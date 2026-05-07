@@ -1,13 +1,21 @@
 import { createORPCClient } from "@orpc/client";
-import { RPCLink } from "@orpc/client/fetch";
-import type { RouterClient } from "@orpc/server";
-import { router } from "../routers";
+import type { ContractRouterClient } from "@orpc/contract";
+import { OpenAPILink } from "@orpc/openapi-client/fetch";
+import { contract } from "../contracts";
 
-const link = new RPCLink({
-	url: "/rpc",
+function getOpenApiUrl() {
+	if (typeof window !== "undefined") {
+		return new URL("/api", window.location.origin);
+	}
+
+	return new URL("/api", "http://localhost:3000");
+}
+
+const link = new OpenAPILink(contract, {
+	url: getOpenApiUrl,
 	headers: () => ({}),
 	fetch: (input: RequestInfo | URL, init?: RequestInit) =>
 		fetch(input, { ...init, credentials: "include" }),
 });
 
-export const orpc: RouterClient<typeof router> = createORPCClient(link);
+export const orpc: ContractRouterClient<typeof contract> = createORPCClient(link);

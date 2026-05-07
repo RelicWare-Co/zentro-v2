@@ -9,7 +9,10 @@ import { queryClient } from "../lib/query-client";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const pageContext = usePageContext();
-  const isAuthPage = pageContext.urlPathname === "/login" || pageContext.urlPathname === "/join";
+  const isAuthPage =
+    pageContext.urlPathname === "/login" ||
+    pageContext.urlPathname === "/join" ||
+    pageContext.urlPathname === "/organization";
 
   if (isAuthPage) {
     return (

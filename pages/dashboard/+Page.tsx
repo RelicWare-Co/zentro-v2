@@ -1,8 +1,9 @@
 import { usePageContext } from "vike-react/usePageContext";
 import { authClient } from "../../lib/auth-client";
 
-function getUserRole(user: { role?: unknown }) {
-	return typeof user.role === "string" && user.role ? user.role : "user";
+function getUserRole(user: unknown) {
+	const role = user && typeof user === "object" && "role" in user ? user.role : null;
+	return typeof role === "string" && role ? role : "user";
 }
 
 export default function Page() {

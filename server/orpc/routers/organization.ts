@@ -1,15 +1,5 @@
 import { and, asc, desc, eq, gt } from "drizzle-orm";
-import { ORPCError } from "@orpc/server";
-import { pub, authed, orgRequired } from "../bases";
-import {
-	JoinTokenSchema,
-	CreateJoinLinkSchema,
-	RevokeJoinLinkSchema,
-	JoinLinkPreviewSchema,
-	JoinLinkRedeemResultSchema,
-	OrganizationManagementSchema,
-	OrganizationSelectionSchema,
-} from "../../../schemas/organization";
+import { implement, ORPCError } from "@orpc/server";
 import {
 	invitation,
 	member,
@@ -17,8 +7,21 @@ import {
 	organizationJoinLink,
 	user as userTable,
 } from "../../../database/drizzle/schema/auth.schema";
+import { dbSqlite, type Database } from "../../../database/drizzle/db";
 import { getOrganizationAccessPolicy } from "../../organization/organization-policy";
-import type { Database } from "../../../database/drizzle/db";
+import { organizationContract } from "../contracts/organization";
+import { authMiddleware } from "../middlewares/auth";
+import { dbMiddleware } from "../middlewares/db";
+import { requireOrgMiddleware } from "../middlewares/require-org";
+
+const organizationImplementer = implement(organizationContract).$context<{
+	headers: Headers;
+	db: ReturnType<typeof dbSqlite>;
+}>();
+
+const publicProcedure = organizationImplementer.use(dbMiddleware);
+const authedProcedure = publicProcedure.use(authMiddleware);
+const orgRequiredProcedure = authedProcedure.use(requireOrgMiddleware);
 
 function toTimestamp(value: Date | number | string | null | undefined) {
 	if (!value) return null;
@@ -107,16 +110,8 @@ async function getOrganizationMemberOrThrow(input: {
 	return memberRow;
 }
 
-export const joinLinkPreview = pub
-	.route({
-		method: "GET",
-		path: "/organization/join-link/preview",
-		summary: "Preview de un join link",
-		tags: ["Organization"],
-	})
-	.input(JoinTokenSchema)
-	.output(JoinLinkPreviewSchema)
-	.handler(async ({ input, context }) => {
+export const joinLinkPreview = publicProcedure.joinLinkPreview.handler(
+	async ({ input, context }) => {
 		const [row] = await context.db
 			.select({
 				id: organizationJoinLink.id,
@@ -166,18 +161,11 @@ export const joinLinkPreview = pub
 			label: row.label,
 			expiresAt: toTimestamp(row.expiresAt),
 		};
-	});
+	},
+);
 
-export const joinLinkRedeem = authed
-	.route({
-		method: "POST",
-		path: "/organization/join-link/redeem",
-		summary: "Canjear un join link",
-		tags: ["Organization"],
-	})
-	.input(JoinTokenSchema)
-	.output(JoinLinkRedeemResultSchema)
-	.handler(async ({ input, context }) => {
+export const joinLinkRedeem = authedProcedure.joinLinkRedeem.handler(
+	async ({ input, context }) => {
 		const userId = context.user.id;
 
 		const result = await context.db.transaction(async (tx) => {
@@ -258,17 +246,10 @@ export const joinLinkRedeem = authed
 		});
 
 		return result;
-	});
+	},
+);
 
-export const selection = authed
-	.route({
-		method: "GET",
-		path: "/organization/selection",
-		summary: "Datos de selección de organización",
-		tags: ["Organization"],
-	})
-	.output(OrganizationSelectionSchema)
-	.handler(async ({ context }) => {
+export const selection = authedProcedure.selection.handler(async ({ context }) => {
 		const user = context.user;
 		const policy = getOrganizationAccessPolicy({ role: user.role });
 		const normalizedEmail = user.email.trim().toLowerCase();
@@ -311,15 +292,8 @@ export const selection = authed
 		};
 	});
 
-export const management = orgRequired
-	.route({
-		method: "GET",
-		path: "/organization/management",
-		summary: "Datos de gestión de organización",
-		tags: ["Organization"],
-	})
-	.output(OrganizationManagementSchema)
-	.handler(async ({ context }) => {
+export const management = orgRequiredProcedure.management.handler(
+	async ({ context }) => {
 		const organizationId = context.organizationId;
 		const currentUser = context.user;
 
@@ -464,17 +438,11 @@ export const management = orgRequired
 			})),
 			joinLinks,
 		};
-	});
+	},
+);
 
-export const joinLinkCreate = orgRequired
-	.route({
-		method: "POST",
-		path: "/organization/join-link",
-		summary: "Crear un join link",
-		tags: ["Organization"],
-	})
-	.input(CreateJoinLinkSchema)
-	.handler(async ({ input, context }) => {
+export const joinLinkCreate = orgRequiredProcedure.joinLinkCreate.handler(
+	async ({ input, context }) => {
 		const organizationId = context.organizationId;
 		const user = context.user;
 
@@ -517,17 +485,11 @@ export const joinLinkCreate = orgRequired
 			joinPath: buildOrganizationJoinPath(token),
 			expiresAt: expiresAt.getTime(),
 		};
-	});
+	},
+);
 
-export const joinLinkRevoke = orgRequired
-	.route({
-		method: "POST",
-		path: "/organization/join-link/revoke",
-		summary: "Revocar un join link",
-		tags: ["Organization"],
-	})
-	.input(RevokeJoinLinkSchema)
-	.handler(async ({ input, context }) => {
+export const joinLinkRevoke = orgRequiredProcedure.joinLinkRevoke.handler(
+	async ({ input, context }) => {
 		const organizationId = context.organizationId;
 		const user = context.user;
 
@@ -567,4 +529,5 @@ export const joinLinkRevoke = orgRequired
 			.where(eq(organizationJoinLink.id, input.joinLinkId));
 
 		return { success: true };
-	});
+	},
+);

@@ -68,6 +68,15 @@ export const JoinLinkRedeemResultSchema = z.object({
 	organizationName: z.string(),
 });
 
+export const CreateJoinLinkResultSchema = z.object({
+	joinPath: z.string(),
+	expiresAt: z.number(),
+});
+
+export const RevokeJoinLinkResultSchema = z.object({
+	success: z.boolean(),
+});
+
 export const OrganizationManagementSchema = z.object({
 	organization: OrganizationSchema,
 	viewer: z.object({

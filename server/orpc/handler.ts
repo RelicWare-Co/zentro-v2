@@ -13,13 +13,21 @@ export const orpcHandler = new OpenAPIHandler(router, {
 	plugins: [
 		new OpenAPIReferencePlugin({
 			docsProvider: "scalar",
+			docsPath: "/docs",
+			specPath: "/openapi.json",
+			docsTitle: "Zentro API Reference",
+			docsConfig: {
+				theme: "deepSpace",
+				layout: "modern",
+				hideDownloadButton: false,
+			},
 			schemaConverters: [new ZodToJsonSchemaConverter()],
 			specGenerateOptions: {
 				info: {
 					title: "Zentro API",
 					version: "1.0.0",
+					description: "OpenAPI endpoints for the Zentro Vike application.",
 				},
-				servers: [{ url: "http://localhost:3000/api" }],
 			},
 		}),
 	],
