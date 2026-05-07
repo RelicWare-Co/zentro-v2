@@ -5,6 +5,7 @@
 - Use conventional commits when creating git commits.
 - Keep changes scoped to the requested behavior. Do not rewrite unrelated code or revert user changes.
 - Prefer existing project patterns over introducing new abstractions.
+- Before migrating code from `../zentro-reborn`, read `MIGRATION_PLAN.md`, follow its milestone order unless there is a clear reason not to, and update the relevant checkboxes/notes in the same change as completed work.
 - If you are unsure about Vike or oRPC behavior, consult the local docs/dependencies first. If that is not enough, clone or inspect the official repositories for current guidance:
   - Vike: `https://github.com/vikejs/vike`
   - oRPC: `https://github.com/middleapi/orpc`
