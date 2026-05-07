@@ -6,10 +6,11 @@ import vikeReact from "vike-react/config";
 
 const config: Config = {
   // https://vike.dev/head-tags
-  title: "My Vike App",
-  description: "Demo showcasing Vike",
+  title: "Zentro",
+  description: "Sistema POS inteligente",
 
   extends: [vikeReact],
+  passToClient: ["user"],
 };
 
 export default config;

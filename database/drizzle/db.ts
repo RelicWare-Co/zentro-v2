@@ -17,7 +17,7 @@ function createDb() {
 	return drizzle(client, { schema });
 }
 
-type Database = ReturnType<typeof createDb>;
+export type Database = ReturnType<typeof createDb>;
 
 let dbInstance: Database | undefined;
 

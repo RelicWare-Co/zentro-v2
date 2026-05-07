@@ -3,17 +3,40 @@ import "./Layout.css";
 import "./tailwind.css";
 import logoUrl from "../assets/logo.svg";
 import { Link } from "../components/Link";
+import { usePageContext } from "vike-react/usePageContext";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "../lib/query-client";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
+  const pageContext = usePageContext();
+  const isAuthPage = pageContext.urlPathname === "/login" || pageContext.urlPathname === "/join";
+
+  if (isAuthPage) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        {children}
+      </QueryClientProvider>
+    );
+  }
+
   return (
-    <div className={"flex max-w-5xl m-auto"}>
-      <Sidebar>
-        <Logo />
-        <Link href="/">Welcome</Link>
-        <Link href="/star-wars">Data Fetching</Link>
-      </Sidebar>
-      <Content>{children}</Content>
-    </div>
+    <QueryClientProvider client={queryClient}>
+      <div className={"flex max-w-5xl m-auto"}>
+        <Sidebar>
+          <Logo />
+          <Link href="/">Welcome</Link>
+          <Link href="/star-wars">Data Fetching</Link>
+          {pageContext.user ? (
+            <>
+              <Link href="/dashboard">Dashboard</Link>
+            </>
+          ) : (
+            <Link href="/login">Iniciar sesión</Link>
+          )}
+        </Sidebar>
+        <Content>{children}</Content>
+      </div>
+    </QueryClientProvider>
   );
 }
 
