@@ -1,5 +1,6 @@
 import {
 	Building2,
+	ChefHat,
 	ChevronLeft,
 	ChevronRight,
 	Clock3,
@@ -11,16 +12,24 @@ import {
 	Receipt,
 	Settings,
 	Store,
+	UtensilsCrossed,
 	Users,
 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { usePageContext } from "vike-react/usePageContext";
 import { OrganizationSelection } from "@/components/OrganizationSelection";
 import { authClient } from "@/lib/auth-client";
 import { queryClient } from "@/lib/query-client";
 import { cn } from "@/lib/utils";
+import { orpcQuery } from "@/server/orpc/client/query";
 
-const navItems = [
+const moduleIconMap = {
+	"chef-hat": ChefHat,
+	"utensils-crossed": UtensilsCrossed,
+} as const;
+
+const baseNavItems = [
 	{
 		name: "Dashboard",
 		path: "/dashboard",
@@ -38,7 +47,7 @@ const navItems = [
 	{ name: "Ventas", path: "/sales", icon: Receipt, order: 50 },
 	{ name: "Productos", path: "/products", icon: Package, order: 60 },
 	{ name: "Configuración", path: "/settings", icon: Settings, order: 70 },
-].sort((left, right) => left.order - right.order);
+];
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
 	const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -46,6 +55,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 	const pageContext = usePageContext();
 	const { data: activeOrganization, isPending: isActiveOrgPending } =
 		authClient.useActiveOrganization();
+	const { data: capabilities } = useQuery({
+		...orpcQuery.modules.capabilities.queryOptions(),
+		enabled: Boolean(activeOrganization),
+	});
 
 	if (isActiveOrgPending) {
 		return (
@@ -58,6 +71,22 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 	if (!activeOrganization) {
 		return <OrganizationSelection />;
 	}
+
+	const moduleNavItems =
+		capabilities?.modules
+			? Object.values(capabilities.modules).flatMap((moduleAccess) =>
+					moduleAccess.navigation.map((item) => ({
+						name: item.label,
+						path: item.path,
+						icon:
+							moduleIconMap[item.icon as keyof typeof moduleIconMap] ?? Store,
+						order: item.order,
+					})),
+				)
+			: [];
+	const navItems = [...baseNavItems, ...moduleNavItems].sort(
+		(left, right) => left.order - right.order,
+	);
 
 	return (
 		<div className="app-safe-area flex min-h-[100dvh] bg-[var(--color-void)] text-[var(--color-photon)]">

@@ -75,16 +75,16 @@ Major source areas to migrate:
 
 Goal: make sure the repo stays stable before large feature migration starts.
 
-- [ ] Confirm `AGENTS.md` links to this file and requires future agents to update checkboxes.
-- [ ] Run `bun install` if dependencies have changed locally.
-- [ ] Run `bunx tsc --noEmit`.
-- [ ] Run `bun run build`.
-- [ ] Inspect `git status --short` and identify unrelated user changes before editing.
-- [ ] Confirm Vike auth guards redirect:
+- [x] Confirm `AGENTS.md` links to this file and requires future agents to update checkboxes.
+- [x] Run `bun install` if dependencies have changed locally.
+- [x] Run `bunx tsc --noEmit`.
+- [x] Run `bun run build`.
+- [x] Inspect `git status --short` and identify unrelated user changes before editing.
+- [x] Confirm Vike auth guards redirect:
   - unauthenticated `/dashboard` -> `/login`
   - authenticated without active organization -> `/organization`
   - authenticated with active organization -> dashboard content
-- [ ] Decide whether to add test tooling now or defer until feature modules are migrated.
+- [x] Decide whether to add test tooling now or defer until feature modules are migrated.
 
 Acceptance criteria:
 
@@ -96,29 +96,29 @@ Acceptance criteria:
 
 Goal: create reusable patterns so every feature migration follows the same shape.
 
-- [ ] Document or create a small example oRPC module that includes:
+- [x] Document or create a small example oRPC module that includes:
   - `schemas/<module>.ts`
   - `server/orpc/contracts/<module>.ts`
   - `server/orpc/routers/<module>.ts`
   - registration in `server/orpc/contracts/index.ts`
   - registration in `server/orpc/routers/index.ts`
   - React usage through `orpcQuery`
-- [ ] Decide where migrated feature UI will live:
+- [x] Decide where migrated feature UI will live:
   - recommended: `features/<module>/**` for domain UI/hooks/types
   - keep generic UI in `components/ui/**`
   - keep route wrappers thin under `pages/**`
-- [ ] Add any missing shared libraries from `../zentro-reborn/src/lib/**` only if still needed:
+- [x] Add any missing shared libraries from `../zentro-reborn/src/lib/**` only if still needed:
   - `site.ts`
   - `app-build.ts`
   - other non-router utilities
-- [ ] Audit dependencies used by migrated UI:
+- [x] Audit dependencies used by migrated UI:
   - `@tanstack/react-table`
   - `date-fns`
   - POS printer packages
   - testing packages
   - TanStack DB packages, only if still intentionally used
-- [ ] Add dependencies only when a migrated feature actually requires them.
-- [ ] Keep old TanStack Router dependencies out of this repo.
+- [x] Add dependencies only when a migrated feature actually requires them.
+- [x] Keep old TanStack Router dependencies out of this repo.
 
 Acceptance criteria:
 
@@ -138,7 +138,7 @@ Source files:
 
 Tasks:
 
-- [ ] Compare current `server/organization/**`, `schemas/organization.ts`, and `server/orpc/routers/organization.ts` against the old organization feature.
+- [x] Compare current `server/organization/**`, `schemas/organization.ts`, and `server/orpc/routers/organization.ts` against the old organization feature.
 - [ ] Port missing organization management schemas:
   - member list
   - invitation list
@@ -151,15 +151,15 @@ Tasks:
   - invite members if still needed
   - update member roles if still needed
   - remove members if still needed
-- [ ] Port `access-control.shared.ts` and server policy behavior only where not already present.
-- [ ] Port module registry primitives:
+- [x] Port `access-control.shared.ts` and server policy behavior only where not already present.
+- [x] Port module registry primitives:
   - `module-definition.ts`
   - `module-registry.ts`
   - `module-access.shared.ts`
   - `module-access.server.ts` adapted into oRPC
-- [ ] Replace old `useOrganizationCapabilities` server-function hook with an oRPC-backed hook.
-- [ ] Update `components/AppLayout.tsx` to include module-provided navigation once capabilities are available.
-- [ ] Create Vike page `pages/organization/+Page.tsx` for management mode, while preserving organization-selection behavior for users without active org.
+- [x] Replace old `useOrganizationCapabilities` server-function hook with an oRPC-backed hook.
+- [x] Update `components/AppLayout.tsx` to include module-provided navigation once capabilities are available.
+- [x] Create Vike page `pages/organization/+Page.tsx` for management mode, while preserving organization-selection behavior for users without active org.
 
 Acceptance criteria:
 
@@ -179,16 +179,16 @@ Source files:
 
 Tasks:
 
-- [ ] Port `settings.shared.ts` schemas to `schemas/settings.ts`.
-- [ ] Create `server/orpc/contracts/settings.ts`.
-- [ ] Create `server/orpc/routers/settings.ts`.
-- [ ] Register settings contract/router.
-- [ ] Convert old `settings.functions.ts` calls to oRPC procedures.
-- [ ] Port `use-settings.ts` to use `orpcQuery`.
-- [ ] Create `pages/settings/+Page.tsx`.
-- [ ] Add `pages/settings/+guard.ts` requiring auth and active org.
-- [ ] Ensure settings reads/writes are scoped by active organization.
-- [ ] Verify form loading, optimistic/cache invalidation behavior, and error states.
+- [x] Port `settings.shared.ts` schemas to `schemas/settings.ts`.
+- [x] Create `server/orpc/contracts/settings.ts`.
+- [x] Create `server/orpc/routers/settings.ts`.
+- [x] Register settings contract/router.
+- [x] Convert old `settings.functions.ts` calls to oRPC procedures.
+- [x] Port `use-settings.ts` to use `orpcQuery`.
+- [x] Create `pages/settings/+Page.tsx`.
+- [x] Add `pages/settings/+guard.ts` requiring auth and active org.
+- [x] Ensure settings reads/writes are scoped by active organization.
+- [x] Verify form loading, optimistic/cache invalidation behavior, and error states.
 
 Acceptance criteria:
 
@@ -209,28 +209,28 @@ Source files:
 
 Tasks:
 
-- [ ] Port product and category schemas to `schemas/products.ts`.
-- [ ] Create `server/orpc/contracts/products.ts`.
-- [ ] Create `server/orpc/routers/products.ts`.
-- [ ] Register products contract/router.
-- [ ] Port product queries:
+- [x] Port product and category schemas to `schemas/products.ts`.
+- [x] Create `server/orpc/contracts/products.ts`.
+- [x] Create `server/orpc/routers/products.ts`.
+- [x] Register products contract/router.
+- [x] Port product queries:
   - list products
   - list categories
   - product detail if present
-- [ ] Port mutations:
+- [x] Port mutations:
   - create product
   - update product
   - delete/deactivate product
   - create/update/delete category
-- [ ] Port UI components:
+- [x] Port UI components:
   - `products-table-columns.tsx`
   - `category-dialog.tsx`
   - `delete-product-dialog.tsx`
   - `product-form-sheet.tsx`
-- [ ] Port `use-products.ts` to oRPC.
-- [ ] Add `pages/products/+Page.tsx` and `+guard.ts`.
-- [ ] Add dependency `@tanstack/react-table` if the migrated table requires it.
-- [ ] Verify inventory records are organization-scoped.
+- [x] Port `use-products.ts` to oRPC.
+- [x] Add `pages/products/+Page.tsx` and `+guard.ts`.
+- [x] Add dependency `@tanstack/react-table` if the migrated table requires it.
+- [x] Verify inventory records are organization-scoped.
 
 Acceptance criteria:
 
@@ -251,20 +251,20 @@ Source files:
 
 Tasks:
 
-- [ ] Port customer schemas to `schemas/customers.ts`.
-- [ ] Create customers contract/router and register them.
-- [ ] Port customer queries/mutations:
+- [x] Port customer schemas to `schemas/customers.ts`.
+- [x] Create customers contract/router and register them.
+- [x] Port customer queries/mutations:
   - list/search customers
   - create customer
   - update customer
   - customer detail if present
-- [ ] Port credit schemas to `schemas/credit.ts`.
-- [ ] Create credit contract/router and register them.
-- [ ] Port credit queries/mutations:
+- [x] Port credit schemas to `schemas/credit.ts`.
+- [x] Create credit contract/router and register them.
+- [x] Port credit queries/mutations:
   - account summary
   - ledger/history
   - payment/adjustment creation if present
-- [ ] Convert old `customers.functions.ts` and `credit.functions.ts` to oRPC.
+- [x] Convert old `customers.functions.ts` and `credit.functions.ts` to oRPC.
 - [ ] Port or adapt tests from old `*.server.test.ts` once this repo has test tooling.
 - [ ] Keep customer picker APIs compatible with the POS migration.
 
@@ -285,13 +285,13 @@ Source files:
 
 Tasks:
 
-- [ ] Port dashboard response schema to `schemas/dashboard.ts`.
-- [ ] Create dashboard contract/router and register them.
-- [ ] Convert old `dashboard.functions.ts` to oRPC.
-- [ ] Port dashboard page UI into `pages/dashboard/+Page.tsx`.
-- [ ] Ensure metrics use active organization context from `requireOrgMiddleware`.
-- [ ] Add loading, empty, and error states consistent with the app layout.
-- [ ] Confirm dashboard does not duplicate heavy POS/sales queries when a compact aggregate query is enough.
+- [x] Port dashboard response schema to `schemas/dashboard.ts`.
+- [x] Create dashboard contract/router and register them.
+- [x] Convert old `dashboard.functions.ts` to oRPC.
+- [x] Port dashboard page UI into `pages/dashboard/+Page.tsx`.
+- [x] Ensure metrics use active organization context from `requireOrgMiddleware`.
+- [x] Add loading, empty, and error states consistent with the app layout.
+- [x] Confirm dashboard does not duplicate heavy POS/sales queries when a compact aggregate query is enough.
 
 Acceptance criteria:
 
@@ -595,4 +595,12 @@ Acceptance criteria:
 
 Use this section for short dated notes as milestones progress.
 
+- 2026-05-08: Milestone 6 completed. Dashboard data now comes from a compact OpenAPI oRPC aggregate at `/api/dashboard/overview`, scoped by `requireOrgMiddleware` and the active user shift. The Vike dashboard page now consumes `orpcQuery.dashboard.overview`, replacing placeholder cards with real revenue, trend, payment mix, inventory, credit, top products, and recent sales sections with loading/empty/error states. Verified with `bunx tsc --noEmit` and `bun run build`.
+- 2026-05-08: Milestone 5 API migration completed for customers and credit. Customers now expose search/create/update/soft-delete through OpenAPI oRPC under `/api/customers`; credit now exposes account search, transaction history, and payment registration under `/api/credit/*`. Both routers use active-organization scoping through `requireOrgMiddleware`, preserve the old pagination/search behavior, and were verified with `bunx tsc --noEmit` and `bun run build`. Customer picker compatibility still needs to be checked during the POS UI migration, and old server tests remain deferred until test tooling exists.
+- 2026-05-07: Milestone 0 baseline verified. `node_modules` was already present, so `bun install` was not rerun because dependencies had not changed. `bunx tsc --noEmit` and `bun run build` pass. `git status --short --branch` was clean before edits. Guard behavior was confirmed from Vike guard code: `/dashboard` and `/` redirect unauthenticated users to `/login`, users without `activeOrganizationId` to `/organization`, and users with an active organization to dashboard content. Full cookie/session integration tests are deferred until test tooling exists.
+- 2026-05-07: Milestone 1 foundation decisions started. The organization oRPC module and `server/orpc/README.md` are the reference pattern for schemas, contracts, routers, registration, and `orpcQuery` React usage. Migrated domain UI should live under `features/<module>/**`, generic primitives stay in `components/ui/**`, and Vike route files under `pages/**` should remain thin wrappers. `../zentro-reborn/src/lib/site.ts` and `app-build.ts` are currently only needed by PWA/app-shell work, so they are deferred to Milestone 13 instead of copied now. Dependency audit is tracked per milestone; add packages only when the migrated feature requires them, and keep TanStack Router out.
+- 2026-05-07: Milestone 2 started with the module access foundation. The old module registry primitives were ported under `features/modules/**`, the restaurants module descriptor and minimum settings metadata parser were added, and module capabilities are now exposed through OpenAPI oRPC at `/api/modules/capabilities`. `components/AppLayout.tsx` consumes those capabilities through `orpcQuery` and appends module-provided navigation only when modules are enabled and accessible. Remaining organization management mutations and the management-mode `/organization` page are still pending.
+- 2026-05-07: `/organization` now renders a Vike management page for users with an active organization, using the existing organization oRPC management/create-join-link/revoke-join-link procedures. The page preserves selection behavior when no active organization exists and keeps unsupported old mutations read-only for now: organization edit/delete/leave, member invite/update/remove, and invitation cancel still need dedicated oRPC procedures before those controls return.
+- 2026-05-07: Milestone 3 completed. Settings now has shared normalization/schema coverage, OpenAPI oRPC endpoints at `/api/settings`, an `orpcQuery` hook, guarded Vike page, active-organization scoping, manager-only writes, module capability invalidation, and loading/error/save states. The settings page includes POS defaults, payment methods, restaurant module toggles, credit, and inventory defaults; printer device settings remain deferred to the printing/device milestones.
+- 2026-05-07: Milestone 4 completed with an adapted catalog UI. Products/categories now use OpenAPI oRPC under `/api/products`, include product/category CRUD, soft product delete, stock movement registration, generated oRPC query invalidation, and active-organization scoping. The UI was consolidated in `features/products/ProductsPage.tsx` instead of porting the old TanStack Table column component, so `@tanstack/react-table` was not added.
 - 2026-05-07: Base layout migration completed. Vike scaffold examples removed. Remaining migration should focus on converting old feature server functions to oRPC before porting each page UI.

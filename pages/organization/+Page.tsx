@@ -1,5 +1,5 @@
-import { OrganizationSelection } from "@/components/OrganizationSelection";
+import { OrganizationManagement } from "@/features/organization/OrganizationManagement";
 
 export default function Page() {
-	return <OrganizationSelection />;
+	return <OrganizationManagement />;
 }
