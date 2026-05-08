@@ -31,6 +31,13 @@ import {
 	transactions as listCreditTransactions,
 } from "./credit";
 import { overview as dashboardOverview } from "./dashboard";
+import {
+	list as listSales,
+	detail as saleDetail,
+	create as createSale,
+	cancel as cancelSale,
+} from "./sales";
+import { active as activeShift } from "./shifts";
 
 export const router = {
 	organization: {
@@ -73,5 +80,14 @@ export const router = {
 	},
 	dashboard: {
 		overview: dashboardOverview,
+	},
+	sales: {
+		list: listSales,
+		detail: saleDetail,
+		create: createSale,
+		cancel: cancelSale,
+	},
+	shifts: {
+		active: activeShift,
 	},
 };

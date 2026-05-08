@@ -5,6 +5,8 @@ import { productsContract } from "./products";
 import { customersContract } from "./customers";
 import { creditContract } from "./credit";
 import { dashboardContract } from "./dashboard";
+import { salesContract } from "./sales";
+import { shiftsContract } from "./shifts";
 
 export const contract = {
 	organization: organizationContract,
@@ -14,6 +16,8 @@ export const contract = {
 	customers: customersContract,
 	credit: creditContract,
 	dashboard: dashboardContract,
+	sales: salesContract,
+	shifts: shiftsContract,
 };
 
 export type AppContract = typeof contract;

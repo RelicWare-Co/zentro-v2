@@ -313,16 +313,16 @@ Source files:
 
 Tasks:
 
-- [ ] Port shared sale types to `schemas/sales.ts` or a server-safe type module as appropriate.
-- [ ] Create sales contract/router and register them.
-- [ ] Port sale history query.
-- [ ] Port sale detail query.
-- [ ] Port sale creation logic from `create-sale.server.ts` into a server-only service used by oRPC handlers.
-- [ ] Ensure sale creation runs inside a DB transaction.
-- [ ] Ensure product stock, customer, credit, payment, and tax/discount behavior matches old app.
-- [ ] Port sales history UI to `pages/sales/+Page.tsx`.
-- [ ] Add `pages/sales/+guard.ts`.
-- [ ] Port sale detail sheet if used outside POS.
+- [x] Port shared sale types to `schemas/sales.ts`.
+- [x] Create sales contract/router and register them.
+- [x] Port sale history query.
+- [x] Port sale detail query.
+- [x] Port sale creation logic from `create-sale.server.ts` into `server/sales/create-sale.server.ts`, a server-only reusable service used by oRPC handlers.
+- [x] Ensure sale creation runs inside a DB transaction.
+- [x] Ensure product stock, customer, credit, payment, and tax/discount behavior matches old app.
+- [x] Port sales history UI to `pages/sales/+Page.tsx`.
+- [x] Add `pages/sales/+guard.ts`.
+- [x] Port sale detail view as a simplified sheet embedded in the sales page (full `SaleDetailSheet` component deferred to POS milestone if still needed).
 
 Acceptance criteria:
 
@@ -603,4 +603,5 @@ Use this section for short dated notes as milestones progress.
 - 2026-05-07: `/organization` now renders a Vike management page for users with an active organization, using the existing organization oRPC management/create-join-link/revoke-join-link procedures. The page preserves selection behavior when no active organization exists and keeps unsupported old mutations read-only for now: organization edit/delete/leave, member invite/update/remove, and invitation cancel still need dedicated oRPC procedures before those controls return.
 - 2026-05-07: Milestone 3 completed. Settings now has shared normalization/schema coverage, OpenAPI oRPC endpoints at `/api/settings`, an `orpcQuery` hook, guarded Vike page, active-organization scoping, manager-only writes, module capability invalidation, and loading/error/save states. The settings page includes POS defaults, payment methods, restaurant module toggles, credit, and inventory defaults; printer device settings remain deferred to the printing/device milestones.
 - 2026-05-07: Milestone 4 completed with an adapted catalog UI. Products/categories now use OpenAPI oRPC under `/api/products`, include product/category CRUD, soft product delete, stock movement registration, generated oRPC query invalidation, and active-organization scoping. The UI was consolidated in `features/products/ProductsPage.tsx` instead of porting the old TanStack Table column component, so `@tanstack/react-table` was not added.
+- 2026-05-08: Milestone 7 completed. Sales core and history now live under OpenAPI oRPC at `/api/sales/*`. The module includes `list`, `detail`, `create`, and `cancel` procedures, all scoped by active organization and using `requireOrgMiddleware`. Sale creation was extracted to a reusable server-only service at `server/sales/create-sale.server.ts` that preserves the original transactional behavior for stock, payments, credit accounts, and modifiers. The sales history page was ported to `pages/sales/+Page.tsx` with local React state replacing TanStack Router search params, and includes today/history views, advanced filters, pagination, metrics, and a simplified sale detail sheet. Verified with `bunx tsc --noEmit` and `bun run build`.
 - 2026-05-07: Base layout migration completed. Vike scaffold examples removed. Remaining migration should focus on converting old feature server functions to oRPC before porting each page UI.
