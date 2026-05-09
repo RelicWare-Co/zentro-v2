@@ -77,6 +77,63 @@ export const RevokeJoinLinkResultSchema = z.object({
 	success: z.boolean(),
 });
 
+export const InviteMemberSchema = z.object({
+	email: z.string().email(),
+	role: z.string().min(1),
+});
+
+export const CancelInvitationSchema = z.object({
+	invitationId: z.string().trim().min(1),
+});
+
+export const UpdateMemberRoleSchema = z.object({
+	memberId: z.string().trim().min(1),
+	role: z.string().min(1),
+});
+
+export const RemoveMemberSchema = z.object({
+	memberIdOrEmail: z.string().trim().min(1),
+});
+
+export const LeaveOrganizationSchema = z.object({
+	organizationId: z.string().trim().min(1),
+});
+
+export const UpdateOrganizationSchema = z.object({
+	name: z.string().min(1).optional(),
+	slug: z.string().min(1).optional(),
+	logo: z.string().optional(),
+});
+
+export const DeleteOrganizationSchema = z.object({
+	organizationId: z.string().trim().min(1),
+});
+
+export const UpdateOrganizationResultSchema = z.object({
+	id: z.string(),
+	name: z.string(),
+	slug: z.string(),
+	logo: z.string().nullable().optional(),
+});
+
+export const MemberResultSchema = z.object({
+	id: z.string(),
+	userId: z.string(),
+	organizationId: z.string(),
+	role: z.string(),
+});
+
+export const InvitationResultSchema = z.object({
+	id: z.string(),
+	email: z.string(),
+	role: z.string(),
+	organizationId: z.string(),
+	inviterId: z.string(),
+	status: z.string(),
+	expiresAt: z.number().nullable().optional(),
+	createdAt: z.number().nullable().optional(),
+});
+
 export const OrganizationManagementSchema = z.object({
 	organization: OrganizationSchema,
 	viewer: z.object({

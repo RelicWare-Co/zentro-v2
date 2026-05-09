@@ -151,3 +151,5 @@ dist
 .cdk.staging
 cdk.out
 sqlite.db
+
+dev.db

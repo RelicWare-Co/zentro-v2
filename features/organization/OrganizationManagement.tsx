@@ -1,16 +1,33 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
+	AlertTriangle,
 	Building2,
+	Check,
 	Copy,
 	Link2,
 	Loader2,
+	LogOut,
 	Mail,
+	Pencil,
 	ShieldCheck,
+	Trash2,
+	UserPlus,
+	UserX,
 	Users,
 	XCircle,
 } from "lucide-react";
 import { useId, useState } from "react";
 import type { z } from "zod";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -70,9 +87,14 @@ function getErrorMessage(error: unknown, fallback: string) {
 	if (error instanceof Error && error.message) {
 		return error.message;
 	}
-
 	return fallback;
 }
+
+const ROLE_OPTIONS = [
+	{ value: "member", label: "Miembro" },
+	{ value: "admin", label: "Admin" },
+	{ value: "owner", label: "Owner" },
+];
 
 export function OrganizationManagement() {
 	const { data: activeOrganization, isPending: isActiveOrgPending } =
@@ -191,13 +213,25 @@ export function OrganizationManagement() {
 							</TabsList>
 
 							<TabsContent value="general">
-								<GeneralTab data={data} />
+								<GeneralTab
+									data={data}
+									refetchManagement={() => managementQuery.refetch()}
+									setFeedback={setFeedback}
+								/>
 							</TabsContent>
 							<TabsContent value="members">
-								<MembersTab data={data} />
+								<MembersTab
+									data={data}
+									refetchManagement={() => managementQuery.refetch()}
+									setFeedback={setFeedback}
+								/>
 							</TabsContent>
 							<TabsContent value="invitations">
-								<InvitationsTab data={data} />
+								<InvitationsTab
+									data={data}
+									refetchManagement={() => managementQuery.refetch()}
+									setFeedback={setFeedback}
+								/>
 							</TabsContent>
 							<TabsContent value="access">
 								<AccessTab
@@ -225,30 +259,168 @@ function HeaderStat(props: { label: string; value: number }) {
 	);
 }
 
-function GeneralTab({ data }: { data: OrganizationManagementData }) {
+function GeneralTab({
+	data,
+	refetchManagement,
+	setFeedback,
+}: {
+	data: OrganizationManagementData;
+	refetchManagement: () => Promise<unknown>;
+	setFeedback: (message: string | null, type?: "success" | "error") => void;
+}) {
+	const [isEditing, setIsEditing] = useState(false);
+	const [editName, setEditName] = useState(data.organization.name);
+	const [editSlug, setEditSlug] = useState(data.organization.slug);
+	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
+	const updateMutation = useMutation(
+		orpcQuery.organization.updateOrganization.mutationOptions(),
+	);
+	const deleteMutation = useMutation(
+		orpcQuery.organization.deleteOrganization.mutationOptions(),
+	);
+
+	const isOwner = parseRoleList(data.viewer.role).includes("owner");
+
+	const handleSave = async (event: React.FormEvent) => {
+		event.preventDefault();
+		setFeedback(null);
+		try {
+			await updateMutation.mutateAsync({
+				name: editName || undefined,
+				slug: editSlug || undefined,
+			});
+			await refetchManagement();
+			setIsEditing(false);
+			setFeedback("Organización actualizada.");
+		} catch (error) {
+			setFeedback(
+				getErrorMessage(error, "No se pudo actualizar la organización."),
+				"error",
+			);
+		}
+	};
+
+	const handleDelete = async () => {
+		setShowDeleteDialog(false);
+		setFeedback(null);
+		try {
+			await deleteMutation.mutateAsync({
+				organizationId: data.organization.id,
+			});
+			setFeedback("Organización eliminada. Redirigiendo...", "success");
+			// Clear active org and reload to selection
+			await authClient.organization.setActive({ organizationId: null });
+			window.location.href = "/organization";
+		} catch (error) {
+			setFeedback(
+				getErrorMessage(error, "No se pudo eliminar la organización."),
+				"error",
+			);
+		}
+	};
+
 	return (
 		<div className="space-y-6">
 			<Card className="border-gray-800 bg-[var(--color-carbon)] shadow-none">
 				<CardHeader>
-					<CardTitle>Información General</CardTitle>
-					<CardDescription className="text-gray-400">
-						Detalles básicos de la organización activa.
-					</CardDescription>
+					<div className="flex items-center justify-between gap-4">
+						<div>
+							<CardTitle>Información General</CardTitle>
+							<CardDescription className="text-gray-400">
+								Detalles básicos de la organización activa.
+							</CardDescription>
+						</div>
+						{data.viewer.canManageAccess && !isEditing && (
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={() => setIsEditing(true)}
+								className="border-gray-700 bg-transparent text-gray-200 hover:bg-white/5"
+							>
+								<Pencil className="mr-1.5 h-3.5 w-3.5" />
+								Editar
+							</Button>
+						)}
+					</div>
 				</CardHeader>
 				<CardContent>
-					<div className="grid gap-4 sm:grid-cols-2">
-						<Detail label="Nombre" value={data.organization.name} />
-						<Detail label="Slug" value={`/${data.organization.slug}`} />
-						<Detail label="ID" value={data.organization.id} mono />
-						<Detail
-							label="Creada"
-							value={
-								data.organization.createdAt
-									? dateFormatter.format(data.organization.createdAt)
-									: "N/A"
-							}
-						/>
-					</div>
+					{isEditing ? (
+						<form onSubmit={handleSave} className="space-y-4">
+							<div className="grid gap-4 sm:grid-cols-2">
+								<div className="space-y-2">
+									<Label>Nombre</Label>
+									<Input
+										value={editName}
+										onChange={(e) => setEditName(e.target.value)}
+										className="border-gray-800 bg-black/30"
+										disabled={updateMutation.isPending}
+									/>
+								</div>
+								<div className="space-y-2">
+									<Label>Slug</Label>
+									<Input
+										value={editSlug}
+										onChange={(e) =>
+											setEditSlug(
+												e.target.value
+													.toLowerCase()
+													.replace(/[^a-z0-9-]/g, ""),
+											)
+										}
+										className="border-gray-800 bg-black/30"
+										disabled={updateMutation.isPending}
+									/>
+								</div>
+							</div>
+							<div className="flex flex-col-reverse gap-3 sm:flex-row">
+								<Button
+									type="button"
+									variant="outline"
+									onClick={() => {
+										setIsEditing(false);
+										setEditName(data.organization.name);
+										setEditSlug(data.organization.slug);
+									}}
+									className="border-gray-700 bg-transparent text-gray-200 hover:bg-white/5"
+									disabled={updateMutation.isPending}
+								>
+									Cancelar
+								</Button>
+								<Button
+									type="submit"
+									className="bg-[var(--color-voltage)] text-black hover:bg-[#d9f15c]"
+									disabled={updateMutation.isPending}
+								>
+									{updateMutation.isPending ? (
+										<>
+											<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+											Guardando...
+										</>
+									) : (
+										<>
+											<Check className="mr-2 h-4 w-4" />
+											Guardar
+										</>
+									)}
+								</Button>
+							</div>
+						</form>
+					) : (
+						<div className="grid gap-4 sm:grid-cols-2">
+							<Detail label="Nombre" value={data.organization.name} />
+							<Detail label="Slug" value={`/${data.organization.slug}`} />
+							<Detail label="ID" value={data.organization.id} mono />
+							<Detail
+								label="Creada"
+								value={
+									data.organization.createdAt
+										? dateFormatter.format(data.organization.createdAt)
+										: "N/A"
+								}
+							/>
+						</div>
+					)}
 				</CardContent>
 			</Card>
 
@@ -256,8 +428,7 @@ function GeneralTab({ data }: { data: OrganizationManagementData }) {
 				<CardHeader>
 					<CardTitle>Permisos Actuales</CardTitle>
 					<CardDescription className="text-gray-400">
-						Las acciones de edición, invitación y miembros se migrarán como el
-						siguiente bloque oRPC.
+						Tu rol determina qué acciones puedes realizar.
 					</CardDescription>
 				</CardHeader>
 				<CardContent className="flex flex-wrap gap-2">
@@ -278,6 +449,59 @@ function GeneralTab({ data }: { data: OrganizationManagementData }) {
 					</Badge>
 				</CardContent>
 			</Card>
+
+			{isOwner && (
+				<Card className="border-red-500/20 bg-red-500/5 shadow-none">
+					<CardHeader>
+						<CardTitle className="text-red-200">Zona de Peligro</CardTitle>
+						<CardDescription className="text-red-200/60">
+							Eliminar la organización es irreversible.
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={() => setShowDeleteDialog(true)}
+							disabled={deleteMutation.isPending}
+							className="border-red-500/30 bg-transparent text-red-200 hover:bg-red-500/10"
+						>
+							{deleteMutation.isPending ? (
+								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+							) : (
+								<Trash2 className="mr-2 h-4 w-4" />
+							)}
+							Eliminar Organización
+						</Button>
+					</CardContent>
+				</Card>
+			)}
+
+			<AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+				<AlertDialogContent className="border-red-500/20 bg-[var(--color-carbon)] text-[var(--color-photon)]">
+					<AlertDialogHeader>
+						<AlertDialogTitle className="flex items-center gap-2 text-red-200">
+							<AlertTriangle className="h-5 w-5" />
+							¿Eliminar organización?
+						</AlertDialogTitle>
+						<AlertDialogDescription className="text-gray-400">
+							Esta acción no se puede deshacer. Todos los datos asociados
+							(productos, ventas, miembros) serán eliminados.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel className="border-gray-700 bg-transparent text-gray-200 hover:bg-white/5">
+							Cancelar
+						</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={handleDelete}
+							className="bg-red-500 text-white hover:bg-red-600"
+						>
+							Eliminar
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 		</div>
 	);
 }
@@ -301,7 +525,73 @@ function Detail(props: { label: string; value: string; mono?: boolean }) {
 	);
 }
 
-function MembersTab({ data }: { data: OrganizationManagementData }) {
+function MembersTab({
+	data,
+	refetchManagement,
+	setFeedback,
+}: {
+	data: OrganizationManagementData;
+	refetchManagement: () => Promise<unknown>;
+	setFeedback: (message: string | null, type?: "success" | "error") => void;
+}) {
+	const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
+	const [pendingRole, setPendingRole] = useState<string>("");
+	const [confirmRemoveMember, setConfirmRemoveMember] = useState<{
+		memberId: string;
+		name: string;
+	} | null>(null);
+
+	const updateRoleMutation = useMutation(
+		orpcQuery.organization.updateMemberRole.mutationOptions(),
+	);
+	const removeMutation = useMutation(
+		orpcQuery.organization.removeMember.mutationOptions(),
+	);
+
+	const startEditRole = (memberId: string, currentRole: string) => {
+		setEditingMemberId(memberId);
+		setPendingRole(currentRole);
+	};
+
+	const saveRole = async (memberId: string) => {
+		setFeedback(null);
+		try {
+			await updateRoleMutation.mutateAsync({
+				memberId,
+				role: pendingRole,
+			});
+			await refetchManagement();
+			setEditingMemberId(null);
+			setFeedback("Rol actualizado.");
+		} catch (error) {
+			setFeedback(
+				getErrorMessage(error, "No se pudo actualizar el rol."),
+				"error",
+			);
+		}
+	};
+
+	const handleRemove = async () => {
+		if (!confirmRemoveMember) return;
+		const target = confirmRemoveMember.memberId;
+		setConfirmRemoveMember(null);
+		setFeedback(null);
+		try {
+			await removeMutation.mutateAsync({ memberIdOrEmail: target });
+			await refetchManagement();
+			setFeedback("Miembro removido.");
+		} catch (error) {
+			setFeedback(
+				getErrorMessage(error, "No se pudo remover al miembro."),
+				"error",
+			);
+		}
+	};
+
+	const viewerIsOwner = parseRoleList(data.viewer.role).includes("owner");
+	const viewerIsAdmin = parseRoleList(data.viewer.role).includes("admin");
+	const canEditMembers = data.viewer.canManageAccess;
+
 	return (
 		<Card className="border-gray-800 bg-[var(--color-carbon)] shadow-none">
 			<CardHeader>
@@ -317,103 +607,411 @@ function MembersTab({ data }: { data: OrganizationManagementData }) {
 							<TableHead className="px-4 text-gray-400">Miembro</TableHead>
 							<TableHead className="text-gray-400">Rol</TableHead>
 							<TableHead className="text-gray-400">Ingreso</TableHead>
+							{canEditMembers && (
+								<TableHead className="text-gray-400 text-right">Acciones</TableHead>
+							)}
 						</TableRow>
 					</TableHeader>
 					<TableBody>
-						{data.members.map((member) => (
-							<TableRow
-								key={member.memberId}
-								className="border-gray-800 hover:bg-white/5"
-							>
-								<TableCell className="px-4">
-									<div className="flex min-w-0 items-center gap-3">
-										<div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gray-800">
-											<span className="text-sm font-medium text-gray-400">
-												{member.name.charAt(0).toUpperCase()}
-											</span>
+						{data.members.map((member) => {
+							const isSelf = member.userId === data.viewer.userId;
+							const isEditing = editingMemberId === member.memberId;
+							const memberRoles = parseRoleList(member.role);
+							const isMemberOwner = memberRoles.includes("owner");
+							// Prevent non-owners from editing an owner, and prevent removing last owner
+							const canEditThis =
+								canEditMembers &&
+								(viewerIsOwner || !isMemberOwner) &&
+								!isSelf;
+							const canRemoveThis =
+								canEditMembers && !isSelf && (viewerIsOwner || !isMemberOwner);
+
+							return (
+								<TableRow
+									key={member.memberId}
+									className="border-gray-800 hover:bg-white/5"
+								>
+									<TableCell className="px-4">
+										<div className="flex min-w-0 items-center gap-3">
+											<div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gray-800">
+												<span className="text-sm font-medium text-gray-400">
+													{member.name.charAt(0).toUpperCase()}
+												</span>
+											</div>
+											<div className="min-w-0">
+												<p className="truncate text-sm font-medium text-white">
+													{member.name}
+												</p>
+												<p className="truncate text-xs text-gray-500">
+													{member.email}
+												</p>
+											</div>
 										</div>
-										<div className="min-w-0">
-											<p className="truncate text-sm font-medium text-white">
-												{member.name}
-											</p>
-											<p className="truncate text-xs text-gray-500">
-												{member.email}
-											</p>
-										</div>
-									</div>
-								</TableCell>
-								<TableCell>
-									<Badge variant="outline" className="text-gray-300">
-										{formatOrganizationRoleLabel(member.role)}
-									</Badge>
-								</TableCell>
-								<TableCell className="text-sm text-gray-400">
-									{member.joinedAt
-										? dateFormatter.format(member.joinedAt)
-										: "N/A"}
-								</TableCell>
-							</TableRow>
-						))}
+									</TableCell>
+									<TableCell>
+										{isEditing ? (
+											<div className="flex items-center gap-2">
+												<Select
+													value={pendingRole}
+													onValueChange={setPendingRole}
+													disabled={updateRoleMutation.isPending}
+												>
+													<SelectTrigger className="h-8 w-32 border-gray-800 bg-black/30 text-xs">
+														<SelectValue />
+													</SelectTrigger>
+													<SelectContent>
+														{ROLE_OPTIONS.map((r) => (
+															<SelectItem key={r.value} value={r.value}>
+																{r.label}
+															</SelectItem>
+														))}
+													</SelectContent>
+												</Select>
+												<Button
+													size="icon-sm"
+													variant="ghost"
+													onClick={() =>
+														void saveRole(member.memberId)
+													}
+													disabled={updateRoleMutation.isPending}
+													className="text-emerald-400 hover:text-emerald-300"
+												>
+													<Check className="h-4 w-4" />
+												</Button>
+												<Button
+													size="icon-sm"
+													variant="ghost"
+													onClick={() => setEditingMemberId(null)}
+													className="text-gray-400 hover:text-gray-300"
+												>
+													<XCircle className="h-4 w-4" />
+												</Button>
+											</div>
+										) : (
+											<Badge
+												variant="outline"
+												className="text-gray-300"
+											>
+												{formatOrganizationRoleLabel(member.role)}
+											</Badge>
+										)}
+									</TableCell>
+									<TableCell className="text-sm text-gray-400">
+										{member.joinedAt
+											? dateFormatter.format(member.joinedAt)
+											: "N/A"}
+									</TableCell>
+									{canEditMembers && (
+										<TableCell className="text-right">
+											<div className="flex items-center justify-end gap-2">
+												{canEditThis && !isEditing && (
+													<Button
+														variant="ghost"
+														size="icon-sm"
+														onClick={() =>
+															startEditRole(
+																member.memberId,
+																member.role,
+															)
+														}
+														className="text-gray-400 hover:text-white"
+													>
+														<Pencil className="h-4 w-4" />
+													</Button>
+												)}
+												{canRemoveThis && (
+													<Button
+														variant="ghost"
+														size="icon-sm"
+														onClick={() =>
+															setConfirmRemoveMember({
+																memberId: member.memberId,
+																name: member.name,
+															})
+														}
+														disabled={removeMutation.isPending}
+														className="text-red-400 hover:text-red-300"
+													>
+														<UserX className="h-4 w-4" />
+													</Button>
+												)}
+											</div>
+										</TableCell>
+									)}
+								</TableRow>
+							);
+						})}
 					</TableBody>
 				</Table>
 				{data.members.length === 0 ? (
 					<div className="p-8 text-center text-sm text-gray-500">
 						No hay miembros en la organización.
-					</div>
-				) : null}
-			</CardContent>
-		</Card>
-	);
-}
+						</div>
+					) : null}
+				</CardContent>
 
-function InvitationsTab({ data }: { data: OrganizationManagementData }) {
-	return (
-		<Card className="border-gray-800 bg-[var(--color-carbon)] shadow-none">
-			<CardHeader>
-				<CardTitle>Invitaciones Pendientes</CardTitle>
-				<CardDescription className="text-gray-400">
-					Invitaciones internas que todavía no han sido aceptadas.
-				</CardDescription>
-			</CardHeader>
-			<CardContent className="p-0">
-				<Table>
-					<TableHeader>
-						<TableRow className="border-gray-800 hover:bg-transparent">
-							<TableHead className="px-4 text-gray-400">Email</TableHead>
-							<TableHead className="text-gray-400">Rol</TableHead>
-							<TableHead className="text-gray-400">Expira</TableHead>
-						</TableRow>
-					</TableHeader>
-					<TableBody>
-						{data.pendingInvitations.map((invitation) => (
-							<TableRow
-								key={invitation.id}
-								className="border-gray-800 hover:bg-white/5"
+				<AlertDialog
+					open={!!confirmRemoveMember}
+					onOpenChange={() => setConfirmRemoveMember(null)}
+				>
+					<AlertDialogContent className="border-red-500/20 bg-[var(--color-carbon)] text-[var(--color-photon)]">
+						<AlertDialogHeader>
+							<AlertDialogTitle className="flex items-center gap-2 text-red-200">
+								<AlertTriangle className="h-5 w-5" />
+								Remover miembro
+							</AlertDialogTitle>
+							<AlertDialogDescription className="text-gray-400">
+								¿Seguro que deseas remover a{" "}
+								<strong>{confirmRemoveMember?.name}</strong> de la
+								organización?
+							</AlertDialogDescription>
+						</AlertDialogHeader>
+						<AlertDialogFooter>
+							<AlertDialogCancel className="border-gray-700 bg-transparent text-gray-200 hover:bg-white/5">
+								Cancelar
+							</AlertDialogCancel>
+							<AlertDialogAction
+								onClick={handleRemove}
+								className="bg-red-500 text-white hover:bg-red-600"
 							>
-								<TableCell className="px-4 text-sm text-white">
-									{invitation.email}
-								</TableCell>
-								<TableCell>
-									<Badge variant="outline" className="text-gray-300">
-										{formatOrganizationRoleLabel(invitation.role)}
-									</Badge>
-								</TableCell>
-								<TableCell className="text-sm text-gray-400">
-									{invitation.expiresAt
-										? dateTimeFormatter.format(invitation.expiresAt)
-										: "N/A"}
-								</TableCell>
+								Remover
+							</AlertDialogAction>
+						</AlertDialogFooter>
+					</AlertDialogContent>
+				</AlertDialog>
+			</Card>
+		);
+	}
+
+function InvitationsTab({
+	data,
+	refetchManagement,
+	setFeedback,
+}: {
+	data: OrganizationManagementData;
+	refetchManagement: () => Promise<unknown>;
+	setFeedback: (message: string | null, type?: "success" | "error") => void;
+}) {
+	const [inviteEmail, setInviteEmail] = useState("");
+	const [inviteRole, setInviteRole] = useState("member");
+	const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
+
+	const inviteMutation = useMutation(
+		orpcQuery.organization.inviteMember.mutationOptions(),
+	);
+	const cancelMutation = useMutation(
+		orpcQuery.organization.cancelInvitation.mutationOptions(),
+	);
+
+	const handleInvite = async (event: React.FormEvent) => {
+		event.preventDefault();
+		setFeedback(null);
+		try {
+			await inviteMutation.mutateAsync({
+				email: inviteEmail,
+				role: inviteRole,
+			});
+			await refetchManagement();
+			setInviteEmail("");
+			setInviteRole("member");
+			setFeedback("Invitación enviada.");
+		} catch (error) {
+			setFeedback(
+				getErrorMessage(error, "No se pudo enviar la invitación."),
+				"error",
+			);
+		}
+	};
+
+	const handleCancel = async () => {
+		if (!confirmCancelId) return;
+		const id = confirmCancelId;
+		setConfirmCancelId(null);
+		setFeedback(null);
+		try {
+			await cancelMutation.mutateAsync({ invitationId: id });
+			await refetchManagement();
+			setFeedback("Invitación cancelada.");
+		} catch (error) {
+			setFeedback(
+				getErrorMessage(error, "No se pudo cancelar la invitación."),
+				"error",
+			);
+		}
+	};
+
+	return (
+		<div className="space-y-6">
+			<Card className="border-gray-800 bg-[var(--color-carbon)] shadow-none">
+				<CardHeader>
+					<CardTitle className="flex items-center gap-2">
+						<UserPlus className="h-4 w-4 text-[var(--color-voltage)]" />
+						Invitar Miembro
+					</CardTitle>
+					<CardDescription className="text-gray-400">
+						Envía una invitación por correo electrónico.
+					</CardDescription>
+				</CardHeader>
+				<CardContent>
+					{data.viewer.canManageAccess ? (
+						<form onSubmit={handleInvite} className="space-y-4">
+							<div className="grid gap-4 sm:grid-cols-2">
+								<div className="space-y-2">
+									<Label>Correo electrónico</Label>
+									<Input
+										type="email"
+										value={inviteEmail}
+										onChange={(e) => setInviteEmail(e.target.value)}
+										placeholder="colaborador@ejemplo.com"
+										required
+										className="border-gray-800 bg-black/30"
+										disabled={inviteMutation.isPending}
+									/>
+								</div>
+								<div className="space-y-2">
+									<Label>Rol</Label>
+									<Select
+										value={inviteRole}
+										onValueChange={setInviteRole}
+										disabled={inviteMutation.isPending}
+									>
+										<SelectTrigger className="border-gray-800 bg-black/30">
+											<SelectValue />
+										</SelectTrigger>
+										<SelectContent>
+											{ROLE_OPTIONS.map((r) => (
+												<SelectItem key={r.value} value={r.value}>
+													{r.label}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								</div>
+							</div>
+							<Button
+								type="submit"
+								className="bg-[var(--color-voltage)] text-black hover:bg-[#d9f15c]"
+								disabled={inviteMutation.isPending}
+							>
+								{inviteMutation.isPending ? (
+									<>
+										<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+										Enviando...
+									</>
+									) : (
+										<>
+											<UserPlus className="mr-2 h-4 w-4" />
+											Enviar Invitación
+										</>
+									)}
+							</Button>
+						</form>
+					) : (
+						<Alert className="border-amber-500/20 bg-amber-500/10 text-amber-100">
+							<AlertTitle>Acceso restringido</AlertTitle>
+							<AlertDescription>
+								Solo owners y admins pueden enviar invitaciones.
+							</AlertDescription>
+						</Alert>
+					)}
+				</CardContent>
+			</Card>
+
+			<Card className="border-gray-800 bg-[var(--color-carbon)] shadow-none">
+				<CardHeader>
+					<CardTitle>Invitaciones Pendientes</CardTitle>
+					<CardDescription className="text-gray-400">
+						Invitaciones internas que todavía no han sido aceptadas.
+					</CardDescription>
+				</CardHeader>
+				<CardContent className="p-0">
+					<Table>
+						<TableHeader>
+							<TableRow className="border-gray-800 hover:bg-transparent">
+								<TableHead className="px-4 text-gray-400">Email</TableHead>
+								<TableHead className="text-gray-400">Rol</TableHead>
+								<TableHead className="text-gray-400">Expira</TableHead>
+								{data.viewer.canManageAccess && (
+									<TableHead className="text-gray-400 text-right">Acciones</TableHead>
+								)}
 							</TableRow>
-						))}
-					</TableBody>
-				</Table>
-				{data.pendingInvitations.length === 0 ? (
-					<div className="p-8 text-center text-sm text-gray-500">
-						No hay invitaciones pendientes.
-					</div>
-				) : null}
-			</CardContent>
-		</Card>
+						</TableHeader>
+						<TableBody>
+							{data.pendingInvitations.map((invitation) => (
+								<TableRow
+									key={invitation.id}
+									className="border-gray-800 hover:bg-white/5"
+								>
+									<TableCell className="px-4 text-sm text-white">
+										{invitation.email}
+									</TableCell>
+									<TableCell>
+										<Badge variant="outline" className="text-gray-300">
+											{formatOrganizationRoleLabel(invitation.role)}
+										</Badge>
+									</TableCell>
+									<TableCell className="text-sm text-gray-400">
+										{invitation.expiresAt
+											? dateTimeFormatter.format(invitation.expiresAt)
+											: "N/A"}
+									</TableCell>
+									{data.viewer.canManageAccess && (
+										<TableCell className="text-right">
+											<Button
+												variant="ghost"
+												size="sm"
+												onClick={() =>
+													setConfirmCancelId(invitation.id)
+												}
+												disabled={cancelMutation.isPending}
+												className="text-red-400 hover:text-red-300"
+											>
+												<XCircle className="mr-1.5 h-3.5 w-3.5" />
+												Cancelar
+											</Button>
+										</TableCell>
+									)}
+								</TableRow>
+							))}
+						</TableBody>
+					</Table>
+					{data.pendingInvitations.length === 0 ? (
+						<div className="p-8 text-center text-sm text-gray-500">
+							No hay invitaciones pendientes.
+						</div>
+					) : null}
+				</CardContent>
+			</Card>
+
+			<AlertDialog
+				open={!!confirmCancelId}
+				onOpenChange={() => setConfirmCancelId(null)}
+			>
+				<AlertDialogContent className="border-red-500/20 bg-[var(--color-carbon)] text-[var(--color-photon)]">
+					<AlertDialogHeader>
+						<AlertDialogTitle className="flex items-center gap-2 text-red-200">
+							<AlertTriangle className="h-5 w-5" />
+							Cancelar invitación
+						</AlertDialogTitle>
+						<AlertDialogDescription className="text-gray-400">
+							La invitación será cancelada y el destinatario no podrá
+							aceptarla.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel className="border-gray-700 bg-transparent text-gray-200 hover:bg-white/5">
+							Volver
+						</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={handleCancel}
+							className="bg-red-500 text-white hover:bg-red-600"
+						>
+							Cancelar Invitación
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
+		</div>
 	);
 }
 
@@ -431,11 +1029,15 @@ function AccessTab({
 	const [joinLinkLabel, setJoinLinkLabel] = useState("");
 	const [expiresInDays, setExpiresInDays] = useState("7");
 	const [latestJoinUrl, setLatestJoinUrl] = useState<string | null>(null);
+	const [showLeaveDialog, setShowLeaveDialog] = useState(false);
 	const createJoinLinkMutation = useMutation(
 		orpcQuery.organization.joinLinkCreate.mutationOptions(),
 	);
 	const revokeJoinLinkMutation = useMutation(
 		orpcQuery.organization.joinLinkRevoke.mutationOptions(),
+	);
+	const leaveMutation = useMutation(
+		orpcQuery.organization.leaveOrganization.mutationOptions(),
 	);
 
 	const createJoinUrl = (joinPath: string) =>
@@ -475,7 +1077,6 @@ function AccessTab({
 
 	const handleRevokeJoinLink = async (joinLinkId: string) => {
 		setFeedback(null);
-
 		try {
 			await revokeJoinLinkMutation.mutateAsync({ joinLinkId });
 			await refetchManagement();
@@ -483,6 +1084,24 @@ function AccessTab({
 		} catch (error) {
 			setFeedback(
 				getErrorMessage(error, "No se pudo revocar el enlace."),
+				"error",
+			);
+		}
+	};
+
+	const handleLeave = async () => {
+		setShowLeaveDialog(false);
+		setFeedback(null);
+		try {
+			await leaveMutation.mutateAsync({
+				organizationId: data.organization.id,
+			});
+			setFeedback("Saliste de la organización. Redirigiendo...", "success");
+			await authClient.organization.setActive({ organizationId: null });
+			window.location.href = "/organization";
+		} catch (error) {
+			setFeedback(
+				getErrorMessage(error, "No se pudo salir de la organización."),
 				"error",
 			);
 		}
@@ -508,7 +1127,9 @@ function AccessTab({
 											id={labelId}
 											name="joinLinkLabel"
 											value={joinLinkLabel}
-											onChange={(event) => setJoinLinkLabel(event.target.value)}
+											onChange={(event) =>
+												setJoinLinkLabel(event.target.value)
+											}
 											placeholder="Ej. Sucursal centro"
 											autoComplete="off"
 											className="border-gray-800 bg-black/30"
@@ -600,7 +1221,9 @@ function AccessTab({
 								? "Creación habilitada"
 								: "Creación controlada"}
 						</Badge>
-						<p className="text-sm text-gray-400">{data.policy.contactMessage}</p>
+						<p className="text-sm text-gray-400">
+							{data.policy.contactMessage}
+						</p>
 					</CardContent>
 				</Card>
 			</div>
@@ -659,7 +1282,9 @@ function AccessTab({
 												type="button"
 												variant="outline"
 												size="sm"
-												onClick={() => void handleRevokeJoinLink(joinLink.id)}
+												onClick={() =>
+													void handleRevokeJoinLink(joinLink.id)
+												}
 												disabled={
 													joinLink.status === "revoked" ||
 													revokeJoinLinkMutation.isPending
@@ -683,9 +1308,65 @@ function AccessTab({
 					)}
 				</CardContent>
 			</Card>
-		</div>
-	);
-}
+
+			<Card className="border-gray-800 bg-[var(--color-carbon)] shadow-none">
+				<CardHeader>
+					<CardTitle>Salir de la Organización</CardTitle>
+					<CardDescription className="text-gray-400">
+						Si ya no necesitas acceso, puedes salir en cualquier momento.
+						No puedes salir si eres el único owner.
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={() => setShowLeaveDialog(true)}
+							disabled={leaveMutation.isPending}
+							className="border-gray-700 bg-transparent text-gray-200 hover:bg-white/5"
+						>
+							{leaveMutation.isPending ? (
+								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+							) : (
+								<LogOut className="mr-2 h-4 w-4" />
+							)}
+							Salir de la Organización
+						</Button>
+					</CardContent>
+				</Card>
+
+				<AlertDialog
+					open={showLeaveDialog}
+					onOpenChange={setShowLeaveDialog}
+				>
+					<AlertDialogContent className="border-amber-500/20 bg-[var(--color-carbon)] text-[var(--color-photon)]">
+						<AlertDialogHeader>
+							<AlertDialogTitle className="flex items-center gap-2 text-amber-200">
+								<AlertTriangle className="h-5 w-5" />
+								¿Salir de la organización?
+							</AlertDialogTitle>
+							<AlertDialogDescription className="text-gray-400">
+								Perderás acceso a todos los datos de{" "}
+								<strong>{data.organization.name}</strong>. Esta acción no se
+								puede deshacer.
+							</AlertDialogDescription>
+						</AlertDialogHeader>
+						<AlertDialogFooter>
+							<AlertDialogCancel className="border-gray-700 bg-transparent text-gray-200 hover:bg-white/5">
+								Cancelar
+							</AlertDialogCancel>
+							<AlertDialogAction
+								onClick={handleLeave}
+								className="bg-amber-500 text-black hover:bg-amber-600"
+							>
+								Salir
+							</AlertDialogAction>
+						</AlertDialogFooter>
+					</AlertDialogContent>
+				</AlertDialog>
+			</div>
+		);
+	}
 
 function JoinLinkStatusBadge(props: { status: OrganizationJoinLinkStatus }) {
 	const className =
@@ -702,4 +1383,11 @@ function JoinLinkStatusBadge(props: { status: OrganizationJoinLinkStatus }) {
 			{formatJoinLinkStatusLabel(props.status)}
 		</Badge>
 	);
+}
+
+function parseRoleList(role: string | null | undefined) {
+	return (role ?? "")
+		.split(",")
+		.map((value) => value.trim().toLowerCase())
+		.filter(Boolean);
 }

@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gt } from "drizzle-orm";
+import { and, asc, desc, eq, gt, like, or } from "drizzle-orm";
 import { implement, ORPCError } from "@orpc/server";
 import {
 	invitation,
@@ -527,6 +527,483 @@ export const joinLinkRevoke = orgRequiredProcedure.joinLinkRevoke.handler(
 			.update(organizationJoinLink)
 			.set({ revokedAt: new Date() })
 			.where(eq(organizationJoinLink.id, input.joinLinkId));
+
+		return { success: true };
+	},
+);
+
+function normalizeInvitationResult(row: {
+	id: string;
+	email: string;
+	role: string | null;
+	organizationId: string;
+	inviterId: string;
+	status: string;
+	expiresAt: Date | number | string | null | undefined;
+	createdAt: Date | number | string | null | undefined;
+}) {
+	return {
+		id: row.id,
+		email: row.email,
+		role: row.role ?? "member",
+		organizationId: row.organizationId,
+		inviterId: row.inviterId,
+		status: row.status,
+		expiresAt: toTimestamp(row.expiresAt),
+		createdAt: toTimestamp(row.createdAt),
+	};
+}
+
+function normalizeMemberResult(row: {
+	id: string;
+	userId: string;
+	organizationId: string;
+	role: string;
+}) {
+	return {
+		id: row.id,
+		userId: row.userId,
+		organizationId: row.organizationId,
+		role: row.role,
+	};
+}
+
+function assertCanManageAccess(role: string | null | undefined) {
+	if (!isOrganizationManagerRole(role)) {
+		throw new ORPCError("FORBIDDEN", {
+			message:
+				"No tienes permisos para gestionar miembros en esta organización.",
+		});
+	}
+}
+
+const VALID_ORG_ROLES = new Set(["member", "admin", "owner"]);
+
+function validateOrgRole(role: string, callerRole: string | null | undefined) {
+	const normalized = role.trim().toLowerCase();
+	if (!VALID_ORG_ROLES.has(normalized)) {
+		throw new ORPCError("BAD_REQUEST", {
+			message: `Rol no válido. Los roles permitidos son: member, admin, owner.`,
+		});
+	}
+	const isOwner = parseRoleList(callerRole).includes("owner");
+	if (normalized === "owner" && !isOwner) {
+		throw new ORPCError("FORBIDDEN", {
+			message: "Solo el owner puede asignar el rol owner.",
+		});
+	}
+	return normalized;
+}
+
+export const inviteMember = orgRequiredProcedure.inviteMember.handler(
+	async ({ input, context }) => {
+		const organizationId = context.organizationId;
+		const user = context.user;
+
+		const currentMember = await getOrganizationMemberOrThrow({
+			organizationId,
+			userId: user.id,
+			db: context.db,
+		});
+		assertCanManageAccess(currentMember.role);
+
+		const validatedRole = validateOrgRole(input.role, currentMember.role);
+		const normalizedEmail = input.email.trim().toLowerCase();
+		const now = new Date();
+
+		// Prevent inviting an existing member
+		const [existingMember] = await context.db
+			.select({ id: member.id })
+			.from(member)
+			.innerJoin(userTable, eq(member.userId, userTable.id))
+			.where(
+				and(
+					eq(member.organizationId, organizationId),
+					eq(userTable.email, normalizedEmail),
+				),
+			)
+			.limit(1);
+		if (existingMember) {
+			throw new ORPCError("BAD_REQUEST", {
+				message: "El usuario ya es miembro de esta organización.",
+			});
+		}
+
+		// Check for pending invitation to the same email
+		const [pendingInvitation] = await context.db
+			.select({ id: invitation.id })
+			.from(invitation)
+			.where(
+				and(
+					eq(invitation.organizationId, organizationId),
+					eq(invitation.email, normalizedEmail),
+					eq(invitation.status, "pending"),
+					gt(invitation.expiresAt, now),
+				),
+			)
+			.limit(1);
+		if (pendingInvitation) {
+			throw new ORPCError("BAD_REQUEST", {
+				message: "Ya existe una invitación pendiente para este correo.",
+			});
+		}
+
+		const id = crypto.randomUUID();
+		const expiresAt = new Date(now.getTime() + 48 * 60 * 60 * 1000); // 48 hours
+
+		await context.db.insert(invitation).values({
+			id,
+			organizationId,
+			inviterId: user.id,
+			email: normalizedEmail,
+			role: validatedRole,
+			status: "pending",
+			expiresAt,
+			createdAt: now,
+		});
+
+		return {
+			id,
+			email: normalizedEmail,
+			role: validatedRole,
+			organizationId,
+			inviterId: user.id,
+			status: "pending",
+			expiresAt: expiresAt.getTime(),
+			createdAt: now.getTime(),
+		};
+	},
+);
+
+export const cancelInvitation = orgRequiredProcedure.cancelInvitation.handler(
+	async ({ input, context }) => {
+		const organizationId = context.organizationId;
+		const user = context.user;
+
+		const currentMember = await getOrganizationMemberOrThrow({
+			organizationId,
+			userId: user.id,
+			db: context.db,
+		});
+		assertCanManageAccess(currentMember.role);
+
+		const [inv] = await context.db
+			.select({
+				id: invitation.id,
+				organizationId: invitation.organizationId,
+				email: invitation.email,
+				role: invitation.role,
+				status: invitation.status,
+				expiresAt: invitation.expiresAt,
+				createdAt: invitation.createdAt,
+				inviterId: invitation.inviterId,
+			})
+			.from(invitation)
+			.where(eq(invitation.id, input.invitationId))
+			.limit(1);
+
+		if (!inv || inv.organizationId !== organizationId) {
+			throw new ORPCError("NOT_FOUND", {
+				message: "No se encontró la invitación en esta organización.",
+			});
+		}
+
+		if (inv.status !== "pending") {
+			throw new ORPCError("BAD_REQUEST", {
+				message: "Solo se pueden cancelar invitaciones pendientes.",
+			});
+		}
+
+		await context.db
+			.update(invitation)
+			.set({ status: "canceled" })
+			.where(eq(invitation.id, input.invitationId));
+
+		return normalizeInvitationResult({
+			...inv,
+			status: "canceled",
+		});
+	},
+);
+
+export const updateMemberRole =
+	orgRequiredProcedure.updateMemberRole.handler(
+		async ({ input, context }) => {
+			const organizationId = context.organizationId;
+			const user = context.user;
+
+			const currentMember = await getOrganizationMemberOrThrow({
+				organizationId,
+				userId: user.id,
+				db: context.db,
+			});
+			assertCanManageAccess(currentMember.role);
+
+			// Verify target member exists in this organization
+			const [target] = await context.db
+				.select({ id: member.id, role: member.role, userId: member.userId, organizationId: member.organizationId })
+				.from(member)
+				.where(
+					and(
+						eq(member.id, input.memberId),
+						eq(member.organizationId, organizationId),
+					),
+				)
+				.limit(1);
+
+			if (!target) {
+				throw new ORPCError("NOT_FOUND", {
+					message: "No se encontró el miembro en esta organización.",
+				});
+			}
+
+			const normalizedRole = validateOrgRole(input.role, currentMember.role);
+			const isOwner = parseRoleList(currentMember.role).includes("owner");
+			const targetIsOwner = parseRoleList(target.role).includes("owner");
+			const settingOwner = normalizedRole === "owner";
+
+			// Only owners can touch owner roles (assign or remove)
+			if ((targetIsOwner || settingOwner) && !isOwner) {
+				throw new ORPCError("FORBIDDEN", {
+					message: "Solo el owner puede modificar roles de owner.",
+				});
+			}
+
+			// Protect the last owner: cannot demote the only owner
+			if (targetIsOwner && !settingOwner) {
+				const owners = await context.db
+					.select({ id: member.id })
+					.from(member)
+					.where(
+						and(
+							eq(member.organizationId, organizationId),
+							like(member.role, "%owner%"),
+						),
+					);
+				if (owners.length <= 1) {
+					throw new ORPCError("BAD_REQUEST", {
+						message: "No puedes degradar al único owner de la organización.",
+					});
+				}
+			}
+
+			await context.db
+				.update(member)
+				.set({ role: normalizedRole })
+				.where(eq(member.id, input.memberId));
+
+			return normalizeMemberResult({
+				id: target.id,
+				userId: target.userId,
+				organizationId: target.organizationId,
+				role: normalizedRole,
+			});
+		},
+	);
+
+export const removeMember = orgRequiredProcedure.removeMember.handler(
+	async ({ input, context }) => {
+		const organizationId = context.organizationId;
+		const user = context.user;
+
+		const currentMember = await getOrganizationMemberOrThrow({
+			organizationId,
+			userId: user.id,
+			db: context.db,
+		});
+		assertCanManageAccess(currentMember.role);
+
+		const [targetMemberRow] = await context.db
+			.select({
+				id: member.id,
+				role: member.role,
+				userId: member.userId,
+				organizationId: member.organizationId,
+			})
+			.from(member)
+			.innerJoin(userTable, eq(member.userId, userTable.id))
+			.where(
+				and(
+					eq(member.organizationId, organizationId),
+					or(eq(member.id, input.memberIdOrEmail), eq(userTable.email, input.memberIdOrEmail)),
+				),
+			)
+			.limit(1);
+
+		if (!targetMemberRow) {
+			throw new ORPCError("NOT_FOUND", {
+				message: "No se encontró el miembro en esta organización.",
+			});
+		}
+
+		// Only owners can remove other owners
+		if (
+			parseRoleList(targetMemberRow.role).includes("owner") &&
+			!parseRoleList(currentMember.role).includes("owner")
+		) {
+			throw new ORPCError("FORBIDDEN", {
+				message: "Solo el owner puede remover a un owner.",
+			});
+		}
+
+		// Protect removing the last owner
+		if (parseRoleList(targetMemberRow.role).includes("owner")) {
+			const owners = await context.db
+				.select({ id: member.id })
+				.from(member)
+				.where(
+					and(
+						eq(member.organizationId, organizationId),
+						like(member.role, "%owner%"),
+					),
+				);
+			if (owners.length <= 1) {
+				throw new ORPCError("BAD_REQUEST", {
+					message: "No puedes remover al único owner de la organización.",
+				});
+			}
+		}
+
+		await context.db
+			.delete(member)
+			.where(
+				and(
+					eq(member.id, targetMemberRow.id),
+					eq(member.organizationId, organizationId),
+				),
+			);
+
+		return normalizeMemberResult(targetMemberRow);
+	},
+);
+
+export const leaveOrganization = orgRequiredProcedure.leaveOrganization.handler(
+	async ({ input, context }) => {
+		const user = context.user;
+		const organizationId = input.organizationId;
+
+		const [currentMember] = await context.db
+			.select({ id: member.id, role: member.role })
+			.from(member)
+			.where(
+				and(
+					eq(member.organizationId, organizationId),
+					eq(member.userId, user.id),
+				),
+			)
+			.limit(1);
+
+		if (!currentMember) {
+			throw new ORPCError("NOT_FOUND", {
+				message: "No eres miembro de esta organización.",
+			});
+		}
+
+		// Prevent leaving if you're the only owner
+		if (parseRoleList(currentMember.role).includes("owner")) {
+			const owners = await context.db
+				.select({ id: member.id })
+				.from(member)
+				.where(
+					and(
+						eq(member.organizationId, organizationId),
+						like(member.role, "%owner%"),
+					),
+				);
+			if (owners.length <= 1) {
+				throw new ORPCError("BAD_REQUEST", {
+					message: "No puedes salir si eres el único owner.",
+				});
+			}
+		}
+
+		await context.db
+			.delete(member)
+			.where(
+				and(
+					eq(member.organizationId, organizationId),
+					eq(member.userId, user.id),
+				),
+			);
+
+		return normalizeMemberResult({
+			id: currentMember.id,
+			userId: user.id,
+			organizationId,
+			role: currentMember.role,
+		});
+	},
+);
+
+export const updateOrganization = orgRequiredProcedure.updateOrganization.handler(
+	async ({ input, context }) => {
+		const organizationId = context.organizationId;
+		const user = context.user;
+
+		const currentMember = await getOrganizationMemberOrThrow({
+			organizationId,
+			userId: user.id,
+			db: context.db,
+		});
+		assertCanManageAccess(currentMember.role);
+
+		const setData: Partial<Record<string, unknown>> = {};
+		if (input.name !== undefined) setData.name = input.name;
+		if (input.slug !== undefined) setData.slug = input.slug;
+		if (input.logo !== undefined) setData.logo = input.logo;
+
+		if (Object.keys(setData).length === 0) {
+			throw new ORPCError("BAD_REQUEST", {
+				message: "No se proporcionaron campos para actualizar.",
+			});
+		}
+
+		await context.db
+			.update(organization)
+			.set(setData)
+			.where(eq(organization.id, organizationId));
+
+		const [updatedOrg] = await context.db
+			.select({
+				id: organization.id,
+				name: organization.name,
+				slug: organization.slug,
+				logo: organization.logo,
+			})
+			.from(organization)
+			.where(eq(organization.id, organizationId))
+			.limit(1);
+
+		return updatedOrg ?? { id: organizationId, name: "", slug: "", logo: null };
+	},
+);
+
+export const deleteOrganization = orgRequiredProcedure.deleteOrganization.handler(
+	async ({ input, context }) => {
+		const user = context.user;
+		const organizationId = context.organizationId;
+
+		if (input.organizationId !== organizationId) {
+			throw new ORPCError("FORBIDDEN", {
+				message: "No puedes eliminar una organización diferente a la activa.",
+			});
+		}
+
+		const currentMember = await getOrganizationMemberOrThrow({
+			organizationId,
+			userId: user.id,
+			db: context.db,
+		});
+
+		if (!parseRoleList(currentMember.role).includes("owner")) {
+			throw new ORPCError("FORBIDDEN", {
+				message: "Solo el owner puede eliminar la organización.",
+			});
+		}
+
+		await context.db
+			.delete(organization)
+			.where(eq(organization.id, organizationId));
 
 		return { success: true };
 	},

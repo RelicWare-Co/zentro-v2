@@ -5,6 +5,13 @@ import {
 	management,
 	joinLinkCreate,
 	joinLinkRevoke,
+	inviteMember,
+	cancelInvitation,
+	updateMemberRole,
+	removeMember,
+	leaveOrganization,
+	updateOrganization,
+	deleteOrganization,
 } from "./organization";
 import { capabilities, setEntitlement } from "./modules";
 import { get as getSettings, update as updateSettings } from "./settings";
@@ -79,6 +86,13 @@ export const router = {
 		management,
 		joinLinkCreate,
 		joinLinkRevoke,
+		inviteMember,
+		cancelInvitation,
+		updateMemberRole,
+		removeMember,
+		leaveOrganization,
+		updateOrganization,
+		deleteOrganization,
 	},
 	modules: {
 		capabilities,
