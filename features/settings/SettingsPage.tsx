@@ -2,16 +2,20 @@ import {
 	Building2,
 	CreditCard,
 	Loader2,
+	Monitor,
+	Moon,
 	Package,
 	Plus,
 	Save,
 	Settings2,
 	Store,
+	Sun,
 	UtensilsCrossed,
 	Users,
 } from "lucide-react";
 import { useEffect, useId, useMemo, useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useTheme, type ThemeMode } from "@/hooks/use-theme";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -361,6 +365,8 @@ function SettingsForm({
 
 			<section className="grid gap-6 xl:grid-cols-[1.1fr_1fr]">
 				<div className="space-y-6">
+					<ThemeSettingsCard />
+
 					<Card className="border-gray-800 bg-[var(--color-carbon)] text-[var(--color-photon)] shadow-none">
 						<CardHeader>
 							<CardTitle className="flex items-center gap-2">
@@ -703,6 +709,53 @@ function SettingsForm({
 				</div>
 			</section>
 		</main>
+	);
+}
+
+function ThemeSettingsCard() {
+	const { mode, setMode } = useTheme();
+
+	const options: { value: ThemeMode; label: string; icon: typeof Sun }[] = [
+		{ value: "light", label: "Claro", icon: Sun },
+		{ value: "dark", label: "Oscuro", icon: Moon },
+		{ value: "auto", label: "Sistema", icon: Monitor },
+	];
+
+	return (
+		<Card className="border-gray-800 bg-[var(--color-carbon)] text-[var(--color-photon)] shadow-none">
+			<CardHeader>
+				<CardTitle className="flex items-center gap-2">
+					<Settings2 className="h-4 w-4 text-[var(--color-voltage)]" />
+					Apariencia
+				</CardTitle>
+				<CardDescription className="text-gray-400">
+					Elige el tema visual de la aplicación.
+				</CardDescription>
+			</CardHeader>
+			<CardContent>
+				<div className="inline-flex rounded-xl border border-gray-700 bg-black/20 p-1">
+					{options.map((option) => {
+						const Icon = option.icon;
+						const active = mode === option.value;
+						return (
+							<button
+								key={option.value}
+								type="button"
+								onClick={() => setMode(option.value)}
+								className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+									active
+										? "bg-[var(--color-voltage)]/10 text-[var(--color-voltage)]"
+										: "text-gray-400 hover:text-white"
+								}`}
+							>
+								<Icon className="h-4 w-4" />
+								{option.label}
+							</button>
+						);
+					})}
+				</div>
+			</CardContent>
+		</Card>
 	);
 }
 
