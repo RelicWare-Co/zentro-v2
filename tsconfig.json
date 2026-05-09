@@ -11,7 +11,8 @@
     ],
     "types": [
       "vite/client",
-      "vike-react"
+      "vike-react",
+      "bun-types"
     ],
     "noEmit": true,
     "skipLibCheck": true,
