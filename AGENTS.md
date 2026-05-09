@@ -17,6 +17,7 @@
 - Run the dev server with `bun run dev`.
 - Build with `bun run build`.
 - Type-check with `bunx tsc --noEmit`.
+- Run tests with `bun test`.
 - Database commands:
   - `bun run db:generate`
   - `bun run db:migrate`
