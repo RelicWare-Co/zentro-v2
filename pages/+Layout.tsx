@@ -9,7 +9,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const isAuthPage =
     pageContext.urlPathname === "/login" ||
     pageContext.urlPathname === "/join";
-  const isFullScreenPage = pageContext.urlPathname === "/pos";
+  const isFullScreenPage =
+    pageContext.urlPathname === "/pos" ||
+    pageContext.urlPathname === "/posv2";
 
   if (isAuthPage || isFullScreenPage) {
     return (
