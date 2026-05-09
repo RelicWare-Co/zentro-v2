@@ -51,6 +51,25 @@ import {
 	searchProducts as posSearchProducts,
 	toggleFavorite as posToggleFavorite,
 } from "./pos";
+import {
+	bootstrap as restaurantBootstrap,
+	tableDetail,
+	addOrderItem,
+	updateOrderMeta,
+	updateDraftItem,
+	deleteDraftItem,
+	sendToKitchen,
+	updateItemStatus,
+	closeOrder,
+	configuration,
+	createArea,
+	updateArea,
+	deleteArea,
+	createTable,
+	updateTable,
+	deleteTable,
+	kitchenBoard,
+} from "./restaurants";
 
 export const router = {
 	organization: {
@@ -113,5 +132,24 @@ export const router = {
 		bootstrap: posBootstrap,
 		searchProducts: posSearchProducts,
 		toggleFavorite: posToggleFavorite,
+	},
+	restaurants: {
+		bootstrap: restaurantBootstrap,
+		tableDetail,
+		addOrderItem,
+		updateOrderMeta,
+		updateDraftItem,
+		deleteDraftItem,
+		sendToKitchen,
+		updateItemStatus,
+		closeOrder,
+		configuration,
+		createArea,
+		updateArea,
+		deleteArea,
+		createTable,
+		updateTable,
+		deleteTable,
+		kitchenBoard,
 	},
 };

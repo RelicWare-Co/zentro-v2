@@ -424,19 +424,19 @@ Source files:
 
 Tasks:
 
-- [ ] Port restaurant schemas to `schemas/restaurants.ts`.
-- [ ] Create restaurants contract/router and register them.
-- [ ] Port `restaurants.module.ts` and register it in the module registry.
-- [ ] Port restaurant settings components:
+- [x] Port restaurant schemas to `schemas/restaurants.ts`.
+- [x] Create restaurants contract/router and register them.
+- [x] Port `restaurants.module.ts` and register it in the module registry.
+- [x] Port restaurant settings components:
   - `RestaurantModuleSettingsCard.tsx`
-- [ ] Port restaurant hooks to oRPC:
+- [x] Port restaurant hooks to oRPC:
   - `use-restaurants.ts`
-- [ ] Port restaurant procedures from `restaurants.functions.ts`.
-- [ ] Add `pages/restaurants/+Page.tsx` and `+guard.ts`.
-- [ ] Add `pages/kitchen/+Page.tsx` and `+guard.ts`.
+- [x] Port restaurant procedures from `restaurants.functions.ts`.
+- [x] Add `pages/restaurants/+Page.tsx` and `+guard.ts`.
+- [x] Add `pages/kitchen/+Page.tsx` and `+guard.ts`.
 - [ ] Port kitchen ticket document generation:
-  - `printing/kitchenTicketDocuments.tsx`
-- [ ] Ensure kitchen screen and restaurant navigation are gated by module access.
+  - `printing/kitchenTicketDocuments.tsx` — **deferred to Milestone 11** because it depends on `ThermalReceipt` and browser-only printing APIs.
+- [x] Ensure kitchen screen and restaurant navigation are gated by module access.
 
 Acceptance criteria:
 
@@ -604,4 +604,5 @@ Use this section for short dated notes as milestones progress.
 - 2026-05-08: Milestone 7 completed. Sales core and history now live under OpenAPI oRPC at `/api/sales/*`. The module includes `list`, `detail`, `create`, and `cancel` procedures, all scoped by active organization and using `requireOrgMiddleware`. Sale creation was extracted to a reusable server-only service at `server/sales/create-sale.server.ts` that preserves the original transactional behavior for stock, payments, credit accounts, and modifiers. The sales history page was ported to `pages/sales/+Page.tsx` with local React state replacing TanStack Router search params, and includes today/history views, advanced filters, pagination, metrics, and a simplified sale detail sheet. Verified with `bunx tsc --noEmit` and `bun run build`.
 - 2026-05-08: Milestone 9 completed. Shift management page migrated to Vike + oRPC. Added `list` and `detail` procedures to the existing `shifts` oRPC module, with full filtering (status, cashier, terminal, payment method, difference status, movements, date range), search, pagination, and organization scoping via `requireOrgMiddleware`. Totals are computed consistently with sales/payment records using the same `buildExpectedAmountsByMethod` logic shared with POS close summary. Created `features/shifts/hooks/use-shifts.ts`, `features/shifts/ShiftsPage.tsx`, `pages/shifts/+Page.tsx`, and `pages/shifts/+guard.ts`. The UI preserves the original layout with metric cards, advanced filters (desktop popover + mobile sheet), and per-shift detail panels showing operations, expected values, and closure reconciliation. Verified with `bunx tsc --noEmit` and `bun run build`.
 - 2026-05-08: Milestone 8 completed. POS runtime migrated to Vike + oRPC. Added `schemas/pos.ts`, `server/orpc/contracts/pos.ts`, `server/orpc/routers/pos.ts` with bootstrap, catalog search, and toggle-favorite endpoints. Expanded existing `shifts` module with open, close, cashMovement, and closeSummary procedures. Created `features/pos/hooks/*` (cart, checkout, shift, modifier, create-customer), `features/pos/components/*` (header, grid, cart, picker, modals), and `pages/pos/+Page.tsx` with `+guard.ts`. POS page is a full-screen surface outside the sidebar layout. Printer dependencies and receipt/thermal printing code remain deferred to Milestone 11. Verified with `bunx tsc --noEmit` and `bun run build`.
+- 2026-05-08: Milestone 10 completed. Restaurant module and kitchen migrated to Vike + oRPC. Added `schemas/restaurants.ts`, `server/orpc/contracts/restaurants.ts`, `server/orpc/routers/restaurants.ts` with full bootstrap, table detail, order item CRUD, kitchen send/receive, order close, area/table management, and kitchen board endpoints. Created `features/restaurants/hooks/use-restaurants.ts` with `orpcQuery` integration. Ported `RestaurantModuleSettingsCard.tsx` and integrated it into `features/settings/SettingsPage.tsx`. Created `pages/restaurants/+Page.tsx`, `pages/restaurants/+guard.ts`, `pages/kitchen/+Page.tsx`, and `pages/kitchen/+guard.ts`. Kitchen ticket document generation (`printing/kitchenTicketDocuments.tsx`) remains deferred to Milestone 11 because it depends on browser-only thermal receipt components. All restaurant endpoints are gated by `requireRestaurantModuleAccess` and manager mutations use `assertManagerAccess`.
 - 2026-05-07: Base layout migration completed. Vike scaffold examples removed. Remaining migration should focus on converting old feature server functions to oRPC before porting each page UI.

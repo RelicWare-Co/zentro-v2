@@ -25,6 +25,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
+import { RestaurantModuleSettingsCard } from "@/features/restaurants/components/RestaurantModuleSettingsCard";
+import {
+	useRestaurantConfiguration,
+} from "@/features/restaurants/hooks/use-restaurants";
 import {
 	useSettings,
 	useUpdateSettingsMutation,
@@ -115,10 +119,7 @@ function SettingsForm({
 	const lowStockThresholdId = useId();
 	const defaultTaxRateId = useId();
 	const newPaymentMethodId = useId();
-	const restaurantEnabledId = useId();
-	const kitchenDisplayEnabledId = useId();
-	const printTicketsEnabledId = useId();
-	const autoPrintOnSendId = useId();
+
 
 	const persistedSettings = useMemo(
 		() => normalizeOrganizationSettings(data.settings),
@@ -495,98 +496,12 @@ function SettingsForm({
 				</Card>
 
 				<div className="space-y-6">
-					<Card className="border-gray-800 bg-[var(--color-carbon)] text-[var(--color-photon)] shadow-none">
-						<CardHeader>
-							<CardTitle className="flex items-center gap-2">
-								<UtensilsCrossed className="h-4 w-4 text-[var(--color-voltage)]" />
-								Restaurantes
-							</CardTitle>
-							<CardDescription className="text-gray-400">
-								Activación del módulo y ajustes de cocina.
-							</CardDescription>
-						</CardHeader>
-						<CardContent className="space-y-3">
-							<ToggleRow
-								id={restaurantEnabledId}
-								title="Módulo de restaurantes"
-								description={
-									data.modules.restaurants.canManageToggle
-										? "Habilita mesas, órdenes y cocina."
-										: "Este toggle depende del entitlement del módulo."
-								}
-								checked={draftSettings.modules.restaurants.enabled}
-								disabled={
-									!canManageSettings || !data.modules.restaurants.canManageToggle
-								}
-								onCheckedChange={(checked) =>
-									setDraftSettings((currentValue) => ({
-										...currentValue,
-										modules: {
-											...currentValue.modules,
-											restaurants: { enabled: checked },
-										},
-									}))
-								}
-							/>
-							<ToggleRow
-								id={kitchenDisplayEnabledId}
-								title="Pantalla de cocina"
-								description="Muestra tickets para preparación."
-								checked={draftSettings.restaurants.kitchen.displayEnabled}
-								disabled={!canManageSettings}
-								onCheckedChange={(checked) =>
-									setDraftSettings((currentValue) => ({
-										...currentValue,
-										restaurants: {
-											...currentValue.restaurants,
-											kitchen: {
-												...currentValue.restaurants.kitchen,
-												displayEnabled: checked,
-											},
-										},
-									}))
-								}
-							/>
-							<ToggleRow
-								id={printTicketsEnabledId}
-								title="Tickets de cocina"
-								description="Permite imprimir comandas cuando se migre impresión."
-								checked={draftSettings.restaurants.kitchen.printTicketsEnabled}
-								disabled={!canManageSettings}
-								onCheckedChange={(checked) =>
-									setDraftSettings((currentValue) => ({
-										...currentValue,
-										restaurants: {
-											...currentValue.restaurants,
-											kitchen: {
-												...currentValue.restaurants.kitchen,
-												printTicketsEnabled: checked,
-											},
-										},
-									}))
-								}
-							/>
-							<ToggleRow
-								id={autoPrintOnSendId}
-								title="Autoimprimir al enviar"
-								description="Prepara el flujo para la integración local."
-								checked={draftSettings.restaurants.kitchen.autoPrintOnSend}
-								disabled={!canManageSettings}
-								onCheckedChange={(checked) =>
-									setDraftSettings((currentValue) => ({
-										...currentValue,
-										restaurants: {
-											...currentValue.restaurants,
-											kitchen: {
-												...currentValue.restaurants.kitchen,
-												autoPrintOnSend: checked,
-											},
-										},
-									}))
-								}
-							/>
-						</CardContent>
-					</Card>
+					<RestaurantConfigurationCard
+						moduleAccess={data.modules.restaurants}
+						draftSettings={draftSettings}
+						canManageSettings={canManageSettings}
+						onSettingsChange={setDraftSettings}
+					/>
 
 					<Card className="border-gray-800 bg-[var(--color-carbon)] text-[var(--color-photon)] shadow-none">
 						<CardHeader>
@@ -742,6 +657,32 @@ function SettingsForm({
 				</div>
 			</section>
 		</main>
+	);
+}
+
+function RestaurantConfigurationCard({
+	moduleAccess,
+	draftSettings,
+	canManageSettings,
+	onSettingsChange,
+}: {
+	moduleAccess: SettingsPageData["modules"]["restaurants"];
+	draftSettings: OrganizationSettings;
+	canManageSettings: boolean;
+	onSettingsChange: (
+		updater: (currentValue: OrganizationSettings) => OrganizationSettings,
+	) => void;
+}) {
+	const { data: configuration } = useRestaurantConfiguration();
+
+	return (
+		<RestaurantModuleSettingsCard
+			moduleAccess={moduleAccess}
+			configuration={configuration ?? []}
+			settings={draftSettings}
+			canManageSettings={canManageSettings}
+			onSettingsChange={onSettingsChange}
+		/>
 	);
 }
 
