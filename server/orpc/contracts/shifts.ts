@@ -1,5 +1,15 @@
 import { oc } from "@orpc/contract";
 import { ActiveShiftResultSchema } from "../../../schemas/shifts";
+import {
+	CloseShiftInputSchema,
+	CloseShiftResultSchema,
+	OpenShiftInputSchema,
+	OpenShiftResultSchema,
+	RegisterCashMovementInputSchema,
+	RegisterCashMovementResultSchema,
+	ShiftCloseSummaryInputSchema,
+	ShiftCloseSummaryResultSchema,
+} from "../../../schemas/pos";
 
 export const shiftsContract = {
 	active: oc.route({
@@ -8,4 +18,40 @@ export const shiftsContract = {
 		summary: "Turno activo del usuario",
 		tags: ["Shifts"],
 	}).output(ActiveShiftResultSchema),
+	open: oc
+		.route({
+			method: "POST",
+			path: "/shifts/open",
+			summary: "Abrir turno",
+			tags: ["Shifts"],
+		})
+		.input(OpenShiftInputSchema)
+		.output(OpenShiftResultSchema),
+	close: oc
+		.route({
+			method: "POST",
+			path: "/shifts/close",
+			summary: "Cerrar turno",
+			tags: ["Shifts"],
+		})
+		.input(CloseShiftInputSchema)
+		.output(CloseShiftResultSchema),
+	cashMovement: oc
+		.route({
+			method: "POST",
+			path: "/shifts/cash-movement",
+			summary: "Registrar movimiento de caja",
+			tags: ["Shifts"],
+		})
+		.input(RegisterCashMovementInputSchema)
+		.output(RegisterCashMovementResultSchema),
+	closeSummary: oc
+		.route({
+			method: "POST",
+			path: "/shifts/close-summary",
+			summary: "Resumen de cierre de turno",
+			tags: ["Shifts"],
+		})
+		.input(ShiftCloseSummaryInputSchema)
+		.output(ShiftCloseSummaryResultSchema),
 };

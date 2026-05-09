@@ -9,8 +9,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const isAuthPage =
     pageContext.urlPathname === "/login" ||
     pageContext.urlPathname === "/join";
+  const isFullScreenPage = pageContext.urlPathname === "/pos";
 
-  if (isAuthPage) {
+  if (isAuthPage || isFullScreenPage) {
     return (
       <QueryClientProvider client={queryClient}>
         {children}

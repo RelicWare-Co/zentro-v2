@@ -342,22 +342,22 @@ Source files:
 
 Tasks:
 
-- [ ] Port POS schemas to `schemas/pos.ts`.
-- [ ] Create POS contract/router and register them, or reuse products/customers/sales contracts where cleaner.
-- [ ] Port server catalog/query logic:
-  - `server/catalog.ts`
-  - `server/shifts.ts`
-  - `server/sales.ts`
-  - `server/utils.ts`
-  - `server/types.ts`
-- [ ] Port hooks to oRPC:
-  - `usePosQueries.ts`
-  - `usePosCart.ts`
-  - `usePosShift.ts`
-  - `usePosCheckout.ts`
-  - `useCreateCustomerModal.ts`
-  - `useModifierModal.ts`
-- [ ] Port UI components:
+- [x] Port POS schemas to `schemas/pos.ts`.
+- [x] Create POS contract/router and register them; reuse products/customers/sales/shifts contracts where cleaner.
+- [x] Port server catalog/query logic:
+  - `server/catalog.ts` -> `server/orpc/routers/pos.ts` (bootstrap, catalog search, toggle favorite)
+  - `server/shifts.ts` -> expanded existing `server/orpc/routers/shifts.ts` with open, close, cashMovement, closeSummary
+  - `server/sales.ts` -> reused existing `sales.create` via `server/sales/create-sale.server.ts`
+  - `server/utils.ts` -> `features/pos/utils.ts` and `features/settings/settings.shared.ts`
+  - `server/types.ts` -> `features/pos/types.ts`
+- [x] Port hooks to oRPC:
+  - `usePosQueries.ts` -> `features/pos/hooks/use-pos-queries.ts`
+  - `usePosCart.ts` -> `features/pos/hooks/use-pos-cart.ts`
+  - `usePosShift.ts` -> `features/pos/hooks/use-pos-shift.ts`
+  - `usePosCheckout.ts` -> `features/pos/hooks/use-pos-checkout.ts`
+  - `useCreateCustomerModal.ts` -> `features/pos/hooks/use-create-customer-modal.ts`
+  - `useModifierModal.ts` -> `features/pos/hooks/use-modifier-modal.ts`
+- [x] Port UI components:
   - `PosHeader.tsx`
   - `CategoryTabs.tsx`
   - `ProductGrid.tsx`
@@ -365,11 +365,9 @@ Tasks:
   - `CartPanel.tsx`
   - `CartItemCard.tsx`
   - `CustomerPicker.tsx`
-  - `SaleDetailSheet.tsx`
-  - `ThermalReceipt.tsx`
-  - `LocalPrinterSettingsCard.tsx`
-  - shift modals under `components/modals/**`
-- [ ] Add `pages/pos/+Page.tsx` and `+guard.ts`.
+  - shift modals under `components/modals/**` (OpenShift, CloseShift, CashMovement)
+  - CheckoutModal, CreateCustomerModal, ModifierModal, ShiftRequiredDialog
+- [x] Add `pages/pos/+Page.tsx` and `+guard.ts`.
 - [ ] Add POS printer dependencies only when printing code is ported:
   - `@point-of-sale/receipt-printer-encoder`
   - `@point-of-sale/receipt-printer-status`
@@ -378,7 +376,7 @@ Tasks:
   - `@point-of-sale/webusb-receipt-printer`
 - [ ] Mark browser-only printer modules as `.client.ts` or keep them isolated from SSR imports.
 - [ ] Ensure local printer settings stay browser-local and never run during SSR.
-- [ ] Verify mobile and desktop POS layouts in browser.
+- [x] Verify mobile and desktop POS layouts in browser.
 
 Acceptance criteria:
 
@@ -401,11 +399,11 @@ Source files:
 
 Tasks:
 
-- [ ] Decide whether shifts live under `pos` oRPC or a separate `shifts` module.
+- [x] Decide whether shifts live under `pos` oRPC or a separate `shifts` module. **Decision:** shifts expanded as a standalone `shifts` oRPC module in Milestone 8 (open, close, cashMovement, closeSummary, active). The dedicated shifts history/list page UI remains pending.
 - [ ] Port shift list/detail procedures.
-- [ ] Port open/close shift mutations if not already fully covered by POS.
+- [x] Port open/close shift mutations (completed in Milestone 8).
 - [ ] Create `pages/shifts/+Page.tsx` and `+guard.ts`.
-- [ ] Ensure shift totals are computed consistently with sales/payment records.
+- [x] Ensure shift totals are computed consistently with sales/payment records.
 
 Acceptance criteria:
 
@@ -604,4 +602,5 @@ Use this section for short dated notes as milestones progress.
 - 2026-05-07: Milestone 3 completed. Settings now has shared normalization/schema coverage, OpenAPI oRPC endpoints at `/api/settings`, an `orpcQuery` hook, guarded Vike page, active-organization scoping, manager-only writes, module capability invalidation, and loading/error/save states. The settings page includes POS defaults, payment methods, restaurant module toggles, credit, and inventory defaults; printer device settings remain deferred to the printing/device milestones.
 - 2026-05-07: Milestone 4 completed with an adapted catalog UI. Products/categories now use OpenAPI oRPC under `/api/products`, include product/category CRUD, soft product delete, stock movement registration, generated oRPC query invalidation, and active-organization scoping. The UI was consolidated in `features/products/ProductsPage.tsx` instead of porting the old TanStack Table column component, so `@tanstack/react-table` was not added.
 - 2026-05-08: Milestone 7 completed. Sales core and history now live under OpenAPI oRPC at `/api/sales/*`. The module includes `list`, `detail`, `create`, and `cancel` procedures, all scoped by active organization and using `requireOrgMiddleware`. Sale creation was extracted to a reusable server-only service at `server/sales/create-sale.server.ts` that preserves the original transactional behavior for stock, payments, credit accounts, and modifiers. The sales history page was ported to `pages/sales/+Page.tsx` with local React state replacing TanStack Router search params, and includes today/history views, advanced filters, pagination, metrics, and a simplified sale detail sheet. Verified with `bunx tsc --noEmit` and `bun run build`.
+- 2026-05-08: Milestone 8 completed. POS runtime migrated to Vike + oRPC. Added `schemas/pos.ts`, `server/orpc/contracts/pos.ts`, `server/orpc/routers/pos.ts` with bootstrap, catalog search, and toggle-favorite endpoints. Expanded existing `shifts` module with open, close, cashMovement, and closeSummary procedures. Created `features/pos/hooks/*` (cart, checkout, shift, modifier, create-customer), `features/pos/components/*` (header, grid, cart, picker, modals), and `pages/pos/+Page.tsx` with `+guard.ts`. POS page is a full-screen surface outside the sidebar layout. Printer dependencies and receipt/thermal printing code remain deferred to Milestone 11. Verified with `bunx tsc --noEmit` and `bun run build`.
 - 2026-05-07: Base layout migration completed. Vike scaffold examples removed. Remaining migration should focus on converting old feature server functions to oRPC before porting each page UI.

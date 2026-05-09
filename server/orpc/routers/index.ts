@@ -37,7 +37,18 @@ import {
 	create as createSale,
 	cancel as cancelSale,
 } from "./sales";
-import { active as activeShift } from "./shifts";
+import {
+	active as activeShift,
+	open as openShift,
+	close as closeShift,
+	cashMovement as registerCashMovement,
+	closeSummary as shiftCloseSummary,
+} from "./shifts";
+import {
+	bootstrap as posBootstrap,
+	searchProducts as posSearchProducts,
+	toggleFavorite as posToggleFavorite,
+} from "./pos";
 
 export const router = {
 	organization: {
@@ -89,5 +100,14 @@ export const router = {
 	},
 	shifts: {
 		active: activeShift,
+		open: openShift,
+		close: closeShift,
+		cashMovement: registerCashMovement,
+		closeSummary: shiftCloseSummary,
+	},
+	pos: {
+		bootstrap: posBootstrap,
+		searchProducts: posSearchProducts,
+		toggleFavorite: posToggleFavorite,
 	},
 };
