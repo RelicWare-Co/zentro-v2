@@ -296,12 +296,20 @@ export function ProductsPage() {
 			</section>
 
 			<Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-				<TabsList className="h-auto border border-gray-800 bg-[var(--color-carbon)]">
-					<TabsTrigger value="products">
+				<TabsList className="flex w-full h-auto flex-wrap gap-2 bg-transparent border-0 p-0">
+					<TabsTrigger
+						value="products"
+						className="flex-1 sm:flex-none h-10 gap-2 rounded-xl border border-transparent px-5 text-sm font-medium text-gray-400 transition-all hover:text-white data-[state=active]:bg-[var(--color-carbon)] data-[state=active]:!border-gray-700 data-[state=active]:text-white"
+					>
 						<Package className="h-4 w-4" />
 						Productos
 					</TabsTrigger>
-					<TabsTrigger value="categories">Categorías</TabsTrigger>
+					<TabsTrigger
+						value="categories"
+						className="flex-1 sm:flex-none h-10 gap-2 rounded-xl border border-transparent px-5 text-sm font-medium text-gray-400 transition-all hover:text-white data-[state=active]:bg-[var(--color-carbon)] data-[state=active]:!border-gray-700 data-[state=active]:text-white"
+					>
+						Categorías
+					</TabsTrigger>
 				</TabsList>
 
 				<TabsContent value="products" className="space-y-6">

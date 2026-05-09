@@ -107,6 +107,7 @@ export function OrganizationManagement() {
 	const [feedbackType, setFeedbackType] = useState<"success" | "error">(
 		"success",
 	);
+	const [activeTab, setActiveTab] = useState("general");
 
 	if (isActiveOrgPending || managementQuery.isPending) {
 		return (
@@ -192,21 +193,69 @@ export function OrganizationManagement() {
 							</Alert>
 						) : null}
 
-						<Tabs defaultValue="general" className="space-y-6">
-							<TabsList className="h-auto flex-wrap border border-gray-800 bg-[var(--color-carbon)]">
-								<TabsTrigger value="general">
+						<Tabs value={activeTab} onValueChange={setActiveTab} className="gap-6">
+							<div className="flex sm:hidden justify-center">
+								<Select
+									value={activeTab}
+									onValueChange={(v) => setActiveTab(v)}
+								>
+									<SelectTrigger className="h-10 w-auto min-w-[180px] rounded-xl border-gray-800 bg-[var(--color-carbon)] px-5 text-sm font-medium text-white">
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent className="border-gray-800 bg-[var(--color-carbon)] text-white">
+										<SelectItem value="general">
+											<div className="flex items-center gap-2">
+												<Building2 className="h-4 w-4" />
+												General
+											</div>
+										</SelectItem>
+										<SelectItem value="members">
+											<div className="flex items-center gap-2">
+												<Users className="h-4 w-4" />
+												Miembros
+											</div>
+										</SelectItem>
+										<SelectItem value="invitations">
+											<div className="flex items-center gap-2">
+												<Mail className="h-4 w-4" />
+												Invitaciones
+											</div>
+										</SelectItem>
+										<SelectItem value="access">
+											<div className="flex items-center gap-2">
+												<Link2 className="h-4 w-4" />
+												Acceso
+											</div>
+										</SelectItem>
+									</SelectContent>
+								</Select>
+							</div>
+							<TabsList className="hidden sm:flex h-auto flex-wrap gap-2 bg-transparent border-0 p-0 w-full">
+								<TabsTrigger
+									value="general"
+									className="shrink-0 h-10 gap-2 rounded-xl border border-transparent px-5 text-sm font-medium text-gray-400 transition-all hover:text-white data-[state=active]:bg-[var(--color-carbon)] data-[state=active]:!border-gray-700 data-[state=active]:text-white"
+								>
 									<Building2 className="h-4 w-4" />
 									General
 								</TabsTrigger>
-								<TabsTrigger value="members">
+								<TabsTrigger
+									value="members"
+									className="shrink-0 h-10 gap-2 rounded-xl border border-transparent px-5 text-sm font-medium text-gray-400 transition-all hover:text-white data-[state=active]:bg-[var(--color-carbon)] data-[state=active]:!border-gray-700 data-[state=active]:text-white"
+								>
 									<Users className="h-4 w-4" />
 									Miembros
 								</TabsTrigger>
-								<TabsTrigger value="invitations">
+								<TabsTrigger
+									value="invitations"
+									className="shrink-0 h-10 gap-2 rounded-xl border border-transparent px-5 text-sm font-medium text-gray-400 transition-all hover:text-white data-[state=active]:bg-[var(--color-carbon)] data-[state=active]:!border-gray-700 data-[state=active]:text-white"
+								>
 									<Mail className="h-4 w-4" />
 									Invitaciones
 								</TabsTrigger>
-								<TabsTrigger value="access">
+								<TabsTrigger
+									value="access"
+									className="shrink-0 h-10 gap-2 rounded-xl border border-transparent px-5 text-sm font-medium text-gray-400 transition-all hover:text-white data-[state=active]:bg-[var(--color-carbon)] data-[state=active]:!border-gray-700 data-[state=active]:text-white"
+								>
 									<Link2 className="h-4 w-4" />
 									Acceso
 								</TabsTrigger>
