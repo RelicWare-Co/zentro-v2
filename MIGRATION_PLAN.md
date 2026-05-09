@@ -456,20 +456,25 @@ Source files:
 
 Tasks:
 
-- [ ] Identify every file that uses `window`, `navigator`, WebUSB, WebSerial, WebBluetooth, canvas, or DOM APIs.
-- [ ] Rename browser-only modules to `.client.ts` / `.client.tsx` or lazy-load them from browser event handlers.
-- [ ] Port receipt document builders that are pure and SSR-safe.
-- [ ] Port browser printer manager as client-only code.
-- [ ] Port PDF fallback if still needed.
-- [ ] Add printer dependencies.
-- [ ] Verify build does not evaluate browser-only printer packages during SSR.
-- [ ] Verify local settings are stored per browser and per organization when needed.
+- [x] Identify every file that uses `window`, `navigator`, WebUSB, WebSerial, WebBluetooth, canvas, or DOM APIs.
+- [x] Rename browser-only modules to `.client.ts` / `.client.tsx` or lazy-load them from browser event handlers.
+- [x] Port receipt document builders that are pure and SSR-safe.
+- [x] Port browser printer manager as client-only code.
+- [x] Port PDF fallback if still needed.
+- [x] Add printer dependencies.
+- [x] Verify build does not evaluate browser-only printer packages during SSR.
+- [x] Verify local settings are stored per browser and per organization when needed.
+- [x] Port `LocalPrinterSettingsCard.tsx` into `features/settings/components/LocalPrinterSettingsCard.client.tsx`.
+- [x] Integrate the card into `features/settings/SettingsPage.tsx` in the POS/settings area.
+- [x] Use `useActiveOrganization()` to pass `organizationId` into printer hooks and actions.
+- [x] Keep the card client-only via a `useEffect` + dynamic import wrapper so the `.client` module is never evaluated during SSR.
 
 Acceptance criteria:
 
 - SSR build passes with printer code present.
 - Opening POS does not request device permissions until the user starts printer setup.
 - Receipt preview and print flow work in supported browsers.
+- Settings page shows the local printer card and uses org-scoped localStorage.
 
 ## Milestone 12: Tests And Quality Gates
 
@@ -606,3 +611,6 @@ Use this section for short dated notes as milestones progress.
 - 2026-05-08: Milestone 8 completed. POS runtime migrated to Vike + oRPC. Added `schemas/pos.ts`, `server/orpc/contracts/pos.ts`, `server/orpc/routers/pos.ts` with bootstrap, catalog search, and toggle-favorite endpoints. Expanded existing `shifts` module with open, close, cashMovement, and closeSummary procedures. Created `features/pos/hooks/*` (cart, checkout, shift, modifier, create-customer), `features/pos/components/*` (header, grid, cart, picker, modals), and `pages/pos/+Page.tsx` with `+guard.ts`. POS page is a full-screen surface outside the sidebar layout. Printer dependencies and receipt/thermal printing code remain deferred to Milestone 11. Verified with `bunx tsc --noEmit` and `bun run build`.
 - 2026-05-08: Milestone 10 completed. Restaurant module and kitchen migrated to Vike + oRPC. Added `schemas/restaurants.ts`, `server/orpc/contracts/restaurants.ts`, `server/orpc/routers/restaurants.ts` with full bootstrap, table detail, order item CRUD, kitchen send/receive, order close, area/table management, and kitchen board endpoints. Created `features/restaurants/hooks/use-restaurants.ts` with `orpcQuery` integration. Ported `RestaurantModuleSettingsCard.tsx` and integrated it into `features/settings/SettingsPage.tsx`. Created `pages/restaurants/+Page.tsx`, `pages/restaurants/+guard.ts`, `pages/kitchen/+Page.tsx`, and `pages/kitchen/+guard.ts`. Kitchen ticket document generation (`printing/kitchenTicketDocuments.tsx`) remains deferred to Milestone 11 because it depends on browser-only thermal receipt components. All restaurant endpoints are gated by `requireRestaurantModuleAccess` and manager mutations use `assertManagerAccess`.
 - 2026-05-07: Base layout migration completed. Vike scaffold examples removed. Remaining migration should focus on converting old feature server functions to oRPC before porting each page UI.
+- 2026-05-09: Milestone 11 completed. All receipt and kitchen printing code migrated with strict SSR boundaries. SSR-safe pieces: `features/pos/components/ThermalReceipt.tsx`, `features/pos/printing/thermal-receipt-document.ts`, `features/pos/printing/receipt-documents.tsx`, `features/restaurants/printing/kitchen-ticket-documents.tsx`. Browser-only pieces renamed with `.client.ts`/`.client.tsx`: `printer-settings.local.client.ts`, `encode-thermal-receipt.client.ts`, `printer-manager.client.ts`, `print-receipt-as-pdf.client.tsx`, `print-thermal-receipt.client.tsx`. Printer dependencies added: `@point-of-sale/receipt-printer-encoder`, `@point-of-sale/receipt-printer-status`, `@point-of-sale/webbluetooth-receipt-printer`, `@point-of-sale/webserial-receipt-printer`, `@point-of-sale/webusb-receipt-printer`. Added `types/pos-printer.d.ts` for missing package types. POS checkout now builds and prints sale receipts via lazy dynamic import of `.client` print module. Restaurant kitchen send now builds and prints kitchen tickets via lazy dynamic import. Cash drawer open wired in POS header via lazy import. `organizationId` is threaded through the entire printing runtime: `printThermalReceipt`, `connectPosPrinter`, `reconnectPosPrinter`, `openPosCashDrawer`, `printReceipt`, `connectWithPrompt`, `reconnectSaved`, `attemptAutoReconnect`, `ensureConnected`, `loadDriver`, `bindPrinterEvents`, `initializePrinterStatus`, and `patchPosLocalPrinterSettings`. Both `pages/pos/+Page.tsx` and `pages/restaurants/+Page.tsx` read `activeOrganization.id` from `useActiveOrganization()` and pass it to all print/open calls. Local printer settings are stored per browser and per organization via a scoped `localStorage` key. No automatic device permission requests on page load; permissions only requested when user explicitly triggers printer connection. Verified with `bunx tsc --noEmit` and `bun run build`.
+- 2026-05-09: Fixed singleton `PosPrinterManager` runtime scoping bug. The manager now tracks `runtimeOrganizationKey` (normalized null/undefined to `"__none__"`) and an `eventGeneration` counter. `loadDriver` recreates the underlying driver when the organization key changes, preventing stale event listeners from writing to the wrong org's `localStorage`. `bindPrinterEvents` captures `boundGeneration` and every handler bails if `this.eventGeneration !== boundGeneration`, so orphaned listeners from replaced drivers never execute. `ensureConnected` now validates both `connectionType` and `runtimeOrganizationKey` before treating an existing connection as valid. `autoReconnectAttempted` is keyed by `${orgKey}:${connectionType}` instead of connection type alone. `disconnect()` resets `runtimeOrganizationKey` and clears the reconnect set. All manager methods that read settings now resolve them with the passed `organizationId` instead of falling back to the global unscoped key. Verified with `bunx tsc --noEmit` and `bun run build`.
+- 2026-05-09: Fixed `initializePrinterStatus` async race. The method now receives the expected `ReceiptPrinterDriver` and `boundGeneration` at call time from the `connected` handler, which captures `expectedPrinter = this.printer` before any async work. `initializePrinterStatus` bails before and after the `@point-of-sale/receipt-printer-status` dynamic import if `this.eventGeneration !== boundGeneration` or `this.printer !== expectedPrinter`. It creates the `ReceiptPrinterStatus` instance using the captured `expectedPrinter` rather than `this.printer` after the await. Every `ReceiptPrinterStatus` event listener (`connected`, `unsupported`, `disconnected`, `update`, `cashDrawer/update`) now checks both `this.eventGeneration !== boundGeneration` and `this.printerStatus !== printerStatus` before mutating state, preventing stale status tracking from attaching to a replaced driver. Verified with `bunx tsc --noEmit` and `bun run build`.

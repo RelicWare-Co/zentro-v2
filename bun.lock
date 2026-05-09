@@ -12,6 +12,11 @@
         "@orpc/server": "^1.14.2",
         "@orpc/tanstack-query": "^1.14.2",
         "@orpc/zod": "^1.14.2",
+        "@point-of-sale/receipt-printer-encoder": "^3.0.3",
+        "@point-of-sale/receipt-printer-status": "^2.0.0",
+        "@point-of-sale/webbluetooth-receipt-printer": "^2.0.0",
+        "@point-of-sale/webserial-receipt-printer": "^2.0.0",
+        "@point-of-sale/webusb-receipt-printer": "^2.0.0",
         "@radix-ui/react-icons": "^1.3.2",
         "@tanstack/react-query": "^5.100.9",
         "@universal-middleware/core": "^0.4.17",
@@ -118,6 +123,8 @@
     "@brillout/picocolors": ["@brillout/picocolors@1.0.30", "", {}, "sha512-xJjdgyN1H0qh2nB2xlzazIipiDixuUd9oD5msh/Qv5bXJG9j8MSD/m4lREt6Z10ej6FF31b8vB4tdT7lDUbiyA=="],
 
     "@brillout/vite-plugin-server-entry": ["@brillout/vite-plugin-server-entry@0.7.18", "", { "dependencies": { "@brillout/import": "^0.2.6", "@brillout/picocolors": "^1.0.26" } }, "sha512-j3neG+vaIZ2AbP2/vGgaIyJwrFIxlK3xd3Ey2EGBswCvAGeI4QSSfXGbb7R3b3H8223PgTTsWOZuZH0Y8Ope2w=="],
+
+    "@canvas/image-data": ["@canvas/image-data@1.1.0", "", {}, "sha512-QdObRRjRbcXGmM1tmJ+MrHcaz1MftF2+W7YI+MsphnsCrmtyfS0d5qJbk0MeSbUeyM/jCb0hmnkXPsy026L7dA=="],
 
     "@date-fns/tz": ["@date-fns/tz@1.4.1", "", {}, "sha512-P5LUNhtbj6YfI3iJjw5EL9eUAG6OitD0W3fWQcpQjDRc/QIsL0tRNuO1PcDvPccWL1fSTXXdE1ds+l95DV/OFA=="],
 
@@ -272,6 +279,18 @@
     "@orpc/zod": ["@orpc/zod@1.14.2", "", { "dependencies": { "@orpc/json-schema": "1.14.2", "@orpc/openapi": "1.14.2", "@orpc/shared": "1.14.2", "escape-string-regexp": "^5.0.0", "wildcard-match": "^5.1.4" }, "peerDependencies": { "@orpc/contract": "1.14.2", "@orpc/server": "1.14.2", "zod": ">=3.25.0" } }, "sha512-47FBoaAz5GfHSdtD/ZNmTjorLD9SiD+I008UH2+DKehC4HMh8V1SbsMWCanUOkh1IFPZ1kzKaOOT+g0OAIOUWA=="],
 
     "@oxc-project/types": ["@oxc-project/types@0.127.0", "", {}, "sha512-aIYXQBo4lCbO4z0R3FHeucQHpF46l2LbMdxRvqvuRuW2OxdnSkcng5B8+K12spgLDj93rtN3+J2Vac/TIO+ciQ=="],
+
+    "@point-of-sale/codepage-encoder": ["@point-of-sale/codepage-encoder@3.0.2", "", {}, "sha512-Sx+0sE/XgPtMUNKScHpwTIZiHNd/+Mg0udACQJVwPsxH9kUAgIkRi9kRlmWBMCruwOJadjKLyKs8MO8Bh+VS/A=="],
+
+    "@point-of-sale/receipt-printer-encoder": ["@point-of-sale/receipt-printer-encoder@3.0.3", "", { "dependencies": { "@canvas/image-data": "^1.0.0", "@point-of-sale/codepage-encoder": "^3.0.0", "canvas-dither": "^1.0.1", "canvas-flatten": "^1.0.1", "resize-image-data": "^0.3.1" } }, "sha512-2+xgs6rwNfrkEw9g4LkgQS6k29qnmo3+hOV7Z2xHNBFn8h4FrwquZwL/dBOTwgmQ9sWEYBkj/bQkg9Rz6lL99w=="],
+
+    "@point-of-sale/receipt-printer-status": ["@point-of-sale/receipt-printer-status@2.0.0", "", {}, "sha512-+oJlFCb4tYhodBnPhwMqi3T1yY003DFNtPTzacNnxhdHg7AzLJ5ilOOLK2gjgHfbRcbI5+jA8A+TFY5iv27Wnw=="],
+
+    "@point-of-sale/webbluetooth-receipt-printer": ["@point-of-sale/webbluetooth-receipt-printer@2.0.0", "", {}, "sha512-xtplxsZWuhKa7DFASYzV8PSiRzwzjbQLqAsWSdjpIVkEo9Xmo652Pcu3aKbRUu4Ih2k9Fz4weyUZljOgbyDYkg=="],
+
+    "@point-of-sale/webserial-receipt-printer": ["@point-of-sale/webserial-receipt-printer@2.0.0", "", {}, "sha512-txTb+DTdkrl2c3oxtIAYc7vKGb4fJMPGnC8iCYMETeAhcFZP2yeISyCa0DVgw4YXNCmsOv6mI6aYzqUjuBb+wQ=="],
+
+    "@point-of-sale/webusb-receipt-printer": ["@point-of-sale/webusb-receipt-printer@2.0.0", "", {}, "sha512-jpPow4XBoHhLH5eqENQOtT7si8iwchfX/4eh5rvwOsLeTowtV2BFb6Jf9yxDY3mFmOGW35MR3yW02GR8bj0y1Q=="],
 
     "@polka/url": ["@polka/url@1.0.0-next.29", "", {}, "sha512-wwQAWhWSuHaag8c4q/KN/vCoeOJYshAIvMQwD4GpSb3OiZklFfvAgmj0VCBBImRpuF/aFgIRzllXlVX93Jevww=="],
 
@@ -549,6 +568,10 @@
 
     "caniuse-lite": ["caniuse-lite@1.0.30001792", "", {}, "sha512-hVLMUZFgR4JJ6ACt1uEESvQN1/dBVqPAKY0hgrV70eN3391K6juAfTjKZLKvOMsx8PxA7gsY1/tLMMTcfFLLpw=="],
 
+    "canvas-dither": ["canvas-dither@1.0.1", "", {}, "sha512-wT1RnV2y9SauibcsfMMCagQTnXmyQq2nJXuX5tTEvo0sXm1vVbJ2r8QxSC3fRQMY3ZgZVq1j54cOvmO4u+Lu/A=="],
+
+    "canvas-flatten": ["canvas-flatten@1.0.1", "", {}, "sha512-UhHeKeWGS23Bm5teZiHk6NEOme1OKCpv6arFovV89dydt0Xz+U4HkPXAKBZS/hmpR15x5U9tDj1ieMQMTwvCAA=="],
+
     "chownr": ["chownr@1.1.4", "", {}, "sha512-jJ0bqzaylmJtVnNgzTeSOs8DPavpbYgEr/b0YL8/2GO3xJEhInFmhKMUnEJQjZumK7KXGFhUy89PrsJWlakBVg=="],
 
     "class-variance-authority": ["class-variance-authority@0.7.1", "", { "dependencies": { "clsx": "^2.1.1" } }, "sha512-Ka+9Trutv7G8M6WT6SeiRWz792K5qEqIGEGzXKhAE6xOWAY6pPH8U+9IY3oCMv6kqTmLsv7Xh/2w2RigkePMsg=="],
@@ -794,6 +817,8 @@
     "regexparam": ["regexparam@3.0.0", "", {}, "sha512-RSYAtP31mvYLkAHrOlh25pCNQ5hWnT106VukGaaFfuJrZFkGRX5GhUAdPqpSDXxOhA2c4akmRuplv1mRqnBn6Q=="],
 
     "reselect": ["reselect@5.1.1", "", {}, "sha512-K/BG6eIky/SBpzfHZv/dd+9JBFiS4SWV7FIujVyJRux6e45+73RaUHXLmIR1f7WOMaQ0U1km6qwklRQxpJJY0w=="],
+
+    "resize-image-data": ["resize-image-data@0.3.1", "", { "dependencies": { "@canvas/image-data": "^1.0.0" } }, "sha512-6hVRn2S6W1cdycreA6Vth5XRN2NnGs7/RnVpxNw/1OCK8aCoevRFH2WprmQRZDnnH3e6awLv2tTIPuv7/7xeGg=="],
 
     "resolve-pkg-maps": ["resolve-pkg-maps@1.0.0", "", {}, "sha512-seS2Tj26TBVOC2NIc2rOe2y2ZO7efxITtLZcGSOnHHNOQ7CkiUBfw0Iw2ck6xkIhPwLhKNLS8BO+hEpngQlqzw=="],
 

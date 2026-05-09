@@ -46,6 +46,17 @@
   - Prefer `+data.server.ts` when data should only load on the server, `+data.client.ts` when it must run in the browser, and `+data.shared.ts` only when both environments are intentional.
   - Use `.ssr.ts` for SSR-only hooks that should not run during client-side navigation/pageContext requests.
 - If Vike reports a wrong-environment import, fix the import boundary instead of suppressing it.
+- When a non-client page needs to render a `.client` component permanently (not just inside an event handler), use a small wrapper that dynamically imports the `.client` module inside `useEffect`. This keeps the browser-only module out of the SSR bundle while still showing the UI after hydration:
+  ```tsx
+  function ClientOnlyWrapper(props) {
+    const [Component, setComponent] = useState(null);
+    useEffect(() => {
+      import("./MyComponent.client").then((m) => setComponent(() => m.MyComponent));
+    }, []);
+    if (!Component) return <Skeleton />;
+    return <Component {...props} />;
+  }
+  ```
 
 ## oRPC And OpenAPI
 

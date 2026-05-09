@@ -11,6 +11,8 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { usePosProducts } from "@/features/pos/hooks/use-pos-queries";
 import { formatCurrency } from "@/features/pos/utils";
+import { buildKitchenTicketDocument } from "@/features/restaurants/printing/kitchen-ticket-documents";
+import { useActiveOrganization } from "@/lib/auth-client";
 import {
 	useAddRestaurantOrderItemMutation,
 	useCloseRestaurantOrderMutation,
@@ -24,6 +26,8 @@ import {
 } from "@/features/restaurants/hooks/use-restaurants";
 
 export default function RestaurantsPage() {
+	const { data: activeOrganization } = useActiveOrganization();
+	const activeOrganizationId = activeOrganization?.id ?? null;
 	const {
 		data: bootstrap,
 		isError: isBootstrapError,
@@ -162,9 +166,30 @@ export default function RestaurantsPage() {
 			const result = await sendToKitchenMutation.mutateAsync({
 				orderId: openOrder.id,
 			});
-			// Kitchen ticket printing deferred to Milestone 11
 			if (result.printing.enabled && result.printing.autoPrintOnSend) {
-				// TODO(Milestone 11): build and print kitchen ticket
+				const document = buildKitchenTicketDocument({
+					ticketId: result.ticket.id,
+					orderNumber: result.ticket.orderNumber,
+					sequenceNumber: result.ticket.sequenceNumber,
+					createdAt: result.ticket.createdAt,
+					tableName: result.ticket.table.name,
+					areaName: result.ticket.table.areaName,
+					items: result.ticket.items.map((item) => ({
+						productName: item.productName,
+						quantity: item.quantity,
+						notes: item.notes,
+						modifiers: item.modifiers.map((m) => ({
+							name: m.name,
+							quantity: m.quantity,
+							unitPrice: m.unitPrice,
+						})),
+						totalAmount: item.totalAmount,
+					})),
+				});
+				const { printThermalReceipt } = await import(
+					"@/features/pos/printing/print-thermal-receipt.client"
+				);
+				await printThermalReceipt(document, activeOrganizationId);
 			}
 			setFeedbackMessage("La comanda fue enviada a cocina.");
 		} catch (error) {

@@ -31,7 +31,10 @@ import {
 } from "@/features/pos/hooks/use-pos-queries";
 import { usePosShift } from "@/features/pos/hooks/use-pos-shift";
 import type { Product } from "@/features/pos/types";
+import { calculateItemTotal, createPaymentMethodLabelMap } from "@/features/pos/utils";
+import { buildSaleReceiptDocument } from "@/features/pos/printing/receipt-documents";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useActiveOrganization } from "@/lib/auth-client";
 
 export default function PosPage() {
 	const isMobile = useIsMobile();
@@ -40,6 +43,8 @@ export default function PosPage() {
 	const [selectedCustomerId, setSelectedCustomerId] = useState("");
 	const [isMobileCartOpen, setIsMobileCartOpen] = useState(false);
 	const [isShiftRequiredOpen, setIsShiftRequiredOpen] = useState(false);
+	const { data: activeOrganization } = useActiveOrganization();
+	const activeOrganizationId = activeOrganization?.id ?? null;
 
 	// Data queries
 	const { data: bootstrap, isLoading: isBootstrapLoading } = usePosBootstrap();
@@ -114,8 +119,49 @@ export default function PosPage() {
 		resetDiscount,
 		paymentMethodOptions,
 		allowCreditSales,
-		async () => {
-			// Receipt printing deferred to Milestone 11
+		async (payload) => {
+			const customer = customers.find(
+				(c) => c.id === selectedCustomerId,
+			);
+			const document = buildSaleReceiptDocument({
+				documentId: payload.result.saleId,
+				issuedAt: Date.now(),
+				status: payload.result.status,
+				customerName: customer?.name ?? "Cliente general",
+				customerMeta: customer?.phone ?? null,
+				cashierName: null,
+				terminalName: defaultTerminalName,
+				items: payload.snapshot.cart.map((item) => ({
+					name: item.product.name,
+					quantity: item.quantity,
+					unitPrice: item.product.price,
+					totalAmount: calculateItemTotal(item),
+					discountAmount: item.discountAmount,
+					modifiers: item.modifiers.map((m) => ({
+						name: m.name,
+						quantity: m.quantity,
+						unitPrice: m.price,
+					})),
+				})),
+				payments: payload.snapshot.payments.map((p) => ({
+					method: p.method,
+					amount: p.amount,
+					reference: p.reference,
+				})),
+				subtotal: payload.result.subtotal,
+				taxAmount: payload.result.taxAmount,
+				discountAmount: payload.result.discountAmount,
+				totalAmount: payload.result.totalAmount,
+				paidAmount: payload.result.paidAmount,
+				balanceDue: payload.result.balanceDue,
+				paymentMethodLabels: settings
+					? createPaymentMethodLabelMap(settings.paymentMethods)
+					: undefined,
+			});
+			const { printThermalReceipt } = await import(
+				"@/features/pos/printing/print-thermal-receipt.client"
+			);
+			await printThermalReceipt(document, activeOrganizationId);
 		},
 	);
 
@@ -188,9 +234,12 @@ export default function PosPage() {
 				onCustomerChange={setSelectedCustomerId}
 				onOpenShift={() => shift.setIsShiftOpenModalOpen(true)}
 				onCashMovement={() => shift.setIsCashMovementModalOpen(true)}
-				onOpenDrawer={() => {
-					// Open cash drawer deferred to Milestone 11
-				}}
+					onOpenDrawer={async () => {
+						const { openPosCashDrawer } = await import(
+							"@/features/pos/printing/print-thermal-receipt.client"
+						);
+						await openPosCashDrawer(activeOrganizationId);
+					}}
 				onCloseShift={() => shift.setIsCloseShiftModalOpen(true)}
 				onCreateCustomer={() =>
 					createCustomerModal.setIsCreateCustomerModalOpen(true)

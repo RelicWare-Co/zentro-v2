@@ -1,0 +1,172 @@
+declare module "@point-of-sale/receipt-printer-encoder" {
+	export default class ReceiptPrinterEncoder {
+		constructor(options?: {
+			language?: string;
+			codepageMapping?: string;
+			errors?: string;
+		});
+		get columns(): number;
+		initialize(): this;
+		codepage(value: string): this;
+		align(value: string): this;
+		bold(value: boolean): this;
+		line(value: string): this;
+		newline(count?: number): this;
+		cut(value?: string): this;
+		rule(options?: { style?: string }): this;
+		pulse(pin?: number, on?: number, off?: number): this;
+		table(columns: Array<{ width: number; align: string }>, rows: string[][]): this;
+		encode(): Uint8Array;
+	}
+}
+
+declare module "@point-of-sale/receipt-printer-status" {
+	interface ReceiptPrinterStatusDriver {
+		connected: boolean;
+		language: string;
+		status: {
+			online: boolean;
+			coverOpened: boolean;
+			paperLoaded: boolean;
+			paperLow: boolean;
+		};
+		cashDrawer: {
+			open: () => void;
+			opened: boolean;
+			addEventListener(event: "update", listener: (state: unknown) => void): void;
+			addEventListener(event: "open", listener: () => void): void;
+			addEventListener(event: "close", listener: () => void): void;
+		};
+		addEventListener(event: "connected", listener: () => void): void;
+		addEventListener(event: "unsupported", listener: () => void): void;
+		addEventListener(event: "disconnected", listener: () => void): void;
+		addEventListener(event: "update", listener: (state: unknown) => void): void;
+	}
+
+	export default class ReceiptPrinterStatus {
+		constructor(options: {
+			printer: {
+				print: (data: Uint8Array | ArrayLike<number>) => Promise<void> | void;
+			};
+			language?: string;
+		});
+	}
+}
+
+declare module "@point-of-sale/webusb-receipt-printer" {
+	interface ReceiptPrinterDriver {
+		connect: () => Promise<void> | void;
+		reconnect: (device: unknown) => Promise<void> | void;
+		disconnect?: () => Promise<void> | void;
+		listen?: () => Promise<boolean> | boolean;
+		print: (data: Uint8Array | ArrayLike<number>) => Promise<void> | void;
+		addEventListener(
+			event: "connected",
+			listener: (device: unknown) => void,
+		): void;
+		addEventListener(event: "disconnected", listener: () => void): void;
+		addEventListener(
+			event: "data",
+			listener: (data: DataView | Uint8Array) => void,
+		): void;
+	}
+
+	export default class WebUSBReceiptPrinter {
+		constructor();
+		connect: () => Promise<void> | void;
+		reconnect: (device: unknown) => Promise<void> | void;
+		disconnect?: () => Promise<void> | void;
+		listen?: () => Promise<boolean> | boolean;
+		print: (data: Uint8Array | ArrayLike<number>) => Promise<void> | void;
+		addEventListener(
+			event: "connected",
+			listener: (device: unknown) => void,
+		): void;
+		addEventListener(event: "disconnected", listener: () => void): void;
+		addEventListener(
+			event: "data",
+			listener: (data: DataView | Uint8Array) => void,
+		): void;
+	}
+}
+
+declare module "@point-of-sale/webserial-receipt-printer" {
+	interface ReceiptPrinterDriver {
+		connect: () => Promise<void> | void;
+		reconnect: (device: unknown) => Promise<void> | void;
+		disconnect?: () => Promise<void> | void;
+		listen?: () => Promise<boolean> | boolean;
+		print: (data: Uint8Array | ArrayLike<number>) => Promise<void> | void;
+		addEventListener(
+			event: "connected",
+			listener: (device: unknown) => void,
+		): void;
+		addEventListener(event: "disconnected", listener: () => void): void;
+		addEventListener(
+			event: "data",
+			listener: (data: DataView | Uint8Array) => void,
+		): void;
+	}
+
+	export default class WebSerialReceiptPrinter {
+		constructor(options?: {
+			baudRate?: number;
+			bufferSize?: number;
+			dataBits?: number;
+			flowControl?: string;
+			parity?: string;
+			stopBits?: number;
+		});
+		connect: () => Promise<void> | void;
+		reconnect: (device: unknown) => Promise<void> | void;
+		disconnect?: () => Promise<void> | void;
+		listen?: () => Promise<boolean> | boolean;
+		print: (data: Uint8Array | ArrayLike<number>) => Promise<void> | void;
+		addEventListener(
+			event: "connected",
+			listener: (device: unknown) => void,
+		): void;
+		addEventListener(event: "disconnected", listener: () => void): void;
+		addEventListener(
+			event: "data",
+			listener: (data: DataView | Uint8Array) => void,
+		): void;
+	}
+}
+
+declare module "@point-of-sale/webbluetooth-receipt-printer" {
+	interface ReceiptPrinterDriver {
+		connect: () => Promise<void> | void;
+		reconnect: (device: unknown) => Promise<void> | void;
+		disconnect?: () => Promise<void> | void;
+		listen?: () => Promise<boolean> | boolean;
+		print: (data: Uint8Array | ArrayLike<number>) => Promise<void> | void;
+		addEventListener(
+			event: "connected",
+			listener: (device: unknown) => void,
+		): void;
+		addEventListener(event: "disconnected", listener: () => void): void;
+		addEventListener(
+			event: "data",
+			listener: (data: DataView | Uint8Array) => void,
+		): void;
+	}
+
+	export default class WebBluetoothReceiptPrinter {
+		constructor();
+		connect: () => Promise<void> | void;
+		reconnect: (device: unknown) => Promise<void> | void;
+		disconnect?: () => Promise<void> | void;
+		listen?: () => Promise<boolean> | boolean;
+		print: (data: Uint8Array | ArrayLike<number>) => Promise<void> | void;
+		addEventListener(
+			event: "connected",
+			listener: (device: unknown) => void,
+		): void;
+		addEventListener(event: "disconnected", listener: () => void): void;
+		addEventListener(
+			event: "data",
+			listener: (data: DataView | Uint8Array) => void,
+		): void;
+	}
+}

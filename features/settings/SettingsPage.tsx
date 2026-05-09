@@ -93,6 +93,46 @@ export function SettingsPage() {
 	);
 }
 
+function LocalPrinterSettingsSection({
+	organizationId,
+}: {
+	organizationId: string;
+}) {
+	const [CardComponent, setCardComponent] = useState<
+		React.ComponentType<{ organizationId: string }> | null
+	>(null);
+
+	useEffect(() => {
+		let mounted = true;
+		import("@/features/settings/components/LocalPrinterSettingsCard.client").then(
+			(mod) => {
+				if (mounted) setCardComponent(() => mod.LocalPrinterSettingsCard);
+			},
+		);
+		return () => {
+			mounted = false;
+		};
+	}, []);
+
+	if (!CardComponent) {
+		return (
+			<Card className="border-gray-800 bg-[var(--color-carbon)] text-[var(--color-photon)] shadow-none">
+				<CardHeader>
+					<CardTitle className="flex items-center gap-2">
+						<Settings2 className="h-4 w-4 text-[var(--color-voltage)]" />
+						Impresión local
+					</CardTitle>
+					<CardDescription className="text-gray-400">
+						Cargando configuración de impresora…
+					</CardDescription>
+				</CardHeader>
+			</Card>
+		);
+	}
+
+	return <CardComponent organizationId={organizationId} />;
+}
+
 function SettingsForm({
 	data,
 	isSaving,
@@ -320,17 +360,18 @@ function SettingsForm({
 			</section>
 
 			<section className="grid gap-6 xl:grid-cols-[1.1fr_1fr]">
-				<Card className="border-gray-800 bg-[var(--color-carbon)] text-[var(--color-photon)] shadow-none">
-					<CardHeader>
-						<CardTitle className="flex items-center gap-2">
-							<Store className="h-4 w-4 text-[var(--color-voltage)]" />
-							Caja y POS
-						</CardTitle>
-						<CardDescription className="text-gray-400">
-							Valores por defecto para apertura de turno y checkout.
-						</CardDescription>
-					</CardHeader>
-					<CardContent className="space-y-6">
+				<div className="space-y-6">
+					<Card className="border-gray-800 bg-[var(--color-carbon)] text-[var(--color-photon)] shadow-none">
+						<CardHeader>
+							<CardTitle className="flex items-center gap-2">
+								<Store className="h-4 w-4 text-[var(--color-voltage)]" />
+								Caja y POS
+							</CardTitle>
+							<CardDescription className="text-gray-400">
+								Valores por defecto para apertura de turno y checkout.
+							</CardDescription>
+						</CardHeader>
+						<CardContent className="space-y-6">
 						<div className="grid gap-2">
 							<Label htmlFor={defaultTerminalNameId}>
 								Nombre por defecto de caja
@@ -494,6 +535,11 @@ function SettingsForm({
 						</div>
 					</CardContent>
 				</Card>
+
+				<LocalPrinterSettingsSection
+					organizationId={data.organization.id}
+				/>
+			</div>
 
 				<div className="space-y-6">
 					<RestaurantConfigurationCard
