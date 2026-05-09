@@ -3,6 +3,8 @@ import {
 	organization,
 	user,
 	member,
+	invitation,
+	organizationJoinLink,
 } from "../../database/drizzle/schema/auth.schema";
 import {
 	category,
@@ -14,6 +16,33 @@ import {
 import {
 	shift,
 } from "../../database/drizzle/schema/pos.schema";
+
+export function makeUser(overrides?: Partial<typeof user.$inferInsert>) {
+	const id = overrides?.id ?? crypto.randomUUID();
+	const now = new Date();
+	return {
+		id,
+		name: overrides?.name ?? "Test User",
+		email: overrides?.email ?? `test-${id.slice(0, 8)}@example.com`,
+		emailVerified: true,
+		image: null,
+		createdAt: now,
+		updatedAt: now,
+		role: overrides?.role ?? "user",
+		banned: false,
+		banReason: null,
+		banExpires: null,
+	};
+}
+
+export async function seedUser(
+	db: TestDb,
+	overrides?: Partial<typeof user.$inferInsert>,
+) {
+	const u = makeUser(overrides);
+	await db.insert(user).values(u);
+	return u;
+}
 
 export interface SeedOrganizationResult {
 	organizationId: string;
@@ -157,6 +186,66 @@ export async function seedCustomer(
 		deletedAt: opts.deletedAt ?? null,
 	});
 
+	return id;
+}
+
+export async function seedInvitation(
+	db: TestDb,
+	opts: {
+		organizationId: string;
+		inviterId: string;
+		email: string;
+		role?: string;
+		status?: string;
+		expiresAt?: Date;
+	},
+) {
+	const id = crypto.randomUUID();
+	const now = new Date();
+	await db.insert(invitation).values({
+		id,
+		organizationId: opts.organizationId,
+		inviterId: opts.inviterId,
+		email: opts.email,
+		role: opts.role ?? "member",
+		status: opts.status ?? "pending",
+		expiresAt: opts.expiresAt ?? new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
+		createdAt: now,
+	});
+	return id;
+}
+
+export async function seedJoinLink(
+	db: TestDb,
+	opts: {
+		organizationId: string;
+		token: string;
+		createdByUserId: string;
+		role?: string;
+		label?: string | null;
+		expiresAt?: Date;
+		revokedAt?: Date | null;
+		maxUses?: number;
+		useCount?: number;
+	},
+) {
+	const id = crypto.randomUUID();
+	const now = new Date();
+	await db.insert(organizationJoinLink).values({
+		id,
+		organizationId: opts.organizationId,
+		token: opts.token,
+		role: opts.role ?? "member",
+		label: opts.label ?? null,
+		createdByUserId: opts.createdByUserId,
+		createdAt: now,
+		expiresAt: opts.expiresAt ?? new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
+		maxUses: opts.maxUses ?? 1,
+		useCount: opts.useCount ?? 0,
+		lastUsedAt: null,
+		lastUsedByUserId: null,
+		revokedAt: opts.revokedAt ?? null,
+	});
 	return id;
 }
 

@@ -1,7 +1,7 @@
 import { createClient, type Client } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
 import * as schema from "../../database/drizzle/schema";
-import { readFileSync } from "fs";
+import { readFileSync, unlinkSync } from "fs";
 import { resolve } from "path";
 
 export type TestDb = ReturnType<typeof drizzle<typeof schema>>;
@@ -13,7 +13,11 @@ export interface CreateTestDbResult {
 }
 
 export function createTestDb(): CreateTestDbResult {
-	const client = createClient({ url: ":memory:" });
+	// Use a temporary file database instead of :memory: to avoid libSQL
+	// transaction isolation issues where transaction queries may run on
+	// a separate in-memory connection that sees an empty database.
+	const dbPath = `/tmp/zentro-test-${crypto.randomUUID()}.db`;
+	const client = createClient({ url: `file:${dbPath}` });
 	const db = drizzle(client, { schema });
 
 	const migrationPath = resolve(
@@ -35,6 +39,11 @@ export function createTestDb(): CreateTestDbResult {
 
 	const cleanup = async () => {
 		await client.close();
+		try {
+			unlinkSync(dbPath);
+		} catch {
+			// ignore cleanup errors
+		}
 	};
 
 	return { db, client, cleanup };

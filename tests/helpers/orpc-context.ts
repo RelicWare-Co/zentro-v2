@@ -3,7 +3,7 @@ import { user } from "../../database/drizzle/schema/auth.schema";
 
 type UserRow = typeof user.$inferSelect;
 
-export function buildMockContext(db: TestDb, user: UserRow, orgId: string) {
+export function buildMockContext(db: TestDb, user: UserRow, orgId?: string | null) {
 	const now = new Date();
 	return {
 		headers: new Headers(),
@@ -15,7 +15,7 @@ export function buildMockContext(db: TestDb, user: UserRow, orgId: string) {
 			expiresAt: new Date(now.getTime() + 1000 * 60 * 60 * 24),
 			createdAt: now,
 			updatedAt: now,
-			activeOrganizationId: orgId,
+			activeOrganizationId: orgId ?? undefined,
 		},
 		user,
 	};
