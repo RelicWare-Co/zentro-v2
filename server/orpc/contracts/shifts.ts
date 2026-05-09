@@ -1,5 +1,11 @@
 import { oc } from "@orpc/contract";
-import { ActiveShiftResultSchema } from "../../../schemas/shifts";
+import {
+	ActiveShiftResultSchema,
+	GetShiftByIdInputSchema,
+	ListShiftsInputSchema,
+	ListShiftsResultSchema,
+	ShiftDetailSchema,
+} from "../../../schemas/shifts";
 import {
 	CloseShiftInputSchema,
 	CloseShiftResultSchema,
@@ -12,6 +18,24 @@ import {
 } from "../../../schemas/pos";
 
 export const shiftsContract = {
+	list: oc
+		.route({
+			method: "GET",
+			path: "/shifts",
+			summary: "Listado de turnos",
+			tags: ["Shifts"],
+		})
+		.input(ListShiftsInputSchema)
+		.output(ListShiftsResultSchema),
+	detail: oc
+		.route({
+			method: "GET",
+			path: "/shifts/detail",
+			summary: "Detalle de turno",
+			tags: ["Shifts"],
+		})
+		.input(GetShiftByIdInputSchema)
+		.output(ShiftDetailSchema),
 	active: oc.route({
 		method: "GET",
 		path: "/shifts/active",

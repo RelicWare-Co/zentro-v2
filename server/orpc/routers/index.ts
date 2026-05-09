@@ -38,6 +38,8 @@ import {
 	cancel as cancelSale,
 } from "./sales";
 import {
+	list as listShifts,
+	detail as shiftDetail,
 	active as activeShift,
 	open as openShift,
 	close as closeShift,
@@ -99,6 +101,8 @@ export const router = {
 		cancel: cancelSale,
 	},
 	shifts: {
+		list: listShifts,
+		detail: shiftDetail,
 		active: activeShift,
 		open: openShift,
 		close: closeShift,

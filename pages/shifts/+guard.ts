@@ -1,0 +1,16 @@
+import type { PageContextServer } from "vike/types";
+import { redirect } from "vike/abort";
+
+export const guard = (pageContext: PageContextServer) => {
+	if (!pageContext.user) {
+		throw redirect("/login");
+	}
+
+	const session = pageContext.session as
+		| ({ activeOrganizationId?: string | null } & typeof pageContext.session)
+		| null;
+
+	if (!session?.activeOrganizationId) {
+		throw redirect("/organization");
+	}
+};
