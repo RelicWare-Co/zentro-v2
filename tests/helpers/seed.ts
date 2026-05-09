@@ -16,6 +16,10 @@ import {
 import {
 	shift,
 } from "../../database/drizzle/schema/pos.schema";
+import {
+	restaurantArea,
+	restaurantTable,
+} from "../../database/drizzle/schema/restaurant.schema";
 
 export function makeUser(overrides?: Partial<typeof user.$inferInsert>) {
 	const id = overrides?.id ?? crypto.randomUUID();
@@ -276,6 +280,58 @@ export async function seedShift(
 		openedAt: now,
 		closedAt: opts.closedAt ?? null,
 		notes: null,
+	});
+
+	return id;
+}
+
+export async function seedRestaurantArea(
+	db: TestDb,
+	opts: {
+		organizationId: string;
+		name?: string;
+		sortOrder?: number;
+	},
+) {
+	const id = crypto.randomUUID();
+	const now = new Date();
+
+	await db.insert(restaurantArea).values({
+		id,
+		organizationId: opts.organizationId,
+		name: opts.name ?? "Main Area",
+		sortOrder: opts.sortOrder ?? 0,
+		createdAt: now,
+		updatedAt: now,
+	});
+
+	return id;
+}
+
+export async function seedRestaurantTable(
+	db: TestDb,
+	opts: {
+		organizationId: string;
+		areaId: string;
+		name?: string;
+		seats?: number;
+		sortOrder?: number;
+		isActive?: boolean;
+	},
+) {
+	const id = crypto.randomUUID();
+	const now = new Date();
+
+	await db.insert(restaurantTable).values({
+		id,
+		organizationId: opts.organizationId,
+		areaId: opts.areaId,
+		name: opts.name ?? "Table 1",
+		seats: opts.seats ?? 4,
+		sortOrder: opts.sortOrder ?? 0,
+		isActive: opts.isActive ?? true,
+		createdAt: now,
+		updatedAt: now,
 	});
 
 	return id;
