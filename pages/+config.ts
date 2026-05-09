@@ -8,6 +8,10 @@ const config: Config = {
   // https://vike.dev/head-tags
   title: "Zentro",
   description: "Sistema POS inteligente",
+  lang: "es-CO",
+  htmlAttributes: {
+    suppressHydrationWarning: "true",
+  },
 
   extends: [vikeReact],
   passToClient: ["user"],
