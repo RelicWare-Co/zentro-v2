@@ -148,29 +148,29 @@ export function CatalogToolbar({
           })}
         </div>
 
-        <div className="ml-auto flex items-center rounded-lg border border-[rgba(255,255,255,0.12)] overflow-hidden shrink-0">
+        <div className="ml-auto flex items-center rounded-xl border border-[rgba(255,255,255,0.12)] overflow-hidden shrink-0">
           <button
             onClick={() => onViewModeChange("grid")}
             className={cn(
-              "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-all",
+              "flex items-center gap-2 px-4 py-2 text-sm font-medium transition-all",
               viewMode === "grid"
                 ? "bg-[#dfff06] text-black"
                 : "text-[#6b6b6b] hover:text-white"
             )}
           >
-            <LayoutGrid className="h-3.5 w-3.5" />
+            <LayoutGrid className="h-4 w-4" />
             <span className="hidden sm:inline">Cuadrícula</span>
           </button>
           <button
             onClick={() => onViewModeChange("list")}
             className={cn(
-              "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-all border-l border-[rgba(255,255,255,0.12)]",
+              "flex items-center gap-2 px-4 py-2 text-sm font-medium transition-all border-l border-[rgba(255,255,255,0.12)]",
               viewMode === "list"
                 ? "bg-[#dfff06] text-black"
                 : "text-[#6b6b6b] hover:text-white"
             )}
           >
-            <List className="h-3.5 w-3.5" />
+            <List className="h-4 w-4" />
             <span className="hidden sm:inline">Lista</span>
           </button>
         </div>
