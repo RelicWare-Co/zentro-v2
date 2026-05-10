@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Barcode, LayoutGrid, List, Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -26,6 +26,38 @@ export function CatalogToolbar({
   onViewModeChange,
 }: CatalogToolbarProps) {
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [hasOverflow, setHasOverflow] = useState(false);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const check = () => {
+      setHasOverflow(el.scrollWidth > el.clientWidth);
+    };
+
+    check();
+
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    window.addEventListener("resize", check);
+
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", check);
+    };
+  }, [categories]);
+
+  const handleWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    if (el.scrollWidth <= el.clientWidth) return;
+    if (Math.abs(e.deltaY) < Math.abs(e.deltaX)) return;
+
+    e.preventDefault();
+    el.scrollLeft += e.deltaY;
+  }, []);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -47,6 +79,15 @@ export function CatalogToolbar({
   }, []);
 
   const allCategories = [{ id: "all", name: "Todos" }, ...categories];
+
+  const maskStyle: React.CSSProperties = hasOverflow
+    ? {
+        maskImage:
+          "linear-gradient(to right, black calc(100% - 48px), transparent 100%)",
+        WebkitMaskImage:
+          "linear-gradient(to right, black calc(100% - 48px), transparent 100%)",
+      }
+    : {};
 
   return (
     <div className="shrink-0 px-4 md:px-6 space-y-3 pb-2">
@@ -82,7 +123,12 @@ export function CatalogToolbar({
 
       {/* Categories + View Toggle */}
       <div className="flex items-center gap-2">
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+        <div
+          ref={scrollRef}
+          onWheel={handleWheel}
+          style={maskStyle}
+          className="flex items-center gap-1.5 overflow-x-auto no-scrollbar"
+        >
           {allCategories.map((cat) => {
             const isActive = activeCategoryId === cat.id;
             return (

@@ -32,6 +32,10 @@ export function CategoryTabs({
 				))}
 			</div>
 			<ScrollBar orientation="horizontal" className="invisible" />
+			<div
+				aria-hidden="true"
+				className="absolute right-0 top-0 bottom-0 z-10 w-12 pointer-events-none bg-gradient-to-l from-[#0a0a0a] via-[#0a0a0a]/80 to-transparent"
+			/>
 		</ScrollArea>
 	);
 }
