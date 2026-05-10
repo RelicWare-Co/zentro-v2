@@ -33,82 +33,73 @@ export function ProductGridCard({
       <button
         type="button"
         onClick={onSelect}
-        disabled={!isActiveShift && isOutOfStock}
         className={cn(
           "w-full text-left flex flex-col items-center rounded-xl border p-3 md:p-4 transition-all h-full",
-          "bg-[var(--color-card)] border-[var(--color-border)]",
-          "hover:border-[var(--color-voltage)]/50 hover:shadow-sm",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-voltage)]",
-          isOutOfStock && "opacity-60"
+          "bg-[#151515] border-[rgba(255,255,255,0.06)]",
+          "hover:border-[#dfff06]/40 hover:shadow-[0_0_20px_rgba(223,255,6,0.08)]",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#dfff06]",
+          isOutOfStock && "opacity-45"
         )}
       >
         {/* Quantity badge */}
         {quantity > 0 && (
-          <div className="absolute top-2 right-2 z-10 bg-[var(--color-voltage)] text-black text-[10px] font-bold px-2 py-0.5 rounded-md">
+          <div className="absolute top-2 right-2 z-10 bg-[#dfff06] text-black text-[10px] font-bold px-2 py-0.5 rounded-md">
             x{quantity}
           </div>
         )}
 
         {/* Icon centered */}
-        <div className="flex h-12 w-12 md:h-14 md:w-14 items-center justify-center rounded-xl bg-[var(--color-muted)] border border-[var(--color-border)] mb-3">
-          <Package className="h-5 w-5 md:h-6 md:w-6 text-[var(--color-muted-foreground)]" />
+        <div className="flex h-11 w-11 md:h-12 md:w-12 items-center justify-center rounded-lg bg-[#1c1c1c] border border-[rgba(255,255,255,0.06)] mb-3">
+          <Package className="h-4 w-4 md:h-5 md:w-5 text-[#3d3d3d]" />
         </div>
 
         {/* Name centered */}
-        <h3 className="text-sm md:text-[15px] font-semibold text-center text-[var(--color-foreground)] line-clamp-2 leading-snug mb-1">
+        <h3 className="text-xs md:text-sm font-medium text-center text-white line-clamp-2 leading-snug mb-0.5">
           {product.name}
         </h3>
 
         {/* Price */}
-        <p
-          className={cn(
-            "text-base md:text-lg font-bold tabular-nums mt-auto pt-2",
-            "text-[var(--color-foreground)] dark:text-[var(--color-voltage)]"
-          )}
-        >
+        <p className="text-sm md:text-[15px] font-bold text-white tabular-nums mt-auto pt-2">
           {formatCurrency(product.price)}
         </p>
 
         {/* Stock row */}
-        <div className="flex items-center justify-center mt-2 pt-2 border-t border-[var(--color-border)] w-full">
+        <div className="flex items-center justify-between mt-2 pt-2 border-t border-[rgba(255,255,255,0.06)] w-full">
           {stockLabel ? (
             <span
               className={cn(
-                "text-[11px] md:text-xs font-medium",
-                product.stock > 0
-                  ? "text-[var(--color-muted-foreground)] dark:text-[var(--color-voltage)]"
-                  : "text-red-500"
+                "text-[10px] md:text-[11px] font-medium",
+                product.stock > 0 ? "text-[#dfff06]" : "text-red-500"
               )}
             >
               {stockLabel}
             </span>
           ) : (
-            <span className="text-[11px] md:text-xs text-transparent">.</span>
+            <span />
+          )}
+
+          {onToggleFavorite && (
+            <button
+              type="button"
+              disabled={isTogglingFavorite}
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleFavorite(product.id);
+              }}
+              className="p-1 rounded hover:bg-[rgba(255,255,255,0.06)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#dfff06] disabled:opacity-50"
+            >
+              <Heart
+                className={cn(
+                  "h-3.5 w-3.5 transition-colors",
+                  product.isFavorite
+                    ? "fill-red-500 text-red-500"
+                    : "text-[#3d3d3d] hover:text-red-400"
+                )}
+              />
+            </button>
           )}
         </div>
       </button>
-
-      {/* Favorite button */}
-      {onToggleFavorite && (
-        <button
-          type="button"
-          disabled={isTogglingFavorite}
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleFavorite(product.id);
-          }}
-          className="absolute bottom-3 right-3 md:bottom-4 md:right-4 p-1.5 rounded-md hover:bg-[var(--color-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-voltage)] disabled:opacity-50"
-        >
-          <Heart
-            className={cn(
-              "h-4 w-4 md:h-5 md:w-5 transition-colors",
-              product.isFavorite
-                ? "fill-red-500 text-red-500"
-                : "text-[var(--color-muted-foreground)] hover:text-red-400"
-            )}
-          />
-        </button>
-      )}
     </div>
   );
 }

@@ -56,12 +56,12 @@ export function ProductCatalog({
 
       <div className="flex-1 min-h-0 overflow-y-auto px-4 md:px-6 py-3">
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center h-40 text-[var(--color-muted-foreground)]">
+          <div className="flex flex-col items-center justify-center h-40 text-[#6b6b6b]">
             <Package className="h-8 w-8 mb-3 animate-pulse" />
             <p className="text-sm">Cargando productos...</p>
           </div>
         ) : regularProducts.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-40 text-[var(--color-muted-foreground)]">
+          <div className="flex flex-col items-center justify-center h-40 text-[#6b6b6b]">
             <Package className="h-8 w-8 mb-3" />
             <p className="text-sm">No se encontraron productos.</p>
           </div>

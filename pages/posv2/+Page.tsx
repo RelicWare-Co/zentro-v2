@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { PosV2Header } from "@/features/posv2/components/PosV2Header";
 import { ProductCatalog } from "@/features/posv2/components/ProductCatalog";
-import { CartPanel } from "@/features/pos/components/CartPanel";
+import { CartPanelV2 } from "@/features/posv2/components/CartPanelV2";
 import { CashMovementModal } from "@/features/pos/components/modals/CashMovementModal";
 import { CheckoutModal } from "@/features/pos/components/modals/CheckoutModal";
 import { CloseShiftModal } from "@/features/pos/components/modals/CloseShiftModal";
@@ -215,7 +215,7 @@ export default function PosV2Page() {
   };
 
   return (
-    <div className="flex h-dvh flex-col overflow-hidden bg-[var(--color-background)] text-[var(--color-foreground)]">
+    <div className="flex h-dvh flex-col overflow-hidden bg-[#0a0a0a] text-white">
       <PosV2Header
         activeShift={activeShift}
         defaultTerminalName={defaultTerminalName}
@@ -250,7 +250,7 @@ export default function PosV2Page() {
           isTogglingFavorite={toggleFavoriteMutation.isPending}
         />
 
-        <CartPanel
+        <CartPanelV2
           cart={cart}
           totalItems={totalItems}
           totals={totals}

@@ -52,13 +52,13 @@ export function CatalogToolbar({
     <div className="shrink-0 px-4 md:px-6 space-y-3 pb-2">
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-muted-foreground)]" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6b6b6b]" />
         <Input
           ref={searchInputRef}
           placeholder="Buscar producto por nombre, SKU o código... (/)"
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="h-11 md:h-12 rounded-xl border-[var(--color-border)] bg-[var(--color-background)] pl-10 pr-10 text-sm text-[var(--color-foreground)] placeholder:text-[var(--color-muted-foreground)] focus-visible:border-[var(--color-voltage)] focus-visible:ring-1 focus-visible:ring-[var(--color-voltage)]/30"
+          className="h-11 md:h-12 rounded-xl border-[rgba(255,255,255,0.08)] bg-[#111111] pl-10 pr-10 text-sm text-white placeholder:text-[#6b6b6b] focus-visible:border-[#dfff06]/30 focus-visible:ring-1 focus-visible:ring-[#dfff06]/20"
         />
         {searchQuery ? (
           <button
@@ -67,14 +67,14 @@ export function CatalogToolbar({
               onClearSearch();
               searchInputRef.current?.focus();
             }}
-            className="absolute right-10 top-1/2 -translate-y-1/2 inline-flex h-7 w-7 items-center justify-center rounded-md text-[var(--color-muted-foreground)] transition-colors hover:bg-[var(--color-muted)] hover:text-[var(--color-foreground)]"
+            className="absolute right-10 top-1/2 -translate-y-1/2 inline-flex h-7 w-7 items-center justify-center rounded-md text-[#6b6b6b] transition-colors hover:bg-[rgba(255,255,255,0.06)] hover:text-white"
           >
             <X className="h-4 w-4" />
           </button>
         ) : null}
         <button
           type="button"
-          className="absolute right-2.5 top-1/2 -translate-y-1/2 inline-flex h-7 w-7 items-center justify-center rounded-md text-[var(--color-muted-foreground)]"
+          className="absolute right-2.5 top-1/2 -translate-y-1/2 inline-flex h-7 w-7 items-center justify-center rounded-md text-[#6b6b6b]"
         >
           <Barcode className="h-4 w-4" />
         </button>
@@ -92,8 +92,8 @@ export function CatalogToolbar({
                 className={cn(
                   "shrink-0 rounded-full px-3.5 py-1.5 text-xs md:text-sm font-medium transition-all border",
                   isActive
-                    ? "bg-black text-white border-black dark:bg-[var(--color-voltage)] dark:text-black dark:border-[var(--color-voltage)]"
-                    : "bg-transparent text-[var(--color-muted-foreground)] border-[var(--color-border)] hover:text-[var(--color-foreground)] hover:border-[var(--color-foreground)]/40"
+                    ? "bg-[#dfff06] text-black border-[#dfff06]"
+                    : "bg-transparent text-[#6b6b6b] border-[rgba(255,255,255,0.12)] hover:text-white hover:border-[rgba(255,255,255,0.25)]"
                 )}
               >
                 {cat.name}
@@ -102,14 +102,14 @@ export function CatalogToolbar({
           })}
         </div>
 
-        <div className="ml-auto flex items-center rounded-lg border border-[var(--color-border)] overflow-hidden shrink-0">
+        <div className="ml-auto flex items-center rounded-lg border border-[rgba(255,255,255,0.12)] overflow-hidden shrink-0">
           <button
             onClick={() => onViewModeChange("grid")}
             className={cn(
               "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-all",
               viewMode === "grid"
-                ? "bg-black text-white dark:bg-[var(--color-voltage)] dark:text-black"
-                : "text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]"
+                ? "bg-[#dfff06] text-black"
+                : "text-[#6b6b6b] hover:text-white"
             )}
           >
             <LayoutGrid className="h-3.5 w-3.5" />
@@ -118,10 +118,10 @@ export function CatalogToolbar({
           <button
             onClick={() => onViewModeChange("list")}
             className={cn(
-              "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-all border-l border-[var(--color-border)]",
+              "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-all border-l border-[rgba(255,255,255,0.12)]",
               viewMode === "list"
-                ? "bg-black text-white dark:bg-[var(--color-voltage)] dark:text-black"
-                : "text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]"
+                ? "bg-[#dfff06] text-black"
+                : "text-[#6b6b6b] hover:text-white"
             )}
           >
             <List className="h-3.5 w-3.5" />
