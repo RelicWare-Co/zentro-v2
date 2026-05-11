@@ -187,7 +187,7 @@ export function encodeThermalReceipt(options: {
 		encoder.line(line);
 	}
 
-	encoder.newline(2);
+	encoder.newline(5);
 	encoder.cut("partial");
 
 	return encoder.encode();
