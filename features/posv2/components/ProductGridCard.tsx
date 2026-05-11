@@ -1,7 +1,7 @@
 import { Heart, Package } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Product } from "@/features/pos/types";
-import { formatCurrency } from "@/features/pos/utils";
+import { calculatePriceWithTax, formatCurrency } from "@/features/pos/utils";
 
 interface ProductGridCardProps {
   product: Product;
@@ -60,7 +60,7 @@ export function ProductGridCard({
 
         {/* Price */}
         <p className="text-sm md:text-[15px] font-bold text-white tabular-nums mt-auto pt-2">
-          {formatCurrency(product.price)}
+          {formatCurrency(calculatePriceWithTax(product))}
         </p>
 
         {/* Stock row */}

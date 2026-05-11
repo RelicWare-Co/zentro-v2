@@ -1,7 +1,7 @@
 import { Heart, Package } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Product } from "@/features/pos/types";
-import { formatCurrency } from "@/features/pos/utils";
+import { calculatePriceWithTax, formatCurrency } from "@/features/pos/utils";
 
 interface ProductListItemProps {
   product: Product;
@@ -69,7 +69,7 @@ export function ProductListItem({
       {/* Price */}
       <div className="shrink-0 text-right">
         <p className="text-sm md:text-base font-bold text-white tabular-nums">
-          {formatCurrency(product.price)}
+          {formatCurrency(calculatePriceWithTax(product))}
         </p>
       </div>
 

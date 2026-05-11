@@ -4,7 +4,7 @@ import {
 	normalizePaymentMethodId,
 } from "@/features/settings/settings.shared";
 import { parseMoneyInput } from "@/lib/utils";
-import type { CartItem, CartTotals } from "./types";
+import type { CartItem, CartTotals, Product } from "./types";
 
 /**
  * Formatea un número como moneda colombiana (COP)
@@ -15,6 +15,13 @@ export function formatCurrency(amount: number): string {
 		currency: "COP",
 		maximumFractionDigits: 0,
 	}).format(amount);
+}
+
+/**
+ * Calcula el precio de un producto con impuestos incluidos
+ */
+export function calculatePriceWithTax(product: Product): number {
+	return Math.round(product.price + (product.price * product.taxRate) / 100);
 }
 
 /**
