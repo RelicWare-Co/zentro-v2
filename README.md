@@ -4,6 +4,36 @@ Generated with [vike.dev/new](https://vike.dev/new) ([version 625](https://www.n
 bun create vike@latest --react --tailwindcss --shadcn-ui --hono --drizzle --shadcnUi
 ```
 
+## About
+
+Zentro is a full-stack business management app with a POS, sales, inventory, kitchen, customers, credit tracking, and more.
+
+## Tech Stack
+
+- **Framework:** [Vike](https://vike.dev) + [React](https://react.dev)
+- **Server:** [Hono](https://hono.dev)
+- **API:** oRPC with OpenAPI transport
+- **Server state:** TanStack Query
+- **Database:** Drizzle ORM over SQLite (libSQL)
+- **Auth:** better-auth with organization support
+- **Styling:** Tailwind CSS v4 + shadcn/ui
+
+## Pages
+
+| Route | Description |
+|-------|-------------|
+| `/dashboard` | Main dashboard |
+| `/organization` | Organization management |
+| `/pos` | Point of sale |
+| `/shifts` | Shift tracking |
+| `/sales` | Sales history & reports |
+| `/customers` | Customer management with CRUD |
+| `/credit` | Accounts receivable with ledger and payments |
+| `/products` | Product catalog |
+| `/settings` | App settings |
+| `/restaurants` | Restaurant management |
+| `/kitchen` | Kitchen display |
+
 ## Contents
 
 - [Vike](#vike)
