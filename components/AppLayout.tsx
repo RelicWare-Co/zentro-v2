@@ -14,6 +14,7 @@ import {
 	Store,
 	UtensilsCrossed,
 	Users,
+	Wallet,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -46,6 +47,7 @@ const baseNavItems = [
 	{ name: "Turnos", path: "/shifts", icon: Clock3, order: 40 },
 	{ name: "Ventas", path: "/sales", icon: Receipt, order: 50 },
 	{ name: "Clientes", path: "/customers", icon: Users, order: 55 },
+	{ name: "Crédito", path: "/credit", icon: Wallet, order: 56 },
 	{ name: "Productos", path: "/products", icon: Package, order: 60 },
 	{ name: "Configuración", path: "/settings", icon: Settings, order: 70 },
 ];
