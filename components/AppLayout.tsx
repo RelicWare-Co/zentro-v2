@@ -45,6 +45,7 @@ const baseNavItems = [
 	{ name: "POS", path: "/pos", icon: Store, order: 30 },
 	{ name: "Turnos", path: "/shifts", icon: Clock3, order: 40 },
 	{ name: "Ventas", path: "/sales", icon: Receipt, order: 50 },
+	{ name: "Clientes", path: "/customers", icon: Users, order: 55 },
 	{ name: "Productos", path: "/products", icon: Package, order: 60 },
 	{ name: "Configuración", path: "/settings", icon: Settings, order: 70 },
 ];

@@ -27,3 +27,10 @@ export function formatMoneyInput(value: string | number) {
 	const parsedValue = parseMoneyInput(value);
 	return parsedValue === 0 ? "" : String(parsedValue);
 }
+
+export function getErrorMessage(error: unknown, fallback: string): string {
+	if (error instanceof Error && error.message) {
+		return error.message;
+	}
+	return fallback;
+}
