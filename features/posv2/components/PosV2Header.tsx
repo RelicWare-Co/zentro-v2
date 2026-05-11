@@ -22,7 +22,7 @@ export function PosV2Header({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-xl md:text-2xl font-extrabold tracking-tight text-white">
-            Zentra
+            Zentro
           </span>
           <span className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-[#dfff06] bg-[#dfff06]/10 px-1.5 py-0.5 rounded">
             POS
