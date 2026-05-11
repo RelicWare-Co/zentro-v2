@@ -4,9 +4,11 @@ import react from "@vitejs/plugin-react";
 
 import vike from "vike/plugin";
 import { defineConfig } from "vite";
+import { frontmanPlugin } from '@frontman-ai/vite';
 
 export default defineConfig({
-  plugins: [vike(), react(), tailwindcss()],
+  plugins: [
+    frontmanPlugin({ host: 'api.frontman.sh' }),vike(), react(), tailwindcss()],
 
   resolve: {
     alias: {
