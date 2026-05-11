@@ -141,11 +141,20 @@ export function CustomersPage() {
 					className="border-red-500/20 bg-red-500/10 text-red-100"
 				>
 					<AlertTitle>No se pudieron cargar los clientes</AlertTitle>
-					<AlertDescription>
+					<AlertDescription className="flex flex-col gap-3">
 						{getErrorMessage(
 							customersQuery.error,
 							"Intenta recargar la página.",
 						)}
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							onClick={() => void customersQuery.refetch()}
+							className="mt-1 w-fit border-red-500/30 bg-transparent text-red-200 hover:bg-red-500/10"
+						>
+							Reintentar
+						</Button>
 					</AlertDescription>
 				</Alert>
 			</div>

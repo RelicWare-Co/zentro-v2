@@ -47,6 +47,7 @@ export function useCustomersSearch(searchQuery: string) {
 		gcTime: 5 * 60_000,
 		refetchOnWindowFocus: false,
 		placeholderData: keepPreviousData,
+		retry: false,
 	});
 }
 
