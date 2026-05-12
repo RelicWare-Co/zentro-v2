@@ -117,3 +117,17 @@ export const InventoryMovementResultSchema = z.object({
 	productId: z.string(),
 	quantity: z.number(),
 });
+
+export const ListProductsInputSchema = z.object({
+	page: z.coerce.number().int().min(0).optional(),
+	pageSize: z.coerce.number().int().min(1).max(100).optional(),
+	query: NullableStringSchema,
+	categoryId: NullableStringSchema,
+});
+
+export const ListProductsResultSchema = z.object({
+	items: ProductSchema.array(),
+	total: z.number().int(),
+	page: z.number().int(),
+	pageSize: z.number().int(),
+});

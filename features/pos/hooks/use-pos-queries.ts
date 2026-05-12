@@ -1,5 +1,6 @@
 import {
 	keepPreviousData,
+	useInfiniteQuery,
 	useMutation,
 	useQuery,
 	useQueryClient,
@@ -17,14 +18,20 @@ export function usePosBootstrap() {
 }
 
 export function usePosProducts(activeCategoryId: string, searchQuery: string) {
-	return useQuery({
-		...orpcQuery.pos.searchProducts.queryOptions({
-			input: {
-				searchQuery: searchQuery || null,
-				categoryId: activeCategoryId === "all" ? null : activeCategoryId,
+	const categoryId = activeCategoryId === "all" ? null : activeCategoryId;
+	const normalizedSearch = searchQuery || null;
+
+	return useInfiniteQuery({
+		...orpcQuery.pos.searchProducts.infiniteOptions({
+			input: (cursor) => ({
+				searchQuery: normalizedSearch,
+				categoryId,
 				limit: 100,
-				cursor: 0,
-			},
+				cursor: cursor ?? 0,
+			}),
+			initialPageParam: 0,
+			getNextPageParam: (lastPage) => lastPage.nextCursor,
+			maxPages: 3,
 		}),
 		placeholderData: keepPreviousData,
 	});

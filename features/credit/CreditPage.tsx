@@ -28,13 +28,12 @@ import {
 	SheetTitle,
 } from "@/components/ui/sheet";
 import {
-	Table,
-	TableBody,
 	TableCell,
 	TableHead,
-	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { VirtualTable } from "@/components/ui/virtual-table";
+import { VirtualList } from "@/components/ui/virtual-list";
 import {
 	useActiveShift,
 	useCreditAccountsSearch,
@@ -42,6 +41,7 @@ import {
 	useOrganizationSettings,
 	useRegisterCreditPaymentMutation,
 	type CreditAccount,
+	type CreditTransaction,
 } from "@/features/credit/hooks/use-credit";
 import { getErrorMessage } from "@/lib/utils";
 
@@ -91,7 +91,7 @@ export function CreditPage() {
 	const transactionsQuery = useCreditTransactions(
 		isLedgerOpen ? selectedAccount?.id ?? null : null,
 	);
-	const transactions = transactionsQuery.data?.data ?? [];
+	const transactions = (transactionsQuery.data?.data ?? []) as CreditTransaction[];
 
 	const activeShiftQuery = useActiveShift();
 	const activeShift = activeShiftQuery.data?.shift ?? null;
@@ -164,97 +164,82 @@ export function CreditPage() {
 				/>
 			</div>
 
-			<div className="overflow-x-auto rounded-xl border border-gray-800 bg-[var(--color-carbon)]">
-				<Table className="min-w-[640px]">
-					<TableHeader>
-						<TableRow className="border-gray-800 hover:bg-transparent">
-							<TableHead className="px-4 text-gray-400">Cliente</TableHead>
-							<TableHead className="text-gray-400">Documento</TableHead>
-							<TableHead className="text-gray-400">Teléfono</TableHead>
-							<TableHead className="text-right text-gray-400">
-								Saldo pendiente
-							</TableHead>
-							<TableHead className="text-right text-gray-400">
-								Acciones
-							</TableHead>
-						</TableRow>
-					</TableHeader>
-					<TableBody>
-						{accounts.map((account) => (
-							<TableRow
-								key={account.id}
-								className="border-gray-800 hover:bg-white/5"
-							>
-								<TableCell className="px-4">
-									<div className="min-w-0">
-										<p className="truncate font-medium text-white">
-											{account.customerName}
-										</p>
-									</div>
-								</TableCell>
-								<TableCell className="text-sm text-gray-300">
-									{account.customerDocument ?? (
-										<span className="text-gray-500">—</span>
-									)}
-								</TableCell>
-								<TableCell className="text-sm text-gray-300">
-									{account.customerPhone ?? (
-										<span className="text-gray-500">—</span>
-									)}
-								</TableCell>
-								<TableCell className="text-right">
-									<p
-										className={`font-semibold tabular-nums ${account.balance > 0 ? "text-[var(--color-voltage)]" : "text-gray-400"}`}
+			<VirtualTable
+				data={accounts}
+				header={
+					<TableRow className="border-gray-800 hover:bg-transparent">
+						<TableHead className="px-4 text-gray-400">Cliente</TableHead>
+						<TableHead className="text-gray-400">Documento</TableHead>
+						<TableHead className="text-gray-400">Teléfono</TableHead>
+						<TableHead className="text-right text-gray-400">Saldo pendiente</TableHead>
+						<TableHead className="text-right text-gray-400">Acciones</TableHead>
+					</TableRow>
+				}
+				renderRow={(account) => (
+					<>
+						<TableCell className="px-4">
+							<div className="min-w-0">
+								<p className="truncate font-medium text-white">{account.customerName}</p>
+							</div>
+						</TableCell>
+						<TableCell className="text-sm text-gray-300">
+							{account.customerDocument ?? <span className="text-gray-500">—</span>}
+						</TableCell>
+						<TableCell className="text-sm text-gray-300">
+							{account.customerPhone ?? <span className="text-gray-500">—</span>}
+						</TableCell>
+						<TableCell className="text-right">
+							<p className={`font-semibold tabular-nums ${account.balance > 0 ? "text-[var(--color-voltage)]" : "text-gray-400"}`}>
+								{currencyFormatter.format(account.balance)}
+							</p>
+						</TableCell>
+						<TableCell className="text-right">
+							<div className="flex justify-end gap-2">
+								<Button
+									type="button"
+									variant="outline"
+									size="sm"
+									onClick={() => openLedger(account)}
+									className="border-gray-700 bg-transparent text-gray-200 hover:bg-white/5"
+								>
+									<History className="h-3.5 w-3.5" />
+									<span className="sr-only">Ver historial</span>
+								</Button>
+								{account.balance > 0 ? (
+									<Button
+										type="button"
+										variant="outline"
+										size="sm"
+										onClick={() => {
+											setSelectedAccount(account);
+											setIsPaymentOpen(true);
+										}}
+										className="border-emerald-500/30 bg-transparent text-emerald-200 hover:bg-emerald-500/10"
 									>
-										{currencyFormatter.format(account.balance)}
-									</p>
-								</TableCell>
-								<TableCell className="text-right">
-									<div className="flex justify-end gap-2">
-										<Button
-											type="button"
-											variant="outline"
-											size="sm"
-											onClick={() => openLedger(account)}
-											className="border-gray-700 bg-transparent text-gray-200 hover:bg-white/5"
-										>
-											<History className="h-3.5 w-3.5" />
-											<span className="sr-only">Ver historial</span>
-										</Button>
-										{account.balance > 0 ? (
-											<Button
-												type="button"
-												variant="outline"
-												size="sm"
-												onClick={() => {
-													setSelectedAccount(account);
-													setIsPaymentOpen(true);
-												}}
-												className="border-emerald-500/30 bg-transparent text-emerald-200 hover:bg-emerald-500/10"
-											>
-												<Plus className="h-3.5 w-3.5" />
-												<span className="sr-only">Registrar abono</span>
-											</Button>
-										) : null}
-									</div>
-								</TableCell>
-							</TableRow>
-						))}
-					</TableBody>
-				</Table>
-				{accounts.length === 0 ? (
-					<div className="flex flex-col items-center gap-3 p-10 text-center">
-						<Wallet className="h-8 w-8 text-gray-600" />
-						<p className="text-sm text-gray-500">
-							{searchQuery.trim()
-								? "No hay cuentas que coincidan con la búsqueda."
-								: "Aún no hay cuentas de crédito registradas."}
-						</p>
-					</div>
-				) : null}
-			</div>
-
-			<Sheet open={isLedgerOpen} onOpenChange={setIsLedgerOpen}>
+										<Plus className="h-3.5 w-3.5" />
+										<span className="sr-only">Registrar abono</span>
+									</Button>
+								) : null}
+							</div>
+						</TableCell>
+						</>
+					)}
+					getItemKey={(account) => account.id}
+					estimateSize={64}
+					maxHeight={600}
+					emptyState={
+						accounts.length === 0 ? (
+							<div className="flex flex-col items-center gap-3 p-10 text-center">
+								<Wallet className="h-8 w-8 text-gray-600" />
+								<p className="text-sm text-gray-500">
+									{searchQuery.trim()
+										? "No hay cuentas que coincidan con la búsqueda."
+										: "Aún no hay cuentas de crédito registradas."}
+								</p>
+							</div>
+						) : null
+					}
+				/><Sheet open={isLedgerOpen} onOpenChange={setIsLedgerOpen}>
 				<SheetContent className="!w-full !max-w-full overflow-hidden border-l border-gray-800 bg-[var(--color-carbon)] p-0 text-white sm:!w-[640px]">
 					<div className="flex h-full flex-col">
 						<SheetHeader className="shrink-0 border-b border-gray-800 p-6">
@@ -271,18 +256,16 @@ export function CreditPage() {
 							</SheetDescription>
 						</SheetHeader>
 
-						<div className="flex-1 overflow-y-auto p-6">
+						<div className="flex-1 overflow-hidden p-6">
 							{transactionsQuery.isLoading ? (
 								<div className="flex items-center justify-center py-12">
 									<Loader2 className="h-6 w-6 animate-spin text-[var(--color-voltage)]" />
 								</div>
 							) : transactions.length > 0 ? (
-								<div className="space-y-3">
-									{transactions.map((tx) => (
-										<div
-											key={tx.id}
-											className="flex items-center justify-between rounded-xl border border-gray-800 bg-black/10 p-4"
-										>
+								<VirtualList
+									data={transactions}
+									renderItem={(tx) => (
+										<div className="flex items-center justify-between rounded-xl border border-gray-800 bg-black/10 p-4">
 											<div className="min-w-0 space-y-1">
 												<div className="flex items-center gap-2">
 													<Badge
@@ -315,8 +298,12 @@ export function CreditPage() {
 												</p>
 											</div>
 										</div>
-									))}
-								</div>
+									)}
+									getItemKey={(tx) => tx.id}
+									estimateSize={80}
+									gap={12}
+									className="h-full"
+								/>
 							) : (
 								<div className="flex flex-col items-center gap-3 py-12 text-center">
 									<History className="h-8 w-8 text-gray-600" />
@@ -325,9 +312,7 @@ export function CreditPage() {
 									</p>
 								</div>
 							)}
-						</div>
-
-						<div className="shrink-0 border-t border-gray-800 bg-black/30 p-4">
+						</div><div className="shrink-0 border-t border-gray-800 bg-black/30 p-4">
 							<Button
 								type="button"
 								onClick={() => {

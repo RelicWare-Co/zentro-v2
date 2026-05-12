@@ -7,6 +7,8 @@ import {
 	DeleteProductSchema,
 	IdResultSchema,
 	InventoryMovementResultSchema,
+	ListProductsInputSchema,
+	ListProductsResultSchema,
 	ProductSchema,
 	RegisterInventoryMovementSchema,
 	SuccessResultSchema,
@@ -22,7 +24,8 @@ export const productsContract = {
 			summary: "Listar productos",
 			tags: ["Products"],
 		})
-		.output(ProductSchema.array()),
+		.input(ListProductsInputSchema)
+		.output(ListProductsResultSchema),
 	categories: oc
 		.route({
 			method: "GET",

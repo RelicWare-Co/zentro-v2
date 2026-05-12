@@ -1,4 +1,6 @@
 import {
+	Check,
+	ChevronsUpDown,
 	Edit3,
 	Loader2,
 	Package,
@@ -7,7 +9,8 @@ import {
 	Search,
 	Trash2,
 } from "lucide-react";
-import { useMemo, useState, type FormEvent } from "react";
+import { cn } from "@/lib/utils";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -54,8 +57,29 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { DataTablePagination } from "@/components/ui/data-table-pagination";
+import {
+	useReactTable,
+	getCoreRowModel,
+	getPaginationRowModel,
+	flexRender,
+	createColumnHelper,
+	type PaginationState,
+} from "@tanstack/react-table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+	Command,
+	CommandEmpty,
+	CommandInput,
+	CommandItem,
+	CommandList,
+} from "@/components/ui/command";
 import {
 	useProductsMutations,
 	useProductsQueries,
@@ -136,11 +160,13 @@ function normalizeSearchTerm(value: string) {
 }
 
 export function ProductsPage() {
-	const { products, categories, isPending, isError, error } =
-		useProductsQueries();
 	const [activeTab, setActiveTab] = useState("products");
 	const [query, setQuery] = useState("");
 	const [categoryFilter, setCategoryFilter] = useState(ALL_FILTER_VALUE);
+	const [pagination, setPagination] = useState<PaginationState>({
+		pageIndex: 0,
+		pageSize: 20,
+	});
 	const [isSheetOpen, setIsSheetOpen] = useState(false);
 	const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 	const [productToDelete, setProductToDelete] = useState<Product | null>(null);
@@ -191,32 +217,25 @@ export function ProductsPage() {
 		},
 	});
 
-	const filteredProducts = useMemo(() => {
-		const normalizedQuery = normalizeSearchTerm(query);
-		return products.filter((product) => {
-			if (normalizedQuery) {
-				const searchableFields = [
-					product.name,
-					product.sku,
-					product.barcode,
-					product.categoryName,
-				]
-					.filter(Boolean)
-					.map((field) => field?.toLowerCase() ?? "");
-				if (!searchableFields.some((field) => field.includes(normalizedQuery))) {
-					return false;
-				}
-			}
+	const resolvedCategoryId =
+		categoryFilter === ALL_FILTER_VALUE
+			? null
+			: categoryFilter === UNCATEGORIZED_FILTER_VALUE
+				? "uncategorized"
+				: categoryFilter;
 
-			if (categoryFilter === UNCATEGORIZED_FILTER_VALUE) {
-				return !product.categoryId;
-			}
-			if (categoryFilter !== ALL_FILTER_VALUE) {
-				return product.categoryId === categoryFilter;
-			}
-			return true;
+	const { products, total, categories, isPending, isError, error } =
+		useProductsQueries({
+			page: pagination.pageIndex,
+			pageSize: pagination.pageSize,
+			query: query,
+			categoryId: resolvedCategoryId,
 		});
-	}, [products, query, categoryFilter]);
+
+	const productsWithInventory = useMemo(
+		() => products.filter((product) => product.trackInventory),
+		[products],
+	);
 
 	const openCreateProduct = () => {
 		setEditingProduct(null);
@@ -227,6 +246,109 @@ export function ProductsPage() {
 		setEditingProduct(product);
 		setIsSheetOpen(true);
 	};
+
+	const columnHelper = createColumnHelper<Product>();
+
+	const columns = useMemo(
+		() => [
+			columnHelper.accessor("name", {
+				header: "Producto",
+				cell: ({ row }) => (
+					<div className="min-w-0">
+						<p className="truncate font-medium text-white">{row.original.name}</p>
+						{row.original.isModifier ? (
+							<Badge className="mt-1 border-[var(--color-voltage)]/20 bg-[var(--color-voltage)]/10 text-[var(--color-voltage)]">
+								Modificador
+							</Badge>
+						) : null}
+					</div>
+				),
+			}),
+			columnHelper.accessor("categoryName", {
+				header: "Categoría",
+				cell: ({ getValue }) => getValue() ?? "Sin categoría",
+			}),
+			columnHelper.display({
+				id: "sku",
+				header: "SKU / Código",
+				cell: ({ row }) => (
+					<div className="text-sm text-gray-300">
+						<p>{row.original.sku || "-"}</p>
+						{row.original.barcode ? (
+							<p className="text-xs text-gray-500">BC: {row.original.barcode}</p>
+						) : null}
+					</div>
+				),
+			}),
+			columnHelper.display({
+				id: "stock",
+				header: "Stock",
+				cell: ({ row }) => <StockBadge product={row.original} />,
+			}),
+			columnHelper.accessor("price", {
+				header: "Precio",
+				cell: ({ getValue }) => (
+					<span className="font-medium text-gray-200">
+						{currencyFormatter.format(getValue())}
+					</span>
+				),
+			}),
+			columnHelper.display({
+				id: "actions",
+				header: () => <span className="sr-only">Acciones</span>,
+				cell: ({ row }) => (
+					<div className="flex justify-end gap-2">
+						{row.original.trackInventory ? (
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								onClick={() => setInventoryProduct(row.original)}
+								className="border-gray-700 bg-transparent text-gray-200 hover:bg-white/5"
+							>
+								Stock
+							</Button>
+						) : null}
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							onClick={() => openEditProduct(row.original)}
+							className="border-gray-700 bg-transparent text-gray-200 hover:bg-white/5"
+						>
+							<Edit3 className="h-3.5 w-3.5" />
+						</Button>
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							onClick={() => setProductToDelete(row.original)}
+							className="border-red-500/30 bg-transparent text-red-200 hover:bg-red-500/10"
+						>
+							<Trash2 className="h-3.5 w-3.5" />
+						</Button>
+					</div>
+				),
+			}),
+		],
+		[],
+	);
+
+	useEffect(() => {
+		setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+	}, [query, categoryFilter]);
+
+	const table = useReactTable({
+		data: products,
+		columns,
+		getCoreRowModel: getCoreRowModel(),
+		manualPagination: true,
+		rowCount: total,
+		onPaginationChange: setPagination,
+		state: {
+			pagination,
+		},
+	});
 
 	const productFormError =
 		createProductMutation.error ?? updateProductMutation.error;
@@ -266,7 +388,7 @@ export function ProductsPage() {
 					<div className="flex items-center gap-3">
 						<h1 className="text-3xl font-bold tracking-tight">Inventario</h1>
 						<Badge className="border-[var(--color-voltage)]/20 bg-[var(--color-voltage)]/10 text-[var(--color-voltage)] hover:bg-[var(--color-voltage)]/10">
-							{products.length} productos
+							{total} productos
 						</Badge>
 					</div>
 					<p className="text-sm text-gray-400">
@@ -343,99 +465,48 @@ export function ProductsPage() {
 						</Select>
 					</div>
 
-					<div className="overflow-hidden rounded-xl border border-gray-800 bg-[var(--color-carbon)]">
-						<Table>
-							<TableHeader>
-								<TableRow className="border-gray-800 hover:bg-transparent">
-									<TableHead className="px-4 text-gray-400">Producto</TableHead>
-									<TableHead className="text-gray-400">Categoría</TableHead>
-									<TableHead className="text-gray-400">SKU / Código</TableHead>
-									<TableHead className="text-gray-400">Stock</TableHead>
-									<TableHead className="text-gray-400">Precio</TableHead>
-									<TableHead className="text-right text-gray-400">
-										Acciones
-									</TableHead>
-								</TableRow>
-							</TableHeader>
-							<TableBody>
-								{filteredProducts.map((product) => (
-									<TableRow
-										key={product.id}
-										className="border-gray-800 hover:bg-white/5"
-									>
-										<TableCell className="px-4">
-											<div className="min-w-0">
-												<p className="truncate font-medium text-white">
-													{product.name}
-												</p>
-												{product.isModifier ? (
-													<Badge className="mt-1 border-[var(--color-voltage)]/20 bg-[var(--color-voltage)]/10 text-[var(--color-voltage)]">
-														Modificador
-													</Badge>
-												) : null}
-											</div>
-										</TableCell>
-										<TableCell className="text-sm text-gray-300">
-											{product.categoryName ?? "Sin categoría"}
-										</TableCell>
-										<TableCell>
-											<div className="text-sm text-gray-300">
-												<p>{product.sku || "-"}</p>
-												{product.barcode ? (
-													<p className="text-xs text-gray-500">
-														BC: {product.barcode}
-													</p>
-												) : null}
-											</div>
-										</TableCell>
-										<TableCell>
-											<StockBadge product={product} />
-										</TableCell>
-										<TableCell className="font-medium text-gray-200">
-											{currencyFormatter.format(product.price)}
-										</TableCell>
-										<TableCell className="text-right">
-											<div className="flex justify-end gap-2">
-												{product.trackInventory ? (
-													<Button
-														type="button"
-														variant="outline"
-														size="sm"
-														onClick={() => setInventoryProduct(product)}
-														className="border-gray-700 bg-transparent text-gray-200 hover:bg-white/5"
-													>
-														Stock
-													</Button>
-												) : null}
-												<Button
-													type="button"
-													variant="outline"
-													size="sm"
-													onClick={() => openEditProduct(product)}
-													className="border-gray-700 bg-transparent text-gray-200 hover:bg-white/5"
-												>
-													<Edit3 className="h-3.5 w-3.5" />
-												</Button>
-												<Button
-													type="button"
-													variant="outline"
-													size="sm"
-													onClick={() => setProductToDelete(product)}
-													className="border-red-500/30 bg-transparent text-red-200 hover:bg-red-500/10"
-												>
-													<Trash2 className="h-3.5 w-3.5" />
-												</Button>
-											</div>
-										</TableCell>
-									</TableRow>
-								))}
-							</TableBody>
-						</Table>
-						{filteredProducts.length === 0 ? (
-							<div className="p-10 text-center text-sm text-gray-500">
-								No hay productos que coincidan con los filtros.
+					<div className="space-y-4">
+						<div className="rounded-xl border border-gray-800 bg-[var(--color-carbon)] overflow-hidden">
+							<div className="max-h-[600px] overflow-auto">
+								<Table>
+									<TableHeader className="sticky top-0 z-10 bg-[var(--color-carbon)]">
+										{table.getHeaderGroups().map((headerGroup) => (
+											<TableRow key={headerGroup.id} className="border-gray-800 hover:bg-transparent">
+												{headerGroup.headers.map((header) => (
+													<TableHead key={header.id} className="px-4 text-gray-400">
+														{header.isPlaceholder
+															? null
+															: flexRender(header.column.columnDef.header, header.getContext())}
+													</TableHead>
+												))}
+											</TableRow>
+										))}
+									</TableHeader>
+									<TableBody>
+										{table.getRowModel().rows.length ? (
+											table.getRowModel().rows.map((row) => (
+												<TableRow key={row.id} className="border-gray-800 hover:bg-white/5">
+													{row.getVisibleCells().map((cell) => (
+														<TableCell key={cell.id} className="px-4">
+															{flexRender(cell.column.columnDef.cell, cell.getContext())}
+														</TableCell>
+													))}
+												</TableRow>
+											))
+										) : (
+											<TableRow className="border-gray-800">
+												<TableCell colSpan={columns.length} className="p-10 text-center text-sm text-gray-500">
+													No hay productos que coincidan con los filtros.
+												</TableCell>
+											</TableRow>
+										)}
+									</TableBody>
+								</Table>
 							</div>
-						) : null}
+							<div className="border-t border-gray-800 p-2">
+								<DataTablePagination table={table} />
+							</div>
+						</div>
 					</div>
 				</TabsContent>
 
@@ -542,7 +613,7 @@ export function ProductsPage() {
 
 			<InventoryDialog
 				product={inventoryProduct}
-				products={products.filter((product) => product.trackInventory)}
+				products={productsWithInventory}
 				type={inventoryType}
 				quantity={inventoryQuantity}
 				notes={inventoryNotes}
@@ -1081,6 +1152,7 @@ function InventoryDialog({
 	onOpenChange: (open: boolean) => void;
 	onSave: () => Promise<void>;
 }) {
+	const [productPickerOpen, setProductPickerOpen] = useState(false);
 	const open = Boolean(product);
 
 	return (
@@ -1091,25 +1163,61 @@ function InventoryDialog({
 				</DialogHeader>
 				<div className="space-y-4">
 					<Field label="Producto">
-						<Select
-							value={product?.id ?? ""}
-							onValueChange={(value) =>
-								onProductChange(
-									products.find((item) => item.id === value) ?? null,
-								)
-							}
-						>
-							<SelectTrigger className="w-full border-gray-700 bg-black/20 text-white">
-								<SelectValue placeholder="Selecciona producto" />
-							</SelectTrigger>
-							<SelectContent className="border-gray-800 bg-[var(--color-carbon)] text-white">
-								{products.map((item) => (
-									<SelectItem key={item.id} value={item.id}>
-										{item.name} ({item.stock})
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
+						<Popover open={productPickerOpen} onOpenChange={setProductPickerOpen}>
+							<PopoverTrigger asChild>
+								<Button
+									type="button"
+									variant="outline"
+									role="combobox"
+									aria-controls="inventory-product-picker-list"
+									aria-expanded={productPickerOpen}
+									className="w-full justify-between border-gray-700 bg-black/20 text-white hover:bg-white/5"
+								>
+									<span className="truncate">
+										{product
+											? `${product.name} (${product.stock})`
+											: "Seleccionar producto..."}
+									</span>
+									<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 text-gray-500" />
+								</Button>
+							</PopoverTrigger>
+							<PopoverContent className="w-[min(360px,calc(100vw-2rem))] border-gray-800 bg-[var(--color-carbon)] p-0 text-white">
+								<Command className="bg-transparent">
+									<CommandInput
+										placeholder="Buscar producto..."
+										className="text-white placeholder:text-gray-500"
+									/>
+									<CommandList id="inventory-product-picker-list" className="p-1.5">
+										<CommandEmpty className="text-gray-400">
+											No se encontraron productos.
+										</CommandEmpty>
+										{products.map((item) => (
+											<CommandItem
+												key={item.id}
+												value={`${item.name} ${item.id}`}
+												onSelect={() => {
+													onProductChange(item);
+													setProductPickerOpen(false);
+												}}
+												className="gap-3 rounded-lg py-2 text-white"
+											>
+												<span className="truncate">
+													{item.name} ({item.stock})
+												</span>
+												<Check
+													className={cn(
+														"ml-auto h-4 w-4 shrink-0",
+														product?.id === item.id
+															? "opacity-100"
+															: "opacity-0",
+													)}
+												/>
+											</CommandItem>
+										))}
+									</CommandList>
+								</Command>
+							</PopoverContent>
+						</Popover>
 					</Field>
 					<Field label="Tipo">
 						<Select value={type} onValueChange={onTypeChange}>

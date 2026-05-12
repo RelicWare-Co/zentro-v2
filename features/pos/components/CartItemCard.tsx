@@ -96,7 +96,7 @@ export function CartItemCard({
 					<button
 						type="button"
 						onClick={onRemove}
-						className="text-gray-500 hover:text-red-400 p-1.5 rounded-md hover:bg-red-400/10 transition-colors"
+						className="text-red-300 hover:text-red-100 p-1.5 rounded-md hover:bg-red-400/10 transition-colors"
 						aria-label="Eliminar producto"
 					>
 						<Trash2 className="h-4 w-4" />

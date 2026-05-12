@@ -1,4 +1,5 @@
 import { Package } from "lucide-react";
+import { useEffect, useRef } from "react";
 import type { Category, Product } from "@/features/pos/types";
 import { ProductGridCard } from "./ProductGridCard";
 import { ProductListItem } from "./ProductListItem";
@@ -20,6 +21,9 @@ interface ProductCatalogProps {
   onProductSelect: (product: Product) => void;
   onToggleFavorite?: (productId: string) => void;
   isTogglingFavorite?: boolean;
+  onLoadMore?: () => void;
+  hasMore?: boolean;
+  isLoadingMore?: boolean;
 }
 
 export function ProductCatalog({
@@ -38,8 +42,29 @@ export function ProductCatalog({
   onProductSelect,
   onToggleFavorite,
   isTogglingFavorite,
+  onLoadMore,
+  hasMore,
+  isLoadingMore,
 }: ProductCatalogProps) {
   const regularProducts = products.filter((p) => !p.isModifier);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!hasMore || !onLoadMore) return;
+    const el = loadMoreRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          onLoadMore();
+        }
+      },
+      { rootMargin: "200px" },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasMore, isLoadingMore, onLoadMore]);
 
   return (
     <div className="flex flex-col min-h-0 flex-1 overflow-hidden">
@@ -94,6 +119,12 @@ export function ProductCatalog({
                 isTogglingFavorite={isTogglingFavorite}
               />
             ))}
+          </div>
+        )}
+
+        {hasMore && (
+          <div ref={loadMoreRef} className="flex h-16 items-center justify-center text-[#6b6b6b]">
+            {isLoadingMore ? <p className="text-sm">Cargando más...</p> : null}
           </div>
         )}
       </div>

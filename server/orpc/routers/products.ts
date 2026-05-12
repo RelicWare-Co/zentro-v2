@@ -28,6 +28,17 @@ function toTimestamp(value: Date | number | string | null | undefined) {
 	return Number.isNaN(dateValue.getTime()) ? Date.now() : dateValue.getTime();
 }
 
+function normalizeCount(value: unknown) {
+	if (typeof value === "number") {
+		return Number.isFinite(value) ? value : 0;
+	}
+	if (typeof value === "string") {
+		const parsedValue = Number(value);
+		return Number.isFinite(parsedValue) ? parsedValue : 0;
+	}
+	return 0;
+}
+
 function normalizeOptionalString(value?: string | null) {
 	if (value == null) {
 		return null;
@@ -99,47 +110,85 @@ async function assertCategoryFromOrganization(input: {
 	return normalizedCategoryId;
 }
 
-export const list = orgRequiredProcedure.list.handler(async ({ context }) => {
-	const rows = await context.db
-		.select({
-			id: product.id,
-			name: product.name,
-			categoryId: product.categoryId,
-			categoryName: category.name,
-			sku: product.sku,
-			barcode: product.barcode,
-			price: product.price,
-			cost: product.cost,
-			taxRate: product.taxRate,
-			stock: product.stock,
-			trackInventory: product.trackInventory,
-			isModifier: product.isModifier,
-			isFavorite: product.isFavorite,
-			createdAt: product.createdAt,
-		})
-		.from(product)
-		.leftJoin(
-			category,
-			and(
-				eq(product.categoryId, category.id),
-				eq(category.organizationId, context.organizationId),
-			),
-		)
-		.where(
-			and(
-				eq(product.organizationId, context.organizationId),
-				isNull(product.deletedAt),
-			),
-		)
-		.orderBy(asc(product.name));
+export const list = orgRequiredProcedure.list.handler(
+	async ({ input, context }) => {
+		const page = Math.max(input.page ?? 0, 0);
+		const pageSize = Math.min(Math.max(input.pageSize ?? 20, 1), 100);
+		const normalizedQuery = input.query?.trim().toLowerCase() ?? "";
+		const normalizedCategoryId = input.categoryId?.trim() ?? "";
+		const searchPattern = `%${normalizedQuery}%`;
 
-	return rows.map((row) => ({
-		...row,
-		cost: row.cost ?? 0,
-		taxRate: row.taxRate ?? 0,
-		createdAt: toTimestamp(row.createdAt),
-	}));
-});
+		const clauses = [
+			eq(product.organizationId, context.organizationId),
+			isNull(product.deletedAt),
+		];
+		if (normalizedCategoryId === "uncategorized") {
+			clauses.push(isNull(product.categoryId));
+		} else if (normalizedCategoryId) {
+			clauses.push(eq(product.categoryId, normalizedCategoryId));
+		}
+		if (normalizedQuery) {
+			clauses.push(
+				sql`(lower(${product.name}) LIKE ${searchPattern} OR lower(coalesce(${product.sku}, '')) LIKE ${searchPattern} OR lower(coalesce(${product.barcode}, '')) LIKE ${searchPattern})`,
+			);
+		}
+
+		const [rows, totalRows] = await Promise.all([
+			context.db
+				.select({
+					id: product.id,
+					name: product.name,
+					categoryId: product.categoryId,
+					categoryName: category.name,
+					sku: product.sku,
+					barcode: product.barcode,
+					price: product.price,
+					cost: product.cost,
+					taxRate: product.taxRate,
+					stock: product.stock,
+					trackInventory: product.trackInventory,
+					isModifier: product.isModifier,
+					isFavorite: product.isFavorite,
+					createdAt: product.createdAt,
+				})
+				.from(product)
+				.leftJoin(
+					category,
+					and(
+						eq(product.categoryId, category.id),
+						eq(category.organizationId, context.organizationId),
+					),
+				)
+				.where(and(...clauses))
+				.orderBy(asc(product.name))
+				.limit(pageSize)
+				.offset(page * pageSize),
+			context.db
+				.select({ total: sql<number>`count(*)` })
+				.from(product)
+				.leftJoin(
+					category,
+					and(
+						eq(product.categoryId, category.id),
+						eq(category.organizationId, context.organizationId),
+					),
+				)
+				.where(and(...clauses)),
+		]);
+
+		return {
+			items: rows.map((row) => ({
+				...row,
+				cost: row.cost ?? 0,
+				taxRate: row.taxRate ?? 0,
+				createdAt: toTimestamp(row.createdAt),
+			})),
+			total: normalizeCount(totalRows[0]?.total),
+			page,
+			pageSize,
+		};
+	},
+);
 
 export const categories = orgRequiredProcedure.categories.handler(
 	async ({ context }) => {

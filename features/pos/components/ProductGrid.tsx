@@ -27,6 +27,9 @@ interface ProductGridProps {
 	onProductSelect: (product: Product) => void;
 	onToggleFavorite?: (productId: string) => void;
 	isTogglingFavorite?: boolean;
+	onLoadMore?: () => void;
+	hasMore?: boolean;
+	isLoadingMore?: boolean;
 	className?: string;
 }
 
@@ -46,6 +49,9 @@ export function ProductGrid({
 	onProductSelect,
 	onToggleFavorite,
 	isTogglingFavorite,
+	onLoadMore,
+	hasMore,
+	isLoadingMore,
 	className,
 }: ProductGridProps) {
 	const regularProducts = products.filter((product) => !product.isModifier);
@@ -68,6 +74,25 @@ export function ProductGrid({
 			scanTimeoutRef.current = null;
 		}
 	}, []);
+
+	const loadMoreRef = useRef<HTMLDivElement | null>(null);
+
+	useEffect(() => {
+		if (!hasMore || !onLoadMore) return;
+		const el = loadMoreRef.current;
+		if (!el) return;
+
+		const observer = new IntersectionObserver(
+			(entries) => {
+				if (entries[0]?.isIntersecting) {
+					onLoadMore();
+				}
+			},
+			{ rootMargin: "200px" },
+		);
+		observer.observe(el);
+		return () => observer.disconnect();
+	}, [hasMore, isLoadingMore, onLoadMore]);
 
 	const focusSearchInput = useCallback(() => {
 		if (
@@ -384,6 +409,12 @@ export function ProductGrid({
 					{!isLoading && regularProducts.length === 0 && (
 						<div className="flex h-48 flex-col items-center justify-center text-gray-500">
 							<p>No se encontraron productos.</p>
+						</div>
+					)}
+
+					{hasMore && (
+						<div ref={loadMoreRef} className="flex h-16 items-center justify-center text-gray-500">
+							{isLoadingMore ? <p>Cargando más...</p> : null}
 						</div>
 					)}
 				</div>

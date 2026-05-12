@@ -38,13 +38,11 @@ import {
 	SheetTitle,
 } from "@/components/ui/sheet";
 import {
-	Table,
-	TableBody,
 	TableCell,
 	TableHead,
-	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { VirtualTable } from "@/components/ui/virtual-table";
 import {
 	useCreateCustomerMutation,
 	useCustomersSearch,
@@ -195,114 +193,98 @@ export function CustomersPage() {
 				/>
 			</div>
 
-			<div className="overflow-hidden rounded-xl border border-gray-800 bg-[var(--color-carbon)]">
-				<Table>
-					<TableHeader>
-						<TableRow className="border-gray-800 hover:bg-transparent">
-							<TableHead className="px-4 text-gray-400">Nombre</TableHead>
-							<TableHead className="text-gray-400">Documento</TableHead>
-							<TableHead className="text-gray-400">Teléfono</TableHead>
-							<TableHead className="text-gray-400">Email</TableHead>
-							<TableHead className="text-right text-gray-400">
-								Acciones
-							</TableHead>
-						</TableRow>
-					</TableHeader>
-					<TableBody>
-						{customers.map((customer) => (
-							<TableRow
-								key={customer.id}
-								className="border-gray-800 hover:bg-white/5"
-							>
-								<TableCell className="px-4">
-									<div className="min-w-0">
-										<p className="truncate font-medium text-white">
-											{customer.name}
-										</p>
-										{customer.type ? (
-											<Badge
-												variant="outline"
-												className="mt-1 border-gray-700 bg-gray-800/80 text-gray-300"
-											>
-												{customer.type === "juridica"
-													? "Jurídica"
-													: "Natural"}
-											</Badge>
-										) : null}
-									</div>
-								</TableCell>
-								<TableCell className="text-sm text-gray-300">
-									{customer.documentType && customer.documentNumber ? (
-										<span>
-											{customer.documentType}{" "}
-											{customer.documentNumber}
-										</span>
-										) : customer.documentNumber ? (
-											<span>{customer.documentNumber}</span>
-										) : (
-											<span className="text-gray-500">—</span>
-										)}
-								</TableCell>
-								<TableCell className="text-sm text-gray-300">
-									{customer.phone ?? (
-										<span className="text-gray-500">—</span>
-									)}
-								</TableCell>
-								<TableCell className="text-sm text-gray-300">
-									{customer.email ?? (
-										<span className="text-gray-500">—</span>
-									)}
-								</TableCell>
-								<TableCell className="text-right">
-									<div className="flex justify-end gap-2">
-										<Button
-											type="button"
-											variant="outline"
-											size="sm"
-											onClick={() => openEdit(customer)}
-											className="border-gray-700 bg-transparent text-gray-200 hover:bg-white/5"
-										>
-											<Edit3 className="h-3.5 w-3.5" />
-										</Button>
-										<Button
-											type="button"
-											variant="outline"
-											size="sm"
-											onClick={() => setCustomerToDelete(customer)}
-											className="border-red-500/30 bg-transparent text-red-200 hover:bg-red-500/10"
-										>
-											<Trash2 className="h-3.5 w-3.5" />
-										</Button>
-									</div>
-								</TableCell>
-							</TableRow>
-						))}
-					</TableBody>
-				</Table>
-				{customers.length === 0 ? (
-					<div className="flex flex-col items-center gap-3 p-10 text-center">
-						<Users className="h-8 w-8 text-gray-600" />
-						<p className="text-sm text-gray-500">
-							{searchQuery.trim()
-								? "No hay clientes que coincidan con la búsqueda."
-								: "Aún no hay clientes registrados."}
-						</p>
-						{!searchQuery.trim() ? (
-							<Button
-								type="button"
-								variant="outline"
-								onClick={openCreate}
-								className="border-gray-700 bg-transparent text-gray-200 hover:bg-white/5 hover:text-white"
-							>
-								<Plus className="mr-2 h-4 w-4" />
-								Crear cliente
-							</Button>
-						) : null}
-					</div>
-				) : null}
-			</div>
-
-			<CustomerFormSheet
+			<VirtualTable
+				data={customers}
+				header={
+					<TableRow className="border-gray-800 hover:bg-transparent">
+						<TableHead className="px-4 text-gray-400">Nombre</TableHead>
+						<TableHead className="text-gray-400">Documento</TableHead>
+						<TableHead className="text-gray-400">Teléfono</TableHead>
+						<TableHead className="text-gray-400">Email</TableHead>
+						<TableHead className="text-right text-gray-400">Acciones</TableHead>
+					</TableRow>
+				}
+				renderRow={(customer) => (
+					<>
+						<TableCell className="px-4">
+							<div className="min-w-0">
+								<p className="truncate font-medium text-white">{customer.name}</p>
+								{customer.type ? (
+									<Badge
+										variant="outline"
+										className="mt-1 border-gray-700 bg-gray-800/80 text-gray-300"
+									>
+										{customer.type === "juridica" ? "Jurídica" : "Natural"}
+									</Badge>
+								) : null}
+							</div>
+						</TableCell>
+						<TableCell className="text-sm text-gray-300">
+							{customer.documentType && customer.documentNumber ? (
+								<span>{customer.documentType} {customer.documentNumber}</span>
+							) : customer.documentNumber ? (
+								<span>{customer.documentNumber}</span>
+							) : (
+								<span className="text-gray-500">—</span>
+							)}
+						</TableCell>
+						<TableCell className="text-sm text-gray-300">
+							{customer.phone ?? <span className="text-gray-500">—</span>}
+						</TableCell>
+						<TableCell className="text-sm text-gray-300">
+							{customer.email ?? <span className="text-gray-500">—</span>}
+						</TableCell>
+						<TableCell className="text-right">
+							<div className="flex justify-end gap-2">
+								<Button
+									type="button"
+									variant="outline"
+									size="sm"
+									onClick={() => openEdit(customer)}
+									className="border-gray-700 bg-transparent text-gray-200 hover:bg-white/5"
+								>
+									<Edit3 className="h-3.5 w-3.5" />
+								</Button>
+								<Button
+									type="button"
+									variant="outline"
+									size="sm"
+									onClick={() => setCustomerToDelete(customer)}
+									className="border-red-500/30 bg-transparent text-red-200 hover:bg-red-500/10"
+								>
+									<Trash2 className="h-3.5 w-3.5" />
+								</Button>
+							</div>
+						</TableCell>
+						</>
+				)}
+				getItemKey={(customer) => customer.id}
+				estimateSize={72}
+				maxHeight={600}
+				emptyState={
+					customers.length === 0 ? (
+						<div className="flex flex-col items-center gap-3 p-10 text-center">
+							<Users className="h-8 w-8 text-gray-600" />
+							<p className="text-sm text-gray-500">
+								{searchQuery.trim()
+									? "No hay clientes que coincidan con la búsqueda."
+									: "Aún no hay clientes registrados."}
+							</p>
+							{!searchQuery.trim() ? (
+								<Button
+									type="button"
+									variant="outline"
+									onClick={openCreate}
+									className="border-gray-700 bg-transparent text-gray-200 hover:bg-white/5 hover:text-white"
+								>
+									<Plus className="mr-2 h-4 w-4" />
+									Crear cliente
+								</Button>
+							) : null}
+						</div>
+					) : null
+				}
+			/><CustomerFormSheet
 				open={isSheetOpen}
 				onOpenChange={(open) => {
 					setIsSheetOpen(open);

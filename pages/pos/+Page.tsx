@@ -48,10 +48,13 @@ export default function PosPage() {
 
 	// Data queries
 	const { data: bootstrap, isLoading: isBootstrapLoading } = usePosBootstrap();
-	const { data: productsData, isLoading: isProductsLoading } = usePosProducts(
-		activeCategoryId,
-		searchQuery,
-	);
+	const {
+		data: productsData,
+		fetchNextPage,
+		hasNextPage,
+		isFetchingNextPage,
+		isLoading: isProductsLoading,
+	} = usePosProducts(activeCategoryId, searchQuery);
 	const { data: customersData } = usePosCustomers();
 	const { data: creditAccountsData } = useCreditAccounts();
 
@@ -72,7 +75,7 @@ export default function PosPage() {
 	const allowCreditSales = settings?.allowCreditSales ?? false;
 	const defaultTerminalName = settings?.defaultTerminalName ?? "Caja Principal";
 
-	const products = productsData?.data ?? [];
+	const products = productsData?.pages.flatMap((page) => page.data) ?? [];
 	const customers = customersData?.data ?? [];
 	const creditAccounts = creditAccountsData?.data ?? [];
 
@@ -265,6 +268,9 @@ export default function PosPage() {
 						toggleFavoriteMutation.mutate({ productId });
 					}}
 					isTogglingFavorite={toggleFavoriteMutation.isPending}
+					onLoadMore={fetchNextPage}
+					hasMore={!!hasNextPage}
+					isLoadingMore={isFetchingNextPage}
 					className={isMobile ? "border-r-0" : undefined}
 				/>
 

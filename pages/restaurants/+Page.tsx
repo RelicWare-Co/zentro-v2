@@ -53,10 +53,12 @@ export default function RestaurantsPage() {
 	const [searchQuery, setSearchQuery] = useState("");
 	const deferredSearchQuery = useDeferredValue(searchQuery);
 	const [activeCategoryId, setActiveCategoryId] = useState("all");
-	const { data: productSearchResult } = usePosProducts(
-		activeCategoryId,
-		deferredSearchQuery,
-	);
+	const {
+		data: productSearchResult,
+		fetchNextPage,
+		hasNextPage,
+		isFetchingNextPage,
+	} = usePosProducts(activeCategoryId, deferredSearchQuery);
 	const [guestCountInput, setGuestCountInput] = useState("0");
 	const [orderNotes, setOrderNotes] = useState("");
 	const openOrderDraftSignature = openOrder
@@ -100,7 +102,7 @@ export default function RestaurantsPage() {
 			setOrderNotes(openOrder.notes ?? "");
 		}
 	}
-	const products = productSearchResult?.data ?? [];
+	const products = productSearchResult?.pages.flatMap((page) => page.data) ?? [];
 	const requiresReference =
 		bootstrap?.settings.paymentMethods.find(
 			(method) => method.id === paymentMethod,

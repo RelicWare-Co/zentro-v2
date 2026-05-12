@@ -139,15 +139,15 @@ describe("product CRUD", () => {
 			});
 
 			// Product appears in list
-			const listBefore = await client.products.list();
-			expect(listBefore.some((p) => p.id === createResult.id)).toBe(true);
+			const listBefore = await client.products.list({});
+			expect(listBefore.items.some((p) => p.id === createResult.id)).toBe(true);
 
 			// Soft delete
 			await client.products.delete({ id: createResult.id });
 
 			// Deleted product excluded from list
-			const listAfter = await client.products.list();
-			expect(listAfter.some((p) => p.id === createResult.id)).toBe(false);
+			const listAfter = await client.products.list({});
+			expect(listAfter.items.some((p) => p.id === createResult.id)).toBe(false);
 
 			// Reuse barcode and sku
 			const reuseResult = await client.products.create({

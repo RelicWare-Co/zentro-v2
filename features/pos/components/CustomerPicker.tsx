@@ -57,6 +57,7 @@ export function CustomerPicker({
 					type="button"
 					variant="ghost"
 					role="combobox"
+					aria-controls="customer-picker-list"
 					aria-expanded={isOpen}
 					className={cn(
 						"h-11 min-w-0 justify-between rounded-lg border border-gray-800 bg-[#101010] px-3 py-2 text-left text-sm text-white hover:bg-[#151515] hover:text-white",
@@ -84,7 +85,7 @@ export function CustomerPicker({
 						placeholder={searchPlaceholder}
 						className="text-white placeholder:text-gray-500"
 					/>
-					<CommandList className="p-1.5">
+					<CommandList id="customer-picker-list" className="p-1.5">
 						<CommandEmpty className="text-gray-400">
 							No se encontraron clientes.
 						</CommandEmpty>

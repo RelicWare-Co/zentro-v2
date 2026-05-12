@@ -1,4 +1,4 @@
-import { useEffect, useId } from "react";
+import { type Dispatch, type SetStateAction, useEffect, useId } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -31,7 +31,7 @@ interface CloseShiftModalProps {
 	shiftCloseSummary: z.infer<typeof ShiftCloseSummaryResultSchema> | undefined;
 	isLoading: boolean;
 	closureAmounts: Record<string, string>;
-	setClosureAmounts: (amounts: Record<string, string>) => void;
+	setClosureAmounts: Dispatch<SetStateAction<Record<string, string>>>;
 	closeShiftNotes: string;
 	setCloseShiftNotes: (value: string) => void;
 	hasInvalidAmounts: boolean;
@@ -281,12 +281,12 @@ export function CloseShiftModal({
 												closureAmounts[row.paymentMethod] ?? "",
 											)}
 											onChange={(event) =>
-												setClosureAmounts({
-													...closureAmounts,
+												setClosureAmounts((prev) => ({
+													...prev,
 													[row.paymentMethod]: sanitizeMoneyInput(
 														event.target.value,
 													),
-												})
+												}))
 											}
 											className="pl-7 bg-[#0a0a0a] border-gray-800 text-white focus-visible:ring-[var(--color-voltage)]"
 										/>

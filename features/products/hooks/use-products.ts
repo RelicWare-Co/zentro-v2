@@ -6,12 +6,27 @@ import type { CategorySchema, ProductSchema } from "@/schemas/products";
 export type Product = z.infer<typeof ProductSchema>;
 export type Category = z.infer<typeof CategorySchema>;
 
-export function useProductsQueries() {
-	const productsQuery = useQuery(orpcQuery.products.list.queryOptions());
+export function useProductsQueries(options: {
+	page: number;
+	pageSize: number;
+	query: string;
+	categoryId: string | null;
+}) {
+	const productsQuery = useQuery(
+		orpcQuery.products.list.queryOptions({
+			input: {
+				page: options.page,
+				pageSize: options.pageSize,
+				query: options.query || null,
+				categoryId: options.categoryId || null,
+			},
+		}),
+	);
 	const categoriesQuery = useQuery(orpcQuery.products.categories.queryOptions());
 
 	return {
-		products: productsQuery.data ?? [],
+		products: productsQuery.data?.items ?? [],
+		total: productsQuery.data?.total ?? 0,
 		categories: categoriesQuery.data ?? [],
 		isPending: productsQuery.isPending || categoriesQuery.isPending,
 		isError: productsQuery.isError || categoriesQuery.isError,
@@ -31,13 +46,13 @@ export function useProductsMutations(options?: {
 	const queryClient = useQueryClient();
 	const invalidateProducts = async () => {
 		await queryClient.invalidateQueries({
-			queryKey: orpcQuery.products.list.queryOptions().queryKey,
+			queryKey: ["orpc", "products", "list"],
 		});
 	};
 	const invalidateProductsAndCategories = async () => {
 		await Promise.all([
 			queryClient.invalidateQueries({
-				queryKey: orpcQuery.products.list.queryOptions().queryKey,
+				queryKey: ["orpc", "products", "list"],
 			}),
 			queryClient.invalidateQueries({
 				queryKey: orpcQuery.products.categories.queryOptions().queryKey,
