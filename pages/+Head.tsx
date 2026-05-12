@@ -23,10 +23,8 @@ export function Head() {
       />
       <meta name="apple-mobile-web-app-title" content="Zentro" />
       <meta name="format-detection" content="telephone=no" />
-      <script
-        // biome-ignore lint/security/noDangerouslySetInnerHtml: required for theme initialization before hydration
-        dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }}
-      />
+      {/* biome-ignore lint/security/noDangerouslySetInnerHtml: safe in React 19 native script tags */}
+      <script>{THEME_INIT_SCRIPT}</script>
     </>
   );
 }

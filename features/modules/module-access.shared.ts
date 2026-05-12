@@ -10,9 +10,9 @@ import {
 } from "./module-registry";
 
 export type {
-	ModuleActivationPolicy,
+	
 	ModuleEntitlementStatus,
-	ModuleNavigationItem,
+	
 };
 export { MODULE_KEYS, type ModuleKey };
 
@@ -29,7 +29,7 @@ export type ModuleAccessState = {
 	navigation: ModuleNavigationItem[];
 };
 
-export const MODULE_CATALOG = Object.fromEntries(
+const MODULE_CATALOG = Object.fromEntries(
 	MODULE_KEYS.map((moduleKey) => {
 		const definition = getModuleDefinition(moduleKey);
 		return [

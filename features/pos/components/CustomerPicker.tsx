@@ -60,33 +60,33 @@ export function CustomerPicker({
 					aria-controls="customer-picker-list"
 					aria-expanded={isOpen}
 					className={cn(
-						"h-11 min-w-0 justify-between rounded-lg border border-gray-800 bg-[#101010] px-3 py-2 text-left text-sm text-white hover:bg-[#151515] hover:text-white",
+						"h-11 min-w-0 justify-between rounded-lg border border-zinc-800 bg-[#101010] px-3 py-2 text-left text-sm text-white hover:bg-[#151515] hover:text-white",
 						buttonClassName,
 					)}
 				>
 					<span className="min-w-0">
 						<span className="block truncate">{selectedCustomerLabel}</span>
-						<span className="block truncate text-xs text-gray-500">
+						<span className="block truncate text-xs text-zinc-500">
 							{selectedCustomerMeta}
 						</span>
 					</span>
-					<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 text-gray-500" />
+					<ChevronsUpDown className="ml-2 size-4 shrink-0 text-zinc-500" />
 				</Button>
 			</PopoverTrigger>
 			<PopoverContent
 				align="start"
 				className={cn(
-					"w-[min(360px,calc(100vw-2rem))] border-gray-800 bg-[var(--color-carbon)] p-0 text-white",
+					"w-[min(360px,calc(100vw-2rem))] border-zinc-800 bg-[var(--color-carbon)] p-0 text-white",
 					contentClassName,
 				)}
 			>
 				<Command className="bg-transparent">
 					<CommandInput
 						placeholder={searchPlaceholder}
-						className="text-white placeholder:text-gray-500"
+						className="text-white placeholder:text-zinc-500"
 					/>
 					<CommandList id="customer-picker-list" className="p-1.5">
-						<CommandEmpty className="text-gray-400">
+						<CommandEmpty className="text-zinc-400">
 							No se encontraron clientes.
 						</CommandEmpty>
 						<CommandItem
@@ -99,13 +99,13 @@ export function CustomerPicker({
 						>
 							<div className="min-w-0 flex-1 space-y-1">
 								<p className="truncate font-medium">Cliente Mostrador</p>
-								<p className="truncate text-xs text-gray-400">
+								<p className="truncate text-xs text-zinc-400">
 									Venta rápida sin cliente asociado
 								</p>
 							</div>
 							<Check
 								className={cn(
-									"h-4 w-4 shrink-0",
+									"size-4 shrink-0",
 									selectedCustomerId === "" ? "opacity-100" : "opacity-0",
 								)}
 							/>
@@ -122,7 +122,7 @@ export function CustomerPicker({
 							>
 								<div className="min-w-0 flex-1 space-y-1">
 									<p className="truncate font-medium">{customer.name}</p>
-									<p className="truncate text-xs text-gray-400">
+									<p className="truncate text-xs text-zinc-400">
 										{[customer.documentNumber, customer.phone, customer.email]
 											.filter(Boolean)
 											.join(" · ") || "Sin datos adicionales"}
@@ -130,7 +130,7 @@ export function CustomerPicker({
 								</div>
 								<Check
 									className={cn(
-										"h-4 w-4 shrink-0",
+										"size-4 shrink-0",
 										selectedCustomerId === customer.id
 											? "opacity-100"
 											: "opacity-0",

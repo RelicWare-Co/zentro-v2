@@ -1,4 +1,4 @@
-import { startTransition, useDeferredValue, useEffect, useMemo, useState } from "react";
+import { startTransition, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -64,8 +64,7 @@ export default function RestaurantsPage() {
 	const openOrderDraftSignature = openOrder
 		? `${openOrder.id}:${openOrder.guestCount}:${openOrder.notes ?? ""}`
 		: "empty";
-	const [previousOpenOrderDraftSignature, setPreviousOpenOrderDraftSignature] =
-		useState(openOrderDraftSignature);
+	const previousOpenOrderDraftSignatureRef = useRef(openOrderDraftSignature);
 	const [paymentMethod, setPaymentMethod] = useState(
 		bootstrap?.settings.paymentMethods[0]?.id ?? "cash",
 	);
@@ -92,8 +91,8 @@ export default function RestaurantsPage() {
 	const updateItemStatusMutation = useUpdateRestaurantOrderItemStatusMutation();
 	const closeOrderMutation = useCloseRestaurantOrderMutation();
 
-	if (openOrderDraftSignature !== previousOpenOrderDraftSignature) {
-		setPreviousOpenOrderDraftSignature(openOrderDraftSignature);
+	if (openOrderDraftSignature !== previousOpenOrderDraftSignatureRef.current) {
+		previousOpenOrderDraftSignatureRef.current = openOrderDraftSignature;
 		if (!openOrder) {
 			setGuestCountInput("0");
 			setOrderNotes("");
@@ -310,7 +309,7 @@ export default function RestaurantsPage() {
 			<div className="mb-6 flex items-center justify-between gap-4">
 				<div>
 					<h1 className="text-2xl font-semibold">Restaurantes</h1>
-					<p className="mt-1 text-sm text-gray-400">
+					<p className="mt-1 text-sm text-zinc-400">
 						Mesas, comandas y cierre de cuenta sobre el POS actual.
 					</p>
 				</div>
@@ -318,7 +317,7 @@ export default function RestaurantsPage() {
 					<Button
 						asChild
 						variant="outline"
-						className="border-gray-700 bg-transparent text-gray-100 hover:bg-white/5"
+						className="border-zinc-700 bg-transparent text-zinc-100 hover:bg-white/5"
 					>
 						<a href="/kitchen">Ver Cocina</a>
 					</Button>
@@ -327,7 +326,7 @@ export default function RestaurantsPage() {
 
 			<div aria-live="polite" className="mb-4">
 				{feedbackMessage ? (
-					<Alert className="border-gray-700 bg-[var(--color-carbon)] text-[var(--color-photon)]">
+					<Alert className="border-zinc-700 bg-[var(--color-carbon)] text-[var(--color-photon)]">
 						<AlertTitle>Estado</AlertTitle>
 						<AlertDescription>{feedbackMessage}</AlertDescription>
 					</Alert>
@@ -335,14 +334,14 @@ export default function RestaurantsPage() {
 			</div>
 
 			<div className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
-				<Card className="border-gray-800 bg-[var(--color-carbon)] shadow-none">
-					<CardHeader className="border-b border-gray-800 pb-4">
+				<Card className="border-zinc-800 bg-[var(--color-carbon)] shadow-none">
+					<CardHeader className="border-b border-zinc-800 pb-4">
 						<CardTitle className="text-base">Mesas</CardTitle>
 					</CardHeader>
 					<CardContent className="space-y-5 pt-5">
 						{bootstrap?.areas.map((area) => (
 							<section key={area.id}>
-								<h2 className="mb-2 text-sm font-medium text-gray-300">
+								<h2 className="mb-2 text-sm font-medium text-zinc-300">
 									{area.name}
 								</h2>
 								<div className="space-y-2">
@@ -356,7 +355,7 @@ export default function RestaurantsPage() {
 												className={`w-full rounded-lg border px-3 py-3 text-left transition-colors ${
 													isSelected
 														? "border-[var(--color-voltage)] bg-black/20 text-white"
-														: "border-gray-800 bg-black/10 text-gray-200 hover:border-gray-700 hover:bg-black/20"
+														: "border-zinc-800 bg-black/10 text-zinc-200 hover:border-zinc-700 hover:bg-black/20"
 												}`}
 											>
 												<div className="flex items-center justify-between gap-3">
@@ -364,13 +363,13 @@ export default function RestaurantsPage() {
 														<div className="truncate font-medium">
 															{table.name}
 														</div>
-														<div className="mt-1 text-xs text-gray-400">
+														<div className="mt-1 text-xs text-zinc-400">
 															{table.seats > 0
 																? `${table.seats} puestos`
 																: "Sin capacidad definida"}
 														</div>
 													</div>
-													<div className="text-right text-xs text-gray-400">
+													<div className="text-right text-xs text-zinc-400">
 														{table.openOrder ? (
 															<>
 																<div>
@@ -397,8 +396,8 @@ export default function RestaurantsPage() {
 				</Card>
 
 				<div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-					<Card className="border-gray-800 bg-[var(--color-carbon)] shadow-none">
-						<CardHeader className="border-b border-gray-800 pb-4">
+					<Card className="border-zinc-800 bg-[var(--color-carbon)] shadow-none">
+						<CardHeader className="border-b border-zinc-800 pb-4">
 							<CardTitle className="text-base">
 								{selectedTable
 									? `${selectedTable.name} · ${selectedTable.areaName}`
@@ -421,7 +420,7 @@ export default function RestaurantsPage() {
 													setGuestCountInput(event.target.value)
 												}
 												autoComplete="off"
-												className="border-gray-700 bg-black/20"
+												className="border-zinc-700 bg-black/20"
 											/>
 										</div>
 										<div className="grid gap-2">
@@ -434,7 +433,7 @@ export default function RestaurantsPage() {
 													setOrderNotes(event.target.value)
 												}
 												autoComplete="off"
-												className="min-h-20 border-gray-700 bg-black/20"
+												className="min-h-20 border-zinc-700 bg-black/20"
 											/>
 										</div>
 										<div className="flex items-end">
@@ -468,7 +467,7 @@ export default function RestaurantsPage() {
 													}
 													placeholder="Nombre, SKU o código…"
 													autoComplete="off"
-													className="border-gray-700 bg-black/20"
+													className="border-zinc-700 bg-black/20"
 												/>
 											</div>
 											<div className="grid gap-2">
@@ -499,8 +498,8 @@ export default function RestaurantsPage() {
 												</div>
 										</div>
 
-										<div className="rounded-lg border border-gray-800">
-											<div className="grid grid-cols-[minmax(0,1fr)_140px_88px] border-b border-gray-800 px-3 py-2 text-sm text-gray-400">
+										<div className="rounded-lg border border-zinc-800">
+											<div className="grid grid-cols-[minmax(0,1fr)_140px_88px] border-b border-zinc-800 px-3 py-2 text-sm text-zinc-400">
 												<div>Producto</div>
 												<div>Precio</div>
 												<div />
@@ -509,17 +508,17 @@ export default function RestaurantsPage() {
 												products.map((product) => (
 													<div
 														key={product.id}
-														className="grid grid-cols-[minmax(0,1fr)_140px_88px] items-center border-b border-gray-800 px-3 py-2 last:border-b-0"
+														className="grid grid-cols-[minmax(0,1fr)_140px_88px] items-center border-b border-zinc-800 px-3 py-2 last:border-b-0"
 													>
 														<div className="min-w-0">
 															<div className="truncate">
 																{product.name}
 															</div>
-															<div className="mt-1 text-xs text-gray-400">
+															<div className="mt-1 text-xs text-zinc-400">
 																{product.categoryName}
 															</div>
 														</div>
-														<div className="text-sm text-gray-200">
+														<div className="text-sm text-zinc-200">
 															{formatCurrency(product.price)}
 														</div>
 														<div className="flex justify-end">
@@ -530,7 +529,7 @@ export default function RestaurantsPage() {
 																	handleAddProduct(product.id)
 																}
 																disabled={addItemMutation.isPending}
-																className="border-gray-700 bg-transparent text-gray-100 hover:bg-white/5"
+																className="border-zinc-700 bg-transparent text-zinc-100 hover:bg-white/5"
 															>
 																Agregar
 															</Button>
@@ -538,7 +537,7 @@ export default function RestaurantsPage() {
 													</div>
 												))
 											) : (
-												<div className="px-3 py-6 text-sm text-gray-400">
+												<div className="px-3 py-6 text-sm text-zinc-400">
 													No hay productos para ese filtro.
 												</div>
 											)}
@@ -546,21 +545,21 @@ export default function RestaurantsPage() {
 									</section>
 								</>
 							) : (
-								<div className="text-sm text-gray-400">
+								<div className="text-sm text-zinc-400">
 									Selecciona una mesa para comenzar.
 								</div>
 							)}
 						</CardContent>
 					</Card>
 
-					<Card className="border-gray-800 bg-[var(--color-carbon)] shadow-none">
-						<CardHeader className="border-b border-gray-800 pb-4">
+					<Card className="border-zinc-800 bg-[var(--color-carbon)] shadow-none">
+						<CardHeader className="border-b border-zinc-800 pb-4">
 							<CardTitle className="text-base">Cuenta</CardTitle>
 						</CardHeader>
 						<CardContent className="space-y-4 pt-5">
 							{openOrder ? (
 								<>
-									<div className="text-sm text-gray-400">
+									<div className="text-sm text-zinc-400">
 										Orden #{openOrder.orderNumber}
 									</div>
 									<div className="space-y-3">
@@ -568,25 +567,25 @@ export default function RestaurantsPage() {
 											openOrder.items.map((item) => (
 												<div
 													key={item.id}
-													className="rounded-lg border border-gray-800 bg-black/10 p-3"
+													className="rounded-lg border border-zinc-800 bg-black/10 p-3"
 												>
 													<div className="flex items-start justify-between gap-3">
 														<div className="min-w-0">
 															<div className="truncate font-medium">
 																{item.quantity} × {item.productName}
 															</div>
-															<div className="mt-1 text-sm text-gray-400">
+															<div className="mt-1 text-sm text-zinc-400">
 																{formatCurrency(item.totalAmount)}
 															</div>
 															{item.modifiers.length > 0 ? (
-																<div className="mt-2 text-xs text-gray-400">
+																<div className="mt-2 text-xs text-zinc-400">
 																	{item.modifiers
 																		.map((modifier) => modifier.name)
 																		.join(", ")}
 																</div>
 															) : null}
 														</div>
-														<div className="text-xs text-gray-400">
+														<div className="text-xs text-zinc-400">
 															{item.status === "draft"
 																? "Pendiente"
 																: item.status === "sent"
@@ -613,7 +612,7 @@ export default function RestaurantsPage() {
 																		item.quantity <= 1 ||
 																		updateDraftItemMutation.isPending
 																	}
-																	className="border-gray-700 bg-transparent text-gray-100 hover:bg-white/5"
+																	className="border-zinc-700 bg-transparent text-zinc-100 hover:bg-white/5"
 																>
 																	-
 																</Button>
@@ -629,7 +628,7 @@ export default function RestaurantsPage() {
 																	disabled={
 																		updateDraftItemMutation.isPending
 																	}
-																	className="border-gray-700 bg-transparent text-gray-100 hover:bg-white/5"
+																	className="border-zinc-700 bg-transparent text-zinc-100 hover:bg-white/5"
 																>
 																	+
 																</Button>
@@ -642,7 +641,7 @@ export default function RestaurantsPage() {
 																	disabled={
 																		deleteDraftItemMutation.isPending
 																	}
-																	className="border-gray-700 bg-transparent text-gray-100 hover:bg-white/5"
+																	className="border-zinc-700 bg-transparent text-zinc-100 hover:bg-white/5"
 																>
 																	Quitar
 																</Button>
@@ -657,7 +656,7 @@ export default function RestaurantsPage() {
 															disabled={
 																updateItemStatusMutation.isPending
 															}
-															className="border-gray-700 bg-transparent text-gray-100 hover:bg-white/5"
+															className="border-zinc-700 bg-transparent text-zinc-100 hover:bg-white/5"
 														>
 															Marcar Servido
 														</Button>
@@ -666,22 +665,22 @@ export default function RestaurantsPage() {
 												</div>
 											))
 										) : (
-											<div className="text-sm text-gray-400">
+											<div className="text-sm text-zinc-400">
 												Agrega productos para abrir la cuenta.
 											</div>
 										)}
 									</div>
 
-									<div className="rounded-lg border border-gray-800 bg-black/10 p-3">
+									<div className="rounded-lg border border-zinc-800 bg-black/10 p-3">
 										<div className="flex items-center justify-between text-sm">
-											<span className="text-gray-400">Total</span>
+											<span className="text-zinc-400">Total</span>
 											<span className="font-medium text-white">
 												{formatCurrency(openOrder.totals.totalAmount)}
 											</span>
 										</div>
 										<div className="mt-1 flex items-center justify-between text-sm">
-											<span className="text-gray-400">Items</span>
-											<span className="text-gray-200">
+											<span className="text-zinc-400">Items</span>
+											<span className="text-zinc-200">
 												{openOrder.totals.itemCount}
 											</span>
 										</div>
@@ -696,7 +695,7 @@ export default function RestaurantsPage() {
 												sendToKitchenMutation.isPending ||
 												openOrder.totals.draftItemsCount === 0
 											}
-											className="border-gray-700 bg-transparent text-gray-100 hover:bg-white/5"
+											className="border-zinc-700 bg-transparent text-zinc-100 hover:bg-white/5"
 										>
 											{sendToKitchenMutation.isPending
 												? "Enviando…"
@@ -705,7 +704,7 @@ export default function RestaurantsPage() {
 									</div>
 
 									{bootstrap?.activeShift ? (
-										<div className="space-y-3 rounded-lg border border-gray-800 bg-black/10 p-3">
+										<div className="space-y-3 rounded-lg border border-zinc-800 bg-black/10 p-3">
 											<div className="grid gap-3">
 												<div className="grid gap-2">
 													<Label htmlFor="paymentMethod">
@@ -748,7 +747,7 @@ export default function RestaurantsPage() {
 															}
 														placeholder="Voucher, transferencia…"
 														autoComplete="off"
-														className="border-gray-700 bg-black/20"
+														className="border-zinc-700 bg-black/20"
 													/>
 												</div>
 											</div>
@@ -768,7 +767,7 @@ export default function RestaurantsPage() {
 											</Button>
 										</div>
 									) : (
-										<Alert className="border-gray-700 bg-black/10 text-[var(--color-photon)]">
+										<Alert className="border-zinc-700 bg-black/10 text-[var(--color-photon)]">
 											<AlertTitle>Caja requerida</AlertTitle>
 											<AlertDescription>
 												Abre una caja en POS para poder cobrar la mesa.
@@ -777,7 +776,7 @@ export default function RestaurantsPage() {
 									)}
 								</>
 							) : (
-								<div className="text-sm text-gray-400">
+								<div className="text-sm text-zinc-400">
 									La mesa está libre. Agrega productos para crear la cuenta.
 								</div>
 							)}

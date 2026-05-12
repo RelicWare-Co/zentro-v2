@@ -93,7 +93,7 @@ export function CatalogToolbar({
     <div className="shrink-0 px-4 md:px-6 space-y-3 pb-2">
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6b6b6b]" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#6b6b6b]" />
         <Input
           ref={searchInputRef}
           placeholder="Buscar producto por nombre, SKU o código... (/)"
@@ -108,16 +108,16 @@ export function CatalogToolbar({
               onClearSearch();
               searchInputRef.current?.focus();
             }}
-            className="absolute right-10 top-1/2 -translate-y-1/2 inline-flex h-7 w-7 items-center justify-center rounded-md text-[#6b6b6b] transition-colors hover:bg-[rgba(255,255,255,0.06)] hover:text-white"
+            className="absolute right-10 top-1/2 -translate-y-1/2 inline-flex size-7 items-center justify-center rounded-md text-[#6b6b6b] transition-colors hover:bg-[rgba(255,255,255,0.06)] hover:text-white"
           >
-            <X className="h-4 w-4" />
+            <X className="size-4" />
           </button>
         ) : null}
         <button
           type="button"
-          className="absolute right-2.5 top-1/2 -translate-y-1/2 inline-flex h-7 w-7 items-center justify-center rounded-md text-[#6b6b6b]"
+          className="absolute right-2.5 top-1/2 -translate-y-1/2 inline-flex size-7 items-center justify-center rounded-md text-[#6b6b6b]"
         >
-          <Barcode className="h-4 w-4" />
+          <Barcode className="size-4" />
         </button>
       </div>
 
@@ -158,7 +158,7 @@ export function CatalogToolbar({
                 : "text-[#6b6b6b] hover:text-white"
             )}
           >
-            <LayoutGrid className="h-4 w-4" />
+            <LayoutGrid className="size-4" />
             <span className="hidden sm:inline">Cuadrícula</span>
           </button>
           <button
@@ -170,7 +170,7 @@ export function CatalogToolbar({
                 : "text-[#6b6b6b] hover:text-white"
             )}
           >
-            <List className="h-4 w-4" />
+            <List className="size-4" />
             <span className="hidden sm:inline">Lista</span>
           </button>
         </div>

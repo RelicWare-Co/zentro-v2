@@ -173,13 +173,19 @@ export function usePosCheckout(
 
 		const saleDiscountAmount = parseMoneyInput(discountInput);
 
-		const salePayments = payments
-			.map((paymentMethod) => ({
-				method: paymentMethod.method,
-				amount: parseMoneyInput(paymentMethod.amount),
-				reference: paymentMethod.reference.trim() || null,
-			}))
-			.filter((paymentMethod) => paymentMethod.amount > 0);
+		const salePayments = payments.reduce<
+			Array<{ method: string; amount: number; reference: string | null }>
+		>((acc, paymentMethod) => {
+			const amount = parseMoneyInput(paymentMethod.amount);
+			if (amount > 0) {
+				acc.push({
+					method: paymentMethod.method,
+					amount,
+					reference: paymentMethod.reference.trim() || null,
+				});
+			}
+			return acc;
+		}, []);
 		const shouldRegisterAsCreditSale =
 			isCreditSale &&
 			cartTotals.totalAmount -

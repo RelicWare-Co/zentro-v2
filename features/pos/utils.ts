@@ -6,15 +6,17 @@ import {
 import { parseMoneyInput } from "@/lib/utils";
 import type { CartItem, CartTotals, Product } from "./types";
 
+const currencyFormatter = new Intl.NumberFormat("es-CO", {
+	style: "currency",
+	currency: "COP",
+	maximumFractionDigits: 0,
+});
+
 /**
  * Formatea un número como moneda colombiana (COP)
  */
 export function formatCurrency(amount: number): string {
-	return new Intl.NumberFormat("es-CO", {
-		style: "currency",
-		currency: "COP",
-		maximumFractionDigits: 0,
-	}).format(amount);
+	return currencyFormatter.format(amount);
 }
 
 /**
@@ -55,7 +57,7 @@ export function createPaymentMethodLabelMap(
 /**
  * Calcula el subtotal del carrito (sin impuestos ni descuentos)
  */
-export function calculateSubTotal(items: CartItem[]): number {
+function calculateSubTotal(items: CartItem[]): number {
 	return items.reduce((sum, item) => {
 		const itemTotal = item.product.price * item.quantity;
 		const modifiersTotal = item.modifiers.reduce(
@@ -70,7 +72,7 @@ export function calculateSubTotal(items: CartItem[]): number {
 /**
  * Calcula los impuestos totales del carrito
  */
-export function calculateTax(items: CartItem[]): number {
+function calculateTax(items: CartItem[]): number {
 	return items.reduce(
 		(sum, item) =>
 			sum +
@@ -84,14 +86,14 @@ export function calculateTax(items: CartItem[]): number {
 /**
  * Calcula el descuento total de los items del carrito
  */
-export function calculateItemsDiscount(items: CartItem[]): number {
+function calculateItemsDiscount(items: CartItem[]): number {
 	return items.reduce((sum, item) => sum + item.discountAmount, 0);
 }
 
 /**
  * Calcula el total a pagar considerando todos los factores
  */
-export function calculateTotal(
+function calculateTotal(
 	subTotal: number,
 	tax: number,
 	discountAmount: number,

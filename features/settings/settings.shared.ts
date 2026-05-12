@@ -7,7 +7,7 @@ import {
 	DEFAULT_RESTAURANT_MODULE_TOGGLE_SETTINGS,
 } from "@/features/restaurants/restaurants.module";
 
-export const PAYMENT_METHOD_CATALOG = [
+const PAYMENT_METHOD_CATALOG = [
 	{
 		id: "cash",
 		label: "Efectivo",
@@ -34,12 +34,12 @@ export const PAYMENT_METHOD_CATALOG = [
 	},
 ] as const;
 
-export const PAYMENT_METHOD_IDS = PAYMENT_METHOD_CATALOG.map(
+const PAYMENT_METHOD_IDS = PAYMENT_METHOD_CATALOG.map(
 	(method) => method.id,
 );
 export const PAYMENT_METHOD_ID_PATTERN = /^[a-z0-9]+(?:_[a-z0-9]+)*$/;
 
-export type PaymentMethodCatalogId =
+type PaymentMethodCatalogId =
 	(typeof PAYMENT_METHOD_CATALOG)[number]["id"];
 
 export type OrganizationPaymentMethodSettings = {
@@ -71,7 +71,7 @@ export type OrganizationSettings = {
 	};
 };
 
-export const DEFAULT_ORGANIZATION_SETTINGS: OrganizationSettings = {
+const DEFAULT_ORGANIZATION_SETTINGS: OrganizationSettings = {
 	modules: {
 		restaurants: DEFAULT_RESTAURANT_MODULE_TOGGLE_SETTINGS,
 	},
@@ -165,8 +165,10 @@ export function formatPaymentMethodIdLabel(methodId: string) {
 
 	return source
 		.split("_")
-		.filter(Boolean)
-		.map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+		.reduce<string[]>((acc, segment) => {
+			if (segment) acc.push(segment.charAt(0).toUpperCase() + segment.slice(1));
+			return acc;
+		}, [])
 		.join(" ");
 }
 
@@ -219,14 +221,17 @@ export function buildPaymentMethodOptions(
 	}
 
 	const extraOptions = [...extraMethodIds]
-		.map((methodId) => normalizePaymentMethodId(methodId))
-		.filter((methodId, index, collection) => {
-			return (
-				methodId.length > 0 &&
-				!seenMethodIds.has(methodId) &&
-				collection.indexOf(methodId) === index
-			);
-		})
+		.reduce<string[]>((acc, methodId) => {
+			const normalized = normalizePaymentMethodId(methodId);
+			if (
+				normalized.length > 0 &&
+				!seenMethodIds.has(normalized) &&
+				!acc.includes(normalized)
+			) {
+				acc.push(normalized);
+			}
+			return acc;
+		}, [])
 		.sort(comparePaymentMethodIds);
 
 	for (const paymentMethodId of extraOptions) {

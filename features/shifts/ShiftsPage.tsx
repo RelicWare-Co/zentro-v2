@@ -72,7 +72,7 @@ function formatShiftRange(openedAt: number, closedAt: number | null) {
 function getShiftStatusBadgeClass(status: string) {
 	return status === "open"
 		? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/10"
-		: "border-gray-700 bg-gray-800/80 text-gray-300 hover:bg-gray-800/80";
+		: "border-zinc-700 bg-zinc-800/80 text-zinc-300 hover:bg-zinc-800/80";
 }
 
 function getDifferenceClassName(value: number) {
@@ -82,7 +82,7 @@ function getDifferenceClassName(value: number) {
 	if (value < 0) {
 		return "text-sm font-medium text-rose-300";
 	}
-	return "text-sm font-medium text-gray-300";
+	return "text-sm font-medium text-zinc-300";
 }
 
 function formatSignedCurrency(value: number) {
@@ -264,10 +264,10 @@ export function ShiftsPage() {
 		const idPrefix = isMobile ? "mobile-" : "";
 		const inputClassName = `${
 			isMobile ? "h-11" : "h-9"
-		} border-gray-700 bg-black/20 text-white placeholder:text-gray-500`;
+		} border-zinc-700 bg-black/20 text-white placeholder:text-zinc-500`;
 		const selectClassName = `${
 			isMobile ? "h-11" : "h-9"
-		} w-full border-gray-700 bg-black/20 text-white`;
+		} w-full border-zinc-700 bg-black/20 text-white`;
 
 		return (
 			<div className={isMobile ? "space-y-4" : "grid gap-4 md:grid-cols-2"}>
@@ -284,7 +284,7 @@ export function ShiftsPage() {
 						>
 							<SelectValue placeholder="Todos" />
 						</SelectTrigger>
-						<SelectContent className="border-gray-800 bg-[var(--color-carbon)] text-white">
+						<SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
 							<SelectItem value={ALL_FILTER_VALUE}>Todos</SelectItem>
 							{filterOptions.cashiers.map((cashier) => (
 								<SelectItem key={cashier.id} value={cashier.id}>
@@ -308,7 +308,7 @@ export function ShiftsPage() {
 						>
 							<SelectValue placeholder="Todas" />
 						</SelectTrigger>
-						<SelectContent className="border-gray-800 bg-[var(--color-carbon)] text-white">
+						<SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
 							<SelectItem value={ALL_FILTER_VALUE}>Todas</SelectItem>
 							{filterOptions.terminals.map((terminal) => (
 								<SelectItem key={terminal} value={terminal}>
@@ -332,7 +332,7 @@ export function ShiftsPage() {
 						>
 							<SelectValue placeholder="Todos" />
 						</SelectTrigger>
-						<SelectContent className="border-gray-800 bg-[var(--color-carbon)] text-white">
+						<SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
 							<SelectItem value={ALL_FILTER_VALUE}>Todos</SelectItem>
 							{filterOptions.paymentMethods.map((pm) => (
 								<SelectItem key={pm.id} value={pm.id}>
@@ -361,7 +361,7 @@ export function ShiftsPage() {
 						>
 							<SelectValue placeholder="Todas" />
 						</SelectTrigger>
-						<SelectContent className="border-gray-800 bg-[var(--color-carbon)] text-white">
+						<SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
 							<SelectItem value={ALL_FILTER_VALUE}>Todas</SelectItem>
 							<SelectItem value="short">Faltante</SelectItem>
 							<SelectItem value="over">Sobrante</SelectItem>
@@ -386,7 +386,7 @@ export function ShiftsPage() {
 						>
 							<SelectValue placeholder="Todos" />
 						</SelectTrigger>
-						<SelectContent className="border-gray-800 bg-[var(--color-carbon)] text-white">
+						<SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
 							<SelectItem value={ALL_FILTER_VALUE}>Todos</SelectItem>
 							<SelectItem value="yes">Con movimientos</SelectItem>
 							<SelectItem value="no">Sin movimientos</SelectItem>
@@ -418,13 +418,13 @@ export function ShiftsPage() {
 	};
 
 	return (
-		<main className="flex-1 flex flex-col space-y-6 bg-[var(--color-void)] p-6 text-[var(--color-photon)] md:p-8 lg:p-12 font-sans min-h-0 overflow-hidden">
+		<main className="flex-1 flex flex-col gap-6 bg-[var(--color-void)] p-6 text-[var(--color-photon)] md:p-8 lg:p-12 font-sans min-h-0 overflow-hidden">
 			<div className="shrink-0 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
 				<div className="flex items-baseline gap-3">
-					<h1 className="text-3xl font-bold tracking-tight text-white">
+					<h1 className="text-3xl font-semibold tracking-tight text-white">
 						Turnos y cierres de caja
 					</h1>
-					<span className="text-sm text-gray-400">
+					<span className="text-sm text-zinc-400">
 						{formatCount(shifts.length)} turnos •{" "}
 						{formatCurrency(summary.expectedCash)}
 					</span>
@@ -434,7 +434,7 @@ export function ShiftsPage() {
 					<Button
 						asChild
 						variant="outline"
-						className="h-10 w-full shrink-0 rounded-lg border-gray-800 bg-[var(--color-carbon)] px-4 py-2 text-gray-300 hover:bg-white/5 hover:text-white sm:w-auto"
+						className="h-10 w-full shrink-0 rounded-lg border-zinc-800 bg-[var(--color-carbon)] px-4 py-2 text-zinc-300 hover:bg-white/5 hover:text-white sm:w-auto"
 					>
 						<Link href="/dashboard">Ver dashboard</Link>
 					</Button>
@@ -443,7 +443,7 @@ export function ShiftsPage() {
 						className="h-10 w-full shrink-0 rounded-lg bg-[var(--color-voltage)] px-4 py-2 font-semibold text-black hover:bg-[#c9e605] sm:w-auto"
 					>
 						<Link href="/pos">
-							<Store className="mr-2 h-4 w-4" aria-hidden="true" />
+							<Store className="mr-2 size-4" aria-hidden="true" />
 							Ir al POS
 						</Link>
 					</Button>
@@ -473,12 +473,12 @@ export function ShiftsPage() {
 				/>
 			</div>
 
-			<div className="flex-1 flex flex-col min-h-0 overflow-hidden rounded-xl border border-gray-800 bg-[var(--color-carbon)]">
-				<div className="shrink-0 flex flex-col gap-4 border-b border-gray-800 p-4 lg:flex-row lg:items-center lg:justify-between">
+			<div className="flex-1 flex flex-col min-h-0 overflow-hidden rounded-xl border border-zinc-800 bg-[var(--color-carbon)]">
+				<div className="shrink-0 flex flex-col gap-4 border-b border-zinc-800 p-4 lg:flex-row lg:items-center lg:justify-between">
 					<div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center w-full">
 						<div className="relative w-full sm:max-w-xs md:max-w-sm">
 							<Search
-								className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500"
+								className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-zinc-500"
 								aria-hidden="true"
 							/>
 							<Input
@@ -488,7 +488,7 @@ export function ShiftsPage() {
 									setSearchQuery(event.target.value)
 								}
 								placeholder="Cajero, terminal o id…"
-								className="h-10 rounded-lg border-gray-800 bg-black/20 pl-9 focus-visible:border-[var(--color-voltage)] focus-visible:ring-[var(--color-voltage)]/20"
+								className="h-10 rounded-lg border-zinc-800 bg-black/20 pl-9 focus-visible:border-[var(--color-voltage)] focus-visible:ring-[var(--color-voltage)]/20"
 							/>
 						</div>
 
@@ -503,11 +503,11 @@ export function ShiftsPage() {
 							>
 								<SelectTrigger
 									id={statusId}
-									className="h-10 w-full rounded-lg border-gray-800 bg-black/20 text-white"
+									className="h-10 w-full rounded-lg border-zinc-800 bg-black/20 text-white"
 								>
 									<SelectValue placeholder="Estado" />
 								</SelectTrigger>
-								<SelectContent className="border-gray-800 bg-[var(--color-carbon)] text-white">
+								<SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
 									<SelectItem value={ALL_FILTER_VALUE}>
 										Todos
 									</SelectItem>
@@ -525,10 +525,10 @@ export function ShiftsPage() {
 								<Button
 									type="button"
 									variant="outline"
-									className="h-10 w-full rounded-lg border-gray-800 bg-black/20 text-gray-300 hover:bg-white/5 hover:text-white sm:hidden"
+									className="h-10 w-full rounded-lg border-zinc-800 bg-black/20 text-zinc-300 hover:bg-white/5 hover:text-white sm:hidden"
 								>
 									<Filter
-										className="mr-2 h-4 w-4"
+										className="mr-2 size-4"
 										aria-hidden="true"
 									/>
 									Filtros
@@ -541,23 +541,23 @@ export function ShiftsPage() {
 							</SheetTrigger>
 							<SheetContent
 								side="bottom"
-								className="h-[85vh] rounded-t-xl border-gray-800 bg-[var(--color-carbon)] text-white"
+								className="h-[85vh] rounded-t-xl border-zinc-800 bg-[var(--color-carbon)] text-white"
 								showCloseButton={false}
 							>
-								<SheetHeader className="border-b border-gray-800 pb-4">
-									<SheetTitle className="text-gray-200">
+								<SheetHeader className="border-b border-zinc-800 pb-4">
+									<SheetTitle className="text-zinc-200">
 										Filtros avanzados
 									</SheetTitle>
 								</SheetHeader>
-								<div className="flex-1 overflow-y-auto px-4 py-4">
+								<div className="flex-1 overflow-y-auto p-4">
 									{renderAdvancedFilters("mobile")}
 								</div>
-								<div className="grid grid-cols-2 gap-3 border-t border-gray-800 p-4">
+								<div className="grid grid-cols-2 gap-3 border-t border-zinc-800 p-4">
 									<Button
 										type="button"
 										variant="outline"
 										onClick={clearFilters}
-										className="border-gray-700 bg-transparent text-gray-200 hover:bg-white/5 hover:text-white"
+										className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5 hover:text-white"
 									>
 										Limpiar
 									</Button>
@@ -580,10 +580,10 @@ export function ShiftsPage() {
 								<Button
 									type="button"
 									variant="outline"
-									className="hidden h-10 rounded-lg border-gray-800 bg-black/20 text-gray-300 hover:bg-white/5 hover:text-white sm:inline-flex"
+									className="hidden h-10 rounded-lg border-zinc-800 bg-black/20 text-zinc-300 hover:bg-white/5 hover:text-white sm:inline-flex"
 								>
 									<Filter
-										className="mr-2 h-4 w-4"
+										className="mr-2 size-4"
 										aria-hidden="true"
 									/>
 									Filtros
@@ -596,10 +596,10 @@ export function ShiftsPage() {
 							</PopoverTrigger>
 							<PopoverContent
 								align="start"
-								className="z-50 w-[600px] rounded-xl border-gray-800 bg-[var(--color-carbon)] p-4 text-white shadow-xl"
+								className="z-50 w-[600px] rounded-xl border-zinc-800 bg-[var(--color-carbon)] p-4 text-white shadow-xl"
 							>
 								<div className="space-y-4">
-									<h4 className="text-sm font-medium text-gray-200">
+									<h4 className="text-sm font-medium text-zinc-200">
 										Filtros avanzados
 									</h4>
 									{renderAdvancedFilters("desktop")}
@@ -623,7 +623,7 @@ export function ShiftsPage() {
 								type="button"
 								variant="ghost"
 								onClick={clearFilters}
-								className="h-10 text-gray-400 hover:text-white"
+								className="h-10 text-zinc-400 hover:text-white"
 							>
 								Limpiar
 							</Button>
@@ -634,20 +634,20 @@ export function ShiftsPage() {
 				<div className="flex-1 overflow-y-auto min-h-0 p-4">
 					<div className="space-y-4">
 						{shiftsQuery.isLoading && !shiftsQuery.isPlaceholderData ? (
-							<div className="rounded-xl border border-dashed border-gray-800 px-4 py-16 text-center text-sm text-gray-500">
+							<div className="rounded-xl border border-dashed border-zinc-800 px-4 py-16 text-center text-sm text-zinc-500">
 								Cargando turnos…
 							</div>
 						) : shiftsQuery.isError ? (
 							<div className="rounded-xl border border-dashed border-rose-800 px-4 py-16 text-center text-sm text-rose-300">
 								<p className="font-medium">Error al cargar turnos</p>
-								<p className="mt-1 text-xs text-gray-400">
+								<p className="mt-1 text-xs text-zinc-400">
 									{shiftsQuery.error?.message ?? "Intenta de nuevo más tarde."}
 								</p>
 								<Button
 									type="button"
 									variant="outline"
 									onClick={() => shiftsQuery.refetch()}
-									className="mt-4 border-gray-700 bg-transparent text-gray-200 hover:bg-white/5 hover:text-white"
+									className="mt-4 border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5 hover:text-white"
 								>
 									Reintentar
 								</Button>
@@ -656,12 +656,12 @@ export function ShiftsPage() {
 							shifts.map((shift) => (
 								<div
 									key={shift.id}
-									className="overflow-hidden rounded-xl border border-gray-800 bg-black/10 transition-colors hover:border-gray-700 hover:bg-white/5"
+									className="overflow-hidden rounded-xl border border-zinc-800 bg-black/10 transition-colors hover:border-zinc-700 hover:bg-white/5"
 								>
-									<div className="flex flex-col gap-4 border-b border-gray-800/50 bg-black/20 p-4 sm:flex-row sm:items-center sm:justify-between">
+									<div className="flex flex-col gap-4 border-b border-zinc-800/50 bg-black/20 p-4 sm:flex-row sm:items-center sm:justify-between">
 										<div className="flex items-center gap-4">
-											<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-gray-800 bg-[var(--color-carbon)] text-gray-400">
-												<User className="h-4 w-4" />
+											<div className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-zinc-800 bg-[var(--color-carbon)] text-zinc-400">
+												<User className="size-4" />
 											</div>
 											<div className="min-w-0">
 												<div className="flex flex-wrap items-center gap-2">
@@ -673,17 +673,17 @@ export function ShiftsPage() {
 													>
 														{formatShiftStatus(shift.status)}
 													</Badge>
-													<span className="font-mono text-xs text-gray-500">
+													<span className="font-mono text-xs text-zinc-500">
 														#{shift.id.slice(0, 8)}
 													</span>
 												</div>
-												<p className="mt-0.5 truncate text-xs text-gray-400">
+												<p className="mt-0.5 truncate text-xs text-zinc-400">
 													{shift.terminalName ?? "Caja principal"}
 												</p>
 											</div>
 										</div>
 										<div className="shrink-0 text-left sm:text-right">
-											<p className="text-sm font-medium text-gray-300">
+											<p className="text-sm font-medium text-zinc-300">
 												{formatShiftRange(
 													shift.openedAt,
 													shift.closedAt,
@@ -691,7 +691,7 @@ export function ShiftsPage() {
 											</p>
 											{shift.notes ? (
 												<p
-													className="mt-1 max-w-[280px] truncate text-xs text-gray-500 sm:ml-auto"
+													className="mt-1 max-w-[280px] truncate text-xs text-zinc-500 sm:ml-auto"
 													title={shift.notes}
 													>
 													{shift.notes}
@@ -700,15 +700,15 @@ export function ShiftsPage() {
 										</div>
 									</div>
 
-									<div className="grid grid-cols-1 divide-y divide-gray-800/50 lg:grid-cols-3 lg:divide-x lg:divide-y-0">
+									<div className="grid grid-cols-1 divide-y divide-zinc-800/50 lg:grid-cols-3 lg:divide-x lg:divide-y-0">
 										<div className="p-4">
-											<h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
+											<h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-500">
 												Operaciones
 											</h4>
 											<div className="space-y-3">
 												<div className="grid grid-cols-2 gap-4">
 													<div>
-														<p className="text-xs text-gray-500">
+														<p className="text-xs text-zinc-500">
 															Pagadas (
 															{formatCount(
 																shift.operations.paidSalesCount,
@@ -721,7 +721,7 @@ export function ShiftsPage() {
 														</p>
 													</div>
 													<div>
-														<p className="text-xs text-gray-500">
+														<p className="text-xs text-zinc-500">
 															A crédito (
 															{formatCount(
 																shift.operations.creditSalesCount,
@@ -734,16 +734,16 @@ export function ShiftsPage() {
 														</p>
 													</div>
 												</div>
-												<div className="border-t border-gray-800/50 pt-2">
+												<div className="border-t border-zinc-800/50 pt-2">
 													<div className="flex items-center justify-between">
-														<span className="text-xs text-gray-400">
+														<span className="text-xs text-zinc-400">
 															Anuladas (
 															{formatCount(
 																shift.operations
 																	.cancelledSalesCount,
 															)})
 														</span>
-														<span className="text-xs text-gray-300">
+														<span className="text-xs text-zinc-300">
 															{formatCurrency(
 																shift.operations
 																	.cancelledSalesAmount,
@@ -755,13 +755,13 @@ export function ShiftsPage() {
 										</div>
 
 										<div className="bg-black/5 p-4">
-											<h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
+											<h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-500">
 												Valores Esperados
 											</h4>
 											<div className="space-y-3">
 												<div className="flex items-end justify-between">
 													<div>
-														<p className="text-xs text-gray-500">
+														<p className="text-xs text-zinc-500">
 															Efectivo Total
 														</p>
 														<p className="text-base font-semibold text-emerald-400">
@@ -769,7 +769,7 @@ export function ShiftsPage() {
 																shift.totals.expectedCash,
 															)}
 														</p>
-														<p className="text-xs text-gray-500">
+														<p className="text-xs text-zinc-500">
 															Base:{" "}
 															{formatCurrency(
 																shift.startingCash,
@@ -777,7 +777,7 @@ export function ShiftsPage() {
 														</p>
 													</div>
 													<div className="text-right">
-														<p className="text-xs text-gray-500">
+														<p className="text-xs text-zinc-500">
 															Otros Pagos (
 															{formatCount(
 																shift.payments.length,
@@ -791,20 +791,20 @@ export function ShiftsPage() {
 													</div>
 												</div>
 												{shift.paymentBreakdown.length > 0 && (
-													<div className="space-y-1.5 border-t border-gray-800/50 pt-2">
+													<div className="space-y-1.5 border-t border-zinc-800/50 pt-2">
 														{shift.paymentBreakdown.map(
 															(pm) => (
 																<div
 																	key={pm.method}
 																	className="flex items-center justify-between text-xs"
 																>
-																	<span className="text-gray-400">
+																	<span className="text-zinc-400">
 																		{formatPaymentMethodLabel(
 																			pm.method,
 																			paymentMethodLabels,
 																		)}
 																	</span>
-																	<span className="font-medium text-gray-300">
+																	<span className="font-medium text-zinc-300">
 																		{formatCurrency(
 																			pm.amount,
 																		)}
@@ -819,7 +819,7 @@ export function ShiftsPage() {
 
 										<div className="bg-black/10 p-4">
 											<div className="mb-3 flex items-center justify-between">
-												<h4 className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+												<h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
 													Cierre y Conciliación
 												</h4>
 												{shift.closures.length > 0 && (
@@ -847,7 +847,7 @@ export function ShiftsPage() {
 																}
 																className="flex items-center justify-between text-xs"
 															>
-																<span className="text-gray-300">
+																<span className="text-zinc-300">
 																	{formatPaymentMethodLabel(
 																		closure.paymentMethod,
 																		paymentMethodLabels,
@@ -859,7 +859,7 @@ export function ShiftsPage() {
 																			closure.actualAmount,
 																		)}
 																	</span>
-																	<span className="text-gray-500 text-[10px]">
+																	<span className="text-zinc-500 text-[10px]">
 																		vs{" "}
 																		{formatCurrency(
 																			closure.expectedAmount,
@@ -871,15 +871,15 @@ export function ShiftsPage() {
 													)}
 												</div>
 											) : (
-												<p className="text-xs italic text-gray-500">
+												<p className="text-xs italic text-zinc-500">
 													El turno sigue abierto o aún no
 													tiene conciliación registrada.
 												</p>
 											)}
 
 											{shift.movements.length > 0 && (
-												<div className="mt-4 border-t border-gray-800/50 pt-3">
-													<p className="mb-2 text-[10px] font-medium uppercase tracking-wider text-gray-500">
+												<div className="mt-4 border-t border-zinc-800/50 pt-3">
+													<p className="mb-2 text-[10px] font-medium uppercase tracking-wider text-zinc-500">
 														Movimientos de caja (
 														{shift.movements.length})
 													</p>
@@ -894,7 +894,7 @@ export function ShiftsPage() {
 																	className="flex items-start justify-between gap-2 text-xs"
 																>
 																	<span
-																		className="line-clamp-2 break-words text-gray-400"
+																		className="line-clamp-2 break-words text-zinc-400"
 																		title={
 																			m.description
 																		}
@@ -923,7 +923,7 @@ export function ShiftsPage() {
 															))}
 														{shift.movements.length >
 															3 && (
-																<p className="mt-1 text-[10px] italic text-gray-500">
+																<p className="mt-1 text-[10px] italic text-zinc-500">
 																	+{" "}
 																	{shift.movements
 																		.length - 3}{" "}
@@ -939,7 +939,7 @@ export function ShiftsPage() {
 								</div>
 							))
 						) : (
-							<div className="rounded-xl border border-dashed border-gray-800 px-4 py-16 text-center text-sm text-gray-500">
+							<div className="rounded-xl border border-dashed border-zinc-800 px-4 py-16 text-center text-sm text-zinc-500">
 								No hay turnos que coincidan con los filtros
 								actuales.
 							</div>
@@ -947,7 +947,7 @@ export function ShiftsPage() {
 					</div>
 				</div>
 
-				<div className="shrink-0 flex flex-col items-center justify-between gap-4 border-t border-gray-800 bg-black/10 p-4 text-sm text-gray-400 sm:flex-row">
+				<div className="shrink-0 flex flex-col items-center justify-between gap-4 border-t border-zinc-800 bg-black/10 p-4 text-sm text-zinc-400 sm:flex-row">
 					<div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-start">
 						<div className="flex items-center gap-2">
 							<span>Mostrar</span>
@@ -958,10 +958,10 @@ export function ShiftsPage() {
 									setCursor(0);
 								}}
 							>
-								<SelectTrigger className="h-8 w-[70px] rounded-md border-gray-700 bg-[var(--color-carbon)] text-white">
+								<SelectTrigger className="h-8 w-[70px] rounded-md border-zinc-700 bg-[var(--color-carbon)] text-white">
 									<SelectValue placeholder={pageSize} />
 								</SelectTrigger>
-								<SelectContent className="border-gray-800 bg-[var(--color-carbon)] text-white">
+								<SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
 									{[10, 20, 30, 40, 50].map((size) => (
 										<SelectItem key={size} value={`${size}`}>
 											{size}
@@ -985,7 +985,7 @@ export function ShiftsPage() {
 							onClick={() =>
 								updatePagination(Math.max(cursor - pageSize, 0))
 							}
-							className="h-8 rounded-md border-gray-700 bg-[var(--color-carbon)] px-3 text-gray-300 hover:bg-white/5 hover:text-white"
+							className="h-8 rounded-md border-zinc-700 bg-[var(--color-carbon)] px-3 text-zinc-300 hover:bg-white/5 hover:text-white"
 						>
 							Anterior
 						</Button>
@@ -1018,12 +1018,12 @@ function CompactMetricCard({
 	icon: typeof Receipt;
 }) {
 	return (
-		<div className="flex items-center gap-3 rounded-xl border border-gray-800 bg-[var(--color-carbon)] p-4">
-			<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[var(--color-voltage)]/20 bg-[var(--color-voltage)]/10 text-[var(--color-voltage)]">
-				<Icon className="h-5 w-5" aria-hidden="true" />
+		<div className="flex items-center gap-3 rounded-xl border border-zinc-800 bg-[var(--color-carbon)] p-4">
+			<div className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-[var(--color-voltage)]/20 bg-[var(--color-voltage)]/10 text-[var(--color-voltage)]">
+				<Icon className="size-5" aria-hidden="true" />
 			</div>
 			<div className="min-w-0">
-				<p className="truncate text-xs font-medium text-gray-400">
+				<p className="truncate text-xs font-medium text-zinc-400">
 					{title}
 				</p>
 				<p className="truncate text-lg font-semibold tabular-nums text-white">
@@ -1045,7 +1045,7 @@ function FilterField({
 }) {
 	return (
 		<div className="space-y-2">
-			<label className="text-sm text-gray-400" htmlFor={htmlFor}>
+			<label className="text-sm text-zinc-400" htmlFor={htmlFor}>
 				{label}
 			</label>
 			{children}

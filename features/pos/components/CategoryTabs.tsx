@@ -15,7 +15,7 @@ export function CategoryTabs({
 }: CategoryTabsProps) {
 	return (
 		<ScrollArea className="w-full whitespace-nowrap">
-			<div className="flex w-max space-x-1.5 pb-2">
+			<div className="flex w-max gap-x-1.5 pb-2">
 				{categories.map((category) => (
 					<Button
 						key={category.id}
@@ -24,7 +24,7 @@ export function CategoryTabs({
 						className={`rounded-lg px-4 h-8 text-sm font-medium transition-all ${
 							activeCategoryId === category.id
 								? "bg-[var(--color-voltage)] text-black hover:bg-[#c9e605] border-transparent shadow-sm"
-								: "bg-transparent border-gray-800 text-gray-400 hover:text-white hover:bg-gray-800"
+								: "bg-transparent border-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-800"
 							}`}
 					>
 						{category.name}

@@ -13,9 +13,13 @@ function toSingleLine(value: string) {
 }
 
 function toList(values: Array<string | null | undefined>) {
-	return values
-		.map((value) => (typeof value === "string" ? toSingleLine(value) : ""))
-		.filter((value) => value.length > 0);
+	return values.reduce<string[]>((acc, value) => {
+		if (typeof value === "string") {
+			const trimmed = toSingleLine(value);
+			if (trimmed.length > 0) acc.push(trimmed);
+		}
+		return acc;
+	}, []);
 }
 
 function addDivider(encoder: ReceiptPrinterEncoder) {

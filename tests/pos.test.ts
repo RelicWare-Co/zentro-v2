@@ -149,29 +149,31 @@ describe("POS checkout", () => {
       const client = createServerORPCClient(ctx);
 
       // Seed categories
-      const catA = await seedCategory(db, { organizationId, name: "Drinks" });
-      const catB = await seedCategory(db, { organizationId, name: "Food" });
+      const [catA, catB] = await Promise.all([
+        seedCategory(db, { organizationId, name: "Drinks" }),
+        seedCategory(db, { organizationId, name: "Food" }),
+      ]);
 
       // Seed modifier product
-      const modifierId = await seedProduct(db, {
-        organizationId,
-        name: "Extra Cheese",
-        price: 2000,
-        isModifier: true,
-        trackInventory: false,
-        stock: 0,
-      });
-
-      // Seed regular product (should not appear in modifierProducts)
-      await seedProduct(db, {
-        organizationId,
-        categoryId: catA,
-        name: "Soda",
-        price: 5000,
-        isModifier: false,
-        trackInventory: true,
-        stock: 20,
-      });
+      const [modifierId] = await Promise.all([
+        seedProduct(db, {
+          organizationId,
+          name: "Extra Cheese",
+          price: 2000,
+          isModifier: true,
+          trackInventory: false,
+          stock: 0,
+        }),
+        seedProduct(db, {
+          organizationId,
+          categoryId: catA,
+          name: "Soda",
+          price: 5000,
+          isModifier: false,
+          trackInventory: true,
+          stock: 20,
+        }),
+      ]);
 
       // Open shift
       const shiftOpen = await client.shifts.open({ startingCash: 0 });
@@ -218,15 +220,17 @@ describe("POS checkout", () => {
       const client = createServerORPCClient(ctx);
 
       // Seed 5 products
-      for (let i = 1; i <= 5; i++) {
-        await seedProduct(db, {
-          organizationId,
-          name: `Product ${i}`,
-          price: i * 1000,
-          trackInventory: true,
-          stock: 10,
-        });
-      }
+      await Promise.all(
+        Array.from({ length: 5 }, (_, i) =>
+          seedProduct(db, {
+            organizationId,
+            name: `Product ${i + 1}`,
+            price: (i + 1) * 1000,
+            trackInventory: true,
+            stock: 10,
+          }),
+        ),
+      );
 
       // Page 1: limit 2
       const page1 = await client.pos.searchProducts({ limit: 2, cursor: 0 });
@@ -256,27 +260,32 @@ describe("POS checkout", () => {
       const ctx = buildMockContext(db, u, organizationId);
       const client = createServerORPCClient(ctx);
 
-      const catA = await seedCategory(db, { organizationId, name: "CatA" });
-      const catB = await seedCategory(db, { organizationId, name: "CatB" });
+      const [catA, catB] = await Promise.all([
+        seedCategory(db, { organizationId, name: "CatA" }),
+        seedCategory(db, { organizationId, name: "CatB" }),
+      ]);
 
-      const prodA = await seedProduct(db, {
-        organizationId,
-        categoryId: catA,
-        name: "Alpha",
-        price: 1000,
-      });
-      const prodB = await seedProduct(db, {
-        organizationId,
-        categoryId: catB,
-        name: "Beta",
-        price: 2000,
-      });
+      const [prodA, prodB] = await Promise.all([
+        seedProduct(db, {
+          organizationId,
+          categoryId: catA,
+          name: "Alpha",
+          price: 1000,
+        }),
+        seedProduct(db, {
+          organizationId,
+          categoryId: catB,
+          name: "Beta",
+          price: 2000,
+        }),
+      ]);
 
-      const resultA = await client.pos.searchProducts({ categoryId: catA });
+      const [resultA, resultB] = await Promise.all([
+        client.pos.searchProducts({ categoryId: catA }),
+        client.pos.searchProducts({ categoryId: catB }),
+      ]);
       expect(resultA.data.length).toBe(1);
       expect(resultA.data[0].id).toBe(prodA);
-
-      const resultB = await client.pos.searchProducts({ categoryId: catB });
       expect(resultB.data.length).toBe(1);
       expect(resultB.data[0].id).toBe(prodB);
 
@@ -371,16 +380,16 @@ describe("POS checkout", () => {
         trackInventory: true,
       });
 
-      // Verify product appears in search
-      const searchResult = await client.pos.searchProducts({ searchQuery: "Coffee" });
+      // Verify product appears in search and check stock before
+      const [searchResult, beforeStock] = await Promise.all([
+        client.pos.searchProducts({ searchQuery: "Coffee" }),
+        db
+          .select({ stock: product.stock })
+          .from(product)
+          .where(eq(product.id, productId)),
+      ]);
       expect(searchResult.data.length).toBe(1);
       expect(searchResult.data[0].id).toBe(productId);
-
-      // Check stock before
-      const beforeStock = await db
-        .select({ stock: product.stock })
-        .from(product)
-        .where(eq(product.id, productId));
       expect(beforeStock[0].stock).toBe(50);
 
       // Create sale

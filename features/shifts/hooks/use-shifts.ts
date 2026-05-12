@@ -20,7 +20,7 @@ export function useShiftsList(params: ShiftsListParams = {}) {
 	});
 }
 
-export function useShiftDetail(shiftId: string | null) {
+function useShiftDetail(shiftId: string | null) {
 	return useQuery({
 		...orpcQuery.shifts.detail.queryOptions(
 			shiftId ? { input: { shiftId } } : { input: { shiftId: "" } },

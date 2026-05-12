@@ -32,7 +32,7 @@ type Auth = ReturnType<typeof createAuth>;
 
 let authInstance: Auth | undefined;
 
-export function getAuth(): Auth {
+function getAuth(): Auth {
 	if (authInstance) {
 		return authInstance;
 	}

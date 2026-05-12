@@ -1166,15 +1166,16 @@ async function main() {
 	);
 
 	// Check existing data
-	const existingCategories = await db
-		.select({ count: sql<number>`count(*)` })
-		.from(category)
-		.where(eq(category.organizationId, selectedOrg.id));
-
-	const existingProducts = await db
-		.select({ count: sql<number>`count(*)` })
-		.from(product)
-		.where(eq(product.organizationId, selectedOrg.id));
+	const [existingCategories, existingProducts] = await Promise.all([
+		db
+			.select({ count: sql<number>`count(*)` })
+			.from(category)
+			.where(eq(category.organizationId, selectedOrg.id)),
+		db
+			.select({ count: sql<number>`count(*)` })
+			.from(product)
+			.where(eq(product.organizationId, selectedOrg.id)),
+	]);
 
 	const catCount = existingCategories[0].count;
 	const prodCount = existingProducts[0].count;

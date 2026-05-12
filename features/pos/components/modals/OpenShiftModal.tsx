@@ -41,13 +41,13 @@ export function OpenShiftModal({
 
 	return (
 		<Dialog open={isOpen} onOpenChange={onClose}>
-			<DialogContent className="bg-[#151515] border-gray-800 text-white sm:max-w-[400px]">
+			<DialogContent className="bg-[#151515] border-zinc-800 text-white sm:max-w-[400px]">
 				<DialogHeader>
 					<DialogTitle>Apertura de Turno</DialogTitle>
 				</DialogHeader>
 
 				<div className="py-4">
-					<p className="text-sm text-gray-400 mb-4">
+					<p className="text-sm text-zinc-400 mb-4">
 						Ingresa la base de efectivo inicial en la caja para comenzar a
 						operar.
 					</p>
@@ -55,12 +55,12 @@ export function OpenShiftModal({
 					<div className="grid gap-2">
 						<label
 							htmlFor={startingCashId}
-							className="text-sm font-medium text-gray-300"
+							className="text-sm font-medium text-zinc-300"
 						>
 							Base en Efectivo
 						</label>
 						<div className="relative">
-							<span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+							<span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500">
 								$
 							</span>
 							<Input
@@ -72,7 +72,7 @@ export function OpenShiftModal({
 								onChange={(e) =>
 									setStartingCash(sanitizeMoneyInput(e.target.value))
 								}
-								className="pl-7 bg-[#0a0a0a] border-gray-800 text-white focus-visible:ring-[var(--color-voltage)] text-lg h-12"
+								className="pl-7 bg-[#0a0a0a] border-zinc-800 text-white focus-visible:ring-[var(--color-voltage)] text-lg h-12"
 							/>
 						</div>
 					</div>
@@ -80,7 +80,7 @@ export function OpenShiftModal({
 					<div className="grid gap-2 mt-4">
 						<label
 							htmlFor={openShiftNotesId}
-							className="text-sm font-medium text-gray-300"
+							className="text-sm font-medium text-zinc-300"
 						>
 							Notas del turno
 						</label>
@@ -89,7 +89,7 @@ export function OpenShiftModal({
 							placeholder="Opcional: observaciones de apertura"
 							value={openShiftNotes}
 							onChange={(event) => setOpenShiftNotes(event.target.value)}
-							className="min-h-[72px] bg-[#0a0a0a] border-gray-800 text-white focus-visible:ring-[var(--color-voltage)]"
+							className="min-h-[72px] bg-[#0a0a0a] border-zinc-800 text-white focus-visible:ring-[var(--color-voltage)]"
 						/>
 					</div>
 
@@ -102,7 +102,7 @@ export function OpenShiftModal({
 					<Button
 						variant="ghost"
 						onClick={onClose}
-						className="text-gray-400 hover:text-white hover:bg-gray-800"
+						className="text-zinc-400 hover:text-white hover:bg-zinc-800"
 					>
 						Cancelar
 					</Button>

@@ -42,8 +42,8 @@ export function ProductListItem({
     >
       {/* Icon */}
       <div className="shrink-0">
-        <div className="flex h-10 w-10 md:h-11 md:w-11 items-center justify-center rounded-lg bg-[#1c1c1c] border border-[rgba(255,255,255,0.06)]">
-          <Package className="h-4 w-4 md:h-5 md:w-5 text-[#3d3d3d]" />
+        <div className="flex size-10 md:h-11 md:w-11 items-center justify-center rounded-lg bg-[#1c1c1c] border border-[rgba(255,255,255,0.06)]">
+          <Package className="size-4 md:h-5 md:w-5 text-[#3d3d3d]" />
         </div>
       </div>
 
@@ -86,7 +86,7 @@ export function ProductListItem({
         >
           <Heart
             className={cn(
-              "h-4 w-4 md:h-5 md:w-5 transition-colors",
+              "size-4 md:h-5 md:w-5 transition-colors",
               product.isFavorite
                 ? "fill-red-500 text-red-500"
                 : "text-[#3d3d3d] hover:text-red-400"

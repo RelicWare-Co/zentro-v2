@@ -80,11 +80,13 @@ export async function openPosCashDrawer(organizationId?: string | null) {
 	return true;
 }
 
-export function buildPosPrinterTestDocument(): ThermalReceiptDocument {
-	const issuedAt = new Intl.DateTimeFormat("es-CO", {
-		dateStyle: "medium",
-		timeStyle: "short",
-	}).format(new Date());
+const dateFormatter = new Intl.DateTimeFormat("es-CO", {
+	dateStyle: "medium",
+	timeStyle: "short",
+});
+
+function buildPosPrinterTestDocument(): ThermalReceiptDocument {
+	const issuedAt = dateFormatter.format(new Date());
 
 	const receipt = {
 		title: "Prueba de impresión",

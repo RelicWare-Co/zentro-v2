@@ -294,19 +294,19 @@ export default function PosPage() {
 				<Drawer open={isMobileCartOpen} onOpenChange={setIsMobileCartOpen}>
 					<DrawerTrigger asChild>
 						<Button
-							className="fixed bottom-4 right-4 z-50 h-14 w-14 rounded-full bg-[var(--color-voltage)] text-black hover:bg-[#c9e605] shadow-lg"
+							className="fixed bottom-4 right-4 z-50 size-14 rounded-full bg-[var(--color-voltage)] text-black hover:bg-[#c9e605] shadow-lg"
 							size="icon"
 						>
-							<ShoppingCart className="h-5 w-5" />
+							<ShoppingCart className="size-5" />
 							{totalItems > 0 && (
-								<span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+								<span className="absolute -top-1 -right-1 flex size-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
 									{totalItems}
 								</span>
 							)}
 						</Button>
 					</DrawerTrigger>
-					<DrawerContent className="bg-[var(--color-carbon)] border-gray-800 text-white max-h-[85dvh]">
-						<DrawerHeader className="border-b border-gray-800">
+					<DrawerContent className="bg-[var(--color-carbon)] border-zinc-800 text-white max-h-[85dvh]">
+						<DrawerHeader className="border-b border-zinc-800">
 							<DrawerTitle>Orden Actual</DrawerTitle>
 						</DrawerHeader>
 						<div className="flex flex-col h-[calc(85dvh-80px)]">

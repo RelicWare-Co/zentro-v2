@@ -21,7 +21,7 @@ export type Database = ReturnType<typeof createDb>;
 
 let dbInstance: Database | undefined;
 
-export function getDb(): Database {
+function getDb(): Database {
 	if (dbInstance) {
 		return dbInstance;
 	}
@@ -36,7 +36,7 @@ export function dbSqlite() {
 }
 
 // Proxy para lazy initialization
-export const db = new Proxy({} as Database, {
+const db = new Proxy({} as Database, {
 	get(_target, property, receiver) {
 		const target = getDb();
 		const value = Reflect.get(target, property, receiver);

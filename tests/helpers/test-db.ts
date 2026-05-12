@@ -28,10 +28,11 @@ export function createTestDb(): CreateTestDbResult {
 
 	// Strip Drizzle breakpoint markers and split into individual statements
 	const cleanedSql = migrationSql.replace(/-->\s*statement-breakpoint/g, "");
-	const statements = cleanedSql
-		.split(";")
-		.map((s) => s.trim())
-		.filter((s) => s.length > 0);
+	const statements = cleanedSql.split(";").reduce<string[]>((acc, s) => {
+		const trimmed = s.trim();
+		if (trimmed.length > 0) acc.push(trimmed);
+		return acc;
+	}, []);
 
 	for (const stmt of statements) {
 		client.execute(stmt);
@@ -49,7 +50,7 @@ export function createTestDb(): CreateTestDbResult {
 	return { db, client, cleanup };
 }
 
-export async function setupTestDb(): Promise<CreateTestDbResult> {
+async function setupTestDb(): Promise<CreateTestDbResult> {
 	const result = createTestDb();
 	return result;
 }

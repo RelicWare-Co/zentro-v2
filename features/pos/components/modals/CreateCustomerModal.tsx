@@ -56,7 +56,7 @@ export function CreateCustomerModal({
 
 	return (
 		<Dialog open={isOpen} onOpenChange={onClose}>
-			<DialogContent className="bg-[#151515] border-gray-800 text-white sm:max-w-[450px]">
+			<DialogContent className="bg-[#151515] border-zinc-800 text-white sm:max-w-[450px]">
 				<DialogHeader>
 					<DialogTitle>Crear cliente rápido</DialogTitle>
 				</DialogHeader>
@@ -65,7 +65,7 @@ export function CreateCustomerModal({
 					<div className="grid gap-2">
 						<label
 							htmlFor={customerNameId}
-							className="text-sm font-medium text-gray-300"
+							className="text-sm font-medium text-zinc-300"
 						>
 							Nombre
 						</label>
@@ -74,14 +74,14 @@ export function CreateCustomerModal({
 							value={name}
 							onChange={(event) => setName(event.target.value)}
 							placeholder="Nombre del cliente"
-							className="bg-[#0a0a0a] border-gray-800 text-white"
+							className="bg-[#0a0a0a] border-zinc-800 text-white"
 						/>
 					</div>
 
 					<div className="grid gap-2">
 						<label
 							htmlFor={customerPhoneId}
-							className="text-sm font-medium text-gray-300"
+							className="text-sm font-medium text-zinc-300"
 						>
 							Teléfono
 						</label>
@@ -90,7 +90,7 @@ export function CreateCustomerModal({
 							value={phone}
 							onChange={(event) => setPhone(event.target.value)}
 							placeholder="Opcional"
-							className="bg-[#0a0a0a] border-gray-800 text-white"
+							className="bg-[#0a0a0a] border-zinc-800 text-white"
 						/>
 					</div>
 
@@ -98,18 +98,18 @@ export function CreateCustomerModal({
 						<div className="grid gap-2">
 							<label
 								htmlFor={customerDocumentTypeId}
-								className="text-sm font-medium text-gray-300"
+								className="text-sm font-medium text-zinc-300"
 							>
 								Tipo doc
 							</label>
 							<Select value={documentType} onValueChange={setDocumentType}>
 								<SelectTrigger
 									id={customerDocumentTypeId}
-									className="h-10 w-full rounded-md border border-gray-800 bg-[#0a0a0a] px-3 py-2 text-sm text-white focus:ring-[var(--color-voltage)] focus:ring-2"
+									className="h-10 w-full rounded-md border border-zinc-800 bg-[#0a0a0a] px-3 py-2 text-sm text-white focus:ring-[var(--color-voltage)] focus:ring-2"
 								>
 									<SelectValue placeholder="Tipo doc" />
 								</SelectTrigger>
-								<SelectContent className="bg-[#0a0a0a] border-gray-800 text-white">
+								<SelectContent className="bg-[#0a0a0a] border-zinc-800 text-white">
 									<SelectItem value="CC">CC</SelectItem>
 									<SelectItem value="NIT">NIT</SelectItem>
 									<SelectItem value="CE">CE</SelectItem>
@@ -121,7 +121,7 @@ export function CreateCustomerModal({
 						<div className="grid gap-2">
 							<label
 								htmlFor={customerDocumentNumberId}
-								className="text-sm font-medium text-gray-300"
+								className="text-sm font-medium text-zinc-300"
 							>
 								Número doc
 							</label>
@@ -130,7 +130,7 @@ export function CreateCustomerModal({
 								value={documentNumber}
 								onChange={(event) => setDocumentNumber(event.target.value)}
 								placeholder="Opcional"
-								className="bg-[#0a0a0a] border-gray-800 text-white"
+								className="bg-[#0a0a0a] border-zinc-800 text-white"
 							/>
 						</div>
 					</div>
@@ -144,7 +144,7 @@ export function CreateCustomerModal({
 					<Button
 						variant="ghost"
 						onClick={onClose}
-						className="text-gray-400 hover:text-white"
+						className="text-zinc-400 hover:text-white"
 					>
 						Cancelar
 					</Button>

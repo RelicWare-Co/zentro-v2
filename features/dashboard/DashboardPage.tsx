@@ -49,8 +49,8 @@ export function DashboardPage() {
 	if (overviewQuery.isPending) {
 		return (
 			<main className="flex-1 overflow-y-auto bg-[var(--color-void)] p-6 text-[var(--color-photon)] md:p-8 lg:p-12">
-				<div className="mx-auto flex min-h-[50vh] max-w-7xl items-center justify-center rounded-xl border border-gray-800 bg-[var(--color-carbon)] p-8 text-sm text-gray-400">
-					Cargando dashboard...
+				<div className="mx-auto flex min-h-[50vh] max-w-7xl items-center justify-center rounded-xl border border-zinc-800 bg-[var(--color-carbon)] p-8 text-sm text-zinc-400">
+					Cargando dashboard…
 				</div>
 			</main>
 		);
@@ -94,7 +94,7 @@ export function DashboardPage() {
 	);
 	const hasTrendData = weeklyRevenue > 0 || weeklySales > 0;
 	const bestDay =
-		[...data.salesTrend].sort(
+		data.salesTrend.toSorted(
 			(left, right) => right.revenue - left.revenue,
 		)[0] ?? null;
 	const paymentTotal = data.paymentMix.reduce(
@@ -102,7 +102,7 @@ export function DashboardPage() {
 		0,
 	);
 	const primaryPaymentMethod =
-		[...data.paymentMix].sort((left, right) => right.amount - left.amount)[0] ??
+		data.paymentMix.toSorted((left, right) => right.amount - left.amount)[0] ??
 		null;
 
 	return (
@@ -110,12 +110,12 @@ export function DashboardPage() {
 			<div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
 				<div>
 					<div className="flex items-baseline gap-3">
-						<h1 className="text-3xl font-bold tracking-tight text-white">
+						<h1 className="text-3xl font-semibold tracking-tight text-white">
 							Panel de control
 						</h1>
-						<span className="text-sm text-gray-400">Resumen operativo</span>
+						<span className="text-sm text-zinc-400">Resumen operativo</span>
 					</div>
-					<p className="mt-2 text-sm text-gray-500">
+					<p className="mt-2 text-sm text-zinc-500">
 						Datos actualizados a las {dateTimeFormatter.format(data.generatedAt)}.
 					</p>
 				</div>
@@ -124,10 +124,10 @@ export function DashboardPage() {
 					<Button
 						asChild
 						variant="outline"
-						className="h-10 w-full border-gray-800 bg-[var(--color-carbon)] px-4 text-gray-300 hover:bg-white/5 hover:text-white sm:w-auto"
+						className="h-10 w-full border-zinc-800 bg-[var(--color-carbon)] px-4 text-zinc-300 hover:bg-white/5 hover:text-white sm:w-auto"
 					>
 						<a href="/products">
-							<Package className="mr-2 h-4 w-4" aria-hidden="true" />
+							<Package className="mr-2 size-4" aria-hidden="true" />
 							Ver inventario
 						</a>
 					</Button>
@@ -136,7 +136,7 @@ export function DashboardPage() {
 						className="h-10 w-full bg-[var(--color-voltage)] px-4 font-semibold text-black hover:bg-[#c9e605] sm:w-auto"
 					>
 						<a href="/pos">
-							<Store className="mr-2 h-4 w-4" aria-hidden="true" />
+							<Store className="mr-2 size-4" aria-hidden="true" />
 							Ir al POS
 						</a>
 					</Button>
@@ -190,19 +190,19 @@ export function DashboardPage() {
 			</section>
 
 			<section className="grid gap-6 xl:grid-cols-[1.6fr_1fr]">
-				<div className="flex flex-col gap-6 rounded-xl border border-gray-800 bg-[var(--color-carbon)] p-5">
+				<div className="flex flex-col gap-6 rounded-xl border border-zinc-800 bg-[var(--color-carbon)] p-5">
 					<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
 						<div>
 							<h2 className="text-base font-semibold text-white">
 								Ventas de los últimos 7 días
 							</h2>
-							<p className="text-sm text-gray-400">
+							<p className="text-sm text-zinc-400">
 								Comportamiento reciente de ingresos y volumen de ventas.
 							</p>
 						</div>
 						<Badge
 							variant="outline"
-							className="self-start border-gray-700 bg-black/20 text-gray-300 sm:self-auto"
+							className="self-start border-zinc-700 bg-black/20 text-zinc-300 sm:self-auto"
 						>
 							{formatCurrency(weeklyRevenue)}
 						</Badge>
@@ -247,24 +247,24 @@ export function DashboardPage() {
 										key={point.dateKey}
 										className="flex h-full min-w-0 flex-col justify-end"
 									>
-										<div className="mb-2 text-center text-[10px] text-gray-500 sm:text-[11px]">
+										<div className="mb-2 text-center text-[10px] text-zinc-500 sm:text-[11px]">
 											{formatCompactCurrency(point.revenue)}
 										</div>
-										<div className="flex h-28 items-end border-b border-gray-800/80 px-1">
+										<div className="flex h-28 items-end border-b border-zinc-800/80 px-1">
 											<div
 												className={
 													point.revenue > 0
 														? "w-full rounded-t-lg bg-gradient-to-t from-[var(--color-voltage)] to-[#f1ff87] shadow-[0_0_20px_rgba(201,230,5,0.12)] transition-all"
-														: "w-full rounded-full bg-gray-800 transition-all"
+														: "w-full rounded-full bg-zinc-800 transition-all"
 												}
 												style={{ height: `${barHeight}%` }}
 											/>
 										</div>
 										<div className="mt-3 text-center">
-											<div className="text-xs font-medium text-gray-300">
+											<div className="text-xs font-medium text-zinc-300">
 												{formatShortDay(point.dateKey)}
 											</div>
-											<div className="mt-1 hidden text-[10px] text-gray-500 sm:block">
+											<div className="mt-1 hidden text-[10px] text-zinc-500 sm:block">
 												{formatCount(point.salesCount)} ventas
 											</div>
 										</div>
@@ -279,12 +279,12 @@ export function DashboardPage() {
 					)}
 				</div>
 
-				<div className="flex flex-col gap-5 rounded-xl border border-gray-800 bg-[var(--color-carbon)] p-5">
+				<div className="flex flex-col gap-5 rounded-xl border border-zinc-800 bg-[var(--color-carbon)] p-5">
 					<div>
 						<h2 className="text-base font-semibold text-white">
 							Operación actual
 						</h2>
-						<p className="text-sm text-gray-400">
+						<p className="text-sm text-zinc-400">
 							Estado del turno y distribución de cobros de hoy.
 						</p>
 					</div>
@@ -292,7 +292,7 @@ export function DashboardPage() {
 					<div className="flex items-start justify-between gap-3">
 						<div>
 							<p className="text-sm font-medium text-white">Turno</p>
-							<p className="mt-1 text-sm text-gray-400">
+							<p className="mt-1 text-sm text-zinc-400">
 								{data.activeShift
 									? `Abierto en ${data.activeShift.terminalName ?? "caja principal"}`
 									: "No hay un turno abierto para este usuario"}
@@ -302,7 +302,7 @@ export function DashboardPage() {
 							className={
 								data.activeShift
 									? "border-0 bg-emerald-500/10 text-emerald-300"
-									: "border-0 bg-gray-800/80 text-gray-300"
+									: "border-0 bg-zinc-800/80 text-zinc-300"
 							}
 						>
 							{data.activeShift ? "Activo" : "Pendiente"}
@@ -310,7 +310,7 @@ export function DashboardPage() {
 					</div>
 
 					{data.activeShift ? (
-						<div className="rounded-xl border border-gray-800/60 bg-black/20 p-2">
+						<div className="rounded-xl border border-zinc-800/60 bg-black/20 p-2">
 							<div className="grid gap-2 sm:grid-cols-2">
 								<MetricItem
 									label="Abierto desde"
@@ -328,19 +328,19 @@ export function DashboardPage() {
 						<Button
 							asChild
 							variant="outline"
-							className="h-9 w-full border-gray-700 bg-transparent text-gray-200 hover:bg-white/5 hover:text-white"
+							className="h-9 w-full border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5 hover:text-white"
 						>
 							<a href="/pos">
 								Abrir caja en POS
-								<ArrowRight className="ml-2 h-4 w-4" />
+								<ArrowRight className="ml-2 size-4" />
 							</a>
 						</Button>
 					)}
 
-					<div className="border-t border-gray-800 pt-4">
+					<div className="border-t border-zinc-800 pt-4">
 						<div className="mb-3 flex items-center justify-between">
 							<p className="text-sm font-medium text-white">Cobros hoy</p>
-							<p className="text-sm text-gray-400">
+							<p className="text-sm text-zinc-400">
 								{formatCurrency(paymentTotal)}
 							</p>
 						</div>
@@ -356,13 +356,13 @@ export function DashboardPage() {
 									return (
 										<div key={paymentMethod.method} className="space-y-1.5">
 											<div className="flex items-center justify-between text-sm">
-												<span className="text-gray-300">
+												<span className="text-zinc-300">
 													{formatPaymentMethod(
 														paymentMethod.method,
 														data.paymentMethodLabels,
 													)}
 												</span>
-												<span className="text-gray-400">
+												<span className="text-zinc-400">
 													{formatCurrency(paymentMethod.amount)}
 												</span>
 											</div>
@@ -375,7 +375,7 @@ export function DashboardPage() {
 										</div>
 									);
 								})}
-								<p className="text-[11px] text-gray-500">
+								<p className="text-[11px] text-zinc-500">
 									Medio principal:{" "}
 									{primaryPaymentMethod
 										? formatPaymentMethod(
@@ -386,13 +386,13 @@ export function DashboardPage() {
 								</p>
 							</div>
 						) : (
-							<div className="rounded-xl border border-dashed border-gray-800 px-4 py-6 text-center text-sm text-gray-500">
+							<div className="rounded-xl border border-dashed border-zinc-800 px-4 py-6 text-center text-sm text-zinc-500">
 								Aún no hay cobros registrados hoy.
 							</div>
 						)}
 					</div>
 
-					<div className="rounded-xl border border-gray-800/60 bg-black/20 p-2">
+					<div className="rounded-xl border border-zinc-800/60 bg-black/20 p-2">
 						<div className="grid gap-2 sm:grid-cols-2">
 							<MetricItem
 								label="Clientes activos"
@@ -410,23 +410,23 @@ export function DashboardPage() {
 					<Button
 						asChild
 						variant="outline"
-						className="h-10 w-full border-gray-700 bg-transparent text-gray-200 hover:bg-white/5 hover:text-white"
+						className="h-10 w-full border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5 hover:text-white"
 					>
 						<a href="/shifts">
 							Ver turnos y cierres
-							<ArrowRight className="ml-2 h-4 w-4" />
+							<ArrowRight className="ml-2 size-4" />
 						</a>
 					</Button>
 				</div>
 			</section>
 
 			<section className="grid gap-6 xl:grid-cols-2">
-				<div className="flex flex-col gap-5 rounded-xl border border-gray-800 bg-[var(--color-carbon)] p-5">
+				<div className="flex flex-col gap-5 rounded-xl border border-zinc-800 bg-[var(--color-carbon)] p-5">
 					<div>
 						<h2 className="text-base font-semibold text-white">
 							Productos más vendidos
 						</h2>
-						<p className="text-sm text-gray-400">
+						<p className="text-sm text-zinc-400">
 							Top de los últimos 30 días para vigilar rotación y stock.
 						</p>
 					</div>
@@ -435,7 +435,7 @@ export function DashboardPage() {
 							{data.topProducts.map((productItem, index) => (
 								<div
 									key={productItem.productId}
-									className="flex items-center justify-between gap-4 rounded-xl border border-gray-800 bg-black/10 px-4 py-3 transition-colors hover:bg-white/5"
+									className="flex items-center justify-between gap-4 rounded-xl border border-zinc-800 bg-black/10 px-4 py-3 transition-colors hover:bg-white/5"
 								>
 									<div className="min-w-0">
 										<div className="mb-0.5 flex items-center gap-2">
@@ -446,7 +446,7 @@ export function DashboardPage() {
 												{productItem.name}
 											</p>
 										</div>
-										<p className="text-xs text-gray-400">
+										<p className="text-xs text-zinc-400">
 											{formatCount(productItem.quantitySold)} uds. vendidas
 										</p>
 									</div>
@@ -454,7 +454,7 @@ export function DashboardPage() {
 										<p className="text-sm font-medium text-white">
 											{formatCurrency(productItem.revenue)}
 										</p>
-										<p className="text-xs text-gray-500">
+										<p className="text-xs text-zinc-500">
 											Stock: {formatCount(productItem.stock)}
 										</p>
 									</div>
@@ -468,12 +468,12 @@ export function DashboardPage() {
 					)}
 				</div>
 
-				<div className="flex flex-col gap-5 rounded-xl border border-gray-800 bg-[var(--color-carbon)] p-5">
+				<div className="flex flex-col gap-5 rounded-xl border border-zinc-800 bg-[var(--color-carbon)] p-5">
 					<div>
 						<h2 className="text-base font-semibold text-white">
 							Alertas operativas
 						</h2>
-						<p className="text-sm text-gray-400">
+						<p className="text-sm text-zinc-400">
 							Señales clave para actuar antes de que afecten la operación.
 						</p>
 					</div>
@@ -489,7 +489,7 @@ export function DashboardPage() {
 										en riesgo.
 									</p>
 								</div>
-								<AlertTriangle className="h-5 w-5 text-amber-400" />
+								<AlertTriangle className="size-5 text-amber-400" />
 							</div>
 						</div>
 
@@ -504,7 +504,7 @@ export function DashboardPage() {
 										en {formatCount(data.stats.creditAccountsCount)} cuentas.
 									</p>
 								</div>
-								<CreditCard className="h-5 w-5 text-sky-400" />
+								<CreditCard className="size-5 text-sky-400" />
 							</div>
 						</div>
 
@@ -513,13 +513,13 @@ export function DashboardPage() {
 								{data.lowStockProducts.map((productItem) => (
 									<div
 										key={productItem.id}
-										className="flex items-center justify-between gap-4 rounded-xl border border-gray-800 bg-black/10 px-4 py-3 transition-colors hover:bg-white/5"
+										className="flex items-center justify-between gap-4 rounded-xl border border-zinc-800 bg-black/10 px-4 py-3 transition-colors hover:bg-white/5"
 									>
 										<div className="min-w-0">
 											<p className="truncate text-sm font-medium text-white">
 												{productItem.name}
 											</p>
-											<p className="text-xs text-gray-500">
+											<p className="text-xs text-zinc-500">
 												{productItem.categoryName ?? "Sin categoría"}
 											</p>
 										</div>
@@ -537,12 +537,12 @@ export function DashboardPage() {
 			</section>
 
 			<section>
-				<div className="flex flex-col gap-5 rounded-xl border border-gray-800 bg-[var(--color-carbon)] p-5">
+				<div className="flex flex-col gap-5 rounded-xl border border-zinc-800 bg-[var(--color-carbon)] p-5">
 					<div>
 						<h2 className="text-base font-semibold text-white">
 							Ventas recientes
 						</h2>
-						<p className="text-sm text-gray-400">
+						<p className="text-sm text-zinc-400">
 							Actividad más reciente para validar montos, tiempos y tipo de
 							venta.
 						</p>
@@ -552,7 +552,7 @@ export function DashboardPage() {
 							{data.recentSales.map((recentSale) => (
 								<div
 									key={recentSale.id}
-									className="flex flex-col gap-3 rounded-xl border border-gray-800 bg-black/10 px-4 py-3 transition-colors hover:bg-white/5 sm:flex-row sm:items-center sm:justify-between"
+									className="flex flex-col gap-3 rounded-xl border border-zinc-800 bg-black/10 px-4 py-3 transition-colors hover:bg-white/5 sm:flex-row sm:items-center sm:justify-between"
 								>
 									<div className="min-w-0">
 										<div className="flex items-center gap-2">
@@ -565,7 +565,7 @@ export function DashboardPage() {
 												{formatSaleStatus(recentSale.status)}
 											</Badge>
 										</div>
-										<p className="mt-1 text-[11px] text-gray-500">
+										<p className="mt-1 text-[11px] text-zinc-500">
 											{dateTimeFormatter.format(recentSale.createdAt)}
 										</p>
 									</div>
@@ -598,13 +598,13 @@ function CompactStatCard({
 	icon: typeof Receipt;
 }) {
 	return (
-		<div className="flex flex-col justify-between gap-2 rounded-xl border border-gray-800 bg-[var(--color-carbon)] p-3 sm:gap-3 sm:p-4">
+		<div className="flex flex-col justify-between gap-2 rounded-xl border border-zinc-800 bg-[var(--color-carbon)] p-3 sm:gap-3 sm:p-4">
 			<div className="flex items-center gap-2 sm:gap-3">
-				<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[var(--color-voltage)]/20 bg-[var(--color-voltage)]/10 text-[var(--color-voltage)] sm:h-10 sm:w-10">
-					<Icon className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
+				<div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-[var(--color-voltage)]/20 bg-[var(--color-voltage)]/10 text-[var(--color-voltage)] sm:h-10 sm:w-10">
+					<Icon className="size-4 sm:h-5 sm:w-5" aria-hidden="true" />
 				</div>
 				<div className="min-w-0 flex-1">
-					<p className="truncate text-[10px] font-medium uppercase tracking-wider text-gray-500 sm:text-[11px]">
+					<p className="truncate text-[10px] font-medium uppercase tracking-wider text-zinc-500 sm:text-[11px]">
 						{title}
 					</p>
 					<p className="mt-0.5 truncate text-base font-semibold tabular-nums text-white sm:text-lg">
@@ -615,10 +615,10 @@ function CompactStatCard({
 			{description || highlight ? (
 				<div className="hidden text-[11px] sm:block">
 					{description ? (
-						<p className="truncate text-gray-400">{description}</p>
+						<p className="truncate text-zinc-400">{description}</p>
 					) : null}
 					{highlight ? (
-						<p className="mt-0.5 truncate text-gray-500">{highlight}</p>
+						<p className="mt-0.5 truncate text-zinc-500">{highlight}</p>
 					) : null}
 				</div>
 			) : null}
@@ -636,10 +636,10 @@ function MiniMetric({
 	description: string;
 }) {
 	return (
-		<div className="rounded-xl border border-gray-800 bg-black/20 p-4">
-			<p className="text-sm text-gray-400">{label}</p>
+		<div className="rounded-xl border border-zinc-800 bg-black/20 p-4">
+			<p className="text-sm text-zinc-400">{label}</p>
 			<p className="mt-2 text-lg font-semibold text-white">{value}</p>
-			<p className="mt-1 text-xs text-gray-500">{description}</p>
+			<p className="mt-1 text-xs text-zinc-500">{description}</p>
 		</div>
 	);
 }
@@ -655,16 +655,16 @@ function MetricItem({
 }) {
 	return (
 		<div className="p-3">
-			<p className="text-sm text-gray-400">{label}</p>
+			<p className="text-sm text-zinc-400">{label}</p>
 			<p className="mt-1 text-base font-semibold text-white">{value}</p>
-			<p className="text-xs text-gray-500">{description}</p>
+			<p className="text-xs text-zinc-500">{description}</p>
 		</div>
 	);
 }
 
 function EmptyState({ children }: { children: string }) {
 	return (
-		<div className="rounded-xl border border-dashed border-gray-800 px-4 py-8 text-center text-sm text-gray-500">
+		<div className="rounded-xl border border-dashed border-zinc-800 px-4 py-8 text-center text-sm text-zinc-500">
 			{children}
 		</div>
 	);
@@ -750,5 +750,5 @@ function getSaleStatusBadgeClass(status: string) {
 		return "bg-rose-500/10 text-rose-300 hover:bg-rose-500/10";
 	}
 
-	return "bg-gray-800/80 text-gray-300 hover:bg-gray-800/80";
+	return "bg-zinc-800/80 text-zinc-300 hover:bg-zinc-800/80";
 }

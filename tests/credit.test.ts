@@ -23,25 +23,27 @@ describe("credit ledger", () => {
     test("search returns customer info and current balance", async () => {
       const { db, cleanup } = createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const productId = await seedProduct(db, {
-        organizationId,
-        name: "Widget",
-        price: 10000,
-        stock: 10,
-        trackInventory: true,
-      });
-      const customerId = await seedCustomer(db, {
-        organizationId,
-        name: "Alice",
-        documentNumber: "123456",
-        phone: "3001234567",
-        email: "alice@example.com",
-      });
-      const shiftId = await seedShift(db, {
-        organizationId,
-        userId,
-        status: "open",
-      });
+      const [productId, customerId, shiftId] = await Promise.all([
+        seedProduct(db, {
+          organizationId,
+          name: "Widget",
+          price: 10000,
+          stock: 10,
+          trackInventory: true,
+        }),
+        seedCustomer(db, {
+          organizationId,
+          name: "Alice",
+          documentNumber: "123456",
+          phone: "3001234567",
+          email: "alice@example.com",
+        }),
+        seedShift(db, {
+          organizationId,
+          userId,
+          status: "open",
+        }),
+      ]);
 
       await createCoreSale(
         {
@@ -109,14 +111,16 @@ describe("credit ledger", () => {
     test("search filters by customer name", async () => {
       const { db, cleanup } = createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const customerA = await seedCustomer(db, {
-        organizationId,
-        name: "Alice",
-      });
-      const customerB = await seedCustomer(db, {
-        organizationId,
-        name: "Bob",
-      });
+      const [customerA, customerB] = await Promise.all([
+        seedCustomer(db, {
+          organizationId,
+          name: "Alice",
+        }),
+        seedCustomer(db, {
+          organizationId,
+          name: "Bob",
+        }),
+      ]);
 
       const now = new Date();
       await db.insert(creditAccount).values([
@@ -230,22 +234,24 @@ describe("credit ledger", () => {
     test("payment decreases balance and creates linked transaction", async () => {
       const { db, cleanup } = createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const productId = await seedProduct(db, {
-        organizationId,
-        name: "Widget",
-        price: 20000,
-        stock: 10,
-        trackInventory: true,
-      });
-      const customerId = await seedCustomer(db, {
-        organizationId,
-        name: "Alice",
-      });
-      const shiftId = await seedShift(db, {
-        organizationId,
-        userId,
-        status: "open",
-      });
+      const [productId, customerId, shiftId] = await Promise.all([
+        seedProduct(db, {
+          organizationId,
+          name: "Widget",
+          price: 20000,
+          stock: 10,
+          trackInventory: true,
+        }),
+        seedCustomer(db, {
+          organizationId,
+          name: "Alice",
+        }),
+        seedShift(db, {
+          organizationId,
+          userId,
+          status: "open",
+        }),
+      ]);
 
       const saleResult = await createCoreSale(
         {
@@ -336,22 +342,24 @@ describe("credit ledger", () => {
     test("partial payment keeps sale in credit status", async () => {
       const { db, cleanup } = createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const productId = await seedProduct(db, {
-        organizationId,
-        name: "Widget",
-        price: 20000,
-        stock: 10,
-        trackInventory: true,
-      });
-      const customerId = await seedCustomer(db, {
-        organizationId,
-        name: "Alice",
-      });
-      const shiftId = await seedShift(db, {
-        organizationId,
-        userId,
-        status: "open",
-      });
+      const [productId, customerId, shiftId] = await Promise.all([
+        seedProduct(db, {
+          organizationId,
+          name: "Widget",
+          price: 20000,
+          stock: 10,
+          trackInventory: true,
+        }),
+        seedCustomer(db, {
+          organizationId,
+          name: "Alice",
+        }),
+        seedShift(db, {
+          organizationId,
+          userId,
+          status: "open",
+        }),
+      ]);
 
       const saleResult = await createCoreSale(
         {

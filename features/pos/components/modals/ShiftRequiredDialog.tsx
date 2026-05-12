@@ -22,15 +22,15 @@ export function ShiftRequiredDialog({
 }: ShiftRequiredDialogProps) {
 	return (
 		<Dialog open={isOpen} onOpenChange={onClose}>
-			<DialogContent className="bg-[#151515] border-gray-800 text-white sm:max-w-[420px]">
+			<DialogContent className="bg-[#151515] border-zinc-800 text-white sm:max-w-[420px]">
 				<DialogHeader>
 					<div className="flex items-center gap-3">
-						<div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-500/15 text-amber-400">
-							<AlertCircle className="h-5 w-5" />
+						<div className="flex size-10 items-center justify-center rounded-full bg-amber-500/15 text-amber-400">
+							<AlertCircle className="size-5" />
 						</div>
 						<div className="space-y-1">
 							<DialogTitle>Turno cerrado</DialogTitle>
-							<DialogDescription className="text-gray-400">
+							<DialogDescription className="text-zinc-400">
 								Debes tener un turno abierto para poder vender productos.
 							</DialogDescription>
 						</div>
@@ -45,7 +45,7 @@ export function ShiftRequiredDialog({
 					<Button
 						variant="ghost"
 						onClick={onClose}
-						className="text-gray-400 hover:text-white hover:bg-gray-800"
+						className="text-zinc-400 hover:text-white hover:bg-zinc-800"
 					>
 						Entendido
 					</Button>

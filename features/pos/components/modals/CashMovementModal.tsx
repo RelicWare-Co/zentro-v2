@@ -62,7 +62,7 @@ export function CashMovementModal({
 
 	return (
 		<Dialog open={isOpen} onOpenChange={onClose}>
-			<DialogContent className="bg-[#151515] border-gray-800 text-white sm:max-w-[425px]">
+			<DialogContent className="bg-[#151515] border-zinc-800 text-white sm:max-w-[425px]">
 				<DialogHeader>
 					<DialogTitle>Movimiento del Turno</DialogTitle>
 				</DialogHeader>
@@ -77,7 +77,7 @@ export function CashMovementModal({
 					<div className="grid gap-2">
 						<label
 							htmlFor={movementTypeId}
-							className="text-sm font-medium text-gray-300"
+							className="text-sm font-medium text-zinc-300"
 						>
 							Tipo de Movimiento
 						</label>
@@ -89,11 +89,11 @@ export function CashMovementModal({
 						>
 							<SelectTrigger
 								id={movementTypeId}
-								className="h-10 w-full rounded-md border border-gray-800 bg-[#0a0a0a] px-3 py-2 text-sm text-white focus:ring-[var(--color-voltage)] focus:ring-2"
+								className="h-10 w-full rounded-md border border-zinc-800 bg-[#0a0a0a] px-3 py-2 text-sm text-white focus:ring-[var(--color-voltage)] focus:ring-2"
 							>
 								<SelectValue placeholder="Tipo de Movimiento" />
 							</SelectTrigger>
-							<SelectContent className="bg-[#0a0a0a] border-gray-800 text-white">
+							<SelectContent className="bg-[#0a0a0a] border-zinc-800 text-white">
 								<SelectItem value="inflow">Ingreso (Entrada manual)</SelectItem>
 								<SelectItem value="expense">Gasto Operativo</SelectItem>
 								<SelectItem value="payout">Pago a Proveedor</SelectItem>
@@ -104,7 +104,7 @@ export function CashMovementModal({
 					<div className="grid gap-2">
 						<label
 							htmlFor={movementPaymentMethodId}
-							className="text-sm font-medium text-gray-300"
+							className="text-sm font-medium text-zinc-300"
 						>
 							Método Afectado
 						</label>
@@ -114,11 +114,11 @@ export function CashMovementModal({
 						>
 							<SelectTrigger
 								id={movementPaymentMethodId}
-								className="h-10 w-full rounded-md border border-gray-800 bg-[#0a0a0a] px-3 py-2 text-sm text-white focus:ring-[var(--color-voltage)] focus:ring-2"
+								className="h-10 w-full rounded-md border border-zinc-800 bg-[#0a0a0a] px-3 py-2 text-sm text-white focus:ring-[var(--color-voltage)] focus:ring-2"
 							>
 								<SelectValue placeholder="Método de Pago" />
 							</SelectTrigger>
-							<SelectContent className="bg-[#0a0a0a] border-gray-800 text-white">
+							<SelectContent className="bg-[#0a0a0a] border-zinc-800 text-white">
 								{paymentMethodOptions.map((paymentMethod) => (
 									<SelectItem key={paymentMethod.id} value={paymentMethod.id}>
 										{paymentMethod.label}
@@ -131,7 +131,7 @@ export function CashMovementModal({
 					<div className="grid gap-2">
 						<label
 							htmlFor={movementAmountId}
-							className="text-sm font-medium text-gray-300"
+							className="text-sm font-medium text-zinc-300"
 						>
 							Monto
 						</label>
@@ -144,14 +144,14 @@ export function CashMovementModal({
 							onChange={(e) =>
 								setMovementAmount(sanitizeMoneyInput(e.target.value))
 							}
-							className="bg-[#0a0a0a] border-gray-800 text-white focus-visible:ring-[var(--color-voltage)]"
+							className="bg-[#0a0a0a] border-zinc-800 text-white focus-visible:ring-[var(--color-voltage)]"
 						/>
 					</div>
 
 					<div className="grid gap-2">
 						<label
 							htmlFor={movementDescriptionId}
-							className="text-sm font-medium text-gray-300"
+							className="text-sm font-medium text-zinc-300"
 						>
 							Descripción
 						</label>
@@ -160,7 +160,7 @@ export function CashMovementModal({
 							placeholder="Ej. Pago de internet, Base adicional..."
 							value={movementDescription}
 							onChange={(e) => setMovementDescription(e.target.value)}
-							className="bg-[#0a0a0a] border-gray-800 text-white focus-visible:ring-[var(--color-voltage)]"
+							className="bg-[#0a0a0a] border-zinc-800 text-white focus-visible:ring-[var(--color-voltage)]"
 						/>
 					</div>
 
@@ -173,7 +173,7 @@ export function CashMovementModal({
 					<Button
 						variant="ghost"
 						onClick={onClose}
-						className="text-gray-400 hover:text-white hover:bg-gray-800"
+						className="text-zinc-400 hover:text-white hover:bg-zinc-800"
 					>
 						Cancelar
 					</Button>

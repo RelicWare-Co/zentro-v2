@@ -49,8 +49,8 @@ export function ProductGridCard({
         )}
 
         {/* Icon centered */}
-        <div className="flex h-11 w-11 md:h-12 md:w-12 items-center justify-center rounded-lg bg-[#1c1c1c] border border-[rgba(255,255,255,0.06)] mb-3">
-          <Package className="h-4 w-4 md:h-5 md:w-5 text-[#3d3d3d]" />
+        <div className="flex size-11 md:h-12 md:w-12 items-center justify-center rounded-lg bg-[#1c1c1c] border border-[rgba(255,255,255,0.06)] mb-3">
+          <Package className="size-4 md:h-5 md:w-5 text-[#3d3d3d]" />
         </div>
 
         {/* Name centered */}
@@ -90,7 +90,7 @@ export function ProductGridCard({
             >
               <Heart
                 className={cn(
-                  "h-3.5 w-3.5 transition-colors",
+                  "size-3.5 transition-colors",
                   product.isFavorite
                     ? "fill-red-500 text-red-500"
                     : "text-[#3d3d3d] hover:text-red-400"

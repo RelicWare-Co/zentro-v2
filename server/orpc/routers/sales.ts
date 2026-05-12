@@ -300,9 +300,10 @@ export const list = orgRequiredProcedure.list.handler(
 				nextCursor,
 				filterOptions: {
 					cashiers: cashierRows,
-					terminals: terminalRows
-						.map((t) => t.name)
-						.filter((t): t is string => Boolean(t)),
+					terminals: terminalRows.reduce<string[]>((acc, t) => {
+						if (t.name) acc.push(t.name);
+						return acc;
+					}, []),
 					paymentMethods,
 				},
 			};
@@ -339,18 +340,16 @@ export const list = orgRequiredProcedure.list.handler(
 
 		const paymentsBySaleId = new Map<
 			string,
-			{ paidAmount: number; paymentMethods: string[] }
+			{ paidAmount: number; paymentMethods: Set<string> }
 		>();
 		for (const paymentRow of paymentRows) {
 			if (!paymentRow.saleId) continue;
 			const current = paymentsBySaleId.get(paymentRow.saleId) ?? {
 				paidAmount: 0,
-				paymentMethods: [],
+				paymentMethods: new Set(),
 			};
 			current.paidAmount += normalizeNumber(paymentRow.amount);
-			if (!current.paymentMethods.includes(paymentRow.method)) {
-				current.paymentMethods.push(paymentRow.method);
-			}
+			current.paymentMethods.add(paymentRow.method);
 			paymentsBySaleId.set(paymentRow.saleId, current);
 		}
 
@@ -385,7 +384,9 @@ export const list = orgRequiredProcedure.list.handler(
 						row.status === "cancelled"
 							? 0
 							: Math.max(totalAmount - paidAmount, 0),
-					paymentMethods: paymentSummary?.paymentMethods ?? [],
+					paymentMethods: paymentSummary?.paymentMethods
+						? [...paymentSummary.paymentMethods]
+						: [],
 				};
 			}),
 			total: normalizeNumber(totalRows[0]?.total),
@@ -393,9 +394,10 @@ export const list = orgRequiredProcedure.list.handler(
 			nextCursor,
 			filterOptions: {
 				cashiers: cashierRows,
-				terminals: terminalRows
-					.map((t) => t.name)
-					.filter((t): t is string => Boolean(t)),
+				terminals: terminalRows.reduce<string[]>((acc, t) => {
+					if (t.name) acc.push(t.name);
+					return acc;
+				}, []),
 				paymentMethods,
 			},
 		};
@@ -715,31 +717,33 @@ export const cancel = orgRequiredProcedure.cancel.handler(
 				});
 			}
 
-			const chargeTransactions = await tx
-				.select({
-					id: creditTransaction.id,
-					creditAccountId: creditTransaction.creditAccountId,
-					amount: creditTransaction.amount,
-				})
-				.from(creditTransaction)
-				.where(
-					and(
-						eq(creditTransaction.organizationId, organizationId),
-						eq(creditTransaction.saleId, targetSale.id),
-						eq(creditTransaction.type, "charge"),
+			const [chargeTransactions, paymentTransactions] = await Promise.all([
+				tx
+					.select({
+						id: creditTransaction.id,
+						creditAccountId: creditTransaction.creditAccountId,
+						amount: creditTransaction.amount,
+					})
+					.from(creditTransaction)
+					.where(
+						and(
+							eq(creditTransaction.organizationId, organizationId),
+							eq(creditTransaction.saleId, targetSale.id),
+							eq(creditTransaction.type, "charge"),
+						),
 					),
-				);
-			const paymentTransactions = await tx
-				.select({ id: creditTransaction.id })
-				.from(creditTransaction)
-				.where(
-					and(
-						eq(creditTransaction.organizationId, organizationId),
-						eq(creditTransaction.saleId, targetSale.id),
-						eq(creditTransaction.type, "payment"),
-					),
-				)
-				.limit(1);
+				tx
+					.select({ id: creditTransaction.id })
+					.from(creditTransaction)
+					.where(
+						and(
+							eq(creditTransaction.organizationId, organizationId),
+							eq(creditTransaction.saleId, targetSale.id),
+							eq(creditTransaction.type, "payment"),
+						),
+					)
+					.limit(1),
+			]);
 
 			if (paymentTransactions.length > 0) {
 				throw new ORPCError("BAD_REQUEST", {
@@ -757,56 +761,58 @@ export const cancel = orgRequiredProcedure.cancel.handler(
 				});
 			}
 
-			const saleItemRows = await tx
-				.select({
-					productId: saleItem.productId,
-					quantity: saleItem.quantity,
-					productName: product.name,
-					trackInventory: product.trackInventory,
-				})
-				.from(saleItem)
-				.innerJoin(
-					product,
-					and(
-						eq(product.id, saleItem.productId),
-						eq(product.organizationId, organizationId),
+			const [saleItemRows, saleModifierRows] = await Promise.all([
+				tx
+					.select({
+						productId: saleItem.productId,
+						quantity: saleItem.quantity,
+						productName: product.name,
+						trackInventory: product.trackInventory,
+					})
+					.from(saleItem)
+					.innerJoin(
+						product,
+						and(
+							eq(product.id, saleItem.productId),
+							eq(product.organizationId, organizationId),
+						),
+					)
+					.where(
+						and(
+							eq(saleItem.organizationId, organizationId),
+							eq(saleItem.saleId, targetSale.id),
+						),
 					),
-				)
-				.where(
-					and(
-						eq(saleItem.organizationId, organizationId),
-						eq(saleItem.saleId, targetSale.id),
+				tx
+					.select({
+						productId: saleItemModifier.modifierProductId,
+						baseQuantity: saleItem.quantity,
+						modifierQuantity: saleItemModifier.quantity,
+						productName: product.name,
+						trackInventory: product.trackInventory,
+					})
+					.from(saleItemModifier)
+					.innerJoin(
+						saleItem,
+						and(
+							eq(saleItem.id, saleItemModifier.saleItemId),
+							eq(saleItem.organizationId, organizationId),
+						),
+					)
+					.innerJoin(
+						product,
+						and(
+							eq(product.id, saleItemModifier.modifierProductId),
+							eq(product.organizationId, organizationId),
+						),
+					)
+					.where(
+						and(
+							eq(saleItemModifier.organizationId, organizationId),
+							eq(saleItem.saleId, targetSale.id),
+						),
 					),
-				);
-			const saleModifierRows = await tx
-				.select({
-					productId: saleItemModifier.modifierProductId,
-					baseQuantity: saleItem.quantity,
-					modifierQuantity: saleItemModifier.quantity,
-					productName: product.name,
-					trackInventory: product.trackInventory,
-				})
-				.from(saleItemModifier)
-				.innerJoin(
-					saleItem,
-					and(
-						eq(saleItem.id, saleItemModifier.saleItemId),
-						eq(saleItem.organizationId, organizationId),
-					),
-				)
-				.innerJoin(
-					product,
-					and(
-						eq(product.id, saleItemModifier.modifierProductId),
-						eq(product.organizationId, organizationId),
-					),
-				)
-				.where(
-					and(
-						eq(saleItemModifier.organizationId, organizationId),
-						eq(saleItem.saleId, targetSale.id),
-					),
-				);
+			]);
 
 			const stockRestorations = new Map<
 				string,
@@ -831,32 +837,41 @@ export const cancel = orgRequiredProcedure.cancel.handler(
 				});
 			}
 
-			const inventoryRows: Array<typeof inventoryMovement.$inferInsert> = [];
+			const entriesToRestore = [];
 			for (const [productId, restoration] of stockRestorations.entries()) {
 				if (!restoration.trackInventory || restoration.quantity <= 0) {
 					continue;
 				}
+				entriesToRestore.push({ productId, restoration });
+			}
 
-				const updatedProducts = await tx
-					.update(product)
-					.set({
-						stock: sql`${product.stock} + ${restoration.quantity}`,
-					})
-					.where(
-						and(
-							eq(product.id, productId),
-							eq(product.organizationId, organizationId),
-						),
-					)
-					.returning({ id: product.id });
+			const restoreResults = await Promise.all(
+				entriesToRestore.map(({ productId, restoration }) =>
+					tx
+						.update(product)
+						.set({
+							stock: sql`${product.stock} + ${restoration.quantity}`,
+						})
+						.where(
+							and(
+								eq(product.id, productId),
+								eq(product.organizationId, organizationId),
+							),
+						)
+						.returning({ id: product.id })
+						.then((updatedProducts) => {
+							if (updatedProducts.length === 0) {
+								throw new ORPCError("BAD_REQUEST", {
+									message: `No fue posible restaurar el stock de ${restoration.productName}`,
+								});
+							}
+							return { productId, restoration };
+						}),
+				),
+			);
 
-				if (updatedProducts.length === 0) {
-					throw new ORPCError("BAD_REQUEST", {
-						message: `No fue posible restaurar el stock de ${restoration.productName}`,
-					});
-				}
-
-				inventoryRows.push({
+			const inventoryRows: Array<typeof inventoryMovement.$inferInsert> =
+				restoreResults.map(({ productId, restoration }) => ({
 					id: crypto.randomUUID(),
 					organizationId,
 					productId,
@@ -865,54 +880,55 @@ export const cancel = orgRequiredProcedure.cancel.handler(
 					quantity: restoration.quantity,
 					notes: `Anulacion venta ${targetSale.id}`,
 					createdAt: cancelledAt,
-				});
-			}
+				}));
 
 			if (inventoryRows.length > 0) {
 				await tx.insert(inventoryMovement).values(inventoryRows);
 			}
 
-			for (const chargeTransaction of chargeTransactions) {
-				const [creditAccountRow] = await tx
-					.select({
-						id: creditAccount.id,
-						balance: creditAccount.balance,
-					})
-					.from(creditAccount)
-					.where(
-						and(
-							eq(creditAccount.id, chargeTransaction.creditAccountId),
-							eq(creditAccount.organizationId, organizationId),
-						),
-					)
-					.limit(1);
+			await Promise.all(
+				chargeTransactions.map(async (chargeTransaction) => {
+					const [creditAccountRow] = await tx
+						.select({
+							id: creditAccount.id,
+							balance: creditAccount.balance,
+						})
+						.from(creditAccount)
+						.where(
+							and(
+								eq(creditAccount.id, chargeTransaction.creditAccountId),
+								eq(creditAccount.organizationId, organizationId),
+							),
+						)
+						.limit(1);
 
-				if (!creditAccountRow) {
-					throw new ORPCError("NOT_FOUND", {
-						message:
-							"Cuenta de crédito no encontrada para anular la venta",
-					});
-				}
-				if (creditAccountRow.balance < chargeTransaction.amount) {
-					throw new ORPCError("BAD_REQUEST", {
-						message:
-							"La cuenta de crédito ya no coincide con la deuda de esta venta",
-					});
-				}
+					if (!creditAccountRow) {
+						throw new ORPCError("NOT_FOUND", {
+							message:
+								"Cuenta de crédito no encontrada para anular la venta",
+						});
+					}
+					if (creditAccountRow.balance < chargeTransaction.amount) {
+						throw new ORPCError("BAD_REQUEST", {
+							message:
+								"La cuenta de crédito ya no coincide con la deuda de esta venta",
+						});
+					}
 
-				await tx
-					.update(creditAccount)
-					.set({
-						balance: creditAccountRow.balance - chargeTransaction.amount,
-						updatedAt: cancelledAt,
-					})
-					.where(
-						and(
-							eq(creditAccount.id, creditAccountRow.id),
-							eq(creditAccount.organizationId, organizationId),
-						),
-					);
-			}
+					await tx
+						.update(creditAccount)
+						.set({
+							balance: creditAccountRow.balance - chargeTransaction.amount,
+							updatedAt: cancelledAt,
+						})
+						.where(
+							and(
+								eq(creditAccount.id, creditAccountRow.id),
+								eq(creditAccount.organizationId, organizationId),
+							),
+						);
+				}),
+			);
 
 			await tx
 				.update(sale)

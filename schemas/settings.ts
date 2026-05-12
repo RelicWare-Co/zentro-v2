@@ -19,14 +19,14 @@ const paymentMethodIdSchema = z
 		message: "El identificador del método de pago es inválido",
 	});
 
-export const PaymentMethodSettingsSchema = z.object({
+const PaymentMethodSettingsSchema = z.object({
 	id: paymentMethodIdSchema,
 	label: z.string().trim().min(1).max(40),
 	enabled: z.boolean(),
 	requiresReference: z.boolean(),
 });
 
-export const PaymentMethodsSchema = z
+const PaymentMethodsSchema = z
 	.array(PaymentMethodSettingsSchema)
 	.min(1)
 	.superRefine((paymentMethods, ctx) => {
@@ -73,7 +73,7 @@ export const PaymentMethodsSchema = z
 		}
 	});
 
-export const OrganizationSettingsSchema = z.object({
+const OrganizationSettingsSchema = z.object({
 	modules: z.object({
 		restaurants: restaurantModuleToggleSettingsSchema,
 	}),

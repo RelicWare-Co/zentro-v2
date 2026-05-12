@@ -2,9 +2,9 @@ import { z } from "zod";
 
 const NullableStringSchema = z.string().trim().optional().nullable();
 
-export const SaleStatusSchema = z.enum(["completed", "credit", "cancelled"]);
+const SaleStatusSchema = z.enum(["completed", "credit", "cancelled"]);
 
-export const SaleBalanceStatusSchema = z.enum(["with_balance", "settled"]);
+const SaleBalanceStatusSchema = z.enum(["with_balance", "settled"]);
 
 export const ListSalesInputSchema = z.object({
 	limit: z.number().int().min(1).max(100).optional(),
@@ -21,7 +21,7 @@ export const ListSalesInputSchema = z.object({
 	endDate: z.string().optional().nullable(),
 });
 
-export const SaleListItemSchema = z.object({
+const SaleListItemSchema = z.object({
 	id: z.string(),
 	totalAmount: z.number(),
 	status: z.string(),
@@ -35,7 +35,7 @@ export const SaleListItemSchema = z.object({
 	paymentMethods: z.string().array(),
 });
 
-export const FilterOptionsSchema = z.object({
+const FilterOptionsSchema = z.object({
 	cashiers: z.array(
 		z.object({
 			id: z.string(),
@@ -63,7 +63,7 @@ export const GetSaleByIdInputSchema = z.object({
 	saleId: z.string().trim().min(1),
 });
 
-export const SaleDetailPaymentSchema = z.object({
+const SaleDetailPaymentSchema = z.object({
 	id: z.string(),
 	method: z.string(),
 	reference: z.string().nullable(),
@@ -73,7 +73,7 @@ export const SaleDetailPaymentSchema = z.object({
 	notes: z.string().nullable(),
 });
 
-export const SaleDetailItemModifierSchema = z.object({
+const SaleDetailItemModifierSchema = z.object({
 	id: z.string(),
 	modifierProductId: z.string(),
 	name: z.string(),
@@ -82,7 +82,7 @@ export const SaleDetailItemModifierSchema = z.object({
 	subtotal: z.number(),
 });
 
-export const SaleDetailItemSchema = z.object({
+const SaleDetailItemSchema = z.object({
 	id: z.string(),
 	productId: z.string(),
 	name: z.string(),
@@ -96,7 +96,7 @@ export const SaleDetailItemSchema = z.object({
 	modifiers: SaleDetailItemModifierSchema.array(),
 });
 
-export const SaleDetailCustomerSchema = z.object({
+const SaleDetailCustomerSchema = z.object({
 	id: z.string(),
 	name: z.string(),
 	phone: z.string().nullable(),
@@ -104,13 +104,13 @@ export const SaleDetailCustomerSchema = z.object({
 	documentNumber: z.string().nullable(),
 });
 
-export const SaleDetailCashierSchema = z.object({
+const SaleDetailCashierSchema = z.object({
 	id: z.string(),
 	name: z.string(),
 	email: z.string().nullable(),
 });
 
-export const SaleDetailShiftSchema = z.object({
+const SaleDetailShiftSchema = z.object({
 	id: z.string(),
 	terminalName: z.string().nullable(),
 });
@@ -132,13 +132,13 @@ export const SaleDetailSchema = z.object({
 	items: SaleDetailItemSchema.array(),
 });
 
-export const CreateSaleItemModifierSchema = z.object({
+const CreateSaleItemModifierSchema = z.object({
 	modifierProductId: z.string().trim().min(1),
 	quantity: z.number().int().min(1),
 	unitPrice: z.number().min(0).optional(),
 });
 
-export const CreateSaleItemSchema = z.object({
+const CreateSaleItemSchema = z.object({
 	productId: z.string().trim().min(1),
 	quantity: z.number().int().min(1),
 	unitPrice: z.number().min(0).optional(),
@@ -147,7 +147,7 @@ export const CreateSaleItemSchema = z.object({
 	modifiers: z.array(CreateSaleItemModifierSchema).optional(),
 });
 
-export const CreateSalePaymentSchema = z.object({
+const CreateSalePaymentSchema = z.object({
 	method: z.string().trim().min(1),
 	amount: z.number().int().min(1),
 	reference: NullableStringSchema,

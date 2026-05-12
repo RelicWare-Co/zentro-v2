@@ -35,27 +35,27 @@ export function PosV2Header({
             size="icon"
             onClick={onCashMovement}
             disabled={!activeShift}
-            className="h-9 w-9 md:h-10 md:w-10 rounded-lg text-[#6b6b6b] hover:text-white hover:bg-[rgba(255,255,255,0.06)] disabled:opacity-40"
+            className="size-9 md:h-10 md:w-10 rounded-lg text-[#6b6b6b] hover:text-white hover:bg-[rgba(255,255,255,0.06)] disabled:opacity-40"
           >
-            <ArrowLeftRight className="h-4 w-4 md:h-5 md:w-5" />
+            <ArrowLeftRight className="size-4 md:h-5 md:w-5" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
             onClick={onOpenDrawer}
             disabled={!activeShift}
-            className="h-9 w-9 md:h-10 md:w-10 rounded-lg text-[#6b6b6b] hover:text-white hover:bg-[rgba(255,255,255,0.06)] disabled:opacity-40"
+            className="size-9 md:h-10 md:w-10 rounded-lg text-[#6b6b6b] hover:text-white hover:bg-[rgba(255,255,255,0.06)] disabled:opacity-40"
           >
-            <Printer className="h-4 w-4 md:h-5 md:w-5" />
+            <Printer className="size-4 md:h-5 md:w-5" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
             onClick={onCloseShift}
             disabled={!activeShift}
-            className="h-9 w-9 md:h-10 md:w-10 rounded-lg text-[#ef4444] hover:text-red-400 hover:bg-[rgba(239,68,68,0.1)] disabled:opacity-40"
+            className="size-9 md:h-10 md:w-10 rounded-lg text-[#ef4444] hover:text-red-400 hover:bg-[rgba(239,68,68,0.1)] disabled:opacity-40"
           >
-            <Lock className="h-4 w-4 md:h-5 md:w-5" />
+            <Lock className="size-4 md:h-5 md:w-5" />
           </Button>
         </div>
       </div>

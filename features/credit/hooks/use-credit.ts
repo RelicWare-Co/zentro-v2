@@ -15,7 +15,7 @@ import type {
 
 export type CreditAccount = z.infer<typeof CreditAccountSchema>;
 export type CreditTransaction = z.infer<typeof CreditTransactionSchema>;
-export type RegisterCreditPaymentInput = z.infer<
+type RegisterCreditPaymentInput = z.infer<
 	typeof RegisterCreditPaymentSchema
 >;
 

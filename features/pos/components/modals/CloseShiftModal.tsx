@@ -93,42 +93,42 @@ export function CloseShiftModal({
 
 	return (
 		<Dialog open={isOpen} onOpenChange={onClose}>
-			<DialogContent className="bg-[#151515] border-gray-800 text-white sm:max-w-[500px]">
+			<DialogContent className="bg-[#151515] border-zinc-800 text-white sm:max-w-[500px]">
 				<DialogHeader>
 					<DialogTitle>Cierre de Turno</DialogTitle>
 				</DialogHeader>
 
 				<div className="py-4 space-y-6">
-					<div className="bg-[#0a0a0a] rounded-lg p-4 border border-gray-800">
-						<h4 className="text-sm font-medium text-gray-400 mb-3">
+					<div className="bg-[#0a0a0a] rounded-lg p-4 border border-zinc-800">
+						<h4 className="text-sm font-medium text-zinc-400 mb-3">
 							Resumen del Sistema
 						</h4>
 						{isLoading && (
-							<p className="text-sm text-gray-400">Cargando resumen...</p>
+							<p className="text-sm text-zinc-400">Cargando resumen…</p>
 						)}
 						{shiftCloseSummary && (
 							<div className="space-y-2 text-sm">
 								<div className="flex justify-between">
-									<span className="text-gray-300">Base inicial</span>
+									<span className="text-zinc-300">Base inicial</span>
 									<span className="text-white font-medium tabular-nums">
 										{formatCurrency(shiftCloseSummary.shift.startingCash)}
 									</span>
 								</div>
 								<div className="flex justify-between">
-									<span className="text-gray-300">Efectivo esperado</span>
+									<span className="text-zinc-300">Efectivo esperado</span>
 									<span className="text-white font-medium tabular-nums">
 										{formatCurrency(cashSummary?.expectedAmount ?? 0)}
 									</span>
 								</div>
 								{hasMovementItems ? (
 									<>
-										<Separator className="my-2 border-gray-700" />
+										<Separator className="my-2 border-zinc-700" />
 										<div className="space-y-2">
-											<p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">
+											<p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
 												Movimientos de caja
 											</p>
 											<div className="flex justify-between">
-												<span className="text-gray-300">Ingresos manuales</span>
+												<span className="text-zinc-300">Ingresos manuales</span>
 												<span className="font-medium tabular-nums text-emerald-400">
 													+
 													{formatCurrency(
@@ -137,7 +137,7 @@ export function CloseShiftModal({
 												</span>
 											</div>
 											<div className="flex justify-between">
-												<span className="text-gray-300">Gastos operativos</span>
+												<span className="text-zinc-300">Gastos operativos</span>
 												<span className="font-medium tabular-nums text-red-400">
 													-
 													{formatCurrency(
@@ -146,7 +146,7 @@ export function CloseShiftModal({
 												</span>
 											</div>
 											<div className="flex justify-between">
-												<span className="text-gray-300">Pagos a proveedor</span>
+												<span className="text-zinc-300">Pagos a proveedor</span>
 												<span className="font-medium tabular-nums text-red-400">
 													-
 													{formatCurrency(
@@ -155,7 +155,7 @@ export function CloseShiftModal({
 												</span>
 											</div>
 											<div className="flex justify-between">
-												<span className="text-gray-300">Ajuste neto</span>
+												<span className="text-zinc-300">Ajuste neto</span>
 												<span
 													className={`font-medium tabular-nums ${
 														shiftCloseSummary.movements.totals.net >= 0
@@ -174,19 +174,19 @@ export function CloseShiftModal({
 										</div>
 									</>
 								) : (
-									<p className="text-xs text-gray-500">
+									<p className="text-xs text-zinc-500">
 										No hay movimientos de caja registrados en este turno.
 									</p>
 								)}
 								{nonCashSummaryRows.length > 0 ? (
 									<>
-										<Separator className="my-2 border-gray-700" />
+										<Separator className="my-2 border-zinc-700" />
 										{nonCashSummaryRows.map((row) => (
 											<div
 												key={`expected-${row.paymentMethod}`}
 												className="flex justify-between"
 											>
-												<span className="text-gray-300">
+												<span className="text-zinc-300">
 													{formatPaymentMethodLabel(
 														row.paymentMethod,
 														paymentMethodLabels,
@@ -200,10 +200,10 @@ export function CloseShiftModal({
 									</>
 								) : null}
 								{shouldShowSeparatorBeforeTotal ? (
-									<Separator className="my-2 border-gray-700" />
+									<Separator className="my-2 border-zinc-700" />
 								) : null}
 								<div className="flex justify-between text-base">
-									<span className="text-gray-200 font-semibold">
+									<span className="text-zinc-200 font-semibold">
 										Total Esperado
 									</span>
 									<span className="text-[var(--color-voltage)] font-bold tabular-nums">
@@ -215,21 +215,21 @@ export function CloseShiftModal({
 					</div>
 
 					{hasMovementItems ? (
-						<div className="bg-[#0a0a0a] rounded-lg p-4 border border-gray-800">
-							<h4 className="text-sm font-medium text-gray-400 mb-3">
+						<div className="bg-[#0a0a0a] rounded-lg p-4 border border-zinc-800">
+							<h4 className="text-sm font-medium text-zinc-400 mb-3">
 								Detalle de Movimientos
 							</h4>
 							<div className="space-y-2">
 								{movementItems.map((movement) => (
 									<div
 										key={`${movement.type}-${movement.paymentMethod}-${movement.createdAt}-${movement.description}`}
-										className="flex items-start justify-between gap-3 rounded-md border border-gray-800/80 bg-black/20 px-3 py-2"
+										className="flex items-start justify-between gap-3 rounded-md border border-zinc-800/80 bg-black/20 px-3 py-2"
 									>
 										<div className="min-w-0">
 											<p className="text-sm font-medium text-white">
 												{formatMovementType(movement.type)}
 											</p>
-											<p className="text-xs text-gray-400">
+											<p className="text-xs text-zinc-400">
 												{formatPaymentMethodLabel(
 													movement.paymentMethod,
 													paymentMethodLabels,
@@ -260,7 +260,7 @@ export function CloseShiftModal({
 								<div key={row.paymentMethod} className="grid gap-2">
 									<label
 										htmlFor={`closure-${row.paymentMethod}`}
-										className="text-sm font-medium text-gray-300"
+										className="text-sm font-medium text-zinc-300"
 									>
 										{formatPaymentMethodLabel(
 											row.paymentMethod,
@@ -269,7 +269,7 @@ export function CloseShiftModal({
 										(Esperado: {formatCurrency(row.expectedAmount)})
 									</label>
 									<div className="relative">
-										<span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+										<span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500">
 											$
 										</span>
 										<Input
@@ -288,7 +288,7 @@ export function CloseShiftModal({
 													),
 												}))
 											}
-											className="pl-7 bg-[#0a0a0a] border-gray-800 text-white focus-visible:ring-[var(--color-voltage)]"
+											className="pl-7 bg-[#0a0a0a] border-zinc-800 text-white focus-visible:ring-[var(--color-voltage)]"
 										/>
 									</div>
 									{closureAmounts[row.paymentMethod] && (
@@ -318,7 +318,7 @@ export function CloseShiftModal({
 					<div className="grid gap-2">
 						<label
 							htmlFor={closeShiftNotesId}
-							className="text-sm font-medium text-gray-300"
+							className="text-sm font-medium text-zinc-300"
 						>
 							Notas de cierre
 						</label>
@@ -327,7 +327,7 @@ export function CloseShiftModal({
 							placeholder="Opcional: explica diferencias o novedades del cierre"
 							value={closeShiftNotes}
 							onChange={(event) => setCloseShiftNotes(event.target.value)}
-							className="min-h-[72px] bg-[#0a0a0a] border-gray-800 text-white focus-visible:ring-[var(--color-voltage)]"
+							className="min-h-[72px] bg-[#0a0a0a] border-zinc-800 text-white focus-visible:ring-[var(--color-voltage)]"
 						/>
 					</div>
 
@@ -340,7 +340,7 @@ export function CloseShiftModal({
 					<Button
 						variant="ghost"
 						onClick={onClose}
-						className="text-gray-400 hover:text-white hover:bg-gray-800"
+						className="text-zinc-400 hover:text-white hover:bg-zinc-800"
 					>
 						Cancelar
 					</Button>

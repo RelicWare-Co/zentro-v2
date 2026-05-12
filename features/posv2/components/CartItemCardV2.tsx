@@ -79,7 +79,7 @@ export function CartItemCardV2({
               className="h-7 w-8 flex items-center justify-center text-[#6b6b6b] hover:text-white hover:bg-[rgba(255,255,255,0.08)] rounded-l-lg transition-colors disabled:opacity-50"
               aria-label="Disminuir cantidad"
             >
-              <Minus className="h-3 w-3" />
+              <Minus className="size-3" />
             </button>
             <div className="w-8 text-center text-sm font-semibold text-white">
               {item.quantity}
@@ -90,7 +90,7 @@ export function CartItemCardV2({
               className="h-7 w-8 flex items-center justify-center text-[#6b6b6b] hover:text-white hover:bg-[rgba(255,255,255,0.08)] rounded-r-lg transition-colors"
               aria-label="Aumentar cantidad"
             >
-              <Plus className="h-3 w-3" />
+              <Plus className="size-3" />
             </button>
           </div>
           <button
@@ -99,7 +99,7 @@ export function CartItemCardV2({
             className="text-[#6b6b6b] hover:text-red-400 p-1.5 rounded-lg hover:bg-red-400/10 transition-colors"
             aria-label="Eliminar producto"
           >
-            <Trash2 className="h-4 w-4" />
+            <Trash2 className="size-4" />
           </button>
         </div>
       </div>

@@ -29,7 +29,7 @@ export function useSaleDetail(saleId: string | null) {
 	});
 }
 
-export function useCreateSaleMutation() {
+function useCreateSaleMutation() {
 	const queryClient = useQueryClient();
 	return useMutation({
 		...orpcQuery.sales.create.mutationOptions(),

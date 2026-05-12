@@ -221,7 +221,7 @@ function groupAreasWithTables<OpenOrder = unknown>(
 
 	return areas.map((area) => ({
 		...area,
-		tables: [...(tablesByAreaId.get(area.id) ?? [])].sort(
+		tables: (tablesByAreaId.get(area.id) ?? []).toSorted(
 			(left, right) =>
 				left.sortOrder - right.sortOrder ||
 				left.name.localeCompare(right.name, "es-CO"),
@@ -663,9 +663,10 @@ async function refreshKitchenTicketStatus(
 		return;
 	}
 
-	const activeStatuses = ticketItems
-		.map((item) => item.status)
-		.filter((status) => status !== "cancelled");
+	const activeStatuses = ticketItems.reduce<string[]>((acc, item) => {
+		if (item.status !== "cancelled") acc.push(item.status);
+		return acc;
+	}, []);
 	const nextStatus = activeStatuses.every((status) => status === "served")
 		? "served"
 		: activeStatuses.every(
@@ -816,9 +817,12 @@ export const bootstrap = orgRequiredProcedure.bootstrap.handler(
 						closedAt: toTimestamp(activeShift.closedAt),
 					}
 				: null,
-			categories: categories
-				.filter((c): c is { id: string; name: string } => Boolean(c.id && c.name))
-				.map((c) => ({ ...c, description: null as string | null })),
+			categories: categories.reduce<
+				Array<{ id: string; name: string; description: string | null }>
+			>((acc, c) => {
+				if (c.id && c.name) acc.push({ ...c, description: null });
+				return acc;
+			}, []),
 			settings: {
 				paymentMethods,
 				defaultTerminalName: organizationSettings.pos.defaultTerminalName,
@@ -839,16 +843,18 @@ export const tableDetail = orgRequiredProcedure.tableDetail.handler(
 	async ({ input, context }) => {
 		await requireRestaurantModuleAccess(context);
 		const organizationId = context.organizationId;
-		const table = await assertTableFromOrganization(
-			context.db,
-			organizationId,
-			input.tableId,
-		);
-		const openOrder = await getOpenOrderForTable(
-			context.db,
-			organizationId,
-			input.tableId,
-		);
+		const [table, openOrder] = await Promise.all([
+			assertTableFromOrganization(
+				context.db,
+				organizationId,
+				input.tableId,
+			),
+			getOpenOrderForTable(
+				context.db,
+				organizationId,
+				input.tableId,
+			),
+		]);
 
 		if (!openOrder) {
 			return {
@@ -1139,16 +1145,18 @@ export const sendToKitchen = orgRequiredProcedure.sendToKitchen.handler(
 				organizationId,
 				input.orderId,
 			);
-			const table = await assertTableFromOrganization(
-				database,
-				organizationId,
-				order.tableId,
-			);
-			const items = await getOrderItemsWithModifiers(
-				database,
-				organizationId,
-				order.id,
-			);
+			const [table, items] = await Promise.all([
+				assertTableFromOrganization(
+					database,
+					organizationId,
+					order.tableId,
+				),
+				getOrderItemsWithModifiers(
+					database,
+					organizationId,
+					order.id,
+				),
+			]);
 			const draftItems = items.filter((item) => item.status === "draft");
 			if (draftItems.length === 0) {
 				throw new ORPCError("BAD_REQUEST", {
@@ -1183,26 +1191,27 @@ export const sendToKitchen = orgRequiredProcedure.sendToKitchen.handler(
 				printedAt: null,
 			});
 
-			await database
-				.update(restaurantOrderItem)
-				.set({
-					kitchenTicketId: ticketId,
-					status: "sent",
-					sentAt: now,
-					updatedAt: now,
-				})
-				.where(
-					and(
-						eq(restaurantOrderItem.organizationId, organizationId),
-						eq(restaurantOrderItem.orderId, order.id),
-						eq(restaurantOrderItem.status, "draft"),
+			await Promise.all([
+				database
+					.update(restaurantOrderItem)
+					.set({
+						kitchenTicketId: ticketId,
+						status: "sent",
+						sentAt: now,
+						updatedAt: now,
+					})
+					.where(
+						and(
+							eq(restaurantOrderItem.organizationId, organizationId),
+							eq(restaurantOrderItem.orderId, order.id),
+							eq(restaurantOrderItem.status, "draft"),
+						),
 					),
-				);
-
-			await database
-				.update(restaurantOrder)
-				.set({ updatedAt: now })
-				.where(eq(restaurantOrder.id, order.id));
+				database
+					.update(restaurantOrder)
+					.set({ updatedAt: now })
+					.where(eq(restaurantOrder.id, order.id)),
+			]);
 
 			return {
 				ticket: {
@@ -1330,9 +1339,10 @@ export const closeOrder = orgRequiredProcedure.closeOrder.handler(
 		const now = new Date();
 		const ticketIds = [
 			...new Set(
-				activeItems
-					.map((item) => item.kitchenTicketId)
-					.filter((value): value is string => Boolean(value)),
+				activeItems.reduce<string[]>((acc, item) => {
+					if (item.kitchenTicketId) acc.push(item.kitchenTicketId);
+					return acc;
+				}, []),
 			),
 		];
 
@@ -1657,22 +1667,37 @@ export const kitchenBoard = orgRequiredProcedure.kitchenBoard.handler(
 		}
 
 		return {
-			tickets: ticketRows
-				.map((ticketRow) => ({
-					id: ticketRow.id,
-					orderId: ticketRow.orderId,
-					orderNumber: ticketRow.orderNumber,
-					sequenceNumber: ticketRow.sequenceNumber,
-					status: ticketRow.status,
-					createdAt: toTimestamp(ticketRow.createdAt),
-					table: {
-						id: ticketRow.tableId,
-						name: ticketRow.tableName,
-						areaName: ticketRow.areaName,
-					},
-					items: itemsByTicketId.get(ticketRow.id) ?? [],
-				}))
-				.filter((ticket) => ticket.items.length > 0),
+			tickets: ticketRows.reduce<
+				Array<{
+					id: string;
+					orderId: string;
+					orderNumber: string;
+					sequenceNumber: number;
+					status: string;
+					createdAt: number;
+					table: { id: string; name: string; areaName: string };
+					items: typeof ticketRows[number];
+				}>
+			>((acc, ticketRow) => {
+				const items = itemsByTicketId.get(ticketRow.id) ?? [];
+				if (items.length > 0) {
+					acc.push({
+						id: ticketRow.id,
+						orderId: ticketRow.orderId,
+						orderNumber: ticketRow.orderNumber,
+						sequenceNumber: ticketRow.sequenceNumber,
+						status: ticketRow.status,
+						createdAt: toTimestamp(ticketRow.createdAt),
+						table: {
+							id: ticketRow.tableId,
+							name: ticketRow.tableName,
+							areaName: ticketRow.areaName,
+						},
+						items,
+					});
+				}
+				return acc;
+			}, []),
 		};
 	},
 );

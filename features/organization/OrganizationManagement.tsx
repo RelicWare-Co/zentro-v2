@@ -112,7 +112,7 @@ export function OrganizationManagement() {
 	if (isActiveOrgPending || managementQuery.isPending) {
 		return (
 			<div className="flex min-h-[60dvh] w-full items-center justify-center">
-				<Loader2 className="h-8 w-8 animate-spin text-[var(--color-voltage)]" />
+				<Loader2 className="size-8 animate-spin text-[var(--color-voltage)]" />
 			</div>
 		);
 	}
@@ -152,24 +152,24 @@ export function OrganizationManagement() {
 	return (
 		<div className="min-h-full bg-[var(--color-void)] text-[var(--color-photon)]">
 			<div className="mx-auto flex min-h-full max-w-7xl flex-col">
-				<header className="shrink-0 border-b border-gray-800 px-6 py-6 md:px-8 lg:px-12">
+				<header className="shrink-0 border-b border-zinc-800 px-6 py-6 md:px-8 lg:px-12">
 					<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 						<div className="min-w-0 space-y-1">
-							<h1 className="truncate text-2xl font-bold tracking-tight text-white">
+							<h1 className="truncate text-2xl font-semibold tracking-tight text-white">
 								{data.organization.name}
 							</h1>
-							<div className="flex flex-wrap items-center gap-2 text-sm text-gray-400">
+							<div className="flex flex-wrap items-center gap-2 text-sm text-zinc-400">
 								<span>/{data.organization.slug}</span>
-								<span className="text-gray-600">•</span>
+								<span className="text-zinc-600">•</span>
 								<span className="inline-flex items-center gap-1">
-									<ShieldCheck className="h-3.5 w-3.5 text-[var(--color-voltage)]" />
+									<ShieldCheck className="size-3.5 text-[var(--color-voltage)]" />
 									{formatOrganizationRoleLabel(data.viewer.role)}
 								</span>
 							</div>
 						</div>
 						<div className="flex gap-4">
 							<HeaderStat label="Miembros" value={data.stats.membersCount} />
-							<div className="w-px bg-gray-800" />
+							<div className="w-px bg-zinc-800" />
 							<HeaderStat label="Links" value={data.stats.activeJoinLinksCount} />
 						</div>
 					</div>
@@ -199,31 +199,31 @@ export function OrganizationManagement() {
 									value={activeTab}
 									onValueChange={(v) => setActiveTab(v)}
 								>
-									<SelectTrigger className="h-10 w-auto min-w-[180px] rounded-xl border-gray-800 bg-[var(--color-carbon)] px-5 text-sm font-medium text-white">
+									<SelectTrigger className="h-10 w-auto min-w-[180px] rounded-xl border-zinc-800 bg-[var(--color-carbon)] px-5 text-sm font-medium text-white">
 										<SelectValue />
 									</SelectTrigger>
-									<SelectContent className="border-gray-800 bg-[var(--color-carbon)] text-white">
+									<SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
 										<SelectItem value="general">
 											<div className="flex items-center gap-2">
-												<Building2 className="h-4 w-4" />
+												<Building2 className="size-4" />
 												General
 											</div>
 										</SelectItem>
 										<SelectItem value="members">
 											<div className="flex items-center gap-2">
-												<Users className="h-4 w-4" />
+												<Users className="size-4" />
 												Miembros
 											</div>
 										</SelectItem>
 										<SelectItem value="invitations">
 											<div className="flex items-center gap-2">
-												<Mail className="h-4 w-4" />
+												<Mail className="size-4" />
 												Invitaciones
 											</div>
 										</SelectItem>
 										<SelectItem value="access">
 											<div className="flex items-center gap-2">
-												<Link2 className="h-4 w-4" />
+												<Link2 className="size-4" />
 												Acceso
 											</div>
 										</SelectItem>
@@ -233,30 +233,30 @@ export function OrganizationManagement() {
 							<TabsList className="hidden sm:flex h-auto flex-wrap gap-2 bg-transparent border-0 p-0 w-full">
 								<TabsTrigger
 									value="general"
-									className="shrink-0 h-10 gap-2 rounded-xl border border-transparent px-5 text-sm font-medium text-gray-400 transition-all hover:text-white data-[state=active]:bg-[var(--color-carbon)] data-[state=active]:!border-gray-700 data-[state=active]:text-white"
+									className="shrink-0 h-10 gap-2 rounded-xl border border-transparent px-5 text-sm font-medium text-zinc-400 transition-all hover:text-white data-[state=active]:bg-[var(--color-carbon)] data-[state=active]:!border-zinc-700 data-[state=active]:text-white"
 								>
-									<Building2 className="h-4 w-4" />
+									<Building2 className="size-4" />
 									General
 								</TabsTrigger>
 								<TabsTrigger
 									value="members"
-									className="shrink-0 h-10 gap-2 rounded-xl border border-transparent px-5 text-sm font-medium text-gray-400 transition-all hover:text-white data-[state=active]:bg-[var(--color-carbon)] data-[state=active]:!border-gray-700 data-[state=active]:text-white"
+									className="shrink-0 h-10 gap-2 rounded-xl border border-transparent px-5 text-sm font-medium text-zinc-400 transition-all hover:text-white data-[state=active]:bg-[var(--color-carbon)] data-[state=active]:!border-zinc-700 data-[state=active]:text-white"
 								>
-									<Users className="h-4 w-4" />
+									<Users className="size-4" />
 									Miembros
 								</TabsTrigger>
 								<TabsTrigger
 									value="invitations"
-									className="shrink-0 h-10 gap-2 rounded-xl border border-transparent px-5 text-sm font-medium text-gray-400 transition-all hover:text-white data-[state=active]:bg-[var(--color-carbon)] data-[state=active]:!border-gray-700 data-[state=active]:text-white"
+									className="shrink-0 h-10 gap-2 rounded-xl border border-transparent px-5 text-sm font-medium text-zinc-400 transition-all hover:text-white data-[state=active]:bg-[var(--color-carbon)] data-[state=active]:!border-zinc-700 data-[state=active]:text-white"
 								>
-									<Mail className="h-4 w-4" />
+									<Mail className="size-4" />
 									Invitaciones
 								</TabsTrigger>
 								<TabsTrigger
 									value="access"
-									className="shrink-0 h-10 gap-2 rounded-xl border border-transparent px-5 text-sm font-medium text-gray-400 transition-all hover:text-white data-[state=active]:bg-[var(--color-carbon)] data-[state=active]:!border-gray-700 data-[state=active]:text-white"
+									className="shrink-0 h-10 gap-2 rounded-xl border border-transparent px-5 text-sm font-medium text-zinc-400 transition-all hover:text-white data-[state=active]:bg-[var(--color-carbon)] data-[state=active]:!border-zinc-700 data-[state=active]:text-white"
 								>
-									<Link2 className="h-4 w-4" />
+									<Link2 className="size-4" />
 									Acceso
 								</TabsTrigger>
 							</TabsList>
@@ -300,7 +300,7 @@ export function OrganizationManagement() {
 function HeaderStat(props: { label: string; value: number }) {
 	return (
 		<div className="text-right">
-			<p className="text-xs tracking-wider text-gray-500 uppercase">
+			<p className="text-xs tracking-wider text-zinc-500 uppercase">
 				{props.label}
 			</p>
 			<p className="text-lg font-semibold text-white">{props.value}</p>
@@ -371,12 +371,12 @@ function GeneralTab({
 
 	return (
 		<div className="space-y-6">
-			<Card className="border-gray-800 bg-[var(--color-carbon)] shadow-none">
+			<Card className="border-zinc-800 bg-[var(--color-carbon)] shadow-none">
 				<CardHeader>
 					<div className="flex items-center justify-between gap-4">
 						<div>
 							<CardTitle>Información General</CardTitle>
-							<CardDescription className="text-gray-400">
+							<CardDescription className="text-zinc-400">
 								Detalles básicos de la organización activa.
 							</CardDescription>
 						</div>
@@ -385,9 +385,9 @@ function GeneralTab({
 								variant="outline"
 								size="sm"
 								onClick={() => setIsEditing(true)}
-								className="border-gray-700 bg-transparent text-gray-200 hover:bg-white/5"
+								className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5"
 							>
-								<Pencil className="mr-1.5 h-3.5 w-3.5" />
+								<Pencil className="mr-1.5 size-3.5" />
 								Editar
 							</Button>
 						)}
@@ -402,7 +402,7 @@ function GeneralTab({
 									<Input
 										value={editName}
 										onChange={(e) => setEditName(e.target.value)}
-										className="border-gray-800 bg-black/30"
+										className="border-zinc-800 bg-black/30"
 										disabled={updateMutation.isPending}
 									/>
 								</div>
@@ -417,7 +417,7 @@ function GeneralTab({
 													.replace(/[^a-z0-9-]/g, ""),
 											)
 										}
-										className="border-gray-800 bg-black/30"
+										className="border-zinc-800 bg-black/30"
 										disabled={updateMutation.isPending}
 									/>
 								</div>
@@ -431,7 +431,7 @@ function GeneralTab({
 										setEditName(data.organization.name);
 										setEditSlug(data.organization.slug);
 									}}
-									className="border-gray-700 bg-transparent text-gray-200 hover:bg-white/5"
+									className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5"
 									disabled={updateMutation.isPending}
 								>
 									Cancelar
@@ -443,12 +443,12 @@ function GeneralTab({
 								>
 									{updateMutation.isPending ? (
 										<>
-											<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-											Guardando...
+											<Loader2 className="mr-2 size-4 animate-spin" />
+											Guardando…
 										</>
 									) : (
 										<>
-											<Check className="mr-2 h-4 w-4" />
+											<Check className="mr-2 size-4" />
 											Guardar
 										</>
 									)}
@@ -473,15 +473,15 @@ function GeneralTab({
 				</CardContent>
 			</Card>
 
-			<Card className="border-gray-800 bg-[var(--color-carbon)] shadow-none">
+			<Card className="border-zinc-800 bg-[var(--color-carbon)] shadow-none">
 				<CardHeader>
 					<CardTitle>Permisos Actuales</CardTitle>
-					<CardDescription className="text-gray-400">
+					<CardDescription className="text-zinc-400">
 						Tu rol determina qué acciones puedes realizar.
 					</CardDescription>
 				</CardHeader>
 				<CardContent className="flex flex-wrap gap-2">
-					<Badge variant="outline" className="border-gray-700 text-gray-300">
+					<Badge variant="outline" className="border-zinc-700 text-zinc-300">
 						{formatOrganizationRoleLabel(data.viewer.role)}
 					</Badge>
 					<Badge
@@ -489,7 +489,7 @@ function GeneralTab({
 						className={
 							data.viewer.canManageAccess
 								? "border-emerald-500/30 bg-emerald-500/10 text-emerald-200"
-								: "border-gray-700 bg-gray-800 text-gray-400"
+								: "border-zinc-700 bg-zinc-800 text-zinc-400"
 						}
 					>
 						{data.viewer.canManageAccess
@@ -516,9 +516,9 @@ function GeneralTab({
 							className="border-red-500/30 bg-transparent text-red-200 hover:bg-red-500/10"
 						>
 							{deleteMutation.isPending ? (
-								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+								<Loader2 className="mr-2 size-4 animate-spin" />
 							) : (
-								<Trash2 className="mr-2 h-4 w-4" />
+								<Trash2 className="mr-2 size-4" />
 							)}
 							Eliminar Organización
 						</Button>
@@ -530,16 +530,16 @@ function GeneralTab({
 				<AlertDialogContent className="border-red-500/20 bg-[var(--color-carbon)] text-[var(--color-photon)]">
 					<AlertDialogHeader>
 						<AlertDialogTitle className="flex items-center gap-2 text-red-200">
-							<AlertTriangle className="h-5 w-5" />
+							<AlertTriangle className="size-5" />
 							¿Eliminar organización?
 						</AlertDialogTitle>
-						<AlertDialogDescription className="text-gray-400">
+						<AlertDialogDescription className="text-zinc-400">
 							Esta acción no se puede deshacer. Todos los datos asociados
 							(productos, ventas, miembros) serán eliminados.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
-						<AlertDialogCancel className="border-gray-700 bg-transparent text-gray-200 hover:bg-white/5">
+						<AlertDialogCancel className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5">
 							Cancelar
 						</AlertDialogCancel>
 						<AlertDialogAction
@@ -558,13 +558,13 @@ function GeneralTab({
 function Detail(props: { label: string; value: string; mono?: boolean }) {
 	return (
 		<div className="min-w-0 space-y-1">
-			<p className="text-xs tracking-wider text-gray-500 uppercase">
+			<p className="text-xs tracking-wider text-zinc-500 uppercase">
 				{props.label}
 			</p>
 			<p
 				className={
 					props.mono
-						? "truncate font-mono text-sm text-gray-400"
+						? "truncate font-mono text-sm text-zinc-400"
 						: "truncate text-sm font-medium text-white"
 				}
 			>
@@ -642,22 +642,22 @@ function MembersTab({
 	const canEditMembers = data.viewer.canManageAccess;
 
 	return (
-		<Card className="border-gray-800 bg-[var(--color-carbon)] shadow-none">
+		<Card className="border-zinc-800 bg-[var(--color-carbon)] shadow-none">
 			<CardHeader>
 				<CardTitle>Miembros Activos</CardTitle>
-				<CardDescription className="text-gray-400">
+				<CardDescription className="text-zinc-400">
 					Listado de usuarios con acceso a esta organización.
 				</CardDescription>
 			</CardHeader>
 			<CardContent className="p-0">
 				<Table>
 					<TableHeader>
-						<TableRow className="border-gray-800 hover:bg-transparent">
-							<TableHead className="px-4 text-gray-400">Miembro</TableHead>
-							<TableHead className="text-gray-400">Rol</TableHead>
-							<TableHead className="text-gray-400">Ingreso</TableHead>
+						<TableRow className="border-zinc-800 hover:bg-transparent">
+							<TableHead className="px-4 text-zinc-400">Miembro</TableHead>
+							<TableHead className="text-zinc-400">Rol</TableHead>
+							<TableHead className="text-zinc-400">Ingreso</TableHead>
 							{canEditMembers && (
-								<TableHead className="text-gray-400 text-right">Acciones</TableHead>
+								<TableHead className="text-zinc-400 text-right">Acciones</TableHead>
 							)}
 						</TableRow>
 					</TableHeader>
@@ -678,12 +678,12 @@ function MembersTab({
 							return (
 								<TableRow
 									key={member.memberId}
-									className="border-gray-800 hover:bg-white/5"
+									className="border-zinc-800 hover:bg-white/5"
 								>
 									<TableCell className="px-4">
 										<div className="flex min-w-0 items-center gap-3">
-											<div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gray-800">
-												<span className="text-sm font-medium text-gray-400">
+											<div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-zinc-800">
+												<span className="text-sm font-medium text-zinc-400">
 													{member.name.charAt(0).toUpperCase()}
 												</span>
 											</div>
@@ -691,7 +691,7 @@ function MembersTab({
 												<p className="truncate text-sm font-medium text-white">
 													{member.name}
 												</p>
-												<p className="truncate text-xs text-gray-500">
+												<p className="truncate text-xs text-zinc-500">
 													{member.email}
 												</p>
 											</div>
@@ -705,7 +705,7 @@ function MembersTab({
 													onValueChange={setPendingRole}
 													disabled={updateRoleMutation.isPending}
 												>
-													<SelectTrigger className="h-8 w-32 border-gray-800 bg-black/30 text-xs">
+													<SelectTrigger className="h-8 w-32 border-zinc-800 bg-black/30 text-xs">
 														<SelectValue />
 													</SelectTrigger>
 													<SelectContent>
@@ -725,27 +725,27 @@ function MembersTab({
 													disabled={updateRoleMutation.isPending}
 													className="text-emerald-400 hover:text-emerald-300"
 												>
-													<Check className="h-4 w-4" />
+													<Check className="size-4" />
 												</Button>
 												<Button
 													size="icon-sm"
 													variant="ghost"
 													onClick={() => setEditingMemberId(null)}
-													className="text-gray-400 hover:text-gray-300"
+													className="text-zinc-400 hover:text-zinc-300"
 												>
-													<XCircle className="h-4 w-4" />
+													<XCircle className="size-4" />
 												</Button>
 											</div>
 										) : (
 											<Badge
 												variant="outline"
-												className="text-gray-300"
+												className="text-zinc-300"
 											>
 												{formatOrganizationRoleLabel(member.role)}
 											</Badge>
 										)}
 									</TableCell>
-									<TableCell className="text-sm text-gray-400">
+									<TableCell className="text-sm text-zinc-400">
 										{member.joinedAt
 											? dateFormatter.format(member.joinedAt)
 											: "N/A"}
@@ -763,9 +763,9 @@ function MembersTab({
 																member.role,
 															)
 														}
-														className="text-gray-400 hover:text-white"
+														className="text-zinc-400 hover:text-white"
 													>
-														<Pencil className="h-4 w-4" />
+														<Pencil className="size-4" />
 													</Button>
 												)}
 												{canRemoveThis && (
@@ -781,7 +781,7 @@ function MembersTab({
 														disabled={removeMutation.isPending}
 														className="text-red-400 hover:text-red-300"
 													>
-														<UserX className="h-4 w-4" />
+														<UserX className="size-4" />
 													</Button>
 												)}
 											</div>
@@ -793,7 +793,7 @@ function MembersTab({
 					</TableBody>
 				</Table>
 				{data.members.length === 0 ? (
-					<div className="p-8 text-center text-sm text-gray-500">
+					<div className="p-8 text-center text-sm text-zinc-500">
 						No hay miembros en la organización.
 						</div>
 					) : null}
@@ -806,17 +806,17 @@ function MembersTab({
 					<AlertDialogContent className="border-red-500/20 bg-[var(--color-carbon)] text-[var(--color-photon)]">
 						<AlertDialogHeader>
 							<AlertDialogTitle className="flex items-center gap-2 text-red-200">
-								<AlertTriangle className="h-5 w-5" />
+								<AlertTriangle className="size-5" />
 								Remover miembro
 							</AlertDialogTitle>
-							<AlertDialogDescription className="text-gray-400">
+							<AlertDialogDescription className="text-zinc-400">
 								¿Seguro que deseas remover a{" "}
 								<strong>{confirmRemoveMember?.name}</strong> de la
 								organización?
 							</AlertDialogDescription>
 						</AlertDialogHeader>
 						<AlertDialogFooter>
-							<AlertDialogCancel className="border-gray-700 bg-transparent text-gray-200 hover:bg-white/5">
+							<AlertDialogCancel className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5">
 								Cancelar
 							</AlertDialogCancel>
 							<AlertDialogAction
@@ -891,13 +891,13 @@ function InvitationsTab({
 
 	return (
 		<div className="space-y-6">
-			<Card className="border-gray-800 bg-[var(--color-carbon)] shadow-none">
+			<Card className="border-zinc-800 bg-[var(--color-carbon)] shadow-none">
 				<CardHeader>
 					<CardTitle className="flex items-center gap-2">
-						<UserPlus className="h-4 w-4 text-[var(--color-voltage)]" />
+						<UserPlus className="size-4 text-[var(--color-voltage)]" />
 						Invitar Miembro
 					</CardTitle>
-					<CardDescription className="text-gray-400">
+					<CardDescription className="text-zinc-400">
 						Envía una invitación por correo electrónico.
 					</CardDescription>
 				</CardHeader>
@@ -913,7 +913,7 @@ function InvitationsTab({
 										onChange={(e) => setInviteEmail(e.target.value)}
 										placeholder="colaborador@ejemplo.com"
 										required
-										className="border-gray-800 bg-black/30"
+										className="border-zinc-800 bg-black/30"
 										disabled={inviteMutation.isPending}
 									/>
 								</div>
@@ -924,7 +924,7 @@ function InvitationsTab({
 										onValueChange={setInviteRole}
 										disabled={inviteMutation.isPending}
 									>
-										<SelectTrigger className="border-gray-800 bg-black/30">
+										<SelectTrigger className="border-zinc-800 bg-black/30">
 											<SelectValue />
 										</SelectTrigger>
 										<SelectContent>
@@ -944,12 +944,12 @@ function InvitationsTab({
 							>
 								{inviteMutation.isPending ? (
 									<>
-										<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-										Enviando...
+										<Loader2 className="mr-2 size-4 animate-spin" />
+										Enviando…
 									</>
 									) : (
 										<>
-											<UserPlus className="mr-2 h-4 w-4" />
+											<UserPlus className="mr-2 size-4" />
 											Enviar Invitación
 										</>
 									)}
@@ -966,22 +966,22 @@ function InvitationsTab({
 				</CardContent>
 			</Card>
 
-			<Card className="border-gray-800 bg-[var(--color-carbon)] shadow-none">
+			<Card className="border-zinc-800 bg-[var(--color-carbon)] shadow-none">
 				<CardHeader>
 					<CardTitle>Invitaciones Pendientes</CardTitle>
-					<CardDescription className="text-gray-400">
+					<CardDescription className="text-zinc-400">
 						Invitaciones internas que todavía no han sido aceptadas.
 					</CardDescription>
 				</CardHeader>
 				<CardContent className="p-0">
 					<Table>
 						<TableHeader>
-							<TableRow className="border-gray-800 hover:bg-transparent">
-								<TableHead className="px-4 text-gray-400">Email</TableHead>
-								<TableHead className="text-gray-400">Rol</TableHead>
-								<TableHead className="text-gray-400">Expira</TableHead>
+							<TableRow className="border-zinc-800 hover:bg-transparent">
+								<TableHead className="px-4 text-zinc-400">Email</TableHead>
+								<TableHead className="text-zinc-400">Rol</TableHead>
+								<TableHead className="text-zinc-400">Expira</TableHead>
 								{data.viewer.canManageAccess && (
-									<TableHead className="text-gray-400 text-right">Acciones</TableHead>
+									<TableHead className="text-zinc-400 text-right">Acciones</TableHead>
 								)}
 							</TableRow>
 						</TableHeader>
@@ -989,17 +989,17 @@ function InvitationsTab({
 							{data.pendingInvitations.map((invitation) => (
 								<TableRow
 									key={invitation.id}
-									className="border-gray-800 hover:bg-white/5"
+									className="border-zinc-800 hover:bg-white/5"
 								>
 									<TableCell className="px-4 text-sm text-white">
 										{invitation.email}
 									</TableCell>
 									<TableCell>
-										<Badge variant="outline" className="text-gray-300">
+										<Badge variant="outline" className="text-zinc-300">
 											{formatOrganizationRoleLabel(invitation.role)}
 										</Badge>
 									</TableCell>
-									<TableCell className="text-sm text-gray-400">
+									<TableCell className="text-sm text-zinc-400">
 										{invitation.expiresAt
 											? dateTimeFormatter.format(invitation.expiresAt)
 											: "N/A"}
@@ -1015,7 +1015,7 @@ function InvitationsTab({
 												disabled={cancelMutation.isPending}
 												className="text-red-400 hover:text-red-300"
 											>
-												<XCircle className="mr-1.5 h-3.5 w-3.5" />
+												<XCircle className="mr-1.5 size-3.5" />
 												Cancelar
 											</Button>
 										</TableCell>
@@ -1025,7 +1025,7 @@ function InvitationsTab({
 						</TableBody>
 					</Table>
 					{data.pendingInvitations.length === 0 ? (
-						<div className="p-8 text-center text-sm text-gray-500">
+						<div className="p-8 text-center text-sm text-zinc-500">
 							No hay invitaciones pendientes.
 						</div>
 					) : null}
@@ -1039,16 +1039,16 @@ function InvitationsTab({
 				<AlertDialogContent className="border-red-500/20 bg-[var(--color-carbon)] text-[var(--color-photon)]">
 					<AlertDialogHeader>
 						<AlertDialogTitle className="flex items-center gap-2 text-red-200">
-							<AlertTriangle className="h-5 w-5" />
+							<AlertTriangle className="size-5" />
 							Cancelar invitación
 						</AlertDialogTitle>
-						<AlertDialogDescription className="text-gray-400">
+						<AlertDialogDescription className="text-zinc-400">
 							La invitación será cancelada y el destinatario no podrá
 							aceptarla.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
-						<AlertDialogCancel className="border-gray-700 bg-transparent text-gray-200 hover:bg-white/5">
+						<AlertDialogCancel className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5">
 							Volver
 						</AlertDialogCancel>
 						<AlertDialogAction
@@ -1159,10 +1159,10 @@ function AccessTab({
 	return (
 		<div className="space-y-6">
 			<div className="grid gap-6 lg:grid-cols-3">
-				<Card className="lg:col-span-2 border-gray-800 bg-[var(--color-carbon)] shadow-none">
+				<Card className="lg:col-span-2 border-zinc-800 bg-[var(--color-carbon)] shadow-none">
 					<CardHeader>
 						<CardTitle>Crear Link de Acceso</CardTitle>
-						<CardDescription className="text-gray-400">
+						<CardDescription className="text-zinc-400">
 							Genera un enlace de un solo uso para sumar miembros.
 						</CardDescription>
 					</CardHeader>
@@ -1181,7 +1181,7 @@ function AccessTab({
 											}
 											placeholder="Ej. Sucursal centro"
 											autoComplete="off"
-											className="border-gray-800 bg-black/30"
+											className="border-zinc-800 bg-black/30"
 											disabled={createJoinLinkMutation.isPending}
 										/>
 									</div>
@@ -1194,7 +1194,7 @@ function AccessTab({
 										>
 											<SelectTrigger
 												id={expiryId}
-												className="w-full border-gray-800 bg-black/30"
+												className="w-full border-zinc-800 bg-black/30"
 											>
 												<SelectValue placeholder="Selecciona" />
 											</SelectTrigger>
@@ -1218,8 +1218,8 @@ function AccessTab({
 								>
 									{createJoinLinkMutation.isPending ? (
 										<>
-											<Loader2 className="h-4 w-4 animate-spin" />
-											Creando...
+											<Loader2 className="size-4 animate-spin" />
+											Creando…
 										</>
 									) : (
 										"Crear Link"
@@ -1250,10 +1250,10 @@ function AccessTab({
 					</CardContent>
 				</Card>
 
-				<Card className="border-gray-800 bg-[var(--color-carbon)] shadow-none">
+				<Card className="border-zinc-800 bg-[var(--color-carbon)] shadow-none">
 					<CardHeader>
 						<CardTitle>Modo de Alta</CardTitle>
-						<CardDescription className="text-gray-400">
+						<CardDescription className="text-zinc-400">
 							Política vigente para organizaciones.
 						</CardDescription>
 					</CardHeader>
@@ -1263,25 +1263,25 @@ function AccessTab({
 							className={
 								data.policy.allowOrganizationCreation
 									? "border-emerald-500/30 bg-emerald-500/10 text-emerald-200"
-									: "border-gray-700 bg-gray-800 text-gray-400"
+									: "border-zinc-700 bg-zinc-800 text-zinc-400"
 							}
 						>
 							{data.policy.allowOrganizationCreation
 								? "Creación habilitada"
 								: "Creación controlada"}
 						</Badge>
-						<p className="text-sm text-gray-400">
+						<p className="text-sm text-zinc-400">
 							{data.policy.contactMessage}
 						</p>
 					</CardContent>
 				</Card>
 			</div>
 
-			<Card className="border-gray-800 bg-[var(--color-carbon)] shadow-none">
+			<Card className="border-zinc-800 bg-[var(--color-carbon)] shadow-none">
 				<CardHeader>
 					<div className="flex items-center justify-between gap-4">
 						<CardTitle>Links de Acceso</CardTitle>
-						<Badge variant="outline" className="text-gray-400">
+						<Badge variant="outline" className="text-zinc-400">
 							{data.joinLinks.length} total
 						</Badge>
 					</div>
@@ -1292,7 +1292,7 @@ function AccessTab({
 							{data.joinLinks.map((joinLink) => (
 								<div
 									key={joinLink.id}
-									className="flex flex-col gap-3 rounded-xl border border-gray-800 bg-black/20 p-4 sm:flex-row sm:items-center sm:justify-between"
+									className="flex flex-col gap-3 rounded-xl border border-zinc-800 bg-black/20 p-4 sm:flex-row sm:items-center sm:justify-between"
 								>
 									<div className="min-w-0 flex-1 space-y-1">
 										<div className="flex flex-wrap items-center gap-2">
@@ -1301,16 +1301,16 @@ function AccessTab({
 											</p>
 											<JoinLinkStatusBadge status={joinLink.status} />
 										</div>
-										<p className="text-xs text-gray-500">
+										<p className="text-xs text-zinc-500">
 											{joinLink.lastUsedAt
 												? `Último uso ${dateTimeFormatter.format(joinLink.lastUsedAt)}`
 												: "Sin uso todavía"}
-											<span className="mx-2 text-gray-700">•</span>
+											<span className="mx-2 text-zinc-700">•</span>
 											Expira:{" "}
 											{joinLink.expiresAt
 												? dateTimeFormatter.format(joinLink.expiresAt)
 												: "Sin límite"}
-											<span className="mx-2 text-gray-700">•</span>
+											<span className="mx-2 text-zinc-700">•</span>
 											Uso: {joinLink.useCount}/{joinLink.maxUses}
 										</p>
 									</div>
@@ -1321,9 +1321,9 @@ function AccessTab({
 											size="sm"
 											onClick={() => void copyJoinUrl(joinLink.joinPath)}
 											disabled={!isJoinLinkActive(joinLink.status)}
-											className="border-gray-700 bg-transparent text-gray-200 hover:bg-white/5"
+											className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5"
 										>
-											<Copy className="mr-1.5 h-3.5 w-3.5" />
+											<Copy className="mr-1.5 size-3.5" />
 											Copiar
 										</Button>
 										{data.viewer.canManageAccess ? (
@@ -1340,7 +1340,7 @@ function AccessTab({
 												}
 												className="border-red-500/30 bg-transparent text-red-200 hover:bg-red-500/10"
 											>
-												<XCircle className="mr-1.5 h-3.5 w-3.5" />
+												<XCircle className="mr-1.5 size-3.5" />
 												Revocar
 											</Button>
 										) : null}
@@ -1349,8 +1349,8 @@ function AccessTab({
 							))}
 						</div>
 					) : (
-						<div className="rounded-xl border border-dashed border-gray-800 bg-black/10 p-8 text-center">
-							<p className="text-sm text-gray-500">
+						<div className="rounded-xl border border-dashed border-zinc-800 bg-black/10 p-8 text-center">
+							<p className="text-sm text-zinc-500">
 								No hay links de acceso creados todavía.
 							</p>
 						</div>
@@ -1358,10 +1358,10 @@ function AccessTab({
 				</CardContent>
 			</Card>
 
-			<Card className="border-gray-800 bg-[var(--color-carbon)] shadow-none">
+			<Card className="border-zinc-800 bg-[var(--color-carbon)] shadow-none">
 				<CardHeader>
 					<CardTitle>Salir de la Organización</CardTitle>
-					<CardDescription className="text-gray-400">
+					<CardDescription className="text-zinc-400">
 						Si ya no necesitas acceso, puedes salir en cualquier momento.
 						No puedes salir si eres el único owner.
 						</CardDescription>
@@ -1372,12 +1372,12 @@ function AccessTab({
 							size="sm"
 							onClick={() => setShowLeaveDialog(true)}
 							disabled={leaveMutation.isPending}
-							className="border-gray-700 bg-transparent text-gray-200 hover:bg-white/5"
+							className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5"
 						>
 							{leaveMutation.isPending ? (
-								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+								<Loader2 className="mr-2 size-4 animate-spin" />
 							) : (
-								<LogOut className="mr-2 h-4 w-4" />
+								<LogOut className="mr-2 size-4" />
 							)}
 							Salir de la Organización
 						</Button>
@@ -1391,17 +1391,17 @@ function AccessTab({
 					<AlertDialogContent className="border-amber-500/20 bg-[var(--color-carbon)] text-[var(--color-photon)]">
 						<AlertDialogHeader>
 							<AlertDialogTitle className="flex items-center gap-2 text-amber-200">
-								<AlertTriangle className="h-5 w-5" />
+								<AlertTriangle className="size-5" />
 								¿Salir de la organización?
 							</AlertDialogTitle>
-							<AlertDialogDescription className="text-gray-400">
+							<AlertDialogDescription className="text-zinc-400">
 								Perderás acceso a todos los datos de{" "}
 								<strong>{data.organization.name}</strong>. Esta acción no se
 								puede deshacer.
 							</AlertDialogDescription>
 						</AlertDialogHeader>
 						<AlertDialogFooter>
-							<AlertDialogCancel className="border-gray-700 bg-transparent text-gray-200 hover:bg-white/5">
+							<AlertDialogCancel className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5">
 								Cancelar
 							</AlertDialogCancel>
 							<AlertDialogAction
@@ -1437,6 +1437,8 @@ function JoinLinkStatusBadge(props: { status: OrganizationJoinLinkStatus }) {
 function parseRoleList(role: string | null | undefined) {
 	return (role ?? "")
 		.split(",")
-		.map((value) => value.trim().toLowerCase())
-		.filter(Boolean);
+		.flatMap((value) => {
+			const trimmed = value.trim().toLowerCase();
+			return trimmed ? [trimmed] : [];
+		});
 }

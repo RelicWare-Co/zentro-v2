@@ -23,21 +23,23 @@ describe("test infrastructure smoke", () => {
 		const { db, cleanup } = createTestDb();
 		const { organizationId, userId } = await seedOrganizationWithMember(db);
 		const categoryId = await seedCategory(db, { organizationId, name: "Drinks" });
-		const productId = await seedProduct(db, {
-			organizationId,
-			categoryId,
-			name: "Coffee",
-			price: 5000,
-		});
-		const customerId = await seedCustomer(db, {
-			organizationId,
-			name: "Alice",
-		});
-		const shiftId = await seedShift(db, {
-			organizationId,
-			userId,
-			startingCash: 10000,
-		});
+		const [productId, customerId, shiftId] = await Promise.all([
+			seedProduct(db, {
+				organizationId,
+				categoryId,
+				name: "Coffee",
+				price: 5000,
+			}),
+			seedCustomer(db, {
+				organizationId,
+				name: "Alice",
+			}),
+			seedShift(db, {
+				organizationId,
+				userId,
+				startingCash: 10000,
+			}),
+		]);
 		expect(categoryId).toBeString();
 		expect(productId).toBeString();
 		expect(customerId).toBeString();

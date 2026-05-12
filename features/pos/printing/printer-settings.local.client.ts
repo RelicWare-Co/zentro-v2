@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-export const POS_PRINTER_SETTINGS_STORAGE_KEY =
+const POS_PRINTER_SETTINGS_STORAGE_KEY =
 	"zentro:pos-printer-settings:v1";
 const POS_PRINTER_SETTINGS_EVENT = "zentro:pos-printer-settings:updated";
 
@@ -13,7 +13,7 @@ export type PosPrinterConnectionType =
 	(typeof POS_PRINTER_CONNECTION_TYPES)[number];
 
 export const POS_PRINTER_OUTPUT_MODES = ["pdf", "device"] as const;
-export type PosPrinterOutputMode = (typeof POS_PRINTER_OUTPUT_MODES)[number];
+type PosPrinterOutputMode = (typeof POS_PRINTER_OUTPUT_MODES)[number];
 
 export const POS_PRINTER_LANGUAGES = [
 	"auto",
@@ -55,7 +55,7 @@ export type PosSavedPrinterDevice =
 	| PosSavedSerialPrinterDevice
 	| PosSavedBluetoothPrinterDevice;
 
-export type PosPrinterSerialConfig = {
+type PosPrinterSerialConfig = {
 	baudRate: number;
 	bufferSize: number;
 	dataBits: 7 | 8;
@@ -79,7 +79,7 @@ export type PosLocalPrinterSettings = {
 	};
 };
 
-export const DEFAULT_POS_LOCAL_PRINTER_SETTINGS: PosLocalPrinterSettings = {
+const DEFAULT_POS_LOCAL_PRINTER_SETTINGS: PosLocalPrinterSettings = {
 	outputMode: "pdf",
 	connectionType: "usb",
 	language: "auto",
@@ -274,7 +274,7 @@ function normalizeSerialConfig(
 	};
 }
 
-export function normalizePosLocalPrinterSettings(
+function normalizePosLocalPrinterSettings(
 	value: unknown,
 ): PosLocalPrinterSettings {
 	if (!isRecord(value)) {
@@ -349,7 +349,7 @@ export function readPosLocalPrinterSettings(
 	}
 }
 
-export function writePosLocalPrinterSettings(
+function writePosLocalPrinterSettings(
 	value: PosLocalPrinterSettings,
 	organizationId?: string | null,
 ): PosLocalPrinterSettings {
@@ -390,7 +390,7 @@ export function patchPosLocalPrinterSettings(
 	return writePosLocalPrinterSettings(nextValue, organizationId);
 }
 
-export function clearSavedDeviceForConnection(
+function clearSavedDeviceForConnection(
 	connectionType: PosPrinterConnectionType,
 	organizationId?: string | null,
 ) {
@@ -406,7 +406,7 @@ export function clearSavedDeviceForConnection(
 	);
 }
 
-export function subscribePosLocalPrinterSettings(
+function subscribePosLocalPrinterSettings(
 	listener: () => void,
 	organizationId?: string | null,
 ) {

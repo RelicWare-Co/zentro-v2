@@ -100,18 +100,20 @@ describe("restaurant module", () => {
       await setRestaurantModuleEnabled(db, organizationId, true);
 
       const areaId = await seedRestaurantArea(db, { organizationId, name: "Terrace" });
-      const tableId = await seedRestaurantTable(db, {
-        organizationId,
-        areaId,
-        name: "T1",
-      });
-      const productId = await seedProduct(db, {
-        organizationId,
-        name: "Burger",
-        price: 15000,
-        stock: 10,
-        trackInventory: false,
-      });
+      const [tableId, productId] = await Promise.all([
+        seedRestaurantTable(db, {
+          organizationId,
+          areaId,
+          name: "T1",
+        }),
+        seedProduct(db, {
+          organizationId,
+          name: "Burger",
+          price: 15000,
+          stock: 10,
+          trackInventory: false,
+        }),
+      ]);
 
       const u = makeUser({ id: userId, email: "owner@example.com" });
       const ctx = buildMockContext(db, u, organizationId);
@@ -158,18 +160,20 @@ describe("restaurant module", () => {
       await setRestaurantModuleEnabled(db, organizationId, true);
 
       const areaId = await seedRestaurantArea(db, { organizationId, name: "Terrace" });
-      const tableId = await seedRestaurantTable(db, {
-        organizationId,
-        areaId,
-        name: "T1",
-      });
-      const productId = await seedProduct(db, {
-        organizationId,
-        name: "Pizza",
-        price: 20000,
-        stock: 10,
-        trackInventory: false,
-      });
+      const [tableId, productId] = await Promise.all([
+        seedRestaurantTable(db, {
+          organizationId,
+          areaId,
+          name: "T1",
+        }),
+        seedProduct(db, {
+          organizationId,
+          name: "Pizza",
+          price: 20000,
+          stock: 10,
+          trackInventory: false,
+        }),
+      ]);
 
       const u = makeUser({ id: userId, email: "owner@example.com" });
       const ctx = buildMockContext(db, u, organizationId);
@@ -220,23 +224,25 @@ describe("restaurant module", () => {
       await setRestaurantModuleEnabled(db, organizationId, true);
 
       const areaId = await seedRestaurantArea(db, { organizationId, name: "Terrace" });
-      const tableId = await seedRestaurantTable(db, {
-        organizationId,
-        areaId,
-        name: "T1",
-      });
-      const productId = await seedProduct(db, {
-        organizationId,
-        name: "Steak",
-        price: 25000,
-        stock: 10,
-        trackInventory: false,
-      });
-      const shiftId = await seedShift(db, {
-        organizationId,
-        userId,
-        status: "open",
-      });
+      const [tableId, productId, shiftId] = await Promise.all([
+        seedRestaurantTable(db, {
+          organizationId,
+          areaId,
+          name: "T1",
+        }),
+        seedProduct(db, {
+          organizationId,
+          name: "Steak",
+          price: 25000,
+          stock: 10,
+          trackInventory: false,
+        }),
+        seedShift(db, {
+          organizationId,
+          userId,
+          status: "open",
+        }),
+      ]);
 
       const u = makeUser({ id: userId, email: "owner@example.com" });
       const ctx = buildMockContext(db, u, organizationId);
@@ -284,15 +290,20 @@ describe("restaurant module", () => {
   describe("VAL-REST-005: area/table CRUD requires manager access", () => {
     test("non-manager is rejected from createArea, updateArea, deleteArea", async () => {
       const { db, cleanup } = createTestDb();
-      const { organizationId, userId: managerId } = await seedOrganizationWithMember(
-        db,
-        { memberRole: "owner", userEmail: "manager@example.com" },
-      );
-      const { userId: cashierId } = await seedOrganizationWithMember(db, {
-        orgName: "Same Org",
-        userEmail: "cashier@example.com",
-        memberRole: "member",
-      });
+      const [
+        { organizationId, userId: managerId },
+        { userId: cashierId },
+      ] = await Promise.all([
+        seedOrganizationWithMember(db, {
+          memberRole: "owner",
+          userEmail: "manager@example.com",
+        }),
+        seedOrganizationWithMember(db, {
+          orgName: "Same Org",
+          userEmail: "cashier@example.com",
+          memberRole: "member",
+        }),
+      ]);
       // Add cashier as member of same organization
       const memberId = crypto.randomUUID();
       const now = new Date();
@@ -442,18 +453,20 @@ describe("restaurant module", () => {
       await setKitchenDisplayEnabled(db, organizationId, true);
 
       const areaId = await seedRestaurantArea(db, { organizationId, name: "Terrace" });
-      const tableId = await seedRestaurantTable(db, {
-        organizationId,
-        areaId,
-        name: "T1",
-      });
-      const productId = await seedProduct(db, {
-        organizationId,
-        name: "Pasta",
-        price: 18000,
-        stock: 10,
-        trackInventory: false,
-      });
+      const [tableId, productId] = await Promise.all([
+        seedRestaurantTable(db, {
+          organizationId,
+          areaId,
+          name: "T1",
+        }),
+        seedProduct(db, {
+          organizationId,
+          name: "Pasta",
+          price: 18000,
+          stock: 10,
+          trackInventory: false,
+        }),
+      ]);
 
       const u = makeUser({ id: userId, email: "owner@example.com" });
       const ctx = buildMockContext(db, u, organizationId);

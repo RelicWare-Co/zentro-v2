@@ -21,7 +21,7 @@ export type PosBootstrap = z.infer<typeof PosBootstrapResultSchema>;
 export type ActiveShift = PosBootstrap["activeShift"];
 
 // Resultado de búsqueda de productos
-export type ProductSearchResult = z.infer<typeof SearchPosProductsResultSchema>;
+type ProductSearchResult = z.infer<typeof SearchPosProductsResultSchema>;
 
 // Categoría de productos
 export type Category = {
@@ -68,7 +68,7 @@ export type CartTotals = {
 };
 
 // Props comunes para modales
-export type ModalProps = {
+type ModalProps = {
 	isOpen: boolean;
 	onClose: () => void;
 };

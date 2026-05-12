@@ -1,7 +1,7 @@
 import { restaurantModuleDefinition } from "@/features/restaurants/restaurants.module";
 import type { ModuleDefinition } from "./module-definition";
 
-export const MODULE_REGISTRY = {
+const MODULE_REGISTRY = {
 	restaurants: restaurantModuleDefinition,
 } as const satisfies Record<string, ModuleDefinition>;
 

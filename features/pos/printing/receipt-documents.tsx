@@ -141,7 +141,7 @@ export function buildSaleReceiptDocument(input: {
 	};
 }
 
-export function buildPaymentReceiptDocument(input: {
+function buildPaymentReceiptDocument(input: {
 	paymentId: string;
 	saleId?: string | null;
 	issuedAt: Date | number;

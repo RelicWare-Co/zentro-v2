@@ -35,7 +35,7 @@ export function ProductCard({
 					rounded-xl
 					p-3
 					border
-					border-gray-800/80
+					border-zinc-800/80
 					block
 					w-full
 					relative
@@ -64,13 +64,13 @@ export function ProductCard({
 					>
 						{product.name}
 					</h3>
-					<p className="text-[11px] text-gray-500 mt-1 font-medium">
+					<p className="text-[11px] text-zinc-500 mt-1 font-medium">
 						{product.categoryName}
 					</p>
 					{product.trackInventory && (
 						<p
 							className={`text-[10px] mt-1 font-medium ${
-								isOutOfStock ? "text-red-400" : "text-gray-500"
+								isOutOfStock ? "text-red-400" : "text-zinc-500"
 							}`}
 						>
 							Stock: {product.stock}
@@ -110,10 +110,10 @@ export function ProductCard({
 					}}
 				>
 					<Heart
-						className={`h-4 w-4 transition-colors ${
+						className={`size-4 transition-colors ${
 							product.isFavorite
 								? "fill-red-500 text-red-500"
-								: "text-gray-600 hover:text-red-400"
+								: "text-zinc-600 hover:text-red-400"
 							}`}
 					/>
 				</button>

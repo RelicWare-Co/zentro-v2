@@ -28,7 +28,7 @@ type PrinterStatusSnapshot = {
 	paperLow: boolean;
 };
 
-export type PosPrinterRuntimeState = {
+type PosPrinterRuntimeState = {
 	status: "idle" | "connecting" | "connected" | "disconnected" | "error";
 	message: string | null;
 	connectionType: PosPrinterConnectionType | null;
@@ -512,7 +512,6 @@ class PosPrinterManager {
 		}
 
 		const settings = readPosLocalPrinterSettings(organizationId);
-		const module = await import("@point-of-sale/receipt-printer-status");
 
 		if (this.eventGeneration !== boundGeneration) {
 			return;
@@ -521,6 +520,7 @@ class PosPrinterManager {
 			return;
 		}
 
+		const module = await import("@point-of-sale/receipt-printer-status");
 		const ReceiptPrinterStatus = module.default as new (options: {
 			printer: ReceiptPrinterDriver;
 			language?: PosPrinterLanguage;

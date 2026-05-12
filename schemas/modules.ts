@@ -3,9 +3,9 @@ import { MODULE_KEYS } from "@/features/modules/module-access.shared";
 
 export const ModuleKeySchema = z.enum(MODULE_KEYS);
 
-export const ModuleEntitlementStatusSchema = z.enum(["granted", "blocked"]);
+const ModuleEntitlementStatusSchema = z.enum(["granted", "blocked"]);
 
-export const ModuleNavigationItemSchema = z.object({
+const ModuleNavigationItemSchema = z.object({
 	id: z.string(),
 	label: z.string(),
 	path: z.string(),

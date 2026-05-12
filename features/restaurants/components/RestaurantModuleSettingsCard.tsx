@@ -91,23 +91,23 @@ export function RestaurantModuleSettingsCard(
 	};
 
 	return (
-		<Card className="border-gray-800 bg-[var(--color-carbon)] text-[var(--color-photon)] shadow-none">
+		<Card className="border-zinc-800 bg-[var(--color-carbon)] text-[var(--color-photon)] shadow-none">
 			<CardHeader>
 				<CardTitle className="flex items-center gap-2">
 					<UtensilsCrossed
-						className="h-4 w-4 text-[var(--color-voltage)]"
+						className="size-4 text-[var(--color-voltage)]"
 						aria-hidden="true"
 					/>
 					Restaurantes
 				</CardTitle>
-				<CardDescription className="text-gray-400">
+				<CardDescription className="text-zinc-400">
 					Activación del módulo, salida de cocina y estructura de mesas.
 				</CardDescription>
 			</CardHeader>
 			<CardContent className="space-y-6">
 				{props.moduleAccess.entitlementStatus === "blocked" ? (
 					<Alert
-						className="border-gray-700 bg-black/10 text-[var(--color-photon)]"
+						className="border-zinc-700 bg-black/10 text-[var(--color-photon)]"
 						aria-live="polite"
 					>
 						<AlertTitle>Módulo bloqueado</AlertTitle>
@@ -130,10 +130,10 @@ export function RestaurantModuleSettingsCard(
 					</Alert>
 				) : null}
 
-				<div className="flex items-center justify-between rounded-lg border border-gray-800 bg-black/10 p-4">
+				<div className="flex items-center justify-between rounded-lg border border-zinc-800 bg-black/10 p-4">
 					<div>
 						<p className="font-medium text-white">Activar módulo</p>
-						<p className="text-sm text-gray-400">
+						<p className="text-sm text-zinc-400">
 							Muestra rutas y habilita el flujo de mesas.
 						</p>
 					</div>
@@ -156,10 +156,10 @@ export function RestaurantModuleSettingsCard(
 				</div>
 
 				<div className="grid gap-3">
-					<div className="flex items-center justify-between rounded-lg border border-gray-800 bg-black/10 p-4">
+					<div className="flex items-center justify-between rounded-lg border border-zinc-800 bg-black/10 p-4">
 						<div>
 							<p className="font-medium text-white">Pantalla de cocina</p>
-							<p className="text-sm text-gray-400">
+							<p className="text-sm text-zinc-400">
 								Habilita la ruta interna de cocina.
 							</p>
 						</div>
@@ -180,10 +180,10 @@ export function RestaurantModuleSettingsCard(
 							}
 						/>
 					</div>
-					<div className="flex items-center justify-between rounded-lg border border-gray-800 bg-black/10 p-4">
+					<div className="flex items-center justify-between rounded-lg border border-zinc-800 bg-black/10 p-4">
 						<div>
 							<p className="font-medium text-white">Imprimir comandas</p>
-							<p className="text-sm text-gray-400">
+							<p className="text-sm text-zinc-400">
 								Permite imprimir ticket de cocina al enviar.
 							</p>
 						</div>
@@ -206,10 +206,10 @@ export function RestaurantModuleSettingsCard(
 							}
 						/>
 					</div>
-					<div className="flex items-center justify-between rounded-lg border border-gray-800 bg-black/10 p-4">
+					<div className="flex items-center justify-between rounded-lg border border-zinc-800 bg-black/10 p-4">
 						<div>
 							<p className="font-medium text-white">Auto imprimir</p>
-							<p className="text-sm text-gray-400">
+							<p className="text-sm text-zinc-400">
 								Dispara impresión inmediata al enviar a cocina.
 							</p>
 						</div>
@@ -237,7 +237,7 @@ export function RestaurantModuleSettingsCard(
 					</div>
 				</div>
 
-				<Separator className="border-gray-800" />
+				<Separator className="border-zinc-800" />
 
 				<div className="space-y-4">
 					<div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
@@ -250,7 +250,7 @@ export function RestaurantModuleSettingsCard(
 								onChange={(event) => setNewAreaName(event.target.value)}
 								placeholder="Ej. Salón, Terraza, Barra…"
 								autoComplete="off"
-								className="border-gray-700 bg-black/20"
+								className="border-zinc-700 bg-black/20"
 								disabled={!props.canManageSettings}
 							/>
 						</div>
@@ -263,9 +263,9 @@ export function RestaurantModuleSettingsCard(
 									!props.canManageSettings ||
 									createRestaurantAreaMutation.isPending
 								}
-								className="border-gray-700 bg-transparent text-gray-100 hover:bg-white/5"
+								className="border-zinc-700 bg-transparent text-zinc-100 hover:bg-white/5"
 							>
-								<Plus className="h-4 w-4" aria-hidden="true" />
+								<Plus className="size-4" aria-hidden="true" />
 								Agregar zona
 							</Button>
 						</div>
@@ -275,7 +275,7 @@ export function RestaurantModuleSettingsCard(
 						{props.configuration.map((area) => (
 							<div
 								key={area.id}
-								className="rounded-lg border border-gray-800 bg-black/10 p-4"
+								className="rounded-lg border border-zinc-800 bg-black/10 p-4"
 							>
 								<div className="flex items-center justify-between gap-3">
 									<div className="font-medium text-white">{area.name}</div>
@@ -298,9 +298,9 @@ export function RestaurantModuleSettingsCard(
 											deleteRestaurantAreaMutation.isPending ||
 											area.tables.length > 0
 										}
-										className="border-gray-700 bg-transparent text-gray-100 hover:bg-white/5"
+										className="border-zinc-700 bg-transparent text-zinc-100 hover:bg-white/5"
 									>
-										<Trash2 className="h-4 w-4" aria-hidden="true" />
+										<Trash2 className="size-4" aria-hidden="true" />
 										Eliminar
 									</Button>
 								</div>
@@ -309,11 +309,11 @@ export function RestaurantModuleSettingsCard(
 									{area.tables.map((table) => (
 										<div
 											key={table.id}
-											className="flex items-center justify-between gap-3 rounded-lg border border-gray-800 px-3 py-2"
+											className="flex items-center justify-between gap-3 rounded-lg border border-zinc-800 px-3 py-2"
 										>
 											<div className="min-w-0">
 												<div className="truncate">{table.name}</div>
-												<div className="text-xs text-gray-400">
+												<div className="text-xs text-zinc-400">
 													{table.seats > 0
 													? `${table.seats} puestos`
 													: "Sin capacidad definida"}
@@ -351,10 +351,10 @@ export function RestaurantModuleSettingsCard(
 														!props.canManageSettings ||
 														deleteRestaurantTableMutation.isPending
 													}
-													className="border-gray-700 bg-transparent text-gray-100 hover:bg-white/5"
+													className="border-zinc-700 bg-transparent text-zinc-100 hover:bg-white/5"
 													aria-label={`Eliminar ${table.name}`}
 												>
-													<Trash2 className="h-4 w-4" aria-hidden="true" />
+													<Trash2 className="size-4" aria-hidden="true" />
 												</Button>
 											</div>
 										</div>
@@ -376,7 +376,7 @@ export function RestaurantModuleSettingsCard(
 										}
 										placeholder="Nueva mesa…"
 										autoComplete="off"
-										className="border-gray-700 bg-black/20"
+										className="border-zinc-700 bg-black/20"
 										disabled={!props.canManageSettings}
 									/>
 									<Input
@@ -395,7 +395,7 @@ export function RestaurantModuleSettingsCard(
 										}
 										placeholder="Puestos"
 										autoComplete="off"
-										className="border-gray-700 bg-black/20"
+										className="border-zinc-700 bg-black/20"
 										disabled={!props.canManageSettings}
 									/>
 									<Button
@@ -406,9 +406,9 @@ export function RestaurantModuleSettingsCard(
 											!props.canManageSettings ||
 											createRestaurantTableMutation.isPending
 										}
-										className="border-gray-700 bg-transparent text-gray-100 hover:bg-white/5"
+										className="border-zinc-700 bg-transparent text-zinc-100 hover:bg-white/5"
 									>
-										<Plus className="h-4 w-4" aria-hidden="true" />
+										<Plus className="size-4" aria-hidden="true" />
 										Agregar
 									</Button>
 								</div>

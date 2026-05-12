@@ -13,10 +13,10 @@ import type {
 	RestaurantTableDetailSchema,
 } from "../../../schemas/restaurants";
 
-export type RestaurantBootstrap = z.infer<typeof RestaurantBootstrapSchema>;
-export type RestaurantTableDetail = z.infer<typeof RestaurantTableDetailSchema>;
+type RestaurantBootstrap = z.infer<typeof RestaurantBootstrapSchema>;
+type RestaurantTableDetail = z.infer<typeof RestaurantTableDetailSchema>;
 export type RestaurantConfiguration = z.infer<typeof RestaurantConfigurationSchema>;
-export type KitchenBoard = z.infer<typeof KitchenBoardSchema>;
+type KitchenBoard = z.infer<typeof KitchenBoardSchema>;
 
 async function invalidateRestaurantQueries(queryClient: QueryClient) {
 	await Promise.all([
@@ -176,7 +176,7 @@ export function useCreateRestaurantAreaMutation() {
 	});
 }
 
-export function useUpdateRestaurantAreaMutation() {
+function useUpdateRestaurantAreaMutation() {
 	const queryClient = useQueryClient();
 
 	return useMutation({

@@ -66,7 +66,7 @@ export function SettingsPage() {
 	if (settingsQuery.isPending) {
 		return (
 			<div className="flex min-h-[60dvh] items-center justify-center">
-				<Loader2 className="h-8 w-8 animate-spin text-[var(--color-voltage)]" />
+				<Loader2 className="size-8 animate-spin text-[var(--color-voltage)]" />
 			</div>
 		);
 	}
@@ -120,13 +120,13 @@ function LocalPrinterSettingsSection({
 
 	if (!CardComponent) {
 		return (
-			<Card className="border-gray-800 bg-[var(--color-carbon)] text-[var(--color-photon)] shadow-none">
+			<Card className="border-zinc-800 bg-[var(--color-carbon)] text-[var(--color-photon)] shadow-none">
 				<CardHeader>
 					<CardTitle className="flex items-center gap-2">
-						<Settings2 className="h-4 w-4 text-[var(--color-voltage)]" />
+						<Settings2 className="size-4 text-[var(--color-voltage)]" />
 						Impresión local
 					</CardTitle>
-					<CardDescription className="text-gray-400">
+					<CardDescription className="text-zinc-400">
 						Cargando configuración de impresora…
 					</CardDescription>
 				</CardHeader>
@@ -152,7 +152,8 @@ function SettingsForm({
 	const [draftSettings, setDraftSettings] = useState<OrganizationSettings>(() =>
 		normalizeOrganizationSettings(data.settings),
 	);
-	const [showSavedMessage, setShowSavedMessage] = useState(false);
+	const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
+	const showSavedMessage = lastSavedAt !== null && !hasChanges;
 	const [newPaymentMethodLabel, setNewPaymentMethodLabel] = useState("");
 	const [paymentMethodDraftError, setPaymentMethodDraftError] = useState<
 		string | null
@@ -181,12 +182,6 @@ function SettingsForm({
 	useEffect(() => {
 		setDraftSettings(persistedSettings);
 	}, [persistedSettings]);
-
-	useEffect(() => {
-		if (hasChanges) {
-			setShowSavedMessage(false);
-		}
-	}, [hasChanges]);
 
 	const handlePaymentMethodChange = (
 		methodId: string,
@@ -254,12 +249,12 @@ function SettingsForm({
 	const handleSave = async () => {
 		if (!canManageSettings) return;
 		await onSave(draftSettings);
-		setShowSavedMessage(true);
+		setLastSavedAt(Date.now());
 	};
 
 	const handleReset = () => {
 		setDraftSettings(persistedSettings);
-		setShowSavedMessage(false);
+		setLastSavedAt(null);
 		setPaymentMethodDraftError(null);
 	};
 
@@ -271,10 +266,10 @@ function SettingsForm({
 						Configuración
 					</Badge>
 					<div className="space-y-2">
-						<h1 className="text-3xl font-bold tracking-tight">
+						<h1 className="text-3xl font-semibold tracking-tight">
 							Ajustes del negocio
 						</h1>
-						<p className="max-w-2xl text-sm text-gray-400 md:text-base">
+						<p className="max-w-2xl text-sm text-zinc-400 md:text-base">
 							Reglas operativas para caja, pagos, crédito, inventario y módulos.
 						</p>
 					</div>
@@ -286,7 +281,7 @@ function SettingsForm({
 						variant="outline"
 						onClick={handleReset}
 						disabled={!canManageSettings || !hasChanges || isSaving}
-						className="border-gray-700 bg-[var(--color-carbon)] text-gray-200 hover:bg-white/5 hover:text-white"
+						className="border-zinc-700 bg-[var(--color-carbon)] text-zinc-200 hover:bg-white/5 hover:text-white"
 					>
 						Restablecer
 					</Button>
@@ -296,7 +291,7 @@ function SettingsForm({
 						disabled={!canManageSettings || !hasChanges || isSaving}
 						className="bg-[var(--color-voltage)] text-black hover:bg-[#d9f15c]"
 					>
-						<Save className="h-4 w-4" />
+						<Save className="size-4" />
 						{isSaving ? "Guardando..." : "Guardar cambios"}
 					</Button>
 				</div>
@@ -315,7 +310,7 @@ function SettingsForm({
 			) : null}
 
 			{!canManageSettings ? (
-				<Alert className="border-gray-700 bg-[var(--color-carbon)] text-[var(--color-photon)]">
+				<Alert className="border-zinc-700 bg-[var(--color-carbon)] text-[var(--color-photon)]">
 					<AlertTitle>Solo lectura</AlertTitle>
 					<AlertDescription>
 						Necesitas rol admin u owner para cambiar estos ajustes.
@@ -367,13 +362,13 @@ function SettingsForm({
 				<div className="space-y-6">
 					<ThemeSettingsCard />
 
-					<Card className="border-gray-800 bg-[var(--color-carbon)] text-[var(--color-photon)] shadow-none">
+					<Card className="border-zinc-800 bg-[var(--color-carbon)] text-[var(--color-photon)] shadow-none">
 						<CardHeader>
 							<CardTitle className="flex items-center gap-2">
-								<Store className="h-4 w-4 text-[var(--color-voltage)]" />
+								<Store className="size-4 text-[var(--color-voltage)]" />
 								Caja y POS
 							</CardTitle>
-							<CardDescription className="text-gray-400">
+							<CardDescription className="text-zinc-400">
 								Valores por defecto para apertura de turno y checkout.
 							</CardDescription>
 						</CardHeader>
@@ -395,7 +390,7 @@ function SettingsForm({
 									}))
 								}
 								disabled={!canManageSettings}
-								className="border-gray-700 bg-black/20"
+								className="border-zinc-700 bg-black/20"
 							/>
 						</div>
 
@@ -418,16 +413,16 @@ function SettingsForm({
 									}))
 								}
 								disabled={!canManageSettings}
-								className="border-gray-700 bg-black/20"
+								className="border-zinc-700 bg-black/20"
 							/>
 						</div>
 
-						<Separator className="bg-gray-800" />
+						<Separator className="bg-zinc-800" />
 
 						<div className="space-y-4">
 							<div>
 								<h3 className="font-medium text-white">Métodos de pago</h3>
-								<p className="mt-1 text-sm text-gray-400">
+								<p className="mt-1 text-sm text-zinc-400">
 									Configura etiquetas, disponibilidad y referencia obligatoria.
 								</p>
 							</div>
@@ -436,7 +431,7 @@ function SettingsForm({
 								{draftSettings.pos.paymentMethods.map((paymentMethod) => (
 									<div
 										key={paymentMethod.id}
-										className="rounded-2xl border border-gray-800 bg-black/20 p-4"
+										className="rounded-2xl border border-zinc-800 bg-black/20 p-4"
 									>
 										<div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
 											<div className="min-w-0 flex-1 space-y-3">
@@ -453,12 +448,12 @@ function SettingsForm({
 															})
 														}
 														disabled={!canManageSettings}
-														className="border-gray-700 bg-black/20"
+														className="border-zinc-700 bg-black/20"
 													/>
 												</div>
-												<p className="text-xs text-gray-500">
+												<p className="text-xs text-zinc-500">
 													Código interno:{" "}
-													<span className="text-gray-400">
+													<span className="text-zinc-400">
 														{paymentMethod.id}
 													</span>
 												</p>
@@ -495,7 +490,7 @@ function SettingsForm({
 								))}
 							</div>
 
-							<div className="rounded-2xl border border-dashed border-gray-700 bg-black/10 p-4">
+							<div className="rounded-2xl border border-dashed border-zinc-700 bg-black/10 p-4">
 								<div className="grid gap-3 lg:grid-cols-[1fr_auto] lg:items-end">
 									<div className="space-y-2">
 										<Label htmlFor={newPaymentMethodId}>
@@ -512,11 +507,11 @@ function SettingsForm({
 											}}
 											disabled={!canManageSettings}
 											placeholder="Ej. Daviplata, QR, Zelle"
-											className="border-gray-700 bg-black/20"
+											className="border-zinc-700 bg-black/20"
 										/>
-										<p className="text-xs text-gray-500">
+										<p className="text-xs text-zinc-500">
 											Código interno:{" "}
-											<span className="text-gray-400">
+											<span className="text-zinc-400">
 												{newPaymentMethodSlug || "Se genera automáticamente"}
 											</span>
 										</p>
@@ -526,9 +521,9 @@ function SettingsForm({
 										variant="outline"
 										onClick={handleAddPaymentMethod}
 										disabled={!canManageSettings}
-										className="border-gray-700 bg-transparent text-gray-200 hover:bg-white/5 hover:text-white"
+										className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5 hover:text-white"
 									>
-										<Plus className="h-4 w-4" />
+										<Plus className="size-4" />
 										Agregar
 									</Button>
 								</div>
@@ -555,13 +550,13 @@ function SettingsForm({
 						onSettingsChange={setDraftSettings}
 					/>
 
-					<Card className="border-gray-800 bg-[var(--color-carbon)] text-[var(--color-photon)] shadow-none">
+					<Card className="border-zinc-800 bg-[var(--color-carbon)] text-[var(--color-photon)] shadow-none">
 						<CardHeader>
 							<CardTitle className="flex items-center gap-2">
-								<CreditCard className="h-4 w-4 text-[var(--color-voltage)]" />
+								<CreditCard className="size-4 text-[var(--color-voltage)]" />
 								Crédito
 							</CardTitle>
-							<CardDescription className="text-gray-400">
+							<CardDescription className="text-zinc-400">
 								Parámetros base para ventas fiadas y cartera.
 							</CardDescription>
 						</CardHeader>
@@ -604,19 +599,19 @@ function SettingsForm({
 										}))
 									}
 									disabled={!canManageSettings}
-									className="border-gray-700 bg-black/20"
+									className="border-zinc-700 bg-black/20"
 								/>
 							</div>
 						</CardContent>
 					</Card>
 
-					<Card className="border-gray-800 bg-[var(--color-carbon)] text-[var(--color-photon)] shadow-none">
+					<Card className="border-zinc-800 bg-[var(--color-carbon)] text-[var(--color-photon)] shadow-none">
 						<CardHeader>
 							<CardTitle className="flex items-center gap-2">
-								<Package className="h-4 w-4 text-[var(--color-voltage)]" />
+								<Package className="size-4 text-[var(--color-voltage)]" />
 								Inventario
 							</CardTitle>
-							<CardDescription className="text-gray-400">
+							<CardDescription className="text-zinc-400">
 								Defaults para catálogo y alertas operativas.
 							</CardDescription>
 						</CardHeader>
@@ -644,7 +639,7 @@ function SettingsForm({
 											}))
 										}
 										disabled={!canManageSettings}
-										className="border-gray-700 bg-black/20"
+										className="border-zinc-700 bg-black/20"
 									/>
 								</div>
 								<div className="grid gap-2">
@@ -670,7 +665,7 @@ function SettingsForm({
 											}))
 										}
 										disabled={!canManageSettings}
-										className="border-gray-700 bg-black/20"
+										className="border-zinc-700 bg-black/20"
 									/>
 								</div>
 							</div>
@@ -722,18 +717,18 @@ function ThemeSettingsCard() {
 	];
 
 	return (
-		<Card className="border-gray-800 bg-[var(--color-carbon)] text-[var(--color-photon)] shadow-none">
+		<Card className="border-zinc-800 bg-[var(--color-carbon)] text-[var(--color-photon)] shadow-none">
 			<CardHeader>
 				<CardTitle className="flex items-center gap-2">
-					<Settings2 className="h-4 w-4 text-[var(--color-voltage)]" />
+					<Settings2 className="size-4 text-[var(--color-voltage)]" />
 					Apariencia
 				</CardTitle>
-				<CardDescription className="text-gray-400">
+				<CardDescription className="text-zinc-400">
 					Elige el tema visual de la aplicación.
 				</CardDescription>
 			</CardHeader>
 			<CardContent>
-				<div className="inline-flex rounded-xl border border-gray-700 bg-black/20 p-1">
+				<div className="inline-flex rounded-xl border border-zinc-700 bg-black/20 p-1">
 					{options.map((option) => {
 						const Icon = option.icon;
 						const active = mode === option.value;
@@ -745,10 +740,10 @@ function ThemeSettingsCard() {
 								className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
 									active
 										? "bg-[var(--color-voltage)]/10 text-[var(--color-voltage)]"
-										: "text-gray-400 hover:text-white"
+										: "text-zinc-400 hover:text-white"
 								}`}
 							>
-								<Icon className="h-4 w-4" />
+								<Icon className="size-4" />
 								{option.label}
 							</button>
 						);
@@ -797,14 +792,14 @@ function SummaryCard({
 	icon: typeof Building2;
 }) {
 	return (
-		<Card className="border-gray-800 bg-[var(--color-carbon)] text-[var(--color-photon)] shadow-none">
+		<Card className="border-zinc-800 bg-[var(--color-carbon)] text-[var(--color-photon)] shadow-none">
 			<CardHeader className="space-y-4">
 				<div className="flex items-center gap-3">
-					<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[var(--color-voltage)]/20 bg-[var(--color-voltage)]/10 text-[var(--color-voltage)]">
-						<Icon className="h-4 w-4" />
+					<div className="flex size-10 shrink-0 items-center justify-center rounded-2xl border border-[var(--color-voltage)]/20 bg-[var(--color-voltage)]/10 text-[var(--color-voltage)]">
+						<Icon className="size-4" />
 					</div>
 					<div className="min-w-0 flex-1">
-						<CardDescription className="text-gray-400">{title}</CardDescription>
+						<CardDescription className="text-zinc-400">{title}</CardDescription>
 						<CardTitle className="mt-1 truncate text-xl font-semibold tracking-tight text-white">
 							{value}
 						</CardTitle>
@@ -812,7 +807,7 @@ function SummaryCard({
 				</div>
 			</CardHeader>
 			<CardContent className="pt-0">
-				<p className="text-sm leading-6 text-gray-400">{description}</p>
+				<p className="text-sm leading-6 text-zinc-400">{description}</p>
 			</CardContent>
 		</Card>
 	);
@@ -836,7 +831,7 @@ function ToggleControl({
 				disabled={disabled}
 				onCheckedChange={onCheckedChange}
 			/>
-			<span className="text-sm text-gray-300">{label}</span>
+			<span className="text-sm text-zinc-300">{label}</span>
 		</div>
 	);
 }
@@ -857,12 +852,12 @@ function ToggleRow({
 	onCheckedChange: (checked: boolean) => void;
 }) {
 	return (
-		<div className="flex items-center justify-between gap-4 rounded-2xl border border-gray-800 bg-black/20 p-4">
+		<div className="flex items-center justify-between gap-4 rounded-2xl border border-zinc-800 bg-black/20 p-4">
 			<div>
 				<Label htmlFor={id} className="font-medium text-white">
 					{title}
 				</Label>
-				<p className="mt-1 text-sm text-gray-400">{description}</p>
+				<p className="mt-1 text-sm text-zinc-400">{description}</p>
 			</div>
 			<Switch
 				id={id}

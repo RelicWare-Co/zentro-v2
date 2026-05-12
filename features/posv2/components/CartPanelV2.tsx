@@ -44,7 +44,7 @@ export function CartPanelV2({
       {/* Header */}
       <div className="p-4 border-b border-[rgba(255,255,255,0.06)] flex items-center justify-between shrink-0 bg-[#111111]">
         <div>
-          <h2 className="text-base font-bold text-white leading-none">
+          <h2 className="text-base font-semibold text-white leading-none">
             Orden Actual
           </h2>
           <p className="text-xs text-[#6b6b6b] mt-1">{totalItems} artículos</p>
@@ -56,7 +56,7 @@ export function CartPanelV2({
           className="text-red-400 hover:text-red-300 hover:bg-red-400/10 font-medium h-8 px-2 text-xs rounded-lg transition-all"
           aria-label="Limpiar carrito"
         >
-          <Trash2 className="h-4 w-4 mr-1" />
+          <Trash2 className="size-4 mr-1" />
           Limpiar
         </Button>
       </div>
@@ -75,9 +75,9 @@ export function CartPanelV2({
           ))}
 
           {cart.length === 0 && (
-            <div className="flex flex-col items-center justify-center h-40 text-[#6b6b6b] space-y-2">
-              <div className="w-10 h-10 rounded-full bg-[rgba(255,255,255,0.04)] flex items-center justify-center border border-[rgba(255,255,255,0.06)]">
-                <Search className="h-4 w-4 text-[#3d3d3d]" />
+            <div className="flex flex-col items-center justify-center h-40 text-[#6b6b6b] gap-2">
+              <div className="size-10 rounded-full bg-[rgba(255,255,255,0.04)] flex items-center justify-center border border-[rgba(255,255,255,0.06)]">
+                <Search className="size-4 text-[#3d3d3d]" />
               </div>
               <p className="text-sm">Escanea o selecciona un producto</p>
             </div>

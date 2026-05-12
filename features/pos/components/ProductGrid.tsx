@@ -244,14 +244,14 @@ export function ProductGrid({
 	return (
 		<div
 			className={cn(
-				"flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden border-r border-gray-800",
+				"flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden border-r border-zinc-800",
 				className,
 			)}
 		>
-			<div className="p-4 space-y-4 shrink-0 border-b border-gray-800/50 bg-[#0a0a0a]">
+			<div className="p-4 space-y-4 shrink-0 border-b border-zinc-800/50 bg-[#0a0a0a]">
 				<div className="flex items-center gap-4">
 					<div className="relative flex-1 max-w-md">
-						<Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+						<Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-zinc-500" />
 						<Input
 							ref={searchInputRef}
 							placeholder="Buscar productos, código de barras..."
@@ -348,7 +348,7 @@ export function ProductGrid({
 										: scanMetricsRef.current.keyCount + 1,
 								};
 							}}
-							className="h-10 rounded-lg border-gray-800 bg-black/40 pl-9 pr-10 text-white placeholder:text-gray-600 transition-all focus-visible:border-[var(--color-voltage)] focus-visible:ring-1 focus-visible:ring-[var(--color-voltage)]"
+							className="h-10 rounded-lg border-zinc-800 bg-black/40 pl-9 pr-10 text-white placeholder:text-zinc-600 transition-all focus-visible:border-[var(--color-voltage)] focus-visible:ring-1 focus-visible:ring-[var(--color-voltage)]"
 						/>
 						{searchQuery.trim().length > 0 ? (
 							<button
@@ -363,9 +363,9 @@ export function ProductGrid({
 									onClearSearch();
 									searchInputRef.current?.focus({ preventScroll: true });
 								}}
-								className="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-gray-500 transition-colors hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-voltage)]"
+								className="absolute right-2 top-1/2 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-md text-zinc-500 transition-colors hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-voltage)]"
 							>
-								<X className="h-4 w-4" />
+								<X className="size-4" />
 							</button>
 						) : null}
 					</div>
@@ -401,20 +401,20 @@ export function ProductGrid({
 					</div>
 
 					{isLoading && (
-						<div className="flex h-16 flex-col items-center justify-center text-gray-500">
-							<p>Cargando productos...</p>
+						<div className="flex h-16 flex-col items-center justify-center text-zinc-500">
+							<p>Cargando productos…</p>
 						</div>
 					)}
 
 					{!isLoading && regularProducts.length === 0 && (
-						<div className="flex h-48 flex-col items-center justify-center text-gray-500">
+						<div className="flex h-48 flex-col items-center justify-center text-zinc-500">
 							<p>No se encontraron productos.</p>
 						</div>
 					)}
 
 					{hasMore && (
-						<div ref={loadMoreRef} className="flex h-16 items-center justify-center text-gray-500">
-							{isLoadingMore ? <p>Cargando más...</p> : null}
+						<div ref={loadMoreRef} className="flex h-16 items-center justify-center text-zinc-500">
+							{isLoadingMore ? <p>Cargando más…</p> : null}
 						</div>
 					)}
 				</div>

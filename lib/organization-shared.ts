@@ -13,8 +13,10 @@ export type OrganizationJoinLinkStatus =
 export function formatOrganizationRoleLabel(role: string | null | undefined) {
 	const normalizedRoles = (role ?? "")
 		.split(",")
-		.map((value) => value.trim().toLowerCase())
-		.filter(Boolean);
+		.flatMap((value) => {
+			const trimmed = value.trim().toLowerCase();
+			return trimmed ? [trimmed] : [];
+		});
 
 	if (normalizedRoles.includes("owner")) {
 		return "Owner";

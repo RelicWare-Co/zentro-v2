@@ -40,7 +40,7 @@ export function getRestaurantModuleToggleSettings(
 	return settings.modules.restaurants;
 }
 
-export function isRestaurantModuleEnabled(settings: OrganizationSettings) {
+function isRestaurantModuleEnabled(settings: OrganizationSettings) {
 	return getRestaurantModuleToggleSettings(settings).enabled;
 }
 
@@ -48,7 +48,7 @@ export function getRestaurantModuleSettings(settings: OrganizationSettings) {
 	return settings.restaurants;
 }
 
-export function getRestaurantModuleFlags(settings: OrganizationSettings) {
+function getRestaurantModuleFlags(settings: OrganizationSettings) {
 	const restaurantSettings = getRestaurantModuleSettings(settings);
 	return {
 		kitchenDisplayEnabled: restaurantSettings.kitchen.displayEnabled,

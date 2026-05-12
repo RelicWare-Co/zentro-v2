@@ -423,13 +423,15 @@ describe("organization access control", () => {
 
 		test("canceling invitation from another organization is rejected", async () => {
 			const { db, cleanup } = createTestDb();
-			const { organizationId, userId } = await seedOrganizationWithMember(db, {
-				memberRole: "admin",
-			});
-			const otherOrg = await seedOrganizationWithMember(db, {
-				orgName: "Other",
-				orgSlug: "other",
-			});
+			const [{ organizationId, userId }, otherOrg] = await Promise.all([
+				seedOrganizationWithMember(db, {
+					memberRole: "admin",
+				}),
+				seedOrganizationWithMember(db, {
+					orgName: "Other",
+					orgSlug: "other",
+				}),
+			]);
 			const invId = await seedInvitation(db, {
 				organizationId: otherOrg.organizationId,
 				inviterId: otherOrg.userId,
@@ -452,10 +454,12 @@ describe("organization access control", () => {
 	describe("VAL-ORG-009: update member role authorization", () => {
 		test("manager can update a member role", async () => {
 			const { db, cleanup } = createTestDb();
-			const { organizationId, userId } = await seedOrganizationWithMember(db, {
-				memberRole: "owner",
-			});
-			const targetUser = await seedUser(db, { name: "Target", email: "target@example.com" });
+			const [{ organizationId, userId }, targetUser] = await Promise.all([
+				seedOrganizationWithMember(db, {
+					memberRole: "owner",
+				}),
+				seedUser(db, { name: "Target", email: "target@example.com" }),
+			]);
 			await db.insert(member).values({
 				id: crypto.randomUUID(),
 				organizationId,
@@ -488,10 +492,12 @@ describe("organization access control", () => {
 
 		test("non-owner cannot assign owner role", async () => {
 			const { db, cleanup } = createTestDb();
-			const { organizationId, userId } = await seedOrganizationWithMember(db, {
-				memberRole: "admin",
-			});
-			const targetUser = await seedUser(db, { name: "Target", email: "target@example.com" });
+			const [{ organizationId, userId }, targetUser] = await Promise.all([
+				seedOrganizationWithMember(db, {
+					memberRole: "admin",
+				}),
+				seedUser(db, { name: "Target", email: "target@example.com" }),
+			]);
 			await db.insert(member).values({
 				id: crypto.randomUUID(),
 				organizationId,
@@ -524,11 +530,13 @@ describe("organization access control", () => {
 
 		test("non-owner cannot demote an existing owner", async () => {
 			const { db, cleanup } = createTestDb();
-			const { organizationId, userId } = await seedOrganizationWithMember(db, {
-				memberRole: "admin",
-			});
+			const [{ organizationId, userId }, targetUser] = await Promise.all([
+				seedOrganizationWithMember(db, {
+					memberRole: "admin",
+				}),
+				seedUser(db, { name: "Target", email: "target@example.com" }),
+			]);
 			// Seed a second owner that the admin tries to demote
-			const targetUser = await seedUser(db, { name: "Target", email: "target@example.com" });
 			await db.insert(member).values({
 				id: crypto.randomUUID(),
 				organizationId,
@@ -589,10 +597,12 @@ describe("organization access control", () => {
 
 		test("invalid role is rejected in updateMemberRole", async () => {
 			const { db, cleanup } = createTestDb();
-			const { organizationId, userId } = await seedOrganizationWithMember(db, {
-				memberRole: "owner",
-			});
-			const targetUser = await seedUser(db, { name: "Target", email: "target@example.com" });
+			const [{ organizationId, userId }, targetUser] = await Promise.all([
+				seedOrganizationWithMember(db, {
+					memberRole: "owner",
+				}),
+				seedUser(db, { name: "Target", email: "target@example.com" }),
+			]);
 			await db.insert(member).values({
 				id: crypto.randomUUID(),
 				organizationId,
@@ -627,10 +637,12 @@ describe("organization access control", () => {
 	describe("VAL-ORG-010: remove member authorization", () => {
 		test("manager can remove a member", async () => {
 			const { db, cleanup } = createTestDb();
-			const { organizationId, userId } = await seedOrganizationWithMember(db, {
-				memberRole: "owner",
-			});
-			const targetUser = await seedUser(db, { name: "Target", email: "target@example.com" });
+			const [{ organizationId, userId }, targetUser] = await Promise.all([
+				seedOrganizationWithMember(db, {
+					memberRole: "owner",
+				}),
+				seedUser(db, { name: "Target", email: "target@example.com" }),
+			]);
 			await db.insert(member).values({
 				id: crypto.randomUUID(),
 				organizationId,
@@ -696,8 +708,10 @@ describe("organization access control", () => {
 				memberRole: "admin",
 			});
 			// Seed two owners
-			const owner1 = await seedUser(db, { name: "Owner1", email: "owner1@example.com" });
-			const owner2 = await seedUser(db, { name: "Owner2", email: "owner2@example.com" });
+			const [owner1, owner2] = await Promise.all([
+				seedUser(db, { name: "Owner1", email: "owner1@example.com" }),
+				seedUser(db, { name: "Owner2", email: "owner2@example.com" }),
+			]);
 			await db.insert(member).values([
 				{
 					id: crypto.randomUUID(),

@@ -31,26 +31,26 @@ export const SearchPosProductsResultSchema = z.object({
 	nextCursor: z.number().nullable(),
 });
 
-export const PosCategorySchema = z.object({
+const PosCategorySchema = z.object({
 	id: z.string(),
 	name: z.string(),
 	description: z.string().nullable().optional(),
 });
 
-export const PosPaymentMethodSchema = z.object({
+const PosPaymentMethodSchema = z.object({
 	id: z.string(),
 	label: z.string(),
 	requiresReference: z.boolean(),
 });
 
-export const PosSettingsSchema = z.object({
+const PosSettingsSchema = z.object({
 	defaultTerminalName: z.string(),
 	defaultStartingCash: z.number(),
 	paymentMethods: PosPaymentMethodSchema.array(),
 	allowCreditSales: z.boolean(),
 });
 
-export const PosActiveShiftSchema = z.object({
+const PosActiveShiftSchema = z.object({
 	id: z.string(),
 	terminalId: z.string().nullable().optional(),
 	terminalName: z.string().nullable().optional(),
@@ -92,7 +92,7 @@ export const OpenShiftResultSchema = z.object({
 	openedAt: z.number(),
 });
 
-export const CashMovementTypeSchema = z.enum(["expense", "payout", "inflow"]);
+const CashMovementTypeSchema = z.enum(["expense", "payout", "inflow"]);
 
 export const RegisterCashMovementInputSchema = z.object({
 	shiftId: z.string().trim().min(1),
@@ -117,14 +117,14 @@ export const ShiftCloseSummaryInputSchema = z.object({
 	shiftId: z.string().trim().min(1),
 });
 
-export const ShiftSummaryByMethodSchema = z.object({
+const ShiftSummaryByMethodSchema = z.object({
 	paymentMethod: z.string(),
 	expectedAmount: z.number(),
 	actualAmount: z.number().nullable().optional(),
 	difference: z.number().nullable().optional(),
 });
 
-export const ShiftCloseMovementItemSchema = z.object({
+const ShiftCloseMovementItemSchema = z.object({
 	type: z.string(),
 	paymentMethod: z.string(),
 	amount: z.number(),
@@ -132,7 +132,7 @@ export const ShiftCloseMovementItemSchema = z.object({
 	createdAt: z.number(),
 });
 
-export const ShiftCloseMovementTotalsSchema = z.object({
+const ShiftCloseMovementTotalsSchema = z.object({
 	inflow: z.number(),
 	expense: z.number(),
 	payout: z.number(),

@@ -188,20 +188,22 @@ describe("cross-area end-to-end flows", () => {
       const shiftId = shiftOpen.id;
 
       // Seed products
-      const productA = await seedProduct(db, {
-        organizationId,
-        name: "Soda",
-        price: 5000,
-        stock: 20,
-        trackInventory: true,
-      });
-      const productB = await seedProduct(db, {
-        organizationId,
-        name: "Chips",
-        price: 3000,
-        stock: 15,
-        trackInventory: true,
-      });
+      const [productA, productB] = await Promise.all([
+        seedProduct(db, {
+          organizationId,
+          name: "Soda",
+          price: 5000,
+          stock: 20,
+          trackInventory: true,
+        }),
+        seedProduct(db, {
+          organizationId,
+          name: "Chips",
+          price: 3000,
+          stock: 15,
+          trackInventory: true,
+        }),
+      ]);
 
       // Cash movement
       await client.shifts.cashMovement({
@@ -227,14 +229,16 @@ describe("cross-area end-to-end flows", () => {
       });
 
       // Verify stock
-      const stockA = await db
-        .select({ stock: product.stock })
-        .from(product)
-        .where(eq(product.id, productA));
-      const stockB = await db
-        .select({ stock: product.stock })
-        .from(product)
-        .where(eq(product.id, productB));
+      const [stockA, stockB] = await Promise.all([
+        db
+          .select({ stock: product.stock })
+          .from(product)
+          .where(eq(product.id, productA)),
+        db
+          .select({ stock: product.stock })
+          .from(product)
+          .where(eq(product.id, productB)),
+      ]);
       expect(stockA[0].stock).toBe(19);
       expect(stockB[0].stock).toBe(13);
 
@@ -301,17 +305,19 @@ describe("cross-area end-to-end flows", () => {
       const shiftId = shiftOpen.id;
 
       // Step 2: Seed product and customer
-      const productId = await seedProduct(db, {
-        organizationId,
-        name: "Gadget",
-        price: 30000,
-        stock: 10,
-        trackInventory: true,
-      });
-      const customerId = await seedCustomer(db, {
-        organizationId,
-        name: "Jane Doe",
-      });
+      const [productId, customerId] = await Promise.all([
+        seedProduct(db, {
+          organizationId,
+          name: "Gadget",
+          price: 30000,
+          stock: 10,
+          trackInventory: true,
+        }),
+        seedCustomer(db, {
+          organizationId,
+          name: "Jane Doe",
+        }),
+      ]);
 
       // Step 3: Create credit sale (pay 5000 cash, 25000 on credit)
       const saleResult = await client.sales.create({
@@ -460,17 +466,19 @@ describe("cross-area end-to-end flows", () => {
       const shiftOpen = await client.shifts.open({ startingCash: 0 });
       const shiftId = shiftOpen.id;
 
-      const productId = await seedProduct(db, {
-        organizationId,
-        name: "Premium Item",
-        price: 50000,
-        stock: 5,
-        trackInventory: true,
-      });
-      const customerId = await seedCustomer(db, {
-        organizationId,
-        name: "John Credit",
-      });
+      const [productId, customerId] = await Promise.all([
+        seedProduct(db, {
+          organizationId,
+          name: "Premium Item",
+          price: 50000,
+          stock: 5,
+          trackInventory: true,
+        }),
+        seedCustomer(db, {
+          organizationId,
+          name: "John Credit",
+        }),
+      ]);
 
       // Credit sale with no initial payment
       const saleResult = await createCoreSale(
@@ -537,40 +545,43 @@ describe("cross-area end-to-end flows", () => {
       const shiftOpen = await client.shifts.open({ startingCash: 0 });
       const shiftId = shiftOpen.id;
 
-      const productId = await seedProduct(db, {
-        organizationId,
-        name: "Widget",
-        price: 10000,
-        stock: 20,
-        trackInventory: true,
-      });
-      const customerId = await seedCustomer(db, {
-        organizationId,
-        name: "Multi Credit",
-      });
+      const [productId, customerId] = await Promise.all([
+        seedProduct(db, {
+          organizationId,
+          name: "Widget",
+          price: 10000,
+          stock: 20,
+          trackInventory: true,
+        }),
+        seedCustomer(db, {
+          organizationId,
+          name: "Multi Credit",
+        }),
+      ]);
 
       // Two credit sales
-      const sale1 = await createCoreSale(
-        {
-          shiftId,
-          customerId,
-          items: [{ productId, quantity: 1, unitPrice: 10000 }],
-          payments: [],
-          isCreditSale: true,
-        },
-        { db, organizationId, userId },
-      );
-
-      const sale2 = await createCoreSale(
-        {
-          shiftId,
-          customerId,
-          items: [{ productId, quantity: 1, unitPrice: 10000 }],
-          payments: [],
-          isCreditSale: true,
-        },
-        { db, organizationId, userId },
-      );
+      const [sale1, sale2] = await Promise.all([
+        createCoreSale(
+          {
+            shiftId,
+            customerId,
+            items: [{ productId, quantity: 1, unitPrice: 10000 }],
+            payments: [],
+            isCreditSale: true,
+          },
+          { db, organizationId, userId },
+        ),
+        createCoreSale(
+          {
+            shiftId,
+            customerId,
+            items: [{ productId, quantity: 1, unitPrice: 10000 }],
+            payments: [],
+            isCreditSale: true,
+          },
+          { db, organizationId, userId },
+        ),
+      ]);
 
       const accountRows = await db
         .select()

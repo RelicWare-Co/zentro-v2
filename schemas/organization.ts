@@ -13,7 +13,7 @@ export const RevokeJoinLinkSchema = z.object({
 	joinLinkId: z.string().trim().min(1),
 });
 
-export const OrganizationSchema = z.object({
+const OrganizationSchema = z.object({
 	id: z.string(),
 	name: z.string(),
 	slug: z.string(),
@@ -21,7 +21,7 @@ export const OrganizationSchema = z.object({
 	createdAt: z.number().nullable().optional(),
 });
 
-export const MemberSchema = z.object({
+const MemberSchema = z.object({
 	memberId: z.string(),
 	userId: z.string(),
 	name: z.string(),
@@ -30,7 +30,7 @@ export const MemberSchema = z.object({
 	joinedAt: z.number().nullable().optional(),
 });
 
-export const InvitationSchema = z.object({
+const InvitationSchema = z.object({
 	id: z.string(),
 	email: z.string(),
 	role: z.string(),
@@ -38,7 +38,7 @@ export const InvitationSchema = z.object({
 	createdAt: z.number().nullable().optional(),
 });
 
-export const JoinLinkSchema = z.object({
+const JoinLinkSchema = z.object({
 	id: z.string(),
 	label: z.string().nullable().optional(),
 	role: z.string(),

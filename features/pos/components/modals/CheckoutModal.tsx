@@ -63,7 +63,7 @@ interface CheckoutModalProps {
 }
 
 const paymentFieldClassName =
-	"h-10 touch-manipulation rounded-lg border-gray-700 bg-[#151515] py-0 text-base text-white md:text-sm";
+	"h-10 touch-manipulation rounded-lg border-zinc-700 bg-[#151515] py-0 text-base text-white md:text-sm";
 const paymentSelectFieldClassName =
 	"data-[size=default]:h-10 data-[size=default]:rounded-lg";
 
@@ -143,26 +143,26 @@ export function CheckoutModal({
 
 	return (
 		<Dialog open={isOpen} onOpenChange={onClose}>
-			<DialogContent className="bg-[#151515] border-gray-800 text-white sm:max-w-[500px]">
+			<DialogContent className="bg-[#151515] border-zinc-800 text-white sm:max-w-[500px]">
 				<DialogHeader>
 					<DialogTitle className="text-xl">Cobrar Orden</DialogTitle>
 				</DialogHeader>
 
 				<div className="py-4 space-y-6">
-					<div className="flex justify-between items-center bg-[#0a0a0a] p-4 rounded-lg border border-gray-800">
-						<span className="text-gray-400 font-medium">Total a Pagar</span>
+					<div className="flex justify-between items-center bg-[#0a0a0a] p-4 rounded-lg border border-zinc-800">
+						<span className="text-zinc-400 font-medium">Total a Pagar</span>
 						<span className="text-3xl font-bold text-[var(--color-voltage)]">
 							{formatCurrency(totalAmount)}
 						</span>
 					</div>
 
 					<div className="space-y-4">
-						<div className="rounded-lg border border-gray-800 bg-[#0a0a0a] p-3">
+						<div className="rounded-lg border border-zinc-800 bg-[#0a0a0a] p-3">
 							<div className="space-y-1">
-								<p className="text-sm font-medium text-gray-200">
+								<p className="text-sm font-medium text-zinc-200">
 									Cliente de la venta
 								</p>
-								<p className="text-xs text-gray-500">
+								<p className="text-xs text-zinc-500">
 									Puedes asignarlo aquí mismo antes de finalizar el cobro.
 								</p>
 							</div>
@@ -170,18 +170,18 @@ export function CheckoutModal({
 								customers={customers}
 								selectedCustomerId={selectedCustomerId}
 								onCustomerChange={onCustomerChange}
-								buttonClassName="mt-3 h-auto w-full justify-between border-gray-700 bg-[#151515] hover:bg-[#151515]"
+								buttonClassName="mt-3 h-auto w-full justify-between border-zinc-700 bg-[#151515] hover:bg-[#151515]"
 								contentClassName="w-[min(420px,calc(100vw-2rem))]"
 							/>
 						</div>
 
-						<div className="rounded-lg border border-gray-800 bg-[#0a0a0a] p-3">
+						<div className="rounded-lg border border-zinc-800 bg-[#0a0a0a] p-3">
 							<div className="flex items-center justify-between gap-3">
 								<div>
-									<p className="text-sm font-medium text-gray-200">
+									<p className="text-sm font-medium text-zinc-200">
 										Aplicar descuento
 									</p>
-									<p className="text-xs text-gray-500">
+									<p className="text-xs text-zinc-500">
 										Actívalo solo cuando la orden lo necesite.
 									</p>
 								</div>
@@ -205,11 +205,11 @@ export function CheckoutModal({
 												discountInputRef.current?.select();
 											}, 0);
 										}}
-										className="border-gray-600 data-[state=checked]:border-[var(--color-voltage)] data-[state=checked]:bg-[var(--color-voltage)] data-[state=checked]:text-black"
+										className="border-zinc-600 data-[state=checked]:border-[var(--color-voltage)] data-[state=checked]:bg-[var(--color-voltage)] data-[state=checked]:text-black"
 									/>
 									<label
 										htmlFor={discountEnabledId}
-										className="cursor-pointer text-sm text-gray-300"
+										className="cursor-pointer text-sm text-zinc-300"
 									>
 										Agregar
 									</label>
@@ -218,7 +218,7 @@ export function CheckoutModal({
 
 							{isDiscountEnabled ? (
 								<div className="relative mt-3">
-									<span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+									<span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500">
 										$
 									</span>
 									<Input
@@ -231,14 +231,14 @@ export function CheckoutModal({
 										onChange={(event) =>
 											setDiscountInput(sanitizeMoneyInput(event.target.value))
 										}
-										className="h-10 touch-manipulation border-gray-700 bg-[#151515] pl-7 text-base focus-visible:border-[var(--color-voltage)] focus-visible:ring-0 md:text-sm"
+										className="h-10 touch-manipulation border-zinc-700 bg-[#151515] pl-7 text-base focus-visible:border-[var(--color-voltage)] focus-visible:ring-0 md:text-sm"
 									/>
 								</div>
 							) : null}
 						</div>
 
 						<div className="flex items-center justify-between">
-							<h4 className="text-sm font-semibold text-gray-300">
+							<h4 className="text-sm font-semibold text-zinc-300">
 								Métodos de Pago
 							</h4>
 							{allowCreditSales ? (
@@ -248,17 +248,17 @@ export function CheckoutModal({
 										id={creditSaleId}
 										checked={isCreditSale}
 										onChange={(e) => setIsCreditSale(e.target.checked)}
-										className="w-4 h-4 rounded border-gray-700 bg-[#0a0a0a] text-[var(--color-voltage)] focus:ring-[var(--color-voltage)]"
+										className="size-4 rounded border-zinc-700 bg-[#0a0a0a] text-[var(--color-voltage)] focus:ring-[var(--color-voltage)]"
 									/>
 									<label
 										htmlFor={creditSaleId}
-										className="text-sm text-gray-400 cursor-pointer"
+										className="text-sm text-zinc-400 cursor-pointer"
 									>
 										Dejar saldo a crédito
 									</label>
 								</div>
 							) : (
-								<span className="text-sm text-gray-500">
+								<span className="text-sm text-zinc-500">
 									Crédito deshabilitado en ajustes
 								</span>
 							)}
@@ -280,7 +280,7 @@ export function CheckoutModal({
 							)}
 
 						{isCreditSale && (
-							<p className="text-sm text-gray-400">
+							<p className="text-sm text-zinc-400">
 								{shouldCreateCreditBalance
 									? "Puedes registrar un abono inicial ahora y el restante quedará pendiente en la cuenta del cliente."
 									: "Con los descuentos y pagos actuales no quedará saldo pendiente, así que la venta se registrará como pagada."}
@@ -321,11 +321,11 @@ export function CheckoutModal({
 								return (
 									<div
 										key={payment.id}
-										className="relative flex flex-col gap-2 rounded-lg border border-gray-800 bg-[#0a0a0a] p-3"
+										className="relative flex flex-col gap-2 rounded-lg border border-zinc-800 bg-[#0a0a0a] p-3"
 									>
 										{payments.length > 1 && (
 											<div className="flex items-center justify-between gap-3">
-												<p className="text-xs font-medium uppercase tracking-[0.14em] text-gray-500">
+												<p className="text-xs font-medium uppercase tracking-[0.14em] text-zinc-500">
 													Pago {index + 1}
 												</p>
 												<button
@@ -334,7 +334,7 @@ export function CheckoutModal({
 													className="inline-flex h-8 touch-manipulation items-center gap-1 rounded-md px-2 text-sm text-red-400 transition-colors hover:bg-red-500/10 hover:text-red-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/60"
 													aria-label={`Eliminar método de pago ${index + 1}`}
 												>
-													<XIcon className="h-3.5 w-3.5" />
+													<XIcon className="size-3.5" />
 													<span>Quitar</span>
 												</button>
 											</div>
@@ -352,7 +352,7 @@ export function CheckoutModal({
 												>
 													<SelectValue placeholder="Método" />
 												</SelectTrigger>
-												<SelectContent className="bg-[#151515] border-gray-700 text-white">
+												<SelectContent className="bg-[#151515] border-zinc-700 text-white">
 													{paymentMethodOptions.map((paymentMethodOption) => (
 														<SelectItem
 															key={paymentMethodOption.id}
@@ -365,7 +365,7 @@ export function CheckoutModal({
 											</Select>
 
 											<div className="relative flex-1">
-												<span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+												<span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500">
 													$
 												</span>
 												<Input
@@ -395,7 +395,7 @@ export function CheckoutModal({
 												onChange={(e) =>
 													onUpdatePayment(index, "reference", e.target.value)
 												}
-												className="h-10 touch-manipulation border-gray-700 bg-[#151515] text-base focus-visible:border-[var(--color-voltage)] focus-visible:ring-0 md:h-9 md:text-sm"
+												className="h-10 touch-manipulation border-zinc-700 bg-[#151515] text-base focus-visible:border-[var(--color-voltage)] focus-visible:ring-0 md:h-9 md:text-sm"
 											/>
 										) : null}
 									</div>
@@ -405,16 +405,16 @@ export function CheckoutModal({
 							<Button
 								variant="outline"
 								onClick={onAddPaymentMethod}
-								className="w-full h-9 border-dashed border-gray-700 text-gray-400 hover:text-white hover:border-gray-500 bg-transparent"
+								className="w-full h-9 border-dashed border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500 bg-transparent"
 							>
-								<Plus className="w-4 h-4 mr-2" />
+								<Plus className="size-4 mr-2" />
 								Dividir Pago (Otro método)
 							</Button>
 						</div>
 					</div>
 
-					<div className="flex justify-between items-center text-sm pt-2 border-t border-gray-800">
-						<span className="text-gray-400">{footerLabel}</span>
+					<div className="flex justify-between items-center text-sm pt-2 border-t border-zinc-800">
+						<span className="text-zinc-400">{footerLabel}</span>
 						<span
 							className={`font-semibold ${
 								isCreditSale
@@ -435,7 +435,7 @@ export function CheckoutModal({
 					</div>
 
 					{!isCreditSale && canReturnCashChange && hasPaymentDifference ? (
-						<p className="text-sm text-gray-400">
+						<p className="text-sm text-zinc-400">
 							El sistema registrará el valor recibido y mostrará este monto como
 							vuelto para el cajero.
 						</p>
@@ -450,7 +450,7 @@ export function CheckoutModal({
 					<Button
 						variant="ghost"
 						onClick={onClose}
-						className="text-gray-400 hover:text-white"
+						className="text-zinc-400 hover:text-white"
 					>
 						Cancelar
 					</Button>

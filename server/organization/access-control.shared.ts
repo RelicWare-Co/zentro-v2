@@ -1,8 +1,10 @@
-export function parseRoleList(role: string | null | undefined) {
+function parseRoleList(role: string | null | undefined) {
 	return (role ?? "")
 		.split(",")
-		.map((value) => value.trim().toLowerCase())
-		.filter(Boolean);
+		.flatMap((value) => {
+			const trimmed = value.trim().toLowerCase();
+			return trimmed ? [trimmed] : [];
+		});
 }
 
 export function isOrganizationManagerRole(role: string | null | undefined) {

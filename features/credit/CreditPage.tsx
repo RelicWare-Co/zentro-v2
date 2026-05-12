@@ -72,7 +72,7 @@ function getTransactionTypeBadgeClass(type: string) {
 		return "border-emerald-500/20 bg-emerald-500/10 text-emerald-300";
 	if (type === "interest")
 		return "border-amber-500/20 bg-amber-500/10 text-amber-300";
-	return "border-gray-700 bg-gray-800/80 text-gray-300";
+	return "border-zinc-700 bg-zinc-800/80 text-zinc-300";
 }
 
 export function CreditPage() {
@@ -111,7 +111,7 @@ export function CreditPage() {
 	if (accountsQuery.isPending) {
 		return (
 			<div className="flex min-h-[60dvh] items-center justify-center">
-				<Loader2 className="h-8 w-8 animate-spin text-[var(--color-voltage)]" />
+				<Loader2 className="size-8 animate-spin text-[var(--color-voltage)]" />
 			</div>
 		);
 	}
@@ -140,12 +140,12 @@ export function CreditPage() {
 			<section className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
 				<div className="space-y-2">
 					<div className="flex items-center gap-3">
-						<h1 className="text-3xl font-bold tracking-tight">Crédito</h1>
+						<h1 className="text-3xl font-semibold tracking-tight">Crédito</h1>
 						<Badge className="border-[var(--color-voltage)]/20 bg-[var(--color-voltage)]/10 text-[var(--color-voltage)] hover:bg-[var(--color-voltage)]/10">
 							{totalAccounts} cuentas
 						</Badge>
 					</div>
-					<p className="text-sm text-gray-400">
+					<p className="text-sm text-zinc-400">
 						Saldo total pendiente:{" "}
 						<span className="font-semibold text-[var(--color-voltage)]">
 							{currencyFormatter.format(totalBalance)}
@@ -155,24 +155,24 @@ export function CreditPage() {
 			</section>
 
 			<div className="relative w-full sm:max-w-sm">
-				<Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-500" />
+				<Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-zinc-500" />
 				<Input
 					value={searchQuery}
 					onChange={(event) => setSearchQuery(event.target.value)}
 					placeholder="Buscar por nombre, documento o teléfono…"
-					className="border-gray-800 bg-black/20 pl-9"
+					className="border-zinc-800 bg-black/20 pl-9"
 				/>
 			</div>
 
 			<VirtualTable
 				data={accounts}
 				header={
-					<TableRow className="border-gray-800 hover:bg-transparent">
-						<TableHead className="px-4 text-gray-400">Cliente</TableHead>
-						<TableHead className="text-gray-400">Documento</TableHead>
-						<TableHead className="text-gray-400">Teléfono</TableHead>
-						<TableHead className="text-right text-gray-400">Saldo pendiente</TableHead>
-						<TableHead className="text-right text-gray-400">Acciones</TableHead>
+					<TableRow className="border-zinc-800 hover:bg-transparent">
+						<TableHead className="px-4 text-zinc-400">Cliente</TableHead>
+						<TableHead className="text-zinc-400">Documento</TableHead>
+						<TableHead className="text-zinc-400">Teléfono</TableHead>
+						<TableHead className="text-right text-zinc-400">Saldo pendiente</TableHead>
+						<TableHead className="text-right text-zinc-400">Acciones</TableHead>
 					</TableRow>
 				}
 				renderRow={(account) => (
@@ -182,14 +182,14 @@ export function CreditPage() {
 								<p className="truncate font-medium text-white">{account.customerName}</p>
 							</div>
 						</TableCell>
-						<TableCell className="text-sm text-gray-300">
-							{account.customerDocument ?? <span className="text-gray-500">—</span>}
+						<TableCell className="text-sm text-zinc-300">
+							{account.customerDocument ?? <span className="text-zinc-500">-</span>}
 						</TableCell>
-						<TableCell className="text-sm text-gray-300">
-							{account.customerPhone ?? <span className="text-gray-500">—</span>}
+						<TableCell className="text-sm text-zinc-300">
+							{account.customerPhone ?? <span className="text-zinc-500">-</span>}
 						</TableCell>
 						<TableCell className="text-right">
-							<p className={`font-semibold tabular-nums ${account.balance > 0 ? "text-[var(--color-voltage)]" : "text-gray-400"}`}>
+							<p className={`font-semibold tabular-nums ${account.balance > 0 ? "text-[var(--color-voltage)]" : "text-zinc-400"}`}>
 								{currencyFormatter.format(account.balance)}
 							</p>
 						</TableCell>
@@ -200,9 +200,9 @@ export function CreditPage() {
 									variant="outline"
 									size="sm"
 									onClick={() => openLedger(account)}
-									className="border-gray-700 bg-transparent text-gray-200 hover:bg-white/5"
+									className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5"
 								>
-									<History className="h-3.5 w-3.5" />
+									<History className="size-3.5" />
 									<span className="sr-only">Ver historial</span>
 								</Button>
 								{account.balance > 0 ? (
@@ -216,7 +216,7 @@ export function CreditPage() {
 										}}
 										className="border-emerald-500/30 bg-transparent text-emerald-200 hover:bg-emerald-500/10"
 									>
-										<Plus className="h-3.5 w-3.5" />
+										<Plus className="size-3.5" />
 										<span className="sr-only">Registrar abono</span>
 									</Button>
 								) : null}
@@ -230,8 +230,8 @@ export function CreditPage() {
 					emptyState={
 						accounts.length === 0 ? (
 							<div className="flex flex-col items-center gap-3 p-10 text-center">
-								<Wallet className="h-8 w-8 text-gray-600" />
-								<p className="text-sm text-gray-500">
+								<Wallet className="size-8 text-zinc-600" />
+								<p className="text-sm text-zinc-500">
 									{searchQuery.trim()
 										? "No hay cuentas que coincidan con la búsqueda."
 										: "Aún no hay cuentas de crédito registradas."}
@@ -240,14 +240,14 @@ export function CreditPage() {
 						) : null
 					}
 				/><Sheet open={isLedgerOpen} onOpenChange={setIsLedgerOpen}>
-				<SheetContent className="!w-full !max-w-full overflow-hidden border-l border-gray-800 bg-[var(--color-carbon)] p-0 text-white sm:!w-[640px]">
+				<SheetContent className="!w-full !max-w-full overflow-hidden border-l border-zinc-800 bg-[var(--color-carbon)] p-0 text-white sm:!w-[640px]">
 					<div className="flex h-full flex-col">
-						<SheetHeader className="shrink-0 border-b border-gray-800 p-6">
+						<SheetHeader className="shrink-0 border-b border-zinc-800 p-6">
 							<SheetTitle className="text-2xl font-bold">
 								Historial de crédito
 							</SheetTitle>
-							<SheetDescription className="text-gray-400">
-								{selectedAccount?.customerName} — Saldo pendiente:{" "}
+							<SheetDescription className="text-zinc-400">
+								{selectedAccount?.customerName}: Saldo pendiente:{" "}
 								<span className="font-semibold text-[var(--color-voltage)]">
 									{currencyFormatter.format(
 										selectedAccount?.balance ?? 0,
@@ -259,13 +259,13 @@ export function CreditPage() {
 						<div className="flex-1 overflow-hidden p-6">
 							{transactionsQuery.isLoading ? (
 								<div className="flex items-center justify-center py-12">
-									<Loader2 className="h-6 w-6 animate-spin text-[var(--color-voltage)]" />
+									<Loader2 className="size-6 animate-spin text-[var(--color-voltage)]" />
 								</div>
 							) : transactions.length > 0 ? (
 								<VirtualList
 									data={transactions}
 									renderItem={(tx) => (
-										<div className="flex items-center justify-between rounded-xl border border-gray-800 bg-black/10 p-4">
+										<div className="flex items-center justify-between rounded-xl border border-zinc-800 bg-black/10 p-4">
 											<div className="min-w-0 space-y-1">
 												<div className="flex items-center gap-2">
 													<Badge
@@ -274,18 +274,18 @@ export function CreditPage() {
 														{formatTransactionType(tx.type)}
 													</Badge>
 													{tx.saleId ? (
-														<span className="text-xs text-gray-500">
-															<Receipt className="inline h-3 w-3" />{" "}
+														<span className="text-xs text-zinc-500">
+															<Receipt className="inline size-3" />{" "}
 															{tx.saleId.slice(0, 8)}…
 														</span>
 													) : null}
 												</div>
 												{tx.notes ? (
-													<p className="text-sm text-gray-400">
+													<p className="text-sm text-zinc-400">
 														{tx.notes}
 													</p>
 												) : null}
-												<p className="text-xs text-gray-500">
+												<p className="text-xs text-zinc-500">
 													{dateTimeFormatter.format(tx.createdAt)}
 												</p>
 											</div>
@@ -306,13 +306,13 @@ export function CreditPage() {
 								/>
 							) : (
 								<div className="flex flex-col items-center gap-3 py-12 text-center">
-									<History className="h-8 w-8 text-gray-600" />
-									<p className="text-sm text-gray-500">
+									<History className="size-8 text-zinc-600" />
+									<p className="text-sm text-zinc-500">
 										No hay movimientos registrados.
 									</p>
 								</div>
 							)}
-						</div><div className="shrink-0 border-t border-gray-800 bg-black/30 p-4">
+						</div><div className="shrink-0 border-t border-zinc-800 bg-black/30 p-4">
 							<Button
 								type="button"
 								onClick={() => {
@@ -326,7 +326,7 @@ export function CreditPage() {
 								}
 								className="w-full bg-[var(--color-voltage)] text-black hover:bg-[#d9f15c]"
 							>
-								<Plus className="mr-2 h-4 w-4" />
+								<Plus className="mr-2 size-4" />
 								Registrar abono
 							</Button>
 						</div>
@@ -441,14 +441,14 @@ function PaymentFormSheetContent({
 
 	return (
 		<Sheet open={open} onOpenChange={onOpenChange}>
-			<SheetContent className="!w-full !max-w-full overflow-hidden border-l border-gray-800 bg-[var(--color-carbon)] p-0 text-white sm:!w-[480px]">
+			<SheetContent className="!w-full !max-w-full overflow-hidden border-l border-zinc-800 bg-[var(--color-carbon)] p-0 text-white sm:!w-[480px]">
 				<form onSubmit={handleSubmit} className="flex h-full flex-col">
-					<SheetHeader className="shrink-0 border-b border-gray-800 p-6">
+					<SheetHeader className="shrink-0 border-b border-zinc-800 p-6">
 						<SheetTitle className="text-2xl font-bold">
 							Registrar abono
 						</SheetTitle>
-						<SheetDescription className="text-gray-400">
-							{account?.customerName} — Saldo pendiente:{" "}
+						<SheetDescription className="text-zinc-400">
+							{account?.customerName}: Saldo pendiente:{" "}
 							<span className="font-semibold text-[var(--color-voltage)]">
 								{currencyFormatter.format(account?.balance ?? 0)}
 							</span>
@@ -467,8 +467,8 @@ function PaymentFormSheetContent({
 								</AlertDescription>
 							</Alert>
 						) : (
-							<div className="flex items-center gap-2 rounded-xl border border-gray-800 bg-black/10 p-3 text-sm text-gray-300">
-								<CalendarClock className="h-4 w-4 text-gray-500" />
+							<div className="flex items-center gap-2 rounded-xl border border-zinc-800 bg-black/10 p-3 text-sm text-zinc-300">
+								<CalendarClock className="size-4 text-zinc-500" />
 								<span>
 									Turno activo:{" "}
 									<span className="font-medium text-white">
@@ -488,7 +488,7 @@ function PaymentFormSheetContent({
 									value={amount}
 									onChange={(e) => setAmount(e.target.value)}
 									placeholder="Ej. 50000"
-									className="border-gray-700 bg-black/20"
+									className="border-zinc-700 bg-black/20"
 									required
 								/>
 								{isOverpayment ? (
@@ -506,16 +506,16 @@ function PaymentFormSheetContent({
 								>
 									<SelectTrigger
 										id={methodId}
-										className="w-full border-gray-700 bg-black/20 text-white"
+										className="w-full border-zinc-700 bg-black/20 text-white"
 									>
 										<SelectValue placeholder="Selecciona método" />
 									</SelectTrigger>
-									<SelectContent className="border-gray-800 bg-[var(--color-carbon)] text-white">
+									<SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
 										{paymentMethods.map((pm) => (
 											<SelectItem key={pm.id} value={pm.id}>
 												{pm.label}
 												{pm.requiresReference ? (
-													<span className="ml-1 text-xs text-gray-500">
+													<span className="ml-1 text-xs text-zinc-500">
 														(requiere ref.)
 													</span>
 												) : null}
@@ -531,7 +531,7 @@ function PaymentFormSheetContent({
 									value={saleId}
 									onChange={(e) => setSaleId(e.target.value)}
 									placeholder="ID de venta"
-									className="border-gray-700 bg-black/20"
+									className="border-zinc-700 bg-black/20"
 								/>
 							</Field>
 
@@ -542,7 +542,7 @@ function PaymentFormSheetContent({
 										value={reference}
 										onChange={(e) => setReference(e.target.value)}
 										placeholder="Número de referencia"
-										className="border-gray-700 bg-black/20"
+										className="border-zinc-700 bg-black/20"
 										required
 									/>
 								</Field>
@@ -553,7 +553,7 @@ function PaymentFormSheetContent({
 										value={reference}
 										onChange={(e) => setReference(e.target.value)}
 										placeholder="Número de referencia"
-										className="border-gray-700 bg-black/20"
+										className="border-zinc-700 bg-black/20"
 									/>
 								</Field>
 							)}
@@ -564,7 +564,7 @@ function PaymentFormSheetContent({
 									value={notes}
 									onChange={(e) => setNotes(e.target.value)}
 									placeholder="Observaciones"
-									className="border-gray-700 bg-black/20"
+									className="border-zinc-700 bg-black/20"
 								/>
 							</Field>
 						</div>
@@ -579,7 +579,7 @@ function PaymentFormSheetContent({
 						) : null}
 					</div>
 
-					<div className="shrink-0 border-t border-gray-800 bg-black/30 p-6">
+					<div className="shrink-0 border-t border-zinc-800 bg-black/30 p-6">
 						<Button
 							type="submit"
 							disabled={

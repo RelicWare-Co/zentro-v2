@@ -50,15 +50,15 @@ export function usePosCart() {
 
 	const updateQuantity = useCallback((cartItemId: string, delta: number) => {
 		setCart((prevCart) => {
-			return prevCart
-				.map((item) => {
-					if (item.id === cartItemId) {
-						const newQuantity = item.quantity + delta;
-						return { ...item, quantity: newQuantity > 0 ? newQuantity : 0 };
-					}
-					return item;
-				})
-				.filter((item) => item.quantity > 0);
+			return prevCart.reduce<typeof prevCart>((acc, item) => {
+				if (item.id === cartItemId) {
+					const newQuantity = item.quantity + delta;
+					if (newQuantity > 0) acc.push({ ...item, quantity: newQuantity });
+				} else if (item.quantity > 0) {
+					acc.push(item);
+				}
+				return acc;
+			}, []);
 		});
 	}, []);
 

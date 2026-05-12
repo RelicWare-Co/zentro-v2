@@ -31,18 +31,20 @@ describe("sale creation transactions", () => {
     test("stock is reduced by sold quantity after sale", async () => {
       const { db, cleanup } = createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const productId = await seedProduct(db, {
-        organizationId,
-        name: "Widget",
-        price: 10000,
-        stock: 50,
-        trackInventory: true,
-      });
-      const shiftId = await seedShift(db, {
-        organizationId,
-        userId,
-        status: "open",
-      });
+      const [productId, shiftId] = await Promise.all([
+        seedProduct(db, {
+          organizationId,
+          name: "Widget",
+          price: 10000,
+          stock: 50,
+          trackInventory: true,
+        }),
+        seedShift(db, {
+          organizationId,
+          userId,
+          status: "open",
+        }),
+      ]);
 
       const before = await db
         .select({ stock: product.stock })
@@ -77,26 +79,28 @@ describe("sale creation transactions", () => {
     test("modifier stock is reduced by total quantity sold", async () => {
       const { db, cleanup } = createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const baseProductId = await seedProduct(db, {
-        organizationId,
-        name: "Burger",
-        price: 15000,
-        stock: 20,
-        trackInventory: true,
-      });
-      const modifierProductId = await seedProduct(db, {
-        organizationId,
-        name: "Extra Cheese",
-        price: 2000,
-        stock: 30,
-        trackInventory: true,
-        isModifier: true,
-      });
-      const shiftId = await seedShift(db, {
-        organizationId,
-        userId,
-        status: "open",
-      });
+      const [baseProductId, modifierProductId, shiftId] = await Promise.all([
+        seedProduct(db, {
+          organizationId,
+          name: "Burger",
+          price: 15000,
+          stock: 20,
+          trackInventory: true,
+        }),
+        seedProduct(db, {
+          organizationId,
+          name: "Extra Cheese",
+          price: 2000,
+          stock: 30,
+          trackInventory: true,
+          isModifier: true,
+        }),
+        seedShift(db, {
+          organizationId,
+          userId,
+          status: "open",
+        }),
+      ]);
 
       await createCoreSale(
         {
@@ -134,18 +138,20 @@ describe("sale creation transactions", () => {
     test("non-tracked product does not affect stock", async () => {
       const { db, cleanup } = createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const productId = await seedProduct(db, {
-        organizationId,
-        name: "Service",
-        price: 50000,
-        stock: 0,
-        trackInventory: false,
-      });
-      const shiftId = await seedShift(db, {
-        organizationId,
-        userId,
-        status: "open",
-      });
+      const [productId, shiftId] = await Promise.all([
+        seedProduct(db, {
+          organizationId,
+          name: "Service",
+          price: 50000,
+          stock: 0,
+          trackInventory: false,
+        }),
+        seedShift(db, {
+          organizationId,
+          userId,
+          status: "open",
+        }),
+      ]);
 
       await createCoreSale(
         {
@@ -170,18 +176,20 @@ describe("sale creation transactions", () => {
     test("payment records created and sum equals sale total", async () => {
       const { db, cleanup } = createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const productId = await seedProduct(db, {
-        organizationId,
-        name: "Item",
-        price: 12000,
-        stock: 10,
-        trackInventory: true,
-      });
-      const shiftId = await seedShift(db, {
-        organizationId,
-        userId,
-        status: "open",
-      });
+      const [productId, shiftId] = await Promise.all([
+        seedProduct(db, {
+          organizationId,
+          name: "Item",
+          price: 12000,
+          stock: 10,
+          trackInventory: true,
+        }),
+        seedShift(db, {
+          organizationId,
+          userId,
+          status: "open",
+        }),
+      ]);
 
       const result = await createCoreSale(
         {
@@ -213,18 +221,20 @@ describe("sale creation transactions", () => {
     test("underpayment is rejected", async () => {
       const { db, cleanup } = createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const productId = await seedProduct(db, {
-        organizationId,
-        name: "Item",
-        price: 15000,
-        stock: 10,
-        trackInventory: true,
-      });
-      const shiftId = await seedShift(db, {
-        organizationId,
-        userId,
-        status: "open",
-      });
+      const [productId, shiftId] = await Promise.all([
+        seedProduct(db, {
+          organizationId,
+          name: "Item",
+          price: 15000,
+          stock: 10,
+          trackInventory: true,
+        }),
+        seedShift(db, {
+          organizationId,
+          userId,
+          status: "open",
+        }),
+      ]);
 
       await expect(
         createCoreSale(
@@ -245,18 +255,20 @@ describe("sale creation transactions", () => {
     test("zero-total sale accepts no payments", async () => {
       const { db, cleanup } = createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const productId = await seedProduct(db, {
-        organizationId,
-        name: "Freebie",
-        price: 0,
-        stock: 10,
-        trackInventory: true,
-      });
-      const shiftId = await seedShift(db, {
-        organizationId,
-        userId,
-        status: "open",
-      });
+      const [productId, shiftId] = await Promise.all([
+        seedProduct(db, {
+          organizationId,
+          name: "Freebie",
+          price: 0,
+          stock: 10,
+          trackInventory: true,
+        }),
+        seedShift(db, {
+          organizationId,
+          userId,
+          status: "open",
+        }),
+      ]);
 
       const result = await createCoreSale(
         {
@@ -278,22 +290,24 @@ describe("sale creation transactions", () => {
     test("credit sale for new customer creates account and charge transaction", async () => {
       const { db, cleanup } = createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const productId = await seedProduct(db, {
-        organizationId,
-        name: "Item",
-        price: 25000,
-        stock: 10,
-        trackInventory: true,
-      });
-      const customerId = await seedCustomer(db, {
-        organizationId,
-        name: "John",
-      });
-      const shiftId = await seedShift(db, {
-        organizationId,
-        userId,
-        status: "open",
-      });
+      const [productId, customerId, shiftId] = await Promise.all([
+        seedProduct(db, {
+          organizationId,
+          name: "Item",
+          price: 25000,
+          stock: 10,
+          trackInventory: true,
+        }),
+        seedCustomer(db, {
+          organizationId,
+          name: "John",
+        }),
+        seedShift(db, {
+          organizationId,
+          userId,
+          status: "open",
+        }),
+      ]);
 
       const result = await createCoreSale(
         {
@@ -337,22 +351,24 @@ describe("sale creation transactions", () => {
     test("credit sale for existing customer increments balance", async () => {
       const { db, cleanup } = createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const productId = await seedProduct(db, {
-        organizationId,
-        name: "Item",
-        price: 10000,
-        stock: 10,
-        trackInventory: true,
-      });
-      const customerId = await seedCustomer(db, {
-        organizationId,
-        name: "Jane",
-      });
-      const shiftId = await seedShift(db, {
-        organizationId,
-        userId,
-        status: "open",
-      });
+      const [productId, customerId, shiftId] = await Promise.all([
+        seedProduct(db, {
+          organizationId,
+          name: "Item",
+          price: 10000,
+          stock: 10,
+          trackInventory: true,
+        }),
+        seedCustomer(db, {
+          organizationId,
+          name: "Jane",
+        }),
+        seedShift(db, {
+          organizationId,
+          userId,
+          status: "open",
+        }),
+      ]);
 
       // First credit sale
       await createCoreSale(
@@ -396,18 +412,20 @@ describe("sale creation transactions", () => {
     test("credit sale without customer is rejected", async () => {
       const { db, cleanup } = createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const productId = await seedProduct(db, {
-        organizationId,
-        name: "Item",
-        price: 10000,
-        stock: 10,
-        trackInventory: true,
-      });
-      const shiftId = await seedShift(db, {
-        organizationId,
-        userId,
-        status: "open",
-      });
+      const [productId, shiftId] = await Promise.all([
+        seedProduct(db, {
+          organizationId,
+          name: "Item",
+          price: 10000,
+          stock: 10,
+          trackInventory: true,
+        }),
+        seedShift(db, {
+          organizationId,
+          userId,
+          status: "open",
+        }),
+      ]);
 
       await expect(
         createCoreSale(
@@ -427,22 +445,24 @@ describe("sale creation transactions", () => {
     test("credit sale with full payment is rejected", async () => {
       const { db, cleanup } = createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const productId = await seedProduct(db, {
-        organizationId,
-        name: "Item",
-        price: 10000,
-        stock: 10,
-        trackInventory: true,
-      });
-      const customerId = await seedCustomer(db, {
-        organizationId,
-        name: "Bob",
-      });
-      const shiftId = await seedShift(db, {
-        organizationId,
-        userId,
-        status: "open",
-      });
+      const [productId, customerId, shiftId] = await Promise.all([
+        seedProduct(db, {
+          organizationId,
+          name: "Item",
+          price: 10000,
+          stock: 10,
+          trackInventory: true,
+        }),
+        seedCustomer(db, {
+          organizationId,
+          name: "Bob",
+        }),
+        seedShift(db, {
+          organizationId,
+          userId,
+          status: "open",
+        }),
+      ]);
 
       await expect(
         createCoreSale(
@@ -465,18 +485,20 @@ describe("sale creation transactions", () => {
     test("cancelling sale restores stock and records adjustment movement", async () => {
       const { db, cleanup } = createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const productId = await seedProduct(db, {
-        organizationId,
-        name: "Item",
-        price: 10000,
-        stock: 20,
-        trackInventory: true,
-      });
-      const shiftId = await seedShift(db, {
-        organizationId,
-        userId,
-        status: "open",
-      });
+      const [productId, shiftId] = await Promise.all([
+        seedProduct(db, {
+          organizationId,
+          name: "Item",
+          price: 10000,
+          stock: 20,
+          trackInventory: true,
+        }),
+        seedShift(db, {
+          organizationId,
+          userId,
+          status: "open",
+        }),
+      ]);
       const u = makeUser({ id: userId });
       const ctx = buildMockContext(db, u, organizationId);
       const client = createServerORPCClient(ctx);
@@ -522,18 +544,20 @@ describe("sale creation transactions", () => {
     test("cancelling already cancelled sale is rejected", async () => {
       const { db, cleanup } = createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const productId = await seedProduct(db, {
-        organizationId,
-        name: "Item",
-        price: 10000,
-        stock: 10,
-        trackInventory: true,
-      });
-      const shiftId = await seedShift(db, {
-        organizationId,
-        userId,
-        status: "open",
-      });
+      const [productId, shiftId] = await Promise.all([
+        seedProduct(db, {
+          organizationId,
+          name: "Item",
+          price: 10000,
+          stock: 10,
+          trackInventory: true,
+        }),
+        seedShift(db, {
+          organizationId,
+          userId,
+          status: "open",
+        }),
+      ]);
       const u = makeUser({ id: userId });
       const ctx = buildMockContext(db, u, organizationId);
       const client = createServerORPCClient(ctx);
@@ -560,22 +584,24 @@ describe("sale creation transactions", () => {
     test("credit sale cancellation reduces credit account balance", async () => {
       const { db, cleanup } = createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const productId = await seedProduct(db, {
-        organizationId,
-        name: "Item",
-        price: 30000,
-        stock: 10,
-        trackInventory: true,
-      });
-      const customerId = await seedCustomer(db, {
-        organizationId,
-        name: "Credit Customer",
-      });
-      const shiftId = await seedShift(db, {
-        organizationId,
-        userId,
-        status: "open",
-      });
+      const [productId, customerId, shiftId] = await Promise.all([
+        seedProduct(db, {
+          organizationId,
+          name: "Item",
+          price: 30000,
+          stock: 10,
+          trackInventory: true,
+        }),
+        seedCustomer(db, {
+          organizationId,
+          name: "Credit Customer",
+        }),
+        seedShift(db, {
+          organizationId,
+          userId,
+          status: "open",
+        }),
+      ]);
       const u = makeUser({ id: userId });
       const ctx = buildMockContext(db, u, organizationId);
       const client = createServerORPCClient(ctx);
@@ -623,19 +649,21 @@ describe("sale creation transactions", () => {
     test("sale creation on closed shift is rejected", async () => {
       const { db, cleanup } = createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const productId = await seedProduct(db, {
-        organizationId,
-        name: "Item",
-        price: 10000,
-        stock: 10,
-        trackInventory: true,
-      });
-      const closedShiftId = await seedShift(db, {
-        organizationId,
-        userId,
-        status: "closed",
-        closedAt: new Date(),
-      });
+      const [productId, closedShiftId] = await Promise.all([
+        seedProduct(db, {
+          organizationId,
+          name: "Item",
+          price: 10000,
+          stock: 10,
+          trackInventory: true,
+        }),
+        seedShift(db, {
+          organizationId,
+          userId,
+          status: "closed",
+          closedAt: new Date(),
+        }),
+      ]);
 
       await expect(
         createCoreSale(
@@ -655,15 +683,17 @@ describe("sale creation transactions", () => {
   describe("VAL-SALE-007: wrong-user shift rejects sale", () => {
     test("sale creation on another user's shift is rejected", async () => {
       const { db, cleanup } = createTestDb();
-      const { organizationId, userId: ownerId } = await seedOrganizationWithMember(
-        db,
-        { userEmail: "owner@example.com" },
-      );
-      const { userId: cashierId } = await seedOrganizationWithMember(db, {
-        orgName: "Same Org",
-        userEmail: "cashier@example.com",
-        memberRole: "member",
-      });
+      const [
+        { organizationId, userId: ownerId },
+        { userId: cashierId },
+      ] = await Promise.all([
+        seedOrganizationWithMember(db, { userEmail: "owner@example.com" }),
+        seedOrganizationWithMember(db, {
+          orgName: "Same Org",
+          userEmail: "cashier@example.com",
+          memberRole: "member",
+        }),
+      ]);
       // Add cashier as member of the same organization
       const memberId = crypto.randomUUID();
       const now = new Date();
@@ -675,18 +705,20 @@ describe("sale creation transactions", () => {
         createdAt: now,
       });
 
-      const productId = await seedProduct(db, {
-        organizationId,
-        name: "Item",
-        price: 10000,
-        stock: 10,
-        trackInventory: true,
-      });
-      const shiftId = await seedShift(db, {
-        organizationId,
-        userId: ownerId,
-        status: "open",
-      });
+      const [productId, shiftId] = await Promise.all([
+        seedProduct(db, {
+          organizationId,
+          name: "Item",
+          price: 10000,
+          stock: 10,
+          trackInventory: true,
+        }),
+        seedShift(db, {
+          organizationId,
+          userId: ownerId,
+          status: "open",
+        }),
+      ]);
 
       await expect(
         createCoreSale(
@@ -707,18 +739,20 @@ describe("sale creation transactions", () => {
     test("sale with disabled payment method is rejected", async () => {
       const { db, cleanup } = createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const productId = await seedProduct(db, {
-        organizationId,
-        name: "Item",
-        price: 10000,
-        stock: 10,
-        trackInventory: true,
-      });
-      const shiftId = await seedShift(db, {
-        organizationId,
-        userId,
-        status: "open",
-      });
+      const [productId, shiftId] = await Promise.all([
+        seedProduct(db, {
+          organizationId,
+          name: "Item",
+          price: 10000,
+          stock: 10,
+          trackInventory: true,
+        }),
+        seedShift(db, {
+          organizationId,
+          userId,
+          status: "open",
+        }),
+      ]);
 
       // Disable card payments
       const settings = {
@@ -752,18 +786,20 @@ describe("sale creation transactions", () => {
     test("valid cash overpayment is allowed", async () => {
       const { db, cleanup } = createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const productId = await seedProduct(db, {
-        organizationId,
-        name: "Item",
-        price: 10000,
-        stock: 10,
-        trackInventory: true,
-      });
-      const shiftId = await seedShift(db, {
-        organizationId,
-        userId,
-        status: "open",
-      });
+      const [productId, shiftId] = await Promise.all([
+        seedProduct(db, {
+          organizationId,
+          name: "Item",
+          price: 10000,
+          stock: 10,
+          trackInventory: true,
+        }),
+        seedShift(db, {
+          organizationId,
+          userId,
+          status: "open",
+        }),
+      ]);
 
       const result = await createCoreSale(
         {
@@ -783,18 +819,20 @@ describe("sale creation transactions", () => {
     test("overpayment with non-cash exceeding total is rejected", async () => {
       const { db, cleanup } = createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const productId = await seedProduct(db, {
-        organizationId,
-        name: "Item",
-        price: 10000,
-        stock: 10,
-        trackInventory: true,
-      });
-      const shiftId = await seedShift(db, {
-        organizationId,
-        userId,
-        status: "open",
-      });
+      const [productId, shiftId] = await Promise.all([
+        seedProduct(db, {
+          organizationId,
+          name: "Item",
+          price: 10000,
+          stock: 10,
+          trackInventory: true,
+        }),
+        seedShift(db, {
+          organizationId,
+          userId,
+          status: "open",
+        }),
+      ]);
 
       await expect(
         createCoreSale(
@@ -818,18 +856,20 @@ describe("sale creation transactions", () => {
     test("overpayment without cash is rejected", async () => {
       const { db, cleanup } = createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const productId = await seedProduct(db, {
-        organizationId,
-        name: "Item",
-        price: 10000,
-        stock: 10,
-        trackInventory: true,
-      });
-      const shiftId = await seedShift(db, {
-        organizationId,
-        userId,
-        status: "open",
-      });
+      const [productId, shiftId] = await Promise.all([
+        seedProduct(db, {
+          organizationId,
+          name: "Item",
+          price: 10000,
+          stock: 10,
+          trackInventory: true,
+        }),
+        seedShift(db, {
+          organizationId,
+          userId,
+          status: "open",
+        }),
+      ]);
 
       await expect(
         createCoreSale(
@@ -850,18 +890,20 @@ describe("sale creation transactions", () => {
     test("split payment with non-cash exactly at total and cash covering change is allowed", async () => {
       const { db, cleanup } = createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const productId = await seedProduct(db, {
-        organizationId,
-        name: "Item",
-        price: 10000,
-        stock: 10,
-        trackInventory: true,
-      });
-      const shiftId = await seedShift(db, {
-        organizationId,
-        userId,
-        status: "open",
-      });
+      const [productId, shiftId] = await Promise.all([
+        seedProduct(db, {
+          organizationId,
+          name: "Item",
+          price: 10000,
+          stock: 10,
+          trackInventory: true,
+        }),
+        seedShift(db, {
+          organizationId,
+          userId,
+          status: "open",
+        }),
+      ]);
 
       const result = await createCoreSale(
         {

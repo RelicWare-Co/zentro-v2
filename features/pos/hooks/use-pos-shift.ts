@@ -34,7 +34,7 @@ export function usePosShift(
 
 	// Cash movement form state
 	const [movementType, setMovementType] = useState("inflow");
-	const [movementPaymentMethod, setMovementPaymentMethod] = useState(
+	const [movementPaymentMethod, setMovementPaymentMethod] = useState(() =>
 		getDefaultMovementPaymentMethodId(paymentMethodOptions),
 	);
 	const [movementAmount, setMovementAmount] = useState("");

@@ -108,19 +108,19 @@ export const DeleteRestaurantTableInputSchema = z.object({
 });
 
 // Schemas reutilizados del POS
-export const RestaurantPaymentMethodSchema = z.object({
+const RestaurantPaymentMethodSchema = z.object({
 	id: z.string(),
 	label: z.string(),
 	requiresReference: z.boolean(),
 });
 
-export const RestaurantCategorySchema = z.object({
+const RestaurantCategorySchema = z.object({
 	id: z.string(),
 	name: z.string(),
 	description: z.string().nullable().optional(),
 });
 
-export const RestaurantActiveShiftSchema = z.object({
+const RestaurantActiveShiftSchema = z.object({
 	id: z.string(),
 	terminalId: z.string().nullable().optional(),
 	terminalName: z.string().nullable().optional(),
@@ -131,13 +131,13 @@ export const RestaurantActiveShiftSchema = z.object({
 	notes: z.string().nullable().optional(),
 });
 
-export const RestaurantKitchenSettingsSchema = z.object({
+const RestaurantKitchenSettingsSchema = z.object({
 	displayEnabled: z.boolean(),
 	printTicketsEnabled: z.boolean(),
 	autoPrintOnSend: z.boolean(),
 });
 
-export const RestaurantSettingsSchema = z.object({
+const RestaurantSettingsSchema = z.object({
 	paymentMethods: RestaurantPaymentMethodSchema.array(),
 	defaultTerminalName: z.string(),
 	restaurant: z.object({
@@ -145,7 +145,7 @@ export const RestaurantSettingsSchema = z.object({
 	}),
 });
 
-export const RestaurantTableOpenOrderSchema = z.object({
+const RestaurantTableOpenOrderSchema = z.object({
 	id: z.string(),
 	orderNumber: z.number(),
 	itemCount: z.number(),
@@ -155,7 +155,7 @@ export const RestaurantTableOpenOrderSchema = z.object({
 	servedItemsCount: z.number(),
 });
 
-export const RestaurantTableSummarySchema = z.object({
+const RestaurantTableSummarySchema = z.object({
 	id: z.string(),
 	areaId: z.string(),
 	name: z.string(),
@@ -165,7 +165,7 @@ export const RestaurantTableSummarySchema = z.object({
 	openOrder: RestaurantTableOpenOrderSchema.nullable(),
 });
 
-export const RestaurantAreaSchema = z.object({
+const RestaurantAreaSchema = z.object({
 	id: z.string(),
 	name: z.string(),
 	sortOrder: z.number(),
@@ -179,7 +179,7 @@ export const RestaurantBootstrapSchema = z.object({
 	areas: RestaurantAreaSchema.array(),
 });
 
-export const RestaurantOrderItemModifierSchema = z.object({
+const RestaurantOrderItemModifierSchema = z.object({
 	id: z.string(),
 	modifierProductId: z.string(),
 	quantity: z.number(),
@@ -187,7 +187,7 @@ export const RestaurantOrderItemModifierSchema = z.object({
 	name: z.string(),
 });
 
-export const RestaurantOrderItemSchema = z.object({
+const RestaurantOrderItemSchema = z.object({
 	id: z.string(),
 	orderId: z.string(),
 	productId: z.string(),
@@ -211,7 +211,7 @@ export const RestaurantOrderItemSchema = z.object({
 	cancelledAt: z.number().nullable().optional(),
 });
 
-export const RestaurantKitchenTicketSchema = z.object({
+const RestaurantKitchenTicketSchema = z.object({
 	id: z.string(),
 	sequenceNumber: z.number(),
 	status: z.string(),
@@ -219,7 +219,7 @@ export const RestaurantKitchenTicketSchema = z.object({
 	printedAt: z.number().nullable().optional(),
 });
 
-export const RestaurantOrderTotalsSchema = z.object({
+const RestaurantOrderTotalsSchema = z.object({
 	itemCount: z.number(),
 	totalAmount: z.number(),
 	draftItemsCount: z.number(),
@@ -227,7 +227,7 @@ export const RestaurantOrderTotalsSchema = z.object({
 	servedItemsCount: z.number(),
 });
 
-export const RestaurantOpenOrderSchema = z.object({
+const RestaurantOpenOrderSchema = z.object({
 	id: z.string(),
 	orderNumber: z.number(),
 	guestCount: z.number(),
@@ -270,7 +270,7 @@ export const RestaurantConfigurationSchema = z.array(
 	}),
 );
 
-export const SendToKitchenTicketSchema = z.object({
+const SendToKitchenTicketSchema = z.object({
 	id: z.string(),
 	orderId: z.string(),
 	orderNumber: z.number(),
@@ -292,7 +292,7 @@ export const SendToKitchenResultSchema = z.object({
 	}),
 });
 
-export const KitchenBoardItemSchema = z.object({
+const KitchenBoardItemSchema = z.object({
 	id: z.string(),
 	kitchenTicketId: z.string().nullable().optional(),
 	productName: z.string(),
@@ -301,7 +301,7 @@ export const KitchenBoardItemSchema = z.object({
 	notes: z.string().nullable().optional(),
 });
 
-export const KitchenBoardTicketSchema = z.object({
+const KitchenBoardTicketSchema = z.object({
 	id: z.string(),
 	orderId: z.string(),
 	orderNumber: z.number(),

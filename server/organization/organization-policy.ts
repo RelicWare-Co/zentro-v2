@@ -10,7 +10,7 @@ function isDisabledFlag(value: string | undefined) {
 	return value ? DISABLED_FLAG_VALUES.has(value.trim().toLowerCase()) : false;
 }
 
-export function canUserCreateOrganization(user?: OrganizationPolicyUser) {
+function canUserCreateOrganization(user?: OrganizationPolicyUser) {
 	if (isPlatformAdminRole(user?.role)) {
 		return true;
 	}

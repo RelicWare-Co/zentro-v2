@@ -173,16 +173,15 @@ describe("product CRUD", () => {
 				organizationId,
 				name: "Snacks",
 			});
-			const productId = await seedProduct(db, {
-				organizationId,
-				categoryId,
-				name: "Chips",
-				price: 3000,
-			});
-			const { organizationId: otherOrgId } = await seedOrganizationWithMember(
-				db,
-				{ orgName: "Other Org" },
-			);
+			const [productId, { organizationId: otherOrgId }] = await Promise.all([
+				seedProduct(db, {
+					organizationId,
+					categoryId,
+					name: "Chips",
+					price: 3000,
+				}),
+				seedOrganizationWithMember(db, { orgName: "Other Org" }),
+			]);
 			const externalCategoryId = await seedCategory(db, {
 				organizationId: otherOrgId,
 				name: "External",

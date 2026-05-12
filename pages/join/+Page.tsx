@@ -76,10 +76,10 @@ export default function Page() {
 					<span className="inline-flex items-center rounded-full border border-[#dfff06]/20 bg-[#dfff06]/10 px-2 py-0.5 text-xs font-medium text-[#dfff06]">
 						Join Link
 					</span>
-					<h1 className="text-3xl font-bold tracking-tight text-balance">
+					<h1 className="text-3xl font-semibold tracking-tight text-balance">
 						Entrar a una Organización
 					</h1>
-					<p className="mx-auto max-w-xl text-sm text-gray-400 md:text-base">
+					<p className="mx-auto max-w-xl text-sm text-zinc-400 md:text-base">
 						Este enlace te lleva directo a la organización indicada después de
 						iniciar sesión o crear tu cuenta.
 					</p>
@@ -92,23 +92,23 @@ export default function Page() {
 					</div>
 				) : null}
 
-				<div className="rounded-2xl border border-gray-800 bg-[#1c1c1c] shadow-none">
-					<div className="p-6 border-b border-gray-800">
+				<div className="rounded-2xl border border-zinc-800 bg-[#1c1c1c] shadow-none">
+					<div className="p-6 border-b border-zinc-800">
 						<div className="flex items-center gap-2 text-lg font-semibold">
-							<Building2 className="h-4 w-4 text-[#dfff06]" />
+							<Building2 className="size-4 text-[#dfff06]" />
 							Detalle del acceso
 						</div>
-						<p className="text-sm text-gray-400 mt-1">
+						<p className="text-sm text-zinc-400 mt-1">
 							Revisa la organización y continúa con la cuenta correcta.
 						</p>
 					</div>
 					<div className="p-6 space-y-6">
 						{preview?.organization ? (
-							<div className="rounded-2xl border border-gray-800 bg-black/20 p-5">
+							<div className="rounded-2xl border border-zinc-800 bg-black/20 p-5">
 								<p className="text-lg font-semibold text-white">
 									{preview.organization.name}
 								</p>
-								<p className="text-sm text-gray-400">
+								<p className="text-sm text-zinc-400">
 									/{preview.organization.slug}
 								</p>
 								<div className="mt-4 flex flex-wrap gap-2">
@@ -116,12 +116,12 @@ export default function Page() {
 										{formatOrganizationRoleLabel(preview.role)}
 									</span>
 									{preview.label ? (
-										<span className="inline-flex items-center rounded-full border border-gray-700 bg-transparent px-2 py-0.5 text-xs font-medium text-gray-300">
+										<span className="inline-flex items-center rounded-full border border-zinc-700 bg-transparent px-2 py-0.5 text-xs font-medium text-zinc-300">
 											{preview.label}
 										</span>
 									) : null}
 								</div>
-								<p className="mt-4 text-sm text-gray-400">
+								<p className="mt-4 text-sm text-zinc-400">
 									{preview.canJoin
 										? "El acceso está listo para usarse."
 										: preview.message}
@@ -138,13 +138,13 @@ export default function Page() {
 						)}
 
 						{sessionData ? (
-							<div className="space-y-4 rounded-2xl border border-gray-800 bg-black/20 p-5">
+							<div className="space-y-4 rounded-2xl border border-zinc-800 bg-black/20 p-5">
 								<div>
-									<p className="text-sm text-gray-400">Cuenta actual</p>
+									<p className="text-sm text-zinc-400">Cuenta actual</p>
 									<p className="mt-1 font-semibold text-white">
 										{sessionData.user.name}
 									</p>
-									<p className="text-sm text-gray-400">
+									<p className="text-sm text-zinc-400">
 										{sessionData.user.email}
 									</p>
 								</div>
@@ -159,12 +159,12 @@ export default function Page() {
 									>
 										{isJoining ? (
 											<>
-												<Loader2 className="h-4 w-4 animate-spin" />
+												<Loader2 className="size-4 animate-spin" />
 												Entrando…
 											</>
 										) : (
 											<>
-												<ArrowRight className="h-4 w-4" />
+												<ArrowRight className="size-4" />
 												Entrar con esta cuenta
 											</>
 										)}
@@ -175,16 +175,16 @@ export default function Page() {
 											await authClient.signOut();
 											window.location.reload();
 										}}
-										className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-gray-700 bg-transparent px-3 text-sm font-medium text-gray-200 hover:bg-white/5 hover:text-white transition-colors cursor-pointer"
+										className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-zinc-700 bg-transparent px-3 text-sm font-medium text-zinc-200 hover:bg-white/5 hover:text-white transition-colors cursor-pointer"
 									>
-										<LogOut className="h-4 w-4" />
+										<LogOut className="size-4" />
 										Usar otra cuenta
 									</button>
 								</div>
 							</div>
 						) : (
-							<div className="space-y-3 rounded-2xl border border-gray-800 bg-black/20 p-5">
-								<p className="text-sm text-gray-400">
+							<div className="space-y-3 rounded-2xl border border-zinc-800 bg-black/20 p-5">
+								<p className="text-sm text-zinc-400">
 									Para continuar necesitas iniciar sesión o crear tu cuenta.
 								</p>
 								<div className="flex flex-col gap-3 sm:flex-row">
@@ -196,7 +196,7 @@ export default function Page() {
 									</a>
 									<a
 										href="/login"
-										className="inline-flex h-9 items-center justify-center rounded-lg border border-gray-700 bg-transparent px-3 text-sm font-medium text-gray-200 hover:bg-white/5 hover:text-white transition-colors"
+										className="inline-flex h-9 items-center justify-center rounded-lg border border-zinc-700 bg-transparent px-3 text-sm font-medium text-zinc-200 hover:bg-white/5 hover:text-white transition-colors"
 									>
 										Abrir login sin enlace
 									</a>

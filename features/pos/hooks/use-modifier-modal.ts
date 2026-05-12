@@ -45,14 +45,20 @@ export function useModifierModal(
 			return;
 		}
 
-		const selectedModifiers = modifierProducts
-			.map((modifierProduct) => ({
-				id: modifierProduct.id,
-				name: modifierProduct.name,
-				price: modifierProduct.price,
-				quantity: modifierQuantities[modifierProduct.id] ?? 0,
-			}))
-			.filter((modifierProduct) => modifierProduct.quantity > 0);
+		const selectedModifiers = modifierProducts.reduce<
+			Array<{ id: string; name: string; price: number; quantity: number }>
+		>((acc, modifierProduct) => {
+			const quantity = modifierQuantities[modifierProduct.id] ?? 0;
+			if (quantity > 0) {
+				acc.push({
+					id: modifierProduct.id,
+					name: modifierProduct.name,
+					price: modifierProduct.price,
+					quantity,
+				});
+			}
+			return acc;
+		}, []);
 
 		onAddToCart(selectedProductForModifiers, selectedModifiers);
 		setIsModifierModalOpen(false);

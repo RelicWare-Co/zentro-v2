@@ -70,23 +70,24 @@ export async function seedOrganizationWithMember(
 	const memberId = crypto.randomUUID();
 	const now = new Date();
 
-	await db.insert(user).values({
-		id: userId,
-		name: opts?.userName ?? "Test User",
-		email: opts?.userEmail ?? `test-${userId.slice(0, 8)}@example.com`,
-		emailVerified: true,
-		createdAt: now,
-		updatedAt: now,
-		role: opts?.userRole ?? "user",
-		banned: false,
-	});
-
-	await db.insert(organization).values({
-		id: organizationId,
-		name: opts?.orgName ?? "Test Organization",
-		slug: opts?.orgSlug ?? `test-org-${organizationId.slice(0, 8)}`,
-		createdAt: now,
-	});
+	await Promise.all([
+		db.insert(user).values({
+			id: userId,
+			name: opts?.userName ?? "Test User",
+			email: opts?.userEmail ?? `test-${userId.slice(0, 8)}@example.com`,
+			emailVerified: true,
+			createdAt: now,
+			updatedAt: now,
+			role: opts?.userRole ?? "user",
+			banned: false,
+		}),
+		db.insert(organization).values({
+			id: organizationId,
+			name: opts?.orgName ?? "Test Organization",
+			slug: opts?.orgSlug ?? `test-org-${organizationId.slice(0, 8)}`,
+			createdAt: now,
+		}),
+	]);
 
 	await db.insert(member).values({
 		id: memberId,

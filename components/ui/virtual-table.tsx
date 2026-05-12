@@ -56,7 +56,7 @@ export function VirtualTable<T>({
 	return (
 		<div
 			ref={parentRef}
-			className={cn("overflow-auto rounded-xl border border-gray-800 bg-[var(--color-carbon)]", className)}
+			className={cn("overflow-auto rounded-xl border border-zinc-800 bg-[var(--color-carbon)]", className)}
 			style={{ maxHeight }}
 		>
 			<Table>
@@ -65,7 +65,7 @@ export function VirtualTable<T>({
 				</TableHeader>
 				<TableBody>
 					{data.length === 0 && emptyState ? (
-						<TableRow className="border-gray-800">
+						<TableRow className="border-zinc-800">
 							<td colSpan={100} className="p-0">
 								{emptyState}
 							</td>
@@ -85,7 +85,7 @@ export function VirtualTable<T>({
 										data-index={virtualRow.index}
 										ref={fixedSize ? undefined : virtualizer.measureElement}
 										className={cn(
-											"border-gray-800 hover:bg-white/5",
+											"border-zinc-800 hover:bg-white/5",
 											fixedSize && "overflow-hidden",
 										)}
 										style={{

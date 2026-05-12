@@ -502,7 +502,7 @@ export async function createCoreSale(
 			);
 		}
 
-		const inventoryRows: Array<typeof inventoryMovement.$inferInsert> = [];
+		const entriesToUpdate = [];
 		for (const [productId, deltaQuantity] of stockDeltas.entries()) {
 			if (deltaQuantity === 0) continue;
 
@@ -513,26 +513,35 @@ export async function createCoreSale(
 				});
 			}
 			if (!productRow.trackInventory) continue;
+			entriesToUpdate.push({ productId, deltaQuantity, productRow });
+		}
 
-			const updatedProducts = await tx
-				.update(product)
-				.set({ stock: sql`${product.stock} + ${deltaQuantity}` })
-				.where(
-					and(
-						eq(product.id, productId),
-						eq(product.organizationId, organizationId),
-						isNull(product.deletedAt),
-					),
-				)
-				.returning({ id: product.id });
+		const updateResults = await Promise.all(
+			entriesToUpdate.map(({ productId, deltaQuantity, productRow }) =>
+				tx
+					.update(product)
+					.set({ stock: sql`${product.stock} + ${deltaQuantity}` })
+					.where(
+						and(
+							eq(product.id, productId),
+							eq(product.organizationId, organizationId),
+							isNull(product.deletedAt),
+						),
+					)
+					.returning({ id: product.id })
+					.then((updatedProducts) => {
+						if (updatedProducts.length === 0) {
+							throw new ORPCError("BAD_REQUEST", {
+								message: `No fue posible actualizar el stock de ${productRow.name}`,
+							});
+						}
+						return { productId, deltaQuantity };
+					}),
+			),
+		);
 
-			if (updatedProducts.length === 0) {
-				throw new ORPCError("BAD_REQUEST", {
-					message: `No fue posible actualizar el stock de ${productRow.name}`,
-				});
-			}
-
-			inventoryRows.push({
+		const inventoryRows: Array<typeof inventoryMovement.$inferInsert> =
+			updateResults.map(({ productId, deltaQuantity }) => ({
 				id: crypto.randomUUID(),
 				organizationId,
 				productId,
@@ -541,8 +550,7 @@ export async function createCoreSale(
 				quantity: deltaQuantity,
 				notes: `Venta ${saleId}`,
 				createdAt,
-			});
-		}
+			}));
 
 		if (inventoryRows.length > 0) {
 			await tx.insert(inventoryMovement).values(inventoryRows);

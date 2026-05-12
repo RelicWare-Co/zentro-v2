@@ -272,10 +272,10 @@ export function ProductsPage() {
 				id: "sku",
 				header: "SKU / Código",
 				cell: ({ row }) => (
-					<div className="text-sm text-gray-300">
+					<div className="text-sm text-zinc-300">
 						<p>{row.original.sku || "-"}</p>
 						{row.original.barcode ? (
-							<p className="text-xs text-gray-500">BC: {row.original.barcode}</p>
+							<p className="text-xs text-zinc-500">BC: {row.original.barcode}</p>
 						) : null}
 					</div>
 				),
@@ -288,7 +288,7 @@ export function ProductsPage() {
 			columnHelper.accessor("price", {
 				header: "Precio",
 				cell: ({ getValue }) => (
-					<span className="font-medium text-gray-200">
+					<span className="font-medium text-zinc-200">
 						{currencyFormatter.format(getValue())}
 					</span>
 				),
@@ -304,7 +304,7 @@ export function ProductsPage() {
 								variant="outline"
 								size="sm"
 								onClick={() => setInventoryProduct(row.original)}
-								className="border-gray-700 bg-transparent text-gray-200 hover:bg-white/5"
+								className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5"
 							>
 								Stock
 							</Button>
@@ -314,9 +314,9 @@ export function ProductsPage() {
 							variant="outline"
 							size="sm"
 							onClick={() => openEditProduct(row.original)}
-							className="border-gray-700 bg-transparent text-gray-200 hover:bg-white/5"
+							className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5"
 						>
-							<Edit3 className="h-3.5 w-3.5" />
+							<Edit3 className="size-3.5" />
 						</Button>
 						<Button
 							type="button"
@@ -325,7 +325,7 @@ export function ProductsPage() {
 							onClick={() => setProductToDelete(row.original)}
 							className="border-red-500/30 bg-transparent text-red-200 hover:bg-red-500/10"
 						>
-							<Trash2 className="h-3.5 w-3.5" />
+							<Trash2 className="size-3.5" />
 						</Button>
 					</div>
 				),
@@ -360,7 +360,7 @@ export function ProductsPage() {
 	if (isPending) {
 		return (
 			<div className="flex min-h-[60dvh] items-center justify-center">
-				<Loader2 className="h-8 w-8 animate-spin text-[var(--color-voltage)]" />
+				<Loader2 className="size-8 animate-spin text-[var(--color-voltage)]" />
 			</div>
 		);
 	}
@@ -386,12 +386,12 @@ export function ProductsPage() {
 			<section className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
 				<div className="space-y-2">
 					<div className="flex items-center gap-3">
-						<h1 className="text-3xl font-bold tracking-tight">Inventario</h1>
+						<h1 className="text-3xl font-semibold tracking-tight">Inventario</h1>
 						<Badge className="border-[var(--color-voltage)]/20 bg-[var(--color-voltage)]/10 text-[var(--color-voltage)] hover:bg-[var(--color-voltage)]/10">
 							{total} productos
 						</Badge>
 					</div>
-					<p className="text-sm text-gray-400">
+					<p className="text-sm text-zinc-400">
 						Catálogo de productos, categorías y ajustes básicos de stock.
 					</p>
 				</div>
@@ -401,9 +401,9 @@ export function ProductsPage() {
 						variant="outline"
 						onClick={() => setInventoryProduct(products.find((p) => p.trackInventory) ?? null)}
 						disabled={!products.some((product) => product.trackInventory)}
-						className="border-gray-800 bg-[var(--color-carbon)] text-gray-300 hover:bg-white/5 hover:text-white"
+						className="border-zinc-800 bg-[var(--color-carbon)] text-zinc-300 hover:bg-white/5 hover:text-white"
 					>
-						<PackagePlus className="h-4 w-4" />
+						<PackagePlus className="size-4" />
 						Movimiento de stock
 					</Button>
 					<Button
@@ -411,7 +411,7 @@ export function ProductsPage() {
 						onClick={openCreateProduct}
 						className="bg-[var(--color-voltage)] text-black hover:bg-[#d9f15c]"
 					>
-						<Plus className="h-4 w-4" />
+						<Plus className="size-4" />
 						Agregar producto
 					</Button>
 				</div>
@@ -421,14 +421,14 @@ export function ProductsPage() {
 				<TabsList className="flex w-full h-auto flex-wrap gap-2 bg-transparent border-0 p-0">
 					<TabsTrigger
 						value="products"
-						className="flex-1 sm:flex-none h-10 gap-2 rounded-xl border border-transparent px-5 text-sm font-medium text-gray-400 transition-all hover:text-white data-[state=active]:bg-[var(--color-carbon)] data-[state=active]:!border-gray-700 data-[state=active]:text-white"
+						className="flex-1 sm:flex-none h-10 gap-2 rounded-xl border border-transparent px-5 text-sm font-medium text-zinc-400 transition-all hover:text-white data-[state=active]:bg-[var(--color-carbon)] data-[state=active]:!border-zinc-700 data-[state=active]:text-white"
 					>
-						<Package className="h-4 w-4" />
+						<Package className="size-4" />
 						Productos
 					</TabsTrigger>
 					<TabsTrigger
 						value="categories"
-						className="flex-1 sm:flex-none h-10 gap-2 rounded-xl border border-transparent px-5 text-sm font-medium text-gray-400 transition-all hover:text-white data-[state=active]:bg-[var(--color-carbon)] data-[state=active]:!border-gray-700 data-[state=active]:text-white"
+						className="flex-1 sm:flex-none h-10 gap-2 rounded-xl border border-transparent px-5 text-sm font-medium text-zinc-400 transition-all hover:text-white data-[state=active]:bg-[var(--color-carbon)] data-[state=active]:!border-zinc-700 data-[state=active]:text-white"
 					>
 						Categorías
 					</TabsTrigger>
@@ -437,19 +437,19 @@ export function ProductsPage() {
 				<TabsContent value="products" className="space-y-6">
 					<div className="flex flex-col gap-3 sm:flex-row">
 						<div className="relative w-full sm:max-w-sm">
-							<Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-500" />
+							<Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-zinc-500" />
 							<Input
 								value={query}
 								onChange={(event) => setQuery(event.target.value)}
 								placeholder="Buscar por nombre, SKU o código..."
-								className="border-gray-800 bg-black/20 pl-9"
+								className="border-zinc-800 bg-black/20 pl-9"
 							/>
 						</div>
 						<Select value={categoryFilter} onValueChange={setCategoryFilter}>
-							<SelectTrigger className="w-full border-gray-800 bg-black/20 text-white sm:w-[240px]">
+							<SelectTrigger className="w-full border-zinc-800 bg-black/20 text-white sm:w-[240px]">
 								<SelectValue placeholder="Todas las categorías" />
 							</SelectTrigger>
-							<SelectContent className="border-gray-800 bg-[var(--color-carbon)] text-white">
+							<SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
 								<SelectItem value={ALL_FILTER_VALUE}>
 									Todas las categorías
 								</SelectItem>
@@ -466,14 +466,14 @@ export function ProductsPage() {
 					</div>
 
 					<div className="space-y-4">
-						<div className="rounded-xl border border-gray-800 bg-[var(--color-carbon)] overflow-hidden">
+						<div className="rounded-xl border border-zinc-800 bg-[var(--color-carbon)] overflow-hidden">
 							<div className="max-h-[600px] overflow-auto">
 								<Table>
 									<TableHeader className="sticky top-0 z-10 bg-[var(--color-carbon)]">
 										{table.getHeaderGroups().map((headerGroup) => (
-											<TableRow key={headerGroup.id} className="border-gray-800 hover:bg-transparent">
+											<TableRow key={headerGroup.id} className="border-zinc-800 hover:bg-transparent">
 												{headerGroup.headers.map((header) => (
-													<TableHead key={header.id} className="px-4 text-gray-400">
+													<TableHead key={header.id} className="px-4 text-zinc-400">
 														{header.isPlaceholder
 															? null
 															: flexRender(header.column.columnDef.header, header.getContext())}
@@ -485,7 +485,7 @@ export function ProductsPage() {
 									<TableBody>
 										{table.getRowModel().rows.length ? (
 											table.getRowModel().rows.map((row) => (
-												<TableRow key={row.id} className="border-gray-800 hover:bg-white/5">
+												<TableRow key={row.id} className="border-zinc-800 hover:bg-white/5">
 													{row.getVisibleCells().map((cell) => (
 														<TableCell key={cell.id} className="px-4">
 															{flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -494,8 +494,8 @@ export function ProductsPage() {
 												</TableRow>
 											))
 										) : (
-											<TableRow className="border-gray-800">
-												<TableCell colSpan={columns.length} className="p-10 text-center text-sm text-gray-500">
+											<TableRow className="border-zinc-800">
+												<TableCell colSpan={columns.length} className="p-10 text-center text-sm text-zinc-500">
 													No hay productos que coincidan con los filtros.
 												</TableCell>
 											</TableRow>
@@ -503,7 +503,7 @@ export function ProductsPage() {
 									</TableBody>
 								</Table>
 							</div>
-							<div className="border-t border-gray-800 p-2">
+							<div className="border-t border-zinc-800 p-2">
 								<DataTablePagination table={table} />
 							</div>
 						</div>
@@ -520,7 +520,7 @@ export function ProductsPage() {
 							}}
 							className="bg-[var(--color-voltage)] text-black hover:bg-[#d9f15c]"
 						>
-							<Plus className="h-4 w-4" />
+							<Plus className="size-4" />
 							Crear categoría
 						</Button>
 					</div>
@@ -533,17 +533,17 @@ export function ProductsPage() {
 									setSelectedCategory(category);
 									setIsCategoryDialogOpen(true);
 								}}
-								className="rounded-xl border border-gray-800 bg-[var(--color-carbon)] p-4 text-left transition-colors hover:border-[var(--color-voltage)]/40"
+								className="rounded-xl border border-zinc-800 bg-[var(--color-carbon)] p-4 text-left transition-colors hover:border-[var(--color-voltage)]/40"
 							>
 								<p className="font-medium text-white">{category.name}</p>
-								<p className="mt-2 line-clamp-2 text-sm text-gray-400">
+								<p className="mt-2 line-clamp-2 text-sm text-zinc-400">
 									{category.description || "Sin descripción"}
 								</p>
 							</button>
 						))}
 					</div>
 					{categories.length === 0 ? (
-						<div className="rounded-xl border border-dashed border-gray-800 bg-black/10 p-10 text-center text-sm text-gray-500">
+						<div className="rounded-xl border border-dashed border-zinc-800 bg-black/10 p-10 text-center text-sm text-zinc-500">
 							Aún no hay categorías.
 						</div>
 					) : null}
@@ -648,15 +648,15 @@ export function ProductsPage() {
 					if (!open) setProductToDelete(null);
 				}}
 			>
-				<AlertDialogContent className="border-gray-800 bg-[var(--color-carbon)] text-white">
+				<AlertDialogContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
 					<AlertDialogHeader>
 						<AlertDialogTitle>¿Eliminar producto?</AlertDialogTitle>
-						<AlertDialogDescription className="text-gray-400">
+						<AlertDialogDescription className="text-zinc-400">
 							{productToDelete?.name} será removido del catálogo activo.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
-						<AlertDialogCancel className="border-gray-700 bg-transparent text-gray-200 hover:bg-white/5">
+						<AlertDialogCancel className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5">
 							Cancelar
 						</AlertDialogCancel>
 						<AlertDialogAction
@@ -681,7 +681,7 @@ export function ProductsPage() {
 function StockBadge({ product }: { product: Product }) {
 	if (!product.trackInventory) {
 		return (
-			<span className="text-xs font-medium tracking-wider text-gray-500 uppercase">
+			<span className="text-xs font-medium tracking-wider text-zinc-500 uppercase">
 				Sin seguimiento
 			</span>
 		);
@@ -696,7 +696,7 @@ function StockBadge({ product }: { product: Product }) {
 
 	return (
 		<div className="flex items-center gap-2">
-			<span className="font-medium text-gray-200">{product.stock}</span>
+			<span className="font-medium text-zinc-200">{product.stock}</span>
 			<Badge variant="outline" className={className}>
 				{product.stock <= 0
 					? "Sin stock"
@@ -785,13 +785,13 @@ function ProductFormSheetContent({
 
 	return (
 		<Sheet open={open} onOpenChange={onOpenChange}>
-			<SheetContent className="!w-full !max-w-full overflow-hidden border-l border-gray-800 bg-[var(--color-carbon)] p-0 text-white sm:!w-[780px]">
+			<SheetContent className="!w-full !max-w-full overflow-hidden border-l border-zinc-800 bg-[var(--color-carbon)] p-0 text-white sm:!w-[780px]">
 				<form onSubmit={handleSubmit} className="flex h-full flex-col">
-					<SheetHeader className="shrink-0 border-b border-gray-800 p-6">
+					<SheetHeader className="shrink-0 border-b border-zinc-800 p-6">
 						<SheetTitle className="text-2xl font-bold">
 							{product ? "Editar producto" : "Crear producto"}
 						</SheetTitle>
-						<SheetDescription className="text-gray-400">
+						<SheetDescription className="text-zinc-400">
 							Datos de venta, inventario y clasificación.
 						</SheetDescription>
 					</SheetHeader>
@@ -807,7 +807,7 @@ function ProductFormSheetContent({
 											name: event.target.value,
 										}))
 									}
-									className="border-gray-700 bg-black/20"
+									className="border-zinc-700 bg-black/20"
 									required
 								/>
 							</Field>
@@ -825,10 +825,10 @@ function ProductFormSheetContent({
 										}));
 									}}
 								>
-									<SelectTrigger className="w-full border-gray-700 bg-black/20 text-white">
+									<SelectTrigger className="w-full border-zinc-700 bg-black/20 text-white">
 										<SelectValue placeholder="Sin categoría" />
 									</SelectTrigger>
-									<SelectContent className="border-gray-800 bg-[var(--color-carbon)] text-white">
+									<SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
 										<SelectItem value="none">Sin categoría</SelectItem>
 										{categories.map((category) => (
 											<SelectItem key={category.id} value={category.id}>
@@ -848,7 +848,7 @@ function ProductFormSheetContent({
 											sku: event.target.value,
 										}))
 									}
-									className="border-gray-700 bg-black/20"
+									className="border-zinc-700 bg-black/20"
 								/>
 							</Field>
 							<Field label="Código de barras">
@@ -860,7 +860,7 @@ function ProductFormSheetContent({
 											barcode: event.target.value,
 										}))
 									}
-									className="border-gray-700 bg-black/20"
+									className="border-zinc-700 bg-black/20"
 								/>
 							</Field>
 							<Field label="Precio unitario" required>
@@ -874,7 +874,7 @@ function ProductFormSheetContent({
 											price: sanitizeMoneyInput(event.target.value),
 										}))
 									}
-									className="border-gray-700 bg-black/20"
+									className="border-zinc-700 bg-black/20"
 									required
 								/>
 							</Field>
@@ -889,7 +889,7 @@ function ProductFormSheetContent({
 											cost: sanitizeMoneyInput(event.target.value),
 										}))
 									}
-									className="border-gray-700 bg-black/20"
+									className="border-zinc-700 bg-black/20"
 								/>
 							</Field>
 							<Field label="Impuesto (%)">
@@ -904,7 +904,7 @@ function ProductFormSheetContent({
 											taxRate: event.target.value,
 										}))
 									}
-									className="border-gray-700 bg-black/20"
+									className="border-zinc-700 bg-black/20"
 								/>
 							</Field>
 							{form.trackInventory ? (
@@ -919,7 +919,7 @@ function ProductFormSheetContent({
 												stock: event.target.value,
 											}))
 										}
-										className="border-gray-700 bg-black/20"
+										className="border-zinc-700 bg-black/20"
 									/>
 								</Field>
 							) : null}
@@ -957,7 +957,7 @@ function ProductFormSheetContent({
 						) : null}
 					</div>
 
-					<SheetFooter className="shrink-0 border-t border-gray-800 bg-black/30 p-6">
+					<SheetFooter className="shrink-0 border-t border-zinc-800 bg-black/30 p-6">
 						<Button
 							type="submit"
 							disabled={isPending}
@@ -1004,10 +1004,10 @@ function ToggleLine({
 	onCheckedChange: (checked: boolean) => void;
 }) {
 	return (
-		<div className="flex items-center justify-between gap-4 rounded-xl border border-gray-800 bg-black/20 p-4">
+		<div className="flex items-center justify-between gap-4 rounded-xl border border-zinc-800 bg-black/20 p-4">
 			<div>
 				<p className="font-medium text-white">{title}</p>
-				<p className="text-sm text-gray-400">{description}</p>
+				<p className="text-sm text-zinc-400">{description}</p>
 			</div>
 			<Switch checked={checked} onCheckedChange={onCheckedChange} />
 		</div>
@@ -1059,7 +1059,7 @@ function CategoryDialogContent({
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="border-gray-800 bg-[var(--color-carbon)] text-white sm:max-w-[480px]">
+			<DialogContent className="border-zinc-800 bg-[var(--color-carbon)] text-white sm:max-w-[480px]">
 				<DialogHeader>
 					<DialogTitle>
 						{category ? "Editar categoría" : "Crear categoría"}
@@ -1079,7 +1079,7 @@ function CategoryDialogContent({
 						<Input
 							value={name}
 							onChange={(event) => setName(event.target.value)}
-							className="border-gray-700 bg-black/20"
+							className="border-zinc-700 bg-black/20"
 							required
 						/>
 					</Field>
@@ -1087,7 +1087,7 @@ function CategoryDialogContent({
 						<Textarea
 							value={description}
 							onChange={(event) => setDescription(event.target.value)}
-							className="min-h-[80px] border-gray-700 bg-black/20"
+							className="min-h-[80px] border-zinc-700 bg-black/20"
 						/>
 					</Field>
 					{error ? (
@@ -1157,7 +1157,7 @@ function InventoryDialog({
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="border-gray-800 bg-[var(--color-carbon)] text-white sm:max-w-[520px]">
+			<DialogContent className="border-zinc-800 bg-[var(--color-carbon)] text-white sm:max-w-[520px]">
 				<DialogHeader>
 					<DialogTitle>Movimiento de stock</DialogTitle>
 				</DialogHeader>
@@ -1171,24 +1171,24 @@ function InventoryDialog({
 									role="combobox"
 									aria-controls="inventory-product-picker-list"
 									aria-expanded={productPickerOpen}
-									className="w-full justify-between border-gray-700 bg-black/20 text-white hover:bg-white/5"
+									className="w-full justify-between border-zinc-700 bg-black/20 text-white hover:bg-white/5"
 								>
 									<span className="truncate">
 										{product
 											? `${product.name} (${product.stock})`
 											: "Seleccionar producto..."}
 									</span>
-									<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 text-gray-500" />
+									<ChevronsUpDown className="ml-2 size-4 shrink-0 text-zinc-500" />
 								</Button>
 							</PopoverTrigger>
-							<PopoverContent className="w-[min(360px,calc(100vw-2rem))] border-gray-800 bg-[var(--color-carbon)] p-0 text-white">
+							<PopoverContent className="w-[min(360px,calc(100vw-2rem))] border-zinc-800 bg-[var(--color-carbon)] p-0 text-white">
 								<Command className="bg-transparent">
 									<CommandInput
 										placeholder="Buscar producto..."
-										className="text-white placeholder:text-gray-500"
+										className="text-white placeholder:text-zinc-500"
 									/>
 									<CommandList id="inventory-product-picker-list" className="p-1.5">
-										<CommandEmpty className="text-gray-400">
+										<CommandEmpty className="text-zinc-400">
 											No se encontraron productos.
 										</CommandEmpty>
 										{products.map((item) => (
@@ -1206,7 +1206,7 @@ function InventoryDialog({
 												</span>
 												<Check
 													className={cn(
-														"ml-auto h-4 w-4 shrink-0",
+														"ml-auto size-4 shrink-0",
 														product?.id === item.id
 															? "opacity-100"
 															: "opacity-0",
@@ -1221,10 +1221,10 @@ function InventoryDialog({
 					</Field>
 					<Field label="Tipo">
 						<Select value={type} onValueChange={onTypeChange}>
-							<SelectTrigger className="w-full border-gray-700 bg-black/20 text-white">
+							<SelectTrigger className="w-full border-zinc-700 bg-black/20 text-white">
 								<SelectValue />
 							</SelectTrigger>
-							<SelectContent className="border-gray-800 bg-[var(--color-carbon)] text-white">
+							<SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
 								<SelectItem value="restock">Reposición</SelectItem>
 								<SelectItem value="waste">Merma</SelectItem>
 								<SelectItem value="adjustment">Ajuste</SelectItem>
@@ -1236,7 +1236,7 @@ function InventoryDialog({
 							type="number"
 							value={quantity}
 							onChange={(event) => onQuantityChange(event.target.value)}
-							className="border-gray-700 bg-black/20"
+							className="border-zinc-700 bg-black/20"
 							required
 						/>
 					</Field>
@@ -1244,7 +1244,7 @@ function InventoryDialog({
 						<Textarea
 							value={notes}
 							onChange={(event) => onNotesChange(event.target.value)}
-							className="min-h-[80px] border-gray-700 bg-black/20"
+							className="min-h-[80px] border-zinc-700 bg-black/20"
 						/>
 					</Field>
 					{error ? (

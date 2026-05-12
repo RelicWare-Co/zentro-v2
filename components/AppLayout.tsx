@@ -66,7 +66,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 	if (isActiveOrgPending) {
 		return (
 			<div className="app-safe-area flex min-h-[100dvh] w-full items-center justify-center bg-[var(--color-void)] text-[var(--color-photon)]">
-				<Loader2 className="h-8 w-8 animate-spin text-[var(--color-voltage)]" />
+				<Loader2 className="size-8 animate-spin text-[var(--color-voltage)]" />
 			</div>
 		);
 	}
@@ -96,7 +96,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 			{isSidebarOpen ? (
 				<button
 					type="button"
-					className="fixed inset-0 z-40 h-full w-full cursor-default border-none bg-black/50 lg:hidden"
+					className="fixed inset-0 z-40 size-full cursor-default border-none bg-black/50 lg:hidden"
 					onClick={() => setIsSidebarOpen(false)}
 					aria-label="Cerrar navegación"
 				/>
@@ -104,12 +104,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
 			<aside
 				className={cn(
-					"fixed left-0 z-50 flex h-[100dvh] shrink-0 flex-col border-r border-gray-800 bg-[var(--color-carbon)] pt-[var(--safe-area-top)] pb-[var(--safe-area-bottom)] transition-all duration-300 ease-in-out lg:sticky lg:top-0 lg:translate-x-0",
+					"fixed left-0 z-50 flex h-[100dvh] shrink-0 flex-col border-r border-zinc-800 bg-[var(--color-carbon)] pt-[var(--safe-area-top)] pb-[var(--safe-area-bottom)] transition-all duration-300 ease-in-out lg:sticky lg:top-0 lg:translate-x-0",
 					isCollapsed ? "w-64 lg:w-20" : "w-64",
 					isSidebarOpen ? "translate-x-0" : "-translate-x-full",
 				)}
 			>
-				<div className="flex h-16 shrink-0 items-center overflow-hidden border-b border-gray-800 px-5 whitespace-nowrap">
+				<div className="flex h-16 shrink-0 items-center overflow-hidden border-b border-zinc-800 px-5 whitespace-nowrap">
 					<a
 						href="/dashboard"
 						className={cn(
@@ -124,22 +124,22 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 					<button
 						type="button"
 						onClick={() => setIsCollapsed((current) => !current)}
-						className="ml-auto hidden items-center justify-center rounded-lg p-2 text-gray-400 transition-colors hover:bg-white/5 hover:text-white lg:flex"
+						className="ml-auto hidden items-center justify-center rounded-lg p-2 text-zinc-400 transition-colors hover:bg-white/5 hover:text-white lg:flex"
 						aria-label={
 							isCollapsed ? "Expandir barra lateral" : "Colapsar barra lateral"
 						}
 					>
 						{isCollapsed ? (
-							<ChevronRight className="h-5 w-5" />
+							<ChevronRight className="size-5" />
 						) : (
-							<ChevronLeft className="h-5 w-5" />
+							<ChevronLeft className="size-5" />
 						)}
 					</button>
 				</div>
 
 				<div
 					className={cn(
-						"shrink-0 border-b border-gray-800 p-4",
+						"shrink-0 border-b border-zinc-800 p-4",
 						isCollapsed && "lg:px-2",
 					)}
 				>
@@ -150,13 +150,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 							queryClient.clear();
 						}}
 						className={cn(
-							"group flex w-full items-center overflow-hidden rounded-xl border border-gray-700 bg-gray-900/50 px-3 py-2.5 text-left transition-all hover:border-gray-600 hover:bg-gray-800/50",
+							"group flex w-full items-center overflow-hidden rounded-xl border border-zinc-700 bg-zinc-900/50 px-3 py-2.5 text-left transition-all hover:border-zinc-600 hover:bg-zinc-800/50",
 							isCollapsed && "lg:justify-center lg:px-0",
 						)}
 						title={isCollapsed ? "Cambiar organización" : undefined}
 					>
-						<div className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-[var(--color-voltage)]/10 text-[var(--color-voltage)] transition-colors group-hover:bg-[var(--color-voltage)]/20">
-							<Building2 className="h-3.5 w-3.5" />
+						<div className="flex size-6 shrink-0 items-center justify-center rounded bg-[var(--color-voltage)]/10 text-[var(--color-voltage)] transition-colors group-hover:bg-[var(--color-voltage)]/20">
+							<Building2 className="size-3.5" />
 						</div>
 						<div
 							className={cn(
@@ -169,7 +169,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 							<p className="truncate text-sm font-medium text-white">
 								{activeOrganization.name || "Sin organización"}
 							</p>
-							<p className="truncate text-xs text-gray-500">Cambiar</p>
+							<p className="truncate text-xs text-zinc-500">Cambiar</p>
 						</div>
 					</button>
 				</div>
@@ -195,13 +195,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 									"flex items-center rounded-xl px-3 py-2.5 font-medium whitespace-nowrap transition-colors",
 									isActive
 										? "bg-[var(--color-voltage)]/10 text-[var(--color-voltage)]"
-										: "text-gray-400 hover:bg-white/5 hover:text-white",
+										: "text-zinc-400 hover:bg-white/5 hover:text-white",
 									isCollapsed && "lg:justify-center lg:px-0",
 								)}
 								onClick={() => setIsSidebarOpen(false)}
 								title={isCollapsed ? item.name : undefined}
 							>
-								<Icon className="h-5 w-5 shrink-0" />
+								<Icon className="size-5 shrink-0" />
 								<span
 									className={cn(
 										"overflow-hidden transition-all duration-300",
@@ -219,7 +219,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
 				<div
 					className={cn(
-						"overflow-hidden border-t border-gray-800 p-4",
+						"overflow-hidden border-t border-zinc-800 p-4",
 						isCollapsed && "lg:px-2",
 					)}
 				>
@@ -231,12 +231,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 							window.location.href = "/login";
 						}}
 						className={cn(
-							"flex w-full items-center rounded-xl px-3 py-2.5 font-medium whitespace-nowrap text-gray-400 transition-colors hover:bg-white/5 hover:text-white",
+							"flex w-full items-center rounded-xl px-3 py-2.5 font-medium whitespace-nowrap text-zinc-400 transition-colors hover:bg-white/5 hover:text-white",
 							isCollapsed && "lg:justify-center lg:px-0",
 						)}
 						title={isCollapsed ? "Cerrar sesión" : undefined}
 					>
-						<LogOut className="h-5 w-5 shrink-0" />
+						<LogOut className="size-5 shrink-0" />
 						<span
 							className={cn(
 								"overflow-hidden text-left transition-all duration-300",
@@ -252,14 +252,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 			</aside>
 
 			<div className="flex h-dvh min-w-0 flex-1 flex-col overflow-hidden">
-				<header className="flex h-16 shrink-0 items-center border-b border-gray-800 bg-[var(--color-carbon)] px-4 lg:hidden">
+				<header className="flex h-16 shrink-0 items-center border-b border-zinc-800 bg-[var(--color-carbon)] px-4 lg:hidden">
 					<button
 						type="button"
 						onClick={() => setIsSidebarOpen(true)}
-						className="-ml-2 p-2 text-gray-400 hover:text-white"
+						className="-ml-2 p-2 text-zinc-400 hover:text-white"
 						aria-label="Abrir navegación"
 					>
-						<Menu className="h-6 w-6" />
+						<Menu className="size-6" />
 					</button>
 					<span className="ml-4 text-xl font-bold text-[var(--color-voltage)]">
 						Zentro

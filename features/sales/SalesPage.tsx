@@ -90,12 +90,14 @@ function getCurrentDateFilterValue() {
 	return `${now.getFullYear()}-${month}-${day}`;
 }
 
+const currencyFormatter = new Intl.NumberFormat("es-CO", {
+	style: "currency",
+	currency: "COP",
+	maximumFractionDigits: 0,
+});
+
 function formatCurrency(amount: number): string {
-	return new Intl.NumberFormat("es-CO", {
-		style: "currency",
-		currency: "COP",
-		maximumFractionDigits: 0,
-	}).format(amount);
+	return currencyFormatter.format(amount);
 }
 
 function formatSaleStatus(status: string) {
@@ -112,7 +114,7 @@ function getSaleStatusBadgeClass(status: string) {
 		return "border-[var(--color-voltage)]/20 bg-[var(--color-voltage)]/10 text-[var(--color-voltage)] hover:bg-[var(--color-voltage)]/10";
 	if (status === "cancelled")
 		return "border-rose-500/20 bg-rose-500/10 text-rose-300 hover:bg-rose-500/10";
-	return "border-gray-700 bg-gray-800/80 text-gray-300 hover:bg-gray-800/80";
+	return "border-zinc-700 bg-zinc-800/80 text-zinc-300 hover:bg-zinc-800/80";
 }
 
 function formatPaymentSummary(
@@ -367,9 +369,9 @@ export function SalesPage() {
 		const isMobile = mode === "mobile";
 		const idPrefix = isMobile ? "mobile-" : "";
 		const inputClassName = isMobile
-			? "h-11 border-gray-700 bg-black/20 text-white placeholder:text-gray-500"
-			: "h-9 border-gray-700 bg-black/20 text-white placeholder:text-gray-500";
-		const selectClassName = `${isMobile ? "h-11" : "h-9"} w-full border-gray-700 bg-black/20 text-white`;
+			? "h-11 border-zinc-700 bg-black/20 text-white placeholder:text-zinc-500"
+			: "h-9 border-zinc-700 bg-black/20 text-white placeholder:text-zinc-500";
+		const selectClassName = `${isMobile ? "h-11" : "h-9"} w-full border-zinc-700 bg-black/20 text-white`;
 
 		return (
 			<div className={isMobile ? "space-y-4" : "grid gap-4 md:grid-cols-2"}>
@@ -389,7 +391,7 @@ export function SalesPage() {
 						>
 							<SelectValue placeholder="Todos" />
 						</SelectTrigger>
-						<SelectContent className="border-gray-800 bg-[var(--color-carbon)] text-white">
+						<SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
 							<SelectItem value={ALL_FILTER_VALUE}>Todos</SelectItem>
 							{salesFilterOptions.paymentMethods.map((pm) => (
 								<SelectItem key={pm.id} value={pm.id}>
@@ -413,7 +415,7 @@ export function SalesPage() {
 						>
 							<SelectValue placeholder="Todos" />
 						</SelectTrigger>
-						<SelectContent className="border-gray-800 bg-[var(--color-carbon)] text-white">
+						<SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
 							<SelectItem value={ALL_FILTER_VALUE}>Todos</SelectItem>
 							{salesFilterOptions.cashiers.map((cashier) => (
 								<SelectItem key={cashier.id} value={cashier.id}>
@@ -437,7 +439,7 @@ export function SalesPage() {
 						>
 							<SelectValue placeholder="Todas" />
 						</SelectTrigger>
-						<SelectContent className="border-gray-800 bg-[var(--color-carbon)] text-white">
+						<SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
 							<SelectItem value={ALL_FILTER_VALUE}>Todas</SelectItem>
 							{salesFilterOptions.terminals.map((terminal) => (
 								<SelectItem key={terminal} value={terminal}>
@@ -464,7 +466,7 @@ export function SalesPage() {
 						>
 							<SelectValue placeholder="Todos" />
 						</SelectTrigger>
-						<SelectContent className="border-gray-800 bg-[var(--color-carbon)] text-white">
+						<SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
 							<SelectItem value={ALL_FILTER_VALUE}>Todos</SelectItem>
 							<SelectItem value="with_balance">Con saldo pendiente</SelectItem>
 							<SelectItem value="settled">Sin saldo</SelectItem>
@@ -512,12 +514,12 @@ export function SalesPage() {
 					<div
 						className={
 							isMobile
-								? "rounded-2xl border border-dashed border-[var(--color-voltage)]/20 bg-[var(--color-voltage)]/5 px-4 py-3 text-sm text-gray-300"
-								: "md:col-span-2 rounded-2xl border border-dashed border-[var(--color-voltage)]/20 bg-[var(--color-voltage)]/5 px-4 py-3 text-sm text-gray-300"
+								? "rounded-2xl border border-dashed border-[var(--color-voltage)]/20 bg-[var(--color-voltage)]/5 px-4 py-3 text-sm text-zinc-300"
+								: "md:col-span-2 rounded-2xl border border-dashed border-[var(--color-voltage)]/20 bg-[var(--color-voltage)]/5 px-4 py-3 text-sm text-zinc-300"
 						}
 					>
 						<p className="font-medium text-white">Fecha fija en hoy</p>
-						<p className="mt-0.5 text-xs text-gray-400">
+						<p className="mt-0.5 text-xs text-zinc-400">
 							Mostrando solo ventas del {todayLabel}.
 						</p>
 					</div>
@@ -560,10 +562,10 @@ export function SalesPage() {
 			<div className="flex-1 space-y-6 bg-[var(--color-void)] p-6 text-[var(--color-photon)] md:p-8 lg:p-12 font-sans">
 				<div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
 					<div className="flex items-baseline gap-3">
-						<h1 className="text-3xl font-bold tracking-tight text-white">
+						<h1 className="text-3xl font-semibold tracking-tight text-white">
 							Ventas
 						</h1>
-						<span className="text-sm text-gray-400">
+						<span className="text-sm text-zinc-400">
 							{sales.length} registros • {formatCurrency(totalRevenue)}{" "}
 							facturado
 						</span>
@@ -573,7 +575,7 @@ export function SalesPage() {
 						<Button
 							asChild
 							variant="outline"
-							className="h-10 w-full shrink-0 rounded-lg border-gray-800 bg-[var(--color-carbon)] px-4 py-2 text-gray-300 hover:bg-white/5 hover:text-white sm:w-auto"
+							className="h-10 w-full shrink-0 rounded-lg border-zinc-800 bg-[var(--color-carbon)] px-4 py-2 text-zinc-300 hover:bg-white/5 hover:text-white sm:w-auto"
 						>
 							<Link href="/dashboard">Ver dashboard</Link>
 						</Button>
@@ -582,7 +584,7 @@ export function SalesPage() {
 							className="h-10 w-full shrink-0 rounded-lg bg-[var(--color-voltage)] px-4 py-2 font-semibold text-black hover:bg-[#c9e605] sm:w-auto"
 						>
 							<Link href="/pos">
-								<Store className="mr-2 h-4 w-4" aria-hidden="true" />
+								<Store className="mr-2 size-4" aria-hidden="true" />
 								Ir al POS
 							</Link>
 						</Button>
@@ -594,16 +596,16 @@ export function SalesPage() {
 					onValueChange={handleViewChange}
 					className="w-full"
 				>
-					<TabsList className="inline-flex mb-6 bg-black/20 border border-gray-800 p-1 rounded-full !h-auto">
+					<TabsList className="inline-flex mb-6 bg-black/20 border border-zinc-800 p-1 rounded-full !h-auto">
 						<TabsTrigger
 							value="today"
-							className="inline-flex items-center justify-center min-h-[40px] !rounded-full px-6 py-1.5 text-sm font-medium text-gray-400 bg-transparent transition-all duration-200 ease-in-out data-[state=active]:!bg-gray-800/80 data-[state=active]:!text-white data-[state=active]:!shadow-sm data-[state=active]:!border-transparent hover:text-gray-200 !border-transparent outline-none !h-auto"
+							className="inline-flex items-center justify-center min-h-[40px] !rounded-full px-6 py-1.5 text-sm font-medium text-zinc-400 bg-transparent transition-all duration-200 ease-in-out data-[state=active]:!bg-zinc-800/80 data-[state=active]:!text-white data-[state=active]:!shadow-sm data-[state=active]:!border-transparent hover:text-zinc-200 !border-transparent outline-none !h-auto"
 						>
 							Ventas de hoy
 						</TabsTrigger>
 						<TabsTrigger
 							value="history"
-							className="inline-flex items-center justify-center min-h-[40px] !rounded-full px-6 py-1.5 text-sm font-medium text-gray-400 bg-transparent transition-all duration-200 ease-in-out data-[state=active]:!bg-gray-800/80 data-[state=active]:!text-white data-[state=active]:!shadow-sm data-[state=active]:!border-transparent hover:text-gray-200 !border-transparent outline-none !h-auto"
+							className="inline-flex items-center justify-center min-h-[40px] !rounded-full px-6 py-1.5 text-sm font-medium text-zinc-400 bg-transparent transition-all duration-200 ease-in-out data-[state=active]:!bg-zinc-800/80 data-[state=active]:!text-white data-[state=active]:!shadow-sm data-[state=active]:!border-transparent hover:text-zinc-200 !border-transparent outline-none !h-auto"
 						>
 							Historial de ventas
 						</TabsTrigger>
@@ -629,16 +631,16 @@ export function SalesPage() {
 
 					<IndeterminateProgressBar active={isSalesViewRefreshing} />
 
-					<div className="overflow-x-auto rounded-xl border border-gray-800 bg-[var(--color-carbon)]">
+					<div className="overflow-x-auto rounded-xl border border-zinc-800 bg-[var(--color-carbon)]">
 						<div
 							className={`transition-opacity ${isSalesViewRefreshing ? "opacity-80" : "opacity-100"}`}
 							aria-busy={isSalesViewRefreshing}
 						>
-							<div className="flex flex-col gap-4 border-b border-gray-800 p-4 lg:flex-row lg:items-center lg:justify-between">
+							<div className="flex flex-col gap-4 border-b border-zinc-800 p-4 lg:flex-row lg:items-center lg:justify-between">
 								<div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center w-full">
 									<div className="relative w-full sm:max-w-xs md:max-w-sm">
 										<Search
-											className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500"
+											className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-zinc-500"
 											aria-hidden="true"
 										/>
 										<Input
@@ -649,7 +651,7 @@ export function SalesPage() {
 												setSearchQuery(e.target.value)
 											}
 											placeholder="Cliente, cajero o id…"
-											className="h-10 rounded-lg border-gray-800 bg-black/20 pl-9 focus-visible:border-[var(--color-voltage)] focus-visible:ring-[var(--color-voltage)]/20"
+											className="h-10 rounded-lg border-zinc-800 bg-black/20 pl-9 focus-visible:border-[var(--color-voltage)] focus-visible:ring-[var(--color-voltage)]/20"
 										/>
 									</div>
 
@@ -664,11 +666,11 @@ export function SalesPage() {
 										>
 											<SelectTrigger
 												id={salesStatusId}
-												className="h-10 w-full rounded-lg border-gray-800 bg-black/20 text-white"
+												className="h-10 w-full rounded-lg border-zinc-800 bg-black/20 text-white"
 											>
 												<SelectValue placeholder="Estado" />
 											</SelectTrigger>
-											<SelectContent className="border-gray-800 bg-[var(--color-carbon)] text-white">
+											<SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
 												<SelectItem value={ALL_FILTER_VALUE}>
 													Todos
 												</SelectItem>
@@ -687,10 +689,10 @@ export function SalesPage() {
 											<Button
 												type="button"
 												variant="outline"
-												className="h-10 w-full rounded-lg border-gray-800 bg-black/20 text-gray-300 hover:bg-white/5 hover:text-white sm:hidden"
+												className="h-10 w-full rounded-lg border-zinc-800 bg-black/20 text-zinc-300 hover:bg-white/5 hover:text-white sm:hidden"
 											>
 												<Filter
-													className="mr-2 h-4 w-4"
+													className="mr-2 size-4"
 													aria-hidden="true"
 												/>
 												Filtros
@@ -703,15 +705,15 @@ export function SalesPage() {
 										</SheetTrigger>
 										<SheetContent
 											side="bottom"
-											className="h-[85vh] rounded-t-xl border-gray-800 bg-[var(--color-carbon)] text-white"
+											className="h-[85vh] rounded-t-xl border-zinc-800 bg-[var(--color-carbon)] text-white"
 											showCloseButton={false}
 										>
-											<SheetHeader className="border-b border-gray-800 pb-4">
-												<SheetTitle className="text-gray-200">
+											<SheetHeader className="border-b border-zinc-800 pb-4">
+												<SheetTitle className="text-zinc-200">
 													Filtros avanzados
 												</SheetTitle>
 											</SheetHeader>
-											<div className="flex-1 overflow-y-auto px-4 py-4">
+											<div className="flex-1 overflow-y-auto p-4">
 												{renderAdvancedFilters("mobile")}
 											</div>
 										</SheetContent>
@@ -722,10 +724,10 @@ export function SalesPage() {
 											<Button
 												type="button"
 												variant="outline"
-												className="hidden h-10 rounded-lg border-gray-800 bg-black/20 text-gray-300 hover:bg-white/5 hover:text-white sm:inline-flex"
+												className="hidden h-10 rounded-lg border-zinc-800 bg-black/20 text-zinc-300 hover:bg-white/5 hover:text-white sm:inline-flex"
 											>
 												<Filter
-													className="mr-2 h-4 w-4"
+													className="mr-2 size-4"
 													aria-hidden="true"
 												/>
 												Filtros
@@ -738,10 +740,10 @@ export function SalesPage() {
 										</PopoverTrigger>
 										<PopoverContent
 											align="start"
-											className="z-50 w-[600px] rounded-xl border-gray-800 bg-[var(--color-carbon)] p-4 text-white shadow-xl"
+											className="z-50 w-[600px] rounded-xl border-zinc-800 bg-[var(--color-carbon)] p-4 text-white shadow-xl"
 										>
 											<div className="space-y-4">
-												<h4 className="text-sm font-medium text-gray-200">
+												<h4 className="text-sm font-medium text-zinc-200">
 													Filtros avanzados
 												</h4>
 												{renderAdvancedFilters("desktop")}
@@ -754,7 +756,7 @@ export function SalesPage() {
 											type="button"
 											variant="ghost"
 											onClick={clearFilters}
-											className="h-10 text-gray-400 hover:text-white"
+											className="h-10 text-zinc-400 hover:text-white"
 										>
 											Limpiar
 										</Button>
@@ -764,7 +766,7 @@ export function SalesPage() {
 							<div className="p-4 pt-4">
 								{sales.length > 0 ? (
 									<div className="space-y-2">
-										<div className="hidden grid-cols-[minmax(0,1.45fr)_minmax(0,1.15fr)_84px_minmax(0,0.9fr)_minmax(0,1fr)_minmax(0,1.2fr)_44px] gap-4 px-3 text-[11px] font-medium tracking-[0.16em] text-gray-500 uppercase md:grid">
+										<div className="hidden grid-cols-[minmax(0,1.45fr)_minmax(0,1.15fr)_84px_minmax(0,0.9fr)_minmax(0,1fr)_minmax(0,1.2fr)_44px] gap-4 px-3 text-[11px] font-medium tracking-[0.16em] text-zinc-500 uppercase md:grid">
 											<span>Cliente</span>
 											<span>Fecha/Hora</span>
 											<span>Items</span>
@@ -792,14 +794,14 @@ export function SalesPage() {
 														className={`group w-full touch-manipulation rounded-xl border px-3 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-voltage)]/30 ${
 															selectedSaleSummary?.id === sale.id
 																? "border-[var(--color-voltage)]/30 bg-[var(--color-voltage)]/10"
-																: "border-gray-800 bg-black/10 hover:border-gray-700 hover:bg-white/5"
+																: "border-zinc-800 bg-black/10 hover:border-zinc-700 hover:bg-white/5"
 														}`}
 													>
 														<div className="flex flex-col gap-3 md:grid md:grid-cols-[minmax(0,1.45fr)_minmax(0,1.15fr)_84px_minmax(0,0.9fr)_minmax(0,1fr)_minmax(0,1.2fr)_44px] md:items-center md:gap-4">
 															<div className="min-w-0">
 																<div className="flex min-w-0 items-center gap-2">
 																	<UserRound
-																		className="h-3.5 w-3.5 shrink-0 text-gray-500"
+																		className="size-3.5 shrink-0 text-zinc-500"
 																		aria-hidden="true"
 																	/>
 																	<p className="truncate font-medium text-white">
@@ -807,13 +809,13 @@ export function SalesPage() {
 																			"Cliente mostrador"}
 																	</p>
 																</div>
-																<p className="mt-1 truncate pl-5 text-xs text-gray-500">
+																<p className="mt-1 truncate pl-5 text-xs text-zinc-500">
 																	{sale.cashierName ??
 																		"Sin cajero"}
 																</p>
 															</div>
 
-															<div className="min-w-0 tabular-nums text-sm text-gray-300">
+															<div className="min-w-0 tabular-nums text-sm text-zinc-300">
 																<p>
 																	{dateTimeFormatter.format(
 																		sale.createdAt,
@@ -821,13 +823,13 @@ export function SalesPage() {
 																</p>
 															</div>
 
-															<div className="text-sm text-gray-300">
+															<div className="text-sm text-zinc-300">
 																{formatItemCountLabel(
 																	sale.itemCount,
 																)}
 															</div>
 
-															<div className="min-w-0 text-sm text-gray-300">
+															<div className="min-w-0 text-sm text-zinc-300">
 																<p
 																	className="truncate"
 																	title={paymentSummary}
@@ -854,7 +856,7 @@ export function SalesPage() {
 																		sale.status,
 																	)}
 																</Badge>
-																<p className="text-sm text-gray-400 md:text-right">
+																<p className="text-sm text-zinc-400 md:text-right">
 																	{sale.balanceDue > 0
 																		? `Pendiente ${formatCurrency(
 																				sale.balanceDue,
@@ -864,9 +866,9 @@ export function SalesPage() {
 															</div>
 
 															<div className="hidden justify-end md:flex">
-																<div className="rounded-full border border-gray-800 p-2 text-gray-400 transition-colors group-hover:border-gray-700 group-hover:text-white">
+																<div className="rounded-full border border-zinc-800 p-2 text-zinc-400 transition-colors group-hover:border-zinc-700 group-hover:text-white">
 																	<ArrowRight
-																		className="h-4 w-4"
+																		className="size-4"
 																		aria-hidden="true"
 																	/>
 																</div>
@@ -877,7 +879,7 @@ export function SalesPage() {
 											})}
 										</div>
 
-										<div className="flex flex-col items-center justify-between gap-4 border-t border-gray-800 bg-black/10 p-4 text-sm text-gray-400 sm:flex-row -mx-4 -mb-4 mt-4">
+										<div className="flex flex-col items-center justify-between gap-4 border-t border-zinc-800 bg-black/10 p-4 text-sm text-zinc-400 sm:flex-row -mx-4 -mb-4 mt-4">
 											<div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-start">
 												<div className="flex items-center gap-2">
 													<span>Mostrar</span>
@@ -888,10 +890,10 @@ export function SalesPage() {
 															setCursor(0);
 														}}
 													>
-														<SelectTrigger className="h-8 w-[70px] rounded-md border-gray-700 bg-[var(--color-carbon)] text-white">
+														<SelectTrigger className="h-8 w-[70px] rounded-md border-zinc-700 bg-[var(--color-carbon)] text-white">
 															<SelectValue placeholder={pageSize} />
 														</SelectTrigger>
-														<SelectContent className="border-gray-800 bg-[var(--color-carbon)] text-white">
+														<SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
 															{[10, 20, 30, 40, 50].map((size) => (
 																<SelectItem
 																	key={size}
@@ -914,7 +916,7 @@ export function SalesPage() {
 												<Button
 													variant="outline"
 													size="sm"
-													className="h-8 rounded-md border-gray-700 bg-[var(--color-carbon)] px-3 text-gray-300 hover:bg-white/5 hover:text-white"
+													className="h-8 rounded-md border-zinc-700 bg-[var(--color-carbon)] px-3 text-zinc-300 hover:bg-white/5 hover:text-white"
 													onClick={() =>
 														setCursor(Math.max(cursor - pageSize, 0))
 													}
@@ -939,14 +941,14 @@ export function SalesPage() {
 										</div>
 									</div>
 								) : (
-									<div className="rounded-xl border border-dashed border-gray-800 px-4 py-16 text-center">
-										<p className="text-gray-400">
+									<div className="rounded-xl border border-dashed border-zinc-800 px-4 py-16 text-center">
+										<p className="text-zinc-400">
 											{viewSummary.emptyTitle}
 										</p>
 										<Button
 											asChild
 											variant="outline"
-											className="mt-4 border-gray-700 bg-transparent text-gray-200 hover:bg-white/5 hover:text-white"
+											className="mt-4 border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5 hover:text-white"
 										>
 											<Link href="/pos">Registrar una venta</Link>
 										</Button>
@@ -961,19 +963,19 @@ export function SalesPage() {
 			<Sheet open={isDetailOpen} onOpenChange={setIsDetailOpen}>
 				<SheetContent
 					side="right"
-					className="!w-full !max-w-full overflow-hidden border-gray-800 bg-[var(--color-carbon)] p-0 text-[var(--color-photon)] sm:!w-[1000px]"
+					className="!w-full !max-w-full overflow-hidden border-zinc-800 bg-[var(--color-carbon)] p-0 text-[var(--color-photon)] sm:!w-[1000px]"
 				>
-					<SheetHeader className="border-b border-gray-800 px-6 py-5 shrink-0">
+					<SheetHeader className="border-b border-zinc-800 px-6 py-5 shrink-0">
 						<SheetTitle className="text-2xl font-bold text-[var(--color-photon)]">
 							Detalle de venta
 						</SheetTitle>
-						<SheetDescription className="text-base text-gray-400">
+						<SheetDescription className="text-base text-zinc-400">
 							Revisa cliente, pagos e items registrados para esta venta.
 						</SheetDescription>
 					</SheetHeader>
 					<div className="flex-1 overflow-y-auto p-6">
 							{saleDetailQuery.isLoading ? (
-								<div className="py-12 text-center text-sm text-gray-400">
+								<div className="py-12 text-center text-sm text-zinc-400">
 									Cargando detalle…
 								</div>
 							) : saleDetailQuery.data ? (
@@ -984,7 +986,7 @@ export function SalesPage() {
 									activeShiftId={activeShiftId}
 								/>
 							) : (
-								<div className="py-12 text-center text-sm text-gray-400">
+								<div className="py-12 text-center text-sm text-zinc-400">
 									No se encontró el detalle.
 								</div>
 							)}
@@ -996,10 +998,10 @@ export function SalesPage() {
 				open={isCancelDialogOpen}
 				onOpenChange={setIsCancelDialogOpen}
 			>
-				<AlertDialogContent className="border-gray-800 bg-[var(--color-carbon)] text-white">
+				<AlertDialogContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
 					<AlertDialogHeader>
 						<AlertDialogTitle>Anular venta</AlertDialogTitle>
-						<AlertDialogDescription className="text-gray-400">
+						<AlertDialogDescription className="text-zinc-400">
 							Esta venta quedará anulada. Sus pagos dejarán de contar para
 							caja y sus valores no sumarán en ventas. Esta acción no se
 							puede deshacer.
@@ -1007,7 +1009,7 @@ export function SalesPage() {
 					</AlertDialogHeader>
 					<AlertDialogFooter>
 						<AlertDialogCancel
-							className="border-gray-700 bg-transparent text-gray-300 hover:bg-white/5 hover:text-white"
+							className="border-zinc-700 bg-transparent text-zinc-300 hover:bg-white/5 hover:text-white"
 							disabled={cancelSaleMutation.isPending}
 						>
 							Volver
@@ -1055,7 +1057,7 @@ function SaleDetailContent({
 		<div className="space-y-6">
 			<div className="flex items-center justify-between">
 				<div>
-					<p className="text-xs text-gray-400">ID</p>
+					<p className="text-xs text-zinc-400">ID</p>
 					<p className="font-mono text-sm text-white">{sale.id}</p>
 				</div>
 				<Badge
@@ -1070,25 +1072,25 @@ function SaleDetailContent({
 
 			<div className="grid gap-4 sm:grid-cols-2">
 				<div>
-					<p className="text-xs text-gray-400">Fecha</p>
+					<p className="text-xs text-zinc-400">Fecha</p>
 					<p className="text-sm text-white">
 						{dateTimeFormatter.format(sale.createdAt)}
 						</p>
 					</div>
 					<div>
-						<p className="text-xs text-gray-400">Cajero</p>
+						<p className="text-xs text-zinc-400">Cajero</p>
 						<p className="text-sm text-white">
 							{sale.cashier?.name ?? "Sin cajero"}
 						</p>
 					</div>
 					<div>
-						<p className="text-xs text-gray-400">Terminal</p>
+						<p className="text-xs text-zinc-400">Terminal</p>
 						<p className="text-sm text-white">
 							{sale.shift?.terminalName ?? "-"}
 						</p>
 					</div>
 					<div>
-						<p className="text-xs text-gray-400">Cliente</p>
+						<p className="text-xs text-zinc-400">Cliente</p>
 						<p className="text-sm text-white">
 							{sale.customer?.name ?? "Cliente mostrador"}
 						</p>
@@ -1096,16 +1098,16 @@ function SaleDetailContent({
 				</div>
 
 				<div className="space-y-2">
-					<h4 className="text-sm font-medium text-gray-200">Items</h4>
+					<h4 className="text-sm font-medium text-zinc-200">Items</h4>
 					<div className="space-y-2">
 						{sale.items.map((item) => (
 							<div
 								key={item.id}
-								className="rounded-lg border border-gray-800 bg-black/10 p-3"
+								className="rounded-lg border border-zinc-800 bg-black/10 p-3"
 							>
 								<div className="flex items-center justify-between">
 									<p className="font-medium text-white">{item.name}</p>
-									<p className="text-sm text-gray-300">
+									<p className="text-sm text-zinc-300">
 										{item.quantity} x{" "}
 										{formatCurrency(item.unitPrice)}
 									</p>
@@ -1115,7 +1117,7 @@ function SaleDetailContent({
 										{item.modifiers.map((mod) => (
 											<div
 												key={mod.id}
-												className="flex items-center justify-between text-xs text-gray-400"
+												className="flex items-center justify-between text-xs text-zinc-400"
 											>
 												<span>+ {mod.name}</span>
 												<span>
@@ -1127,7 +1129,7 @@ function SaleDetailContent({
 									</div>
 								)}
 								<div className="mt-2 flex items-center justify-between text-sm">
-									<span className="text-gray-400">
+									<span className="text-zinc-400">
 										Subtotal {formatCurrency(item.subtotal)}
 										{item.taxAmount > 0
 											? ` • Imp ${formatCurrency(item.taxAmount)}`
@@ -1146,22 +1148,22 @@ function SaleDetailContent({
 				</div>
 
 				<div className="space-y-2">
-					<h4 className="text-sm font-medium text-gray-200">Pagos</h4>
+					<h4 className="text-sm font-medium text-zinc-200">Pagos</h4>
 					{sale.payments.length === 0 ? (
-						<p className="text-sm text-gray-400">Sin pagos registrados</p>
+						<p className="text-sm text-zinc-400">Sin pagos registrados</p>
 					) : (
 						<div className="space-y-2">
 							{sale.payments.map((payment) => (
 								<div
 									key={payment.id}
-									className="flex items-center justify-between rounded-lg border border-gray-800 bg-black/10 p-3"
+									className="flex items-center justify-between rounded-lg border border-zinc-800 bg-black/10 p-3"
 								>
 									<div>
 										<p className="text-sm text-white capitalize">
 											{payment.method}
 										</p>
 										{payment.reference ? (
-											<p className="text-xs text-gray-400">
+											<p className="text-xs text-zinc-400">
 												Ref: {payment.reference}
 											</p>
 										) : null}
@@ -1175,14 +1177,14 @@ function SaleDetailContent({
 					)}
 				</div>
 
-				<div className="rounded-xl border border-gray-800 bg-black/10 p-4">
+				<div className="rounded-xl border border-zinc-800 bg-black/10 p-4">
 					<div className="flex items-center justify-between text-sm">
-						<span className="text-gray-400">Subtotal</span>
+						<span className="text-zinc-400">Subtotal</span>
 						<span className="text-white">{formatCurrency(sale.subtotal)}</span>
 					</div>
 					{sale.taxAmount > 0 && (
 						<div className="flex items-center justify-between text-sm">
-							<span className="text-gray-400">Impuestos</span>
+							<span className="text-zinc-400">Impuestos</span>
 							<span className="text-white">
 								{formatCurrency(sale.taxAmount)}
 							</span>
@@ -1190,27 +1192,27 @@ function SaleDetailContent({
 					)}
 					{sale.discountAmount > 0 && (
 						<div className="flex items-center justify-between text-sm">
-							<span className="text-gray-400">Descuentos</span>
+							<span className="text-zinc-400">Descuentos</span>
 							<span className="text-white">
 								-{formatCurrency(sale.discountAmount)}
 							</span>
 						</div>
 					)}
-					<div className="mt-2 flex items-center justify-between border-t border-gray-800 pt-2">
+					<div className="mt-2 flex items-center justify-between border-t border-zinc-800 pt-2">
 						<span className="font-medium text-white">Total</span>
 						<span className="text-lg font-bold text-[var(--color-voltage)]">
 							{formatCurrency(sale.totalAmount)}
 						</span>
 					</div>
 					<div className="mt-1 flex items-center justify-between text-sm">
-						<span className="text-gray-400">Pagado</span>
+						<span className="text-zinc-400">Pagado</span>
 						<span className="text-white">
 							{formatCurrency(sale.paidAmount)}
 						</span>
 					</div>
 					{sale.balanceDue > 0 && (
 						<div className="flex items-center justify-between text-sm">
-							<span className="text-gray-400">Saldo pendiente</span>
+							<span className="text-zinc-400">Saldo pendiente</span>
 							<span className="text-sky-300">
 								{formatCurrency(sale.balanceDue)}
 							</span>
@@ -1242,12 +1244,12 @@ function CompactMetricCard({
 	icon: typeof Receipt;
 }) {
 	return (
-		<div className="flex items-center gap-3 rounded-xl border border-gray-800 bg-[var(--color-carbon)] p-4">
-			<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[var(--color-voltage)]/20 bg-[var(--color-voltage)]/10 text-[var(--color-voltage)]">
-				<Icon className="h-5 w-5" aria-hidden="true" />
+		<div className="flex items-center gap-3 rounded-xl border border-zinc-800 bg-[var(--color-carbon)] p-4">
+			<div className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-[var(--color-voltage)]/20 bg-[var(--color-voltage)]/10 text-[var(--color-voltage)]">
+				<Icon className="size-5" aria-hidden="true" />
 			</div>
 			<div className="min-w-0">
-				<p className="truncate text-xs font-medium text-gray-400">{title}</p>
+				<p className="truncate text-xs font-medium text-zinc-400">{title}</p>
 				<p className="truncate text-lg font-semibold tabular-nums text-white">
 					{value}
 				</p>
@@ -1273,7 +1275,7 @@ function IndeterminateProgressBar({ active }: { active: boolean }) {
 				className={`mt-2 h-1 overflow-hidden rounded-full bg-white/5 transition-opacity ${active ? "opacity-100" : "opacity-0"}`}
 				aria-hidden="true"
 			>
-				<div className="relative h-full w-full">
+				<div className="relative size-full">
 					<div
 						className="absolute inset-y-0 left-0 w-1/3 rounded-full bg-[var(--color-voltage)]/85"
 						style={
@@ -1314,7 +1316,7 @@ function FilterField({
 	return (
 		<div className="space-y-2">
 			<label
-				className="text-xs font-medium tracking-[0.16em] text-gray-500 uppercase"
+				className="text-xs font-medium tracking-[0.16em] text-zinc-500 uppercase"
 				htmlFor={htmlFor}
 			>
 				{label}

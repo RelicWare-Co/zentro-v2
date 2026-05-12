@@ -49,4 +49,4 @@ function NativeSelectOptGroup({
   )
 }
 
-export { NativeSelect, NativeSelectOptGroup, NativeSelectOption }
+export { NativeSelect,  NativeSelectOption }

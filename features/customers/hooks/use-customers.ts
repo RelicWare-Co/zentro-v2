@@ -14,8 +14,8 @@ import type {
 } from "@/schemas/customers";
 
 export type Customer = z.infer<typeof CustomerSchema>;
-export type CreateCustomerInput = z.infer<typeof CreateCustomerSchema>;
-export type UpdateCustomerInput = z.infer<typeof UpdateCustomerSchema>;
+type CreateCustomerInput = z.infer<typeof CreateCustomerSchema>;
+type UpdateCustomerInput = z.infer<typeof UpdateCustomerSchema>;
 
 function getCustomersSearchQueryKey(searchQuery: string | null) {
 	return orpcQuery.customers.search.queryOptions({

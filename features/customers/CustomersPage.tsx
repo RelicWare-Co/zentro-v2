@@ -126,7 +126,7 @@ export function CustomersPage() {
 	if (customersQuery.isPending) {
 		return (
 			<div className="flex min-h-[60dvh] items-center justify-center">
-				<Loader2 className="h-8 w-8 animate-spin text-[var(--color-voltage)]" />
+				<Loader2 className="size-8 animate-spin text-[var(--color-voltage)]" />
 			</div>
 		);
 	}
@@ -164,12 +164,12 @@ export function CustomersPage() {
 			<section className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
 				<div className="space-y-2">
 					<div className="flex items-center gap-3">
-						<h1 className="text-3xl font-bold tracking-tight">Clientes</h1>
+						<h1 className="text-3xl font-semibold tracking-tight">Clientes</h1>
 						<Badge className="border-[var(--color-voltage)]/20 bg-[var(--color-voltage)]/10 text-[var(--color-voltage)] hover:bg-[var(--color-voltage)]/10">
 							{total} clientes
 						</Badge>
 					</div>
-					<p className="text-sm text-gray-400">
+					<p className="text-sm text-zinc-400">
 						Gestiona tus clientes y sus datos de contacto.
 					</p>
 				</div>
@@ -178,30 +178,30 @@ export function CustomersPage() {
 					onClick={openCreate}
 					className="bg-[var(--color-voltage)] text-black hover:bg-[#d9f15c]"
 				>
-					<Plus className="h-4 w-4" />
+					<Plus className="size-4" />
 					Crear cliente
 				</Button>
 			</section>
 
 			<div className="relative w-full sm:max-w-sm">
-				<Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-500" />
+				<Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-zinc-500" />
 				<Input
 					value={searchQuery}
 					onChange={(event) => setSearchQuery(event.target.value)}
 					placeholder="Buscar por nombre, teléfono, documento o email…"
-					className="border-gray-800 bg-black/20 pl-9"
+					className="border-zinc-800 bg-black/20 pl-9"
 				/>
 			</div>
 
 			<VirtualTable
 				data={customers}
 				header={
-					<TableRow className="border-gray-800 hover:bg-transparent">
-						<TableHead className="px-4 text-gray-400">Nombre</TableHead>
-						<TableHead className="text-gray-400">Documento</TableHead>
-						<TableHead className="text-gray-400">Teléfono</TableHead>
-						<TableHead className="text-gray-400">Email</TableHead>
-						<TableHead className="text-right text-gray-400">Acciones</TableHead>
+					<TableRow className="border-zinc-800 hover:bg-transparent">
+						<TableHead className="px-4 text-zinc-400">Nombre</TableHead>
+						<TableHead className="text-zinc-400">Documento</TableHead>
+						<TableHead className="text-zinc-400">Teléfono</TableHead>
+						<TableHead className="text-zinc-400">Email</TableHead>
+						<TableHead className="text-right text-zinc-400">Acciones</TableHead>
 					</TableRow>
 				}
 				renderRow={(customer) => (
@@ -212,27 +212,27 @@ export function CustomersPage() {
 								{customer.type ? (
 									<Badge
 										variant="outline"
-										className="mt-1 border-gray-700 bg-gray-800/80 text-gray-300"
+										className="mt-1 border-zinc-700 bg-zinc-800/80 text-zinc-300"
 									>
 										{customer.type === "juridica" ? "Jurídica" : "Natural"}
 									</Badge>
 								) : null}
 							</div>
 						</TableCell>
-						<TableCell className="text-sm text-gray-300">
+						<TableCell className="text-sm text-zinc-300">
 							{customer.documentType && customer.documentNumber ? (
 								<span>{customer.documentType} {customer.documentNumber}</span>
 							) : customer.documentNumber ? (
 								<span>{customer.documentNumber}</span>
 							) : (
-								<span className="text-gray-500">—</span>
+								<span className="text-zinc-500">-</span>
 							)}
 						</TableCell>
-						<TableCell className="text-sm text-gray-300">
-							{customer.phone ?? <span className="text-gray-500">—</span>}
+						<TableCell className="text-sm text-zinc-300">
+							{customer.phone ?? <span className="text-zinc-500">-</span>}
 						</TableCell>
-						<TableCell className="text-sm text-gray-300">
-							{customer.email ?? <span className="text-gray-500">—</span>}
+						<TableCell className="text-sm text-zinc-300">
+							{customer.email ?? <span className="text-zinc-500">-</span>}
 						</TableCell>
 						<TableCell className="text-right">
 							<div className="flex justify-end gap-2">
@@ -241,9 +241,9 @@ export function CustomersPage() {
 									variant="outline"
 									size="sm"
 									onClick={() => openEdit(customer)}
-									className="border-gray-700 bg-transparent text-gray-200 hover:bg-white/5"
+									className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5"
 								>
-									<Edit3 className="h-3.5 w-3.5" />
+									<Edit3 className="size-3.5" />
 								</Button>
 								<Button
 									type="button"
@@ -252,7 +252,7 @@ export function CustomersPage() {
 									onClick={() => setCustomerToDelete(customer)}
 									className="border-red-500/30 bg-transparent text-red-200 hover:bg-red-500/10"
 								>
-									<Trash2 className="h-3.5 w-3.5" />
+									<Trash2 className="size-3.5" />
 								</Button>
 							</div>
 						</TableCell>
@@ -264,8 +264,8 @@ export function CustomersPage() {
 				emptyState={
 					customers.length === 0 ? (
 						<div className="flex flex-col items-center gap-3 p-10 text-center">
-							<Users className="h-8 w-8 text-gray-600" />
-							<p className="text-sm text-gray-500">
+							<Users className="size-8 text-zinc-600" />
+							<p className="text-sm text-zinc-500">
 								{searchQuery.trim()
 									? "No hay clientes que coincidan con la búsqueda."
 									: "Aún no hay clientes registrados."}
@@ -275,9 +275,9 @@ export function CustomersPage() {
 									type="button"
 									variant="outline"
 									onClick={openCreate}
-									className="border-gray-700 bg-transparent text-gray-200 hover:bg-white/5 hover:text-white"
+									className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5 hover:text-white"
 								>
-									<Plus className="mr-2 h-4 w-4" />
+									<Plus className="mr-2 size-4" />
 									Crear cliente
 								</Button>
 							) : null}
@@ -315,15 +315,15 @@ export function CustomersPage() {
 					if (!open) setCustomerToDelete(null);
 				}}
 			>
-				<AlertDialogContent className="border-gray-800 bg-[var(--color-carbon)] text-white">
+				<AlertDialogContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
 					<AlertDialogHeader>
 						<AlertDialogTitle>¿Eliminar cliente?</AlertDialogTitle>
-						<AlertDialogDescription className="text-gray-400">
+						<AlertDialogDescription className="text-zinc-400">
 							{customerToDelete?.name} será removido de la lista activa.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
-						<AlertDialogCancel className="border-gray-700 bg-transparent text-gray-200 hover:bg-white/5">
+						<AlertDialogCancel className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5">
 							Cancelar
 						</AlertDialogCancel>
 						<AlertDialogAction
@@ -407,13 +407,13 @@ function CustomerFormSheetContent({
 
 	return (
 		<Sheet open={open} onOpenChange={onOpenChange}>
-			<SheetContent className="!w-full !max-w-full overflow-hidden border-l border-gray-800 bg-[var(--color-carbon)] p-0 text-white sm:!w-[540px]">
+			<SheetContent className="!w-full !max-w-full overflow-hidden border-l border-zinc-800 bg-[var(--color-carbon)] p-0 text-white sm:!w-[540px]">
 				<form onSubmit={handleSubmit} className="flex h-full flex-col">
-					<SheetHeader className="shrink-0 border-b border-gray-800 p-6">
+					<SheetHeader className="shrink-0 border-b border-zinc-800 p-6">
 						<SheetTitle className="text-2xl font-bold">
 							{customer ? "Editar cliente" : "Crear cliente"}
 						</SheetTitle>
-						<SheetDescription className="text-gray-400">
+						<SheetDescription className="text-zinc-400">
 							Datos de contacto e identificación.
 						</SheetDescription>
 					</SheetHeader>
@@ -429,7 +429,7 @@ function CustomerFormSheetContent({
 											name: event.target.value,
 										}))
 									}
-									className="border-gray-700 bg-black/20"
+									className="border-zinc-700 bg-black/20"
 									required
 								/>
 							</Field>
@@ -443,10 +443,10 @@ function CustomerFormSheetContent({
 										}))
 									}
 								>
-									<SelectTrigger className="w-full border-gray-700 bg-black/20 text-white">
+									<SelectTrigger className="w-full border-zinc-700 bg-black/20 text-white">
 										<SelectValue />
 									</SelectTrigger>
-									<SelectContent className="border-gray-800 bg-[var(--color-carbon)] text-white">
+									<SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
 										{CUSTOMER_TYPE_OPTIONS.map((option) => (
 											<SelectItem key={option.value} value={option.value}>
 												{option.label}
@@ -465,10 +465,10 @@ function CustomerFormSheetContent({
 										}))
 									}
 								>
-									<SelectTrigger className="w-full border-gray-700 bg-black/20 text-white">
+									<SelectTrigger className="w-full border-zinc-700 bg-black/20 text-white">
 										<SelectValue placeholder="Sin documento" />
 									</SelectTrigger>
-									<SelectContent className="border-gray-800 bg-[var(--color-carbon)] text-white">
+									<SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
 										<SelectItem value="none">Sin documento</SelectItem>
 										{DOCUMENT_TYPE_OPTIONS.map((option) => (
 											<SelectItem key={option.value} value={option.value}>
@@ -487,7 +487,7 @@ function CustomerFormSheetContent({
 											documentNumber: event.target.value,
 										}))
 									}
-									className="border-gray-700 bg-black/20"
+									className="border-zinc-700 bg-black/20"
 								/>
 							</Field>
 							<Field label="Teléfono">
@@ -500,7 +500,7 @@ function CustomerFormSheetContent({
 											phone: event.target.value,
 										}))
 									}
-									className="border-gray-700 bg-black/20"
+									className="border-zinc-700 bg-black/20"
 								/>
 							</Field>
 							<Field label="Correo electrónico">
@@ -513,7 +513,7 @@ function CustomerFormSheetContent({
 											email: event.target.value,
 										}))
 									}
-									className="border-gray-700 bg-black/20"
+									className="border-zinc-700 bg-black/20"
 								/>
 							</Field>
 						</div>
@@ -525,7 +525,7 @@ function CustomerFormSheetContent({
 						) : null}
 					</div>
 
-					<SheetFooter className="shrink-0 border-t border-gray-800 bg-black/30 p-6">
+					<SheetFooter className="shrink-0 border-t border-zinc-800 bg-black/30 p-6">
 						<Button
 							type="submit"
 							disabled={isPending || !form.name.trim()}

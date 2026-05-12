@@ -1,5 +1,9 @@
 import type { CSSProperties } from "react";
 
+const EMPTY_ITEMS: ThermalReceiptItem[] = [];
+const EMPTY_PAYMENTS: ThermalReceiptPayment[] = [];
+const DEFAULT_FOOTER = ["Gracias por su compra"];
+
 export type ThermalReceiptInfoLine = {
 	label: string;
 	value: string | null | undefined;
@@ -13,7 +17,7 @@ export type ThermalReceiptItem = {
 	secondaryLines?: string[];
 };
 
-export type ThermalReceiptPayment = {
+type ThermalReceiptPayment = {
 	label: string;
 	amountLabel: string;
 	secondaryLines?: string[];
@@ -45,10 +49,10 @@ export function ThermalReceipt({
 	issuedAtLabel,
 	statusLabel,
 	infoLines,
-	items = [],
-	payments = [],
+	items = EMPTY_ITEMS,
+	payments = EMPTY_PAYMENTS,
 	totals,
-	footerLines = ["Gracias por su compra"],
+	footerLines = DEFAULT_FOOTER,
 }: ThermalReceiptProps) {
 	const visibleInfoLines = (infoLines ?? []).filter((line) =>
 		Boolean(line.value),

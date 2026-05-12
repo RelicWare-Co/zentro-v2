@@ -86,7 +86,7 @@ function buildStatusBadgeClassName(
 		case "error":
 			return "border-red-500/30 bg-red-500/10 text-red-200";
 		default:
-			return "border-gray-700 bg-black/20 text-gray-300";
+			return "border-zinc-700 bg-black/20 text-zinc-300";
 	}
 }
 
@@ -148,13 +148,13 @@ export function LocalPrinterSettingsCard({
 	};
 
 	return (
-		<Card className="border-gray-800 bg-[var(--color-carbon)] text-[var(--color-photon)] shadow-none">
+		<Card className="border-zinc-800 bg-[var(--color-carbon)] text-[var(--color-photon)] shadow-none">
 			<CardHeader>
 				<CardTitle className="flex items-center gap-2">
-					<Printer className="h-4 w-4 text-[var(--color-voltage)]" />
+					<Printer className="size-4 text-[var(--color-voltage)]" />
 					Impresión local
 				</CardTitle>
-				<CardDescription className="text-gray-400">
+				<CardDescription className="text-zinc-400">
 					Configura impresión por USB, Bluetooth o Serial en este dispositivo.
 				</CardDescription>
 			</CardHeader>
@@ -163,16 +163,16 @@ export function LocalPrinterSettingsCard({
 					<Badge className={buildStatusBadgeClassName(runtimeState.status)}>
 						{buildStatusBadgeLabel(runtimeState.status)}
 					</Badge>
-					<Badge className="border-gray-700 bg-black/20 text-gray-300">
+					<Badge className="border-zinc-700 bg-black/20 text-zinc-300">
 						Modo: {settings.outputMode === "pdf" ? "PDF" : "Impresora POS"}
 					</Badge>
-					<Badge className="border-gray-700 bg-black/20 text-gray-300">
+					<Badge className="border-zinc-700 bg-black/20 text-zinc-300">
 						Canal: {settings.connectionType.toUpperCase()}
 					</Badge>
 				</div>
 
 				{runtimeState.printerStatus ? (
-					<div className="rounded-2xl border border-gray-800 bg-black/20 p-3 text-xs text-gray-300">
+					<div className="rounded-2xl border border-zinc-800 bg-black/20 p-3 text-xs text-zinc-300">
 						<p>
 							Estado impresora:{" "}
 							{runtimeState.printerStatus.online ? "Online" : "Offline"}· Papel{" "}
@@ -201,7 +201,7 @@ export function LocalPrinterSettingsCard({
 				) : null}
 
 				{runtimeState.message ? (
-					<Alert className="border-gray-700 bg-black/20 text-gray-200">
+					<Alert className="border-zinc-700 bg-black/20 text-zinc-200">
 						<AlertTitle>Estado del driver</AlertTitle>
 						<AlertDescription>{runtimeState.message}</AlertDescription>
 					</Alert>
@@ -224,7 +224,7 @@ export function LocalPrinterSettingsCard({
 					</Alert>
 				) : null}
 
-				<div className="space-y-3 rounded-2xl border border-gray-800 bg-black/20 p-4">
+				<div className="space-y-3 rounded-2xl border border-zinc-800 bg-black/20 p-4">
 					<ToggleRow
 						title="Usar impresora POS"
 						description="Cuando está activo, el POS intenta imprimir directo al dispositivo."
@@ -314,7 +314,7 @@ export function LocalPrinterSettingsCard({
 								}))
 							}
 							placeholder="epson"
-							className="border-gray-700 bg-black/20"
+							className="border-zinc-700 bg-black/20"
 						/>
 					</div>
 
@@ -342,10 +342,10 @@ export function LocalPrinterSettingsCard({
 
 				{settings.connectionType === "serial" ? (
 					<>
-						<Separator className="border-gray-800" />
-						<div className="space-y-3 rounded-2xl border border-gray-800 bg-black/20 p-4">
-							<div className="flex items-center gap-2 text-sm font-medium text-gray-200">
-								<Usb className="h-4 w-4 text-[var(--color-voltage)]" />
+						<Separator className="border-zinc-800" />
+						<div className="space-y-3 rounded-2xl border border-zinc-800 bg-black/20 p-4">
+							<div className="flex items-center gap-2 text-sm font-medium text-zinc-200">
+								<Usb className="size-4 text-[var(--color-voltage)]" />
 								Parámetros Serial
 							</div>
 							<div className="grid gap-3 md:grid-cols-3">
@@ -461,11 +461,11 @@ export function LocalPrinterSettingsCard({
 					</>
 				) : null}
 
-				<Separator className="border-gray-800" />
+				<Separator className="border-zinc-800" />
 
-				<div className="rounded-2xl border border-gray-800 bg-black/20 p-4 text-sm text-gray-300">
-					<p className="font-medium text-gray-100">Impresora guardada</p>
-					<p className="mt-1 text-xs text-gray-400">{savedDeviceLabel}</p>
+				<div className="rounded-2xl border border-zinc-800 bg-black/20 p-4 text-sm text-zinc-300">
+					<p className="font-medium text-zinc-100">Impresora guardada</p>
+					<p className="mt-1 text-xs text-zinc-400">{savedDeviceLabel}</p>
 				</div>
 
 				{!connectionSupported ? (
@@ -494,7 +494,7 @@ export function LocalPrinterSettingsCard({
 						disabled={isBusy || !connectionSupported}
 						className="bg-[var(--color-voltage)] text-black hover:bg-[#d9f15c]"
 					>
-						<ScanLine className="h-4 w-4" />
+						<ScanLine className="size-4" />
 						Conectar
 					</Button>
 					<Button
@@ -507,9 +507,9 @@ export function LocalPrinterSettingsCard({
 							)
 						}
 						disabled={isBusy || !connectionSupported || !savedDevice}
-						className="border-gray-700 bg-transparent text-gray-200 hover:bg-white/5 hover:text-white"
+						className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5 hover:text-white"
 					>
-						<RefreshCcw className="h-4 w-4" />
+						<RefreshCcw className="size-4" />
 						Reconectar
 					</Button>
 					<Button
@@ -522,9 +522,9 @@ export function LocalPrinterSettingsCard({
 							)
 						}
 						disabled={isBusy || runtimeState.status !== "connected"}
-						className="border-gray-700 bg-transparent text-gray-200 hover:bg-white/5 hover:text-white"
+						className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5 hover:text-white"
 					>
-						<Settings2 className="h-4 w-4" />
+						<Settings2 className="size-4" />
 						Desconectar
 					</Button>
 					<Button
@@ -537,9 +537,9 @@ export function LocalPrinterSettingsCard({
 							)
 						}
 						disabled={isBusy}
-						className="border-gray-700 bg-transparent text-gray-200 hover:bg-white/5 hover:text-white"
+						className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5 hover:text-white"
 					>
-						<TestTube2 className="h-4 w-4" />
+						<TestTube2 className="size-4" />
 						Imprimir prueba
 					</Button>
 					<Button
@@ -552,9 +552,9 @@ export function LocalPrinterSettingsCard({
 							)
 						}
 						disabled={isBusy || !connectionSupported}
-						className="border-gray-700 bg-transparent text-gray-200 hover:bg-white/5 hover:text-white"
+						className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5 hover:text-white"
 					>
-						<Usb className="h-4 w-4" />
+						<Usb className="size-4" />
 						Abrir caja
 					</Button>
 					<Button
@@ -566,9 +566,9 @@ export function LocalPrinterSettingsCard({
 							setFeedbackError(null);
 						}}
 						disabled={isBusy}
-						className="border-gray-700 bg-transparent text-gray-200 hover:bg-white/5 hover:text-white"
+						className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5 hover:text-white"
 					>
-						<RefreshCcw className="h-4 w-4" />
+						<RefreshCcw className="size-4" />
 						Restablecer local
 					</Button>
 				</div>
@@ -594,7 +594,7 @@ function NumberField({
 				inputMode="numeric"
 				value={value}
 				onChange={(event) => onChange(event.target.value)}
-				className="border-gray-700 bg-black/20"
+				className="border-zinc-700 bg-black/20"
 			/>
 		</div>
 	);
@@ -612,10 +612,10 @@ function ToggleRow({
 	onCheckedChange: (checked: boolean) => void;
 }) {
 	return (
-		<div className="flex items-center justify-between rounded-xl border border-gray-800 bg-black/10 p-3">
+		<div className="flex items-center justify-between rounded-xl border border-zinc-800 bg-black/10 p-3">
 			<div>
 				<p className="text-sm font-medium text-white">{title}</p>
-				<p className="text-xs text-gray-400">{description}</p>
+				<p className="text-xs text-zinc-400">{description}</p>
 			</div>
 			<Switch checked={checked} onCheckedChange={onCheckedChange} />
 		</div>

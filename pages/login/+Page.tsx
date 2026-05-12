@@ -22,7 +22,7 @@ function useJoinToken() {
 }
 
 const inputBase =
-	"w-full pl-10 h-11 bg-[#1c1c1c] border-white/10 text-white placeholder:text-gray-500 focus-visible:border-[var(--color-voltage)] focus-visible:ring-[var(--color-voltage)]/20 rounded-xl";
+	"w-full pl-10 h-11 bg-[#1c1c1c] border-white/10 text-white placeholder:text-zinc-500 focus-visible:border-[var(--color-voltage)] focus-visible:ring-[var(--color-voltage)]/20 rounded-xl";
 
 function getErrorMessage(error: unknown, fallback: string) {
 	return error instanceof Error ? error.message : fallback;
@@ -97,10 +97,10 @@ export default function Page() {
 		<div className="flex min-h-[100dvh] w-full bg-[#0f0f0f] text-white">
 			<div className="relative hidden w-1/2 overflow-hidden bg-[#1c1c1c] lg:flex lg:flex-col lg:items-center lg:justify-center">
 				<div className="relative z-10 flex flex-col items-center px-8 text-center">
-					<h1 className="mb-6 text-6xl font-bold tracking-tight text-[#dfff06]">
+					<h1 className="mb-6 text-6xl font-semibold tracking-tight text-[#dfff06]">
 						Zentro
 					</h1>
-					<p className="max-w-md text-xl text-gray-400">
+					<p className="max-w-md text-xl text-zinc-400">
 						El sistema POS más inteligente para tu negocio
 					</p>
 				</div>
@@ -109,11 +109,11 @@ export default function Page() {
 			<div className="relative flex w-full flex-col items-center justify-center p-8 sm:p-12 md:p-16 lg:w-1/2 lg:p-24">
 				<div className="w-full max-w-[460px] space-y-8">
 					<div className="space-y-3 text-center">
-						<h2 className="text-3xl font-bold tracking-tight">
+						<h2 className="text-3xl font-semibold tracking-tight">
 							{mode === "login" ? "Inicia sesión" : "Crea tu cuenta"}{" "}
 							<span className="text-[#dfff06]">Zentro™</span>
 						</h2>
-						<p className="text-sm text-gray-400">
+						<p className="text-sm text-zinc-400">
 							{mode === "login"
 								? "Ingresa tus credenciales para acceder."
 								: "Regístrate para empezar a vender más."}
@@ -147,14 +147,14 @@ export default function Page() {
 						/>
 					) : (
 						<>
-							<div className="mb-6 flex w-full rounded-xl border border-gray-800 bg-gray-900/50 p-1">
+							<div className="mb-6 flex w-full rounded-xl border border-zinc-800 bg-zinc-900/50 p-1">
 								<button
 									type="button"
 									onClick={() => setMode("login")}
 									className={`flex-1 rounded-lg py-2.5 text-sm font-medium transition-colors cursor-pointer ${
 										mode === "login"
 											? "bg-[#dfff06] text-black shadow-sm"
-											: "text-gray-400 hover:bg-gray-800/50 hover:text-gray-200"
+											: "text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200"
 									}`}
 								>
 									Iniciar sesión
@@ -165,7 +165,7 @@ export default function Page() {
 									className={`flex-1 rounded-lg py-2.5 text-sm font-medium transition-colors cursor-pointer ${
 										mode === "register"
 											? "bg-[#dfff06] text-black shadow-sm"
-											: "text-gray-400 hover:bg-gray-800/50 hover:text-gray-200"
+											: "text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200"
 									}`}
 								>
 									Registrarse
@@ -189,13 +189,13 @@ export default function Page() {
 					)}
 				</div>
 
-				<div className="absolute bottom-8 left-0 flex w-full flex-col items-center justify-center gap-2 text-xs text-gray-500">
+				<div className="absolute bottom-8 left-0 flex w-full flex-col items-center justify-center gap-2 text-xs text-zinc-500">
 					<p>2026 Zentro POS System. Todos los derechos reservados.</p>
 					<div className="flex gap-4">
-						<a href="/" className="transition-colors hover:text-gray-300">
+						<a href="/" className="transition-colors hover:text-zinc-300">
 							Privacidad
 						</a>
-						<a href="/" className="transition-colors hover:text-gray-300">
+						<a href="/" className="transition-colors hover:text-zinc-300">
 							Términos
 						</a>
 					</div>
@@ -248,8 +248,8 @@ function LoginForm(props: {
 					Correo electrónico
 				</LabelWithRequired>
 				<div className="relative">
-					<div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
-						<Mail className="h-4 w-4" />
+					<div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-500">
+						<Mail className="size-4" />
 					</div>
 					<input
 						id={emailId}
@@ -278,8 +278,8 @@ function LoginForm(props: {
 					</a>
 				</div>
 				<div className="relative">
-					<div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
-						<Lock className="h-4 w-4" />
+					<div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-500">
+						<Lock className="size-4" />
 					</div>
 					<input
 						id={passwordId}
@@ -297,15 +297,15 @@ function LoginForm(props: {
 						type="button"
 						onClick={() => setShowPassword((currentValue) => !currentValue)}
 						disabled={isPending || props.isCompletingJoin}
-						className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 transition-colors hover:text-gray-300 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+						className="absolute inset-y-0 right-0 flex items-center pr-3 text-zinc-500 transition-colors hover:text-zinc-300 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
 						aria-label={
 							showPassword ? "Ocultar contraseña" : "Mostrar contraseña"
 						}
 					>
 						{showPassword ? (
-							<EyeOff className="h-4 w-4" />
+							<EyeOff className="size-4" />
 						) : (
-							<Eye className="h-4 w-4" />
+							<Eye className="size-4" />
 						)}
 					</button>
 				</div>
@@ -386,13 +386,13 @@ function RegisterForm(props: {
 			<div className="space-y-2">
 				<label
 					htmlFor={nameId}
-					className="text-xs font-semibold text-gray-200"
+					className="text-xs font-semibold text-zinc-200"
 				>
 					Nombre
 				</label>
 				<div className="relative">
-					<div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
-						<User className="h-4 w-4" />
+					<div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-500">
+						<User className="size-4" />
 					</div>
 					<input
 						id={nameId}
@@ -413,8 +413,8 @@ function RegisterForm(props: {
 					Correo electrónico
 				</LabelWithRequired>
 				<div className="relative">
-					<div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
-						<Mail className="h-4 w-4" />
+					<div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-500">
+						<Mail className="size-4" />
 					</div>
 					<input
 						id={emailId}
@@ -434,10 +434,10 @@ function RegisterForm(props: {
 
 			<div className="space-y-2">
 				<LabelWithRequired htmlFor={passwordId}>Contraseña</LabelWithRequired>
-				<p className="text-xs text-gray-500">Mínimo 8 caracteres.</p>
+				<p className="text-xs text-zinc-500">Mínimo 8 caracteres.</p>
 				<div className="relative">
-					<div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
-						<Lock className="h-4 w-4" />
+					<div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-500">
+						<Lock className="size-4" />
 					</div>
 					<input
 						id={passwordId}
@@ -456,15 +456,15 @@ function RegisterForm(props: {
 						type="button"
 						onClick={() => setShowPassword((currentValue) => !currentValue)}
 						disabled={isPending || props.isCompletingJoin}
-						className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 transition-colors hover:text-gray-300 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+						className="absolute inset-y-0 right-0 flex items-center pr-3 text-zinc-500 transition-colors hover:text-zinc-300 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
 						aria-label={
 							showPassword ? "Ocultar contraseña" : "Mostrar contraseña"
 						}
 					>
 						{showPassword ? (
-							<EyeOff className="h-4 w-4" />
+							<EyeOff className="size-4" />
 						) : (
-							<Eye className="h-4 w-4" />
+							<Eye className="size-4" />
 						)}
 					</button>
 				</div>
@@ -475,8 +475,8 @@ function RegisterForm(props: {
 					Confirmar contraseña
 				</LabelWithRequired>
 				<div className="relative">
-					<div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
-						<Lock className="h-4 w-4" />
+					<div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-500">
+						<Lock className="size-4" />
 					</div>
 					<input
 						id={confirmId}
@@ -497,7 +497,7 @@ function RegisterForm(props: {
 							setShowConfirmPassword((currentValue) => !currentValue)
 						}
 						disabled={isPending || props.isCompletingJoin}
-						className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 transition-colors hover:text-gray-300 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+						className="absolute inset-y-0 right-0 flex items-center pr-3 text-zinc-500 transition-colors hover:text-zinc-300 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
 						aria-label={
 							showConfirmPassword
 								? "Ocultar contraseña"
@@ -505,9 +505,9 @@ function RegisterForm(props: {
 						}
 					>
 						{showConfirmPassword ? (
-							<EyeOff className="h-4 w-4" />
+							<EyeOff className="size-4" />
 						) : (
-							<Eye className="h-4 w-4" />
+							<Eye className="size-4" />
 						)}
 					</button>
 				</div>
@@ -540,13 +540,13 @@ function CardForSignedInUser(props: {
 	onSwitchAccount: () => Promise<void>;
 }) {
 	return (
-		<div className="rounded-2xl border border-gray-800 bg-gray-900/40 p-6">
+		<div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6">
 			<div className="space-y-2">
 				<span className="inline-flex items-center rounded-full border border-[#dfff06]/20 bg-[#dfff06]/10 px-2 py-0.5 text-xs font-medium text-[#dfff06]">
 					Ya Iniciaste Sesión
 				</span>
 				<p className="text-lg font-semibold text-white">{props.sessionName}</p>
-				<p className="text-sm text-gray-400">{props.sessionEmail}</p>
+				<p className="text-sm text-zinc-400">{props.sessionEmail}</p>
 			</div>
 			<div className="mt-5 flex flex-col gap-3">
 				<button
@@ -564,7 +564,7 @@ function CardForSignedInUser(props: {
 				<button
 					type="button"
 					onClick={() => void props.onSwitchAccount()}
-					className="inline-flex h-9 items-center justify-center rounded-lg border border-gray-700 bg-transparent px-3 text-sm font-medium text-gray-200 hover:bg-white/5 hover:text-white transition-colors cursor-pointer"
+					className="inline-flex h-9 items-center justify-center rounded-lg border border-zinc-700 bg-transparent px-3 text-sm font-medium text-zinc-200 hover:bg-white/5 hover:text-white transition-colors cursor-pointer"
 				>
 					Usar otra cuenta
 				</button>
@@ -601,16 +601,16 @@ function JoinContextCard(props: {
 	}
 
 	return (
-		<div className="rounded-2xl border border-gray-800 bg-gray-900/40 p-5">
+		<div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5">
 			<div className="flex items-start gap-3">
 				<div className="mt-0.5 rounded-xl bg-[#dfff06]/10 p-2 text-[#dfff06]">
-					<Building2 className="h-4 w-4" />
+					<Building2 className="size-4" />
 				</div>
 				<div className="min-w-0 flex-1">
 					<p className="font-semibold text-white">
 						{props.joinPreview.organization.name}
 					</p>
-					<p className="text-sm text-gray-400">
+					<p className="text-sm text-zinc-400">
 						/{props.joinPreview.organization.slug}
 					</p>
 					<div className="mt-3 flex flex-wrap gap-2">
@@ -618,12 +618,12 @@ function JoinContextCard(props: {
 							{formatOrganizationRoleLabel(props.joinPreview.role)}
 						</span>
 						{props.joinPreview.label ? (
-							<span className="inline-flex items-center rounded-full border border-gray-700 bg-transparent px-2 py-0.5 text-xs font-medium text-gray-300">
+							<span className="inline-flex items-center rounded-full border border-zinc-700 bg-transparent px-2 py-0.5 text-xs font-medium text-zinc-300">
 								{props.joinPreview.label}
 							</span>
 						) : null}
 					</div>
-					<p className="mt-3 text-sm text-gray-400">
+					<p className="mt-3 text-sm text-zinc-400">
 						{props.joinPreview.canJoin
 							? "Cuando termines de iniciar sesión o crear tu cuenta entrarás directo a esta organización."
 							: props.joinPreview.message}
@@ -641,7 +641,7 @@ function LabelWithRequired(props: {
 	return (
 		<label
 			htmlFor={props.htmlFor}
-			className="text-xs font-semibold text-gray-200"
+			className="text-xs font-semibold text-zinc-200"
 		>
 			{props.children} <span className="text-red-500">*</span>
 		</label>

@@ -175,11 +175,13 @@ export function OrganizationSelection() {
 			}
 
 			if (result?.data) {
-				await refetchOrganizations();
-				await authClient.organization.setActive({
-					organizationId: result.data.id,
-				});
-				await refreshAndEnter();
+				await Promise.all([
+					refetchOrganizations(),
+					authClient.organization.setActive({
+						organizationId: result.data.id,
+					}),
+					refreshAndEnter(),
+				]);
 			}
 		} catch {
 			setErrorMsg("Ocurrió un error inesperado al crear la organización.");
@@ -202,12 +204,14 @@ export function OrganizationSelection() {
 				return;
 			}
 
-			await refetchOrganizations();
-			await refetchSelectionData();
-			await authClient.organization.setActive({
-				organizationId: invitation.organizationId,
-			});
-			await refreshAndEnter();
+			await Promise.all([
+				refetchOrganizations(),
+				refetchSelectionData(),
+				authClient.organization.setActive({
+					organizationId: invitation.organizationId,
+				}),
+				refreshAndEnter(),
+			]);
 		} catch {
 			setErrorMsg("No se pudo aceptar la invitación.");
 		} finally {
@@ -244,7 +248,7 @@ export function OrganizationSelection() {
 	if (isInitialLoading) {
 		return (
 			<div className="app-safe-area flex min-h-[100dvh] w-full items-center justify-center bg-[var(--color-void)] text-[var(--color-photon)]">
-				<Loader2 className="h-8 w-8 animate-spin text-[var(--color-voltage)]" />
+				<Loader2 className="size-8 animate-spin text-[var(--color-voltage)]" />
 			</div>
 		);
 	}
@@ -265,9 +269,9 @@ export function OrganizationSelection() {
 							await authClient.signOut();
 							window.location.href = "/login";
 						}}
-						className="border-gray-700 bg-transparent text-gray-300 hover:bg-white/5 hover:text-white"
+						className="border-zinc-700 bg-transparent text-zinc-300 hover:bg-white/5 hover:text-white"
 					>
-						<LogOut className="mr-2 h-4 w-4" />
+						<LogOut className="mr-2 size-4" />
 						Cerrar sesión
 					</Button>
 				</div>
@@ -276,10 +280,10 @@ export function OrganizationSelection() {
 					<Badge className="border-[var(--color-voltage)]/20 bg-[var(--color-voltage)]/10 text-[var(--color-voltage)] hover:bg-[var(--color-voltage)]/10">
 						Acceso a organizaciones
 					</Badge>
-					<h1 className="text-3xl font-bold tracking-tight text-balance md:text-4xl">
+					<h1 className="text-3xl font-semibold tracking-tight text-balance md:text-4xl">
 						Elige Cómo Quieres Entrar
 					</h1>
-					<p className="mx-auto max-w-2xl text-sm text-gray-400 md:text-base">
+					<p className="mx-auto max-w-2xl text-sm text-zinc-400 md:text-base">
 						Selecciona una organización existente, acepta una invitación en la app
 						o crea un nuevo espacio si tu cuenta todavía lo tiene habilitado.
 					</p>
@@ -298,13 +302,13 @@ export function OrganizationSelection() {
 				</div>
 
 				<div className="grid gap-6 lg:grid-cols-2 lg:gap-8 xl:grid-cols-[1.1fr_0.9fr]">
-					<Card className="border-gray-800 bg-[var(--color-carbon)] text-[var(--color-photon)] shadow-none">
+					<Card className="border-zinc-800 bg-[var(--color-carbon)] text-[var(--color-photon)] shadow-none">
 						<CardHeader>
 							<CardTitle className="flex items-center gap-2">
-								<Building2 className="h-4 w-4 text-[var(--color-voltage)]" />
+								<Building2 className="size-4 text-[var(--color-voltage)]" />
 								Tus Organizaciones
 							</CardTitle>
-							<CardDescription className="text-gray-400">
+							<CardDescription className="text-zinc-400">
 								Entrar a un espacio existente mantiene intacto el selector actual.
 							</CardDescription>
 						</CardHeader>
@@ -316,30 +320,30 @@ export function OrganizationSelection() {
 										type="button"
 										onClick={() => void handleSelect(org.id)}
 										disabled={isSelectingId !== null}
-										className="flex w-full items-center justify-between rounded-2xl border border-gray-800 bg-black/20 p-4 text-left transition-colors hover:border-[var(--color-voltage)]/40 hover:bg-black/30 disabled:cursor-not-allowed disabled:opacity-60"
+										className="flex w-full items-center justify-between rounded-2xl border border-zinc-800 bg-black/20 p-4 text-left transition-colors hover:border-[var(--color-voltage)]/40 hover:bg-black/30 disabled:cursor-not-allowed disabled:opacity-60"
 									>
 										<div className="flex min-w-0 items-center gap-3">
-											<div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--color-voltage)]/10 text-[var(--color-voltage)]">
-												<Building2 className="h-5 w-5" />
+											<div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[var(--color-voltage)]/10 text-[var(--color-voltage)]">
+												<Building2 className="size-5" />
 											</div>
 											<div className="min-w-0">
 												<p className="truncate font-semibold text-white">{org.name}</p>
-												<p className="truncate text-sm text-gray-400">/{org.slug}</p>
+												<p className="truncate text-sm text-zinc-400">/{org.slug}</p>
 											</div>
 										</div>
 										{isSelectingId === org.id ? (
-											<Loader2 className="h-5 w-5 animate-spin text-[var(--color-voltage)]" />
+											<Loader2 className="size-5 animate-spin text-[var(--color-voltage)]" />
 										) : (
-											<ArrowRight className="h-5 w-5 text-gray-500" />
+											<ArrowRight className="size-5 text-zinc-500" />
 										)}
 									</button>
 								))
 							) : (
-								<div className="rounded-2xl border border-dashed border-gray-800 bg-black/10 p-8 text-center">
-									<p className="text-sm text-gray-300">
+								<div className="rounded-2xl border border-dashed border-zinc-800 bg-black/10 p-8 text-center">
+									<p className="text-sm text-zinc-300">
 										Tu cuenta aún no pertenece a ninguna organización.
 									</p>
-									<p className="mt-2 text-sm text-gray-500">
+									<p className="mt-2 text-sm text-zinc-500">
 										Usa una invitación o un join link para entrar sin crear una nueva.
 									</p>
 								</div>
@@ -348,13 +352,13 @@ export function OrganizationSelection() {
 					</Card>
 
 					<div className="space-y-6">
-						<Card className="border-gray-800 bg-[var(--color-carbon)] text-[var(--color-photon)] shadow-none">
+						<Card className="border-zinc-800 bg-[var(--color-carbon)] text-[var(--color-photon)] shadow-none">
 							<CardHeader>
 								<CardTitle className="flex items-center gap-2">
-									<Mail className="h-4 w-4 text-[var(--color-voltage)]" />
+									<Mail className="size-4 text-[var(--color-voltage)]" />
 									Invitaciones Pendientes
 								</CardTitle>
-								<CardDescription className="text-gray-400">
+								<CardDescription className="text-zinc-400">
 									Si ya te invitaron, puedes entrar directo desde aquí.
 								</CardDescription>
 							</CardHeader>
@@ -363,14 +367,14 @@ export function OrganizationSelection() {
 									invitations.map((invitation) => (
 										<div
 											key={invitation.id}
-											className="rounded-2xl border border-gray-800 bg-black/20 p-4"
+											className="rounded-2xl border border-zinc-800 bg-black/20 p-4"
 										>
 											<div className="flex items-start justify-between gap-3">
 												<div className="min-w-0">
 													<p className="truncate font-semibold text-white">
 														{invitation.organizationName}
 													</p>
-													<p className="truncate text-sm text-gray-400">
+													<p className="truncate text-sm text-zinc-400">
 														/{invitation.organizationSlug}
 													</p>
 												</div>
@@ -381,7 +385,7 @@ export function OrganizationSelection() {
 													{formatOrganizationRoleLabel(invitation.role)}
 												</Badge>
 											</div>
-											<p className="mt-3 text-xs text-gray-500">
+											<p className="mt-3 text-xs text-zinc-500">
 												Expira{" "}
 												{invitation.expiresAt
 													? dateTimeFormatter.format(invitation.expiresAt)
@@ -399,8 +403,8 @@ export function OrganizationSelection() {
 												>
 													{isAcceptingInvitationId === invitation.id ? (
 														<>
-															<Loader2 className="h-4 w-4 animate-spin" />
-															Entrando...
+															<Loader2 className="size-4 animate-spin" />
+															Entrando…
 														</>
 													) : (
 														"Entrar Ahora"
@@ -414,12 +418,12 @@ export function OrganizationSelection() {
 														isAcceptingInvitationId !== null ||
 														isRejectingInvitationId !== null
 													}
-													className="border-gray-700 bg-transparent text-gray-200 hover:bg-white/5 hover:text-white"
+													className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5 hover:text-white"
 												>
 													{isRejectingInvitationId === invitation.id ? (
 														<>
-															<Loader2 className="h-4 w-4 animate-spin" />
-															Rechazando...
+															<Loader2 className="size-4 animate-spin" />
+															Rechazando…
 														</>
 													) : (
 														"Rechazar"
@@ -429,7 +433,7 @@ export function OrganizationSelection() {
 										</div>
 									))
 								) : (
-									<div className="rounded-2xl border border-dashed border-gray-800 bg-black/10 p-6 text-sm text-gray-400">
+									<div className="rounded-2xl border border-dashed border-zinc-800 bg-black/10 p-6 text-sm text-zinc-400">
 										No hay invitaciones pendientes para esta cuenta.
 									</div>
 								)}
@@ -437,13 +441,13 @@ export function OrganizationSelection() {
 						</Card>
 
 						{allowOrganizationCreation ? (
-							<Card className="border-gray-800 bg-[var(--color-carbon)] text-[var(--color-photon)] shadow-none">
+							<Card className="border-zinc-800 bg-[var(--color-carbon)] text-[var(--color-photon)] shadow-none">
 								<CardHeader>
 									<CardTitle className="flex items-center gap-2">
-										<Plus className="h-4 w-4 text-[var(--color-voltage)]" />
+										<Plus className="size-4 text-[var(--color-voltage)]" />
 										Crear Organización
 									</CardTitle>
-									<CardDescription className="text-gray-400">
+									<CardDescription className="text-zinc-400">
 										Usa este flujo solo si no tienes invitación ni join link.
 									</CardDescription>
 								</CardHeader>
@@ -456,9 +460,9 @@ export function OrganizationSelection() {
 												setIsCreating(true);
 											}}
 											variant="outline"
-											className="h-12 w-full border-dashed border-gray-700 bg-transparent text-gray-200 hover:bg-white/5 hover:text-white"
+											className="h-12 w-full border-dashed border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5 hover:text-white"
 										>
-											<Plus className="h-4 w-4" />
+											<Plus className="size-4" />
 											Crear Nueva Organización
 										</Button>
 									) : (
@@ -472,7 +476,7 @@ export function OrganizationSelection() {
 													onChange={handleNameChange}
 													placeholder="Ej. Tienda Principal..."
 													autoComplete="off"
-													className="border-gray-800 bg-black/30"
+													className="border-zinc-800 bg-black/30"
 													disabled={isSubmitting}
 												/>
 											</div>
@@ -485,10 +489,10 @@ export function OrganizationSelection() {
 													onChange={handleSlugChange}
 													placeholder="tienda-principal"
 													autoComplete="off"
-													className="border-gray-800 bg-black/30"
+													className="border-zinc-800 bg-black/30"
 													disabled={isSubmitting}
 												/>
-												<p className="text-xs text-gray-500">
+												<p className="text-xs text-zinc-500">
 													Se usará en URLs y selección interna.
 												</p>
 											</div>
@@ -503,7 +507,7 @@ export function OrganizationSelection() {
 														setSlugModified(false);
 														setErrorMsg(null);
 													}}
-													className="flex-1 border-gray-700 bg-transparent text-gray-200 hover:bg-white/5 hover:text-white"
+													className="flex-1 border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5 hover:text-white"
 													disabled={isSubmitting}
 												>
 													Cancelar
@@ -515,8 +519,8 @@ export function OrganizationSelection() {
 												>
 													{isSubmitting ? (
 														<>
-															<Loader2 className="h-4 w-4 animate-spin" />
-															Creando...
+															<Loader2 className="size-4 animate-spin" />
+															Creando…
 														</>
 													) : (
 														"Crear y Entrar"
@@ -528,13 +532,13 @@ export function OrganizationSelection() {
 								</CardContent>
 							</Card>
 						) : (
-							<Card className="border-gray-800 bg-[var(--color-carbon)] text-[var(--color-photon)] shadow-none">
+							<Card className="border-zinc-800 bg-[var(--color-carbon)] text-[var(--color-photon)] shadow-none">
 								<CardHeader>
 									<CardTitle className="flex items-center gap-2">
-										<ShieldAlert className="h-4 w-4 text-amber-300" />
+										<ShieldAlert className="size-4 text-amber-300" />
 										Creación Controlada
 									</CardTitle>
-									<CardDescription className="text-gray-400">
+									<CardDescription className="text-zinc-400">
 										La cuenta no puede abrir organizaciones nuevas por sí sola.
 									</CardDescription>
 								</CardHeader>
@@ -547,14 +551,14 @@ export function OrganizationSelection() {
 										<Button
 											asChild
 											variant="outline"
-											className="w-full border-gray-700 bg-transparent text-gray-200 hover:bg-white/5 hover:text-white"
+											className="w-full border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5 hover:text-white"
 										>
 											<a href={selectionData.contactHref} target="_blank" rel="noreferrer">
 												{selectionData.contactLabel}
 											</a>
 										</Button>
 									) : (
-										<div className="rounded-2xl border border-dashed border-gray-800 bg-black/10 p-4 text-sm text-gray-300">
+										<div className="rounded-2xl border border-dashed border-zinc-800 bg-black/10 p-4 text-sm text-zinc-300">
 											{selectionData?.contactLabel ?? "Contactar al administrador"}
 										</div>
 									)}
@@ -562,13 +566,13 @@ export function OrganizationSelection() {
 							</Card>
 						)}
 
-						<Card className="border-gray-800 bg-[var(--color-carbon)] text-[var(--color-photon)] shadow-none">
+						<Card className="border-zinc-800 bg-[var(--color-carbon)] text-[var(--color-photon)] shadow-none">
 							<CardHeader>
 								<CardTitle className="flex items-center gap-2">
-									<XCircle className="h-4 w-4 text-gray-400" />
+									<XCircle className="size-4 text-zinc-400" />
 									Sin correo manual
 								</CardTitle>
-								<CardDescription className="text-gray-400">
+								<CardDescription className="text-zinc-400">
 									El alta nueva se maneja dentro de la app. Los admins deben compartir
 									invitaciones internas o join links.
 								</CardDescription>

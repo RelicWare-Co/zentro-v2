@@ -405,9 +405,10 @@ export const list = orgRequiredProcedure.list.handler(
 				),
 			],
 		);
-		const terminalNames = terminalRows
-			.map((terminal) => terminal.name)
-			.filter((terminalName): terminalName is string => Boolean(terminalName));
+		const terminalNames = terminalRows.reduce<string[]>((acc, terminal) => {
+			if (terminal.name) acc.push(terminal.name);
+			return acc;
+		}, []);
 
 		const pageRows = shiftRows.slice(0, limit);
 		const hasMore = shiftRows.length > limit;
@@ -609,7 +610,7 @@ export const list = orgRequiredProcedure.list.handler(
 			data: pageRows.map((row) => {
 				const payments = paymentsByShift.get(row.id) ?? [];
 				const movements = movementsByShift.get(row.id) ?? [];
-				const closures = [...(closuresByShift.get(row.id) ?? [])].sort(
+				const closures = (closuresByShift.get(row.id) ?? []).toSorted(
 					(left, right) =>
 						comparePaymentMethodIds(left.paymentMethod, right.paymentMethod),
 				);
@@ -1260,7 +1261,7 @@ export const closeSummary = orgRequiredProcedure.closeSummary.handler(
 		);
 
 		const summaryByMethod = [...expectedByMethod.entries()]
-			.sort(([methodA], [methodB]) =>
+			.toSorted(([methodA], [methodB]) =>
 				comparePaymentMethodIds(methodA, methodB),
 			)
 			.map(([paymentMethod, expectedAmount]) => {
