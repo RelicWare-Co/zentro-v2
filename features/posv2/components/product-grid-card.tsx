@@ -17,7 +17,7 @@ export function ProductGridCard({
   product,
   quantity,
   isOutOfStock,
-  isActiveShift,
+  isActiveShift: _isActiveShift,
   onSelect,
   onToggleFavorite,
   isTogglingFavorite,

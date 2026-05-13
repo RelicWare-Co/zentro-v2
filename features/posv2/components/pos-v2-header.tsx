@@ -12,7 +12,7 @@ interface PosV2HeaderProps {
 
 export function PosV2Header({
   activeShift,
-  defaultTerminalName,
+  defaultTerminalName: _defaultTerminalName,
   onCashMovement,
   onOpenDrawer,
   onCloseShift,

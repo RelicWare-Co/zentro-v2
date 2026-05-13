@@ -15,9 +15,9 @@ interface ProductListItemProps {
 
 export function ProductListItem({
   product,
-  quantity,
+  quantity: _quantity,
   isOutOfStock,
-  isActiveShift,
+  isActiveShift: _isActiveShift,
   onSelect,
   onToggleFavorite,
   isTogglingFavorite,
