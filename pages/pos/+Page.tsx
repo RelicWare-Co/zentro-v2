@@ -17,7 +17,7 @@ import { ModifierModal } from "@/features/pos/components/modals/ModifierModal";
 import { OpenShiftModal } from "@/features/pos/components/modals/OpenShiftModal";
 import { ShiftRequiredDialog } from "@/features/pos/components/modals/ShiftRequiredDialog";
 import { PosHeader } from "@/features/pos/components/PosHeader";
-import { ProductGrid } from "@/features/pos/components/ProductGrid";
+import { ProductGrid } from "@/features/pos/components/product-grid";
 import { useCreateCustomerModal } from "@/features/pos/hooks/use-create-customer-modal";
 import { useModifierModal } from "@/features/pos/hooks/use-modifier-modal";
 import { usePosCart } from "@/features/pos/hooks/use-pos-cart";

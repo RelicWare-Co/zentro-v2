@@ -170,7 +170,7 @@ export function ProductGrid({
       }
 
       scanTimeoutRef.current = setTimeout(() => {
-        void submitScannerValue(value);
+        submitScannerValue(value);
       }, SCANNER_IDLE_DELAY_MS);
     },
     [submitScannerValue]
@@ -303,7 +303,7 @@ export function ProductGrid({
                     looksLikeScannerInput(scanMetricsRef.current, currentValue)
                   ) {
                     event.preventDefault();
-                    void submitScannerValue(currentValue);
+                    submitScannerValue(currentValue);
                     return;
                   }
 
@@ -321,7 +321,7 @@ export function ProductGrid({
                     )
                   ) {
                     event.preventDefault();
-                    void submitScannerValue(event.currentTarget.value);
+                    submitScannerValue(event.currentTarget.value);
                   }
                   return;
                 }
