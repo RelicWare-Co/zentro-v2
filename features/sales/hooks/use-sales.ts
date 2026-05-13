@@ -29,23 +29,6 @@ export function useSaleDetail(saleId: string | null) {
   });
 }
 
-function _useCreateSaleMutation() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    ...orpcQuery.sales.create.mutationOptions(),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: orpcQuery.sales.list.queryOptions({ input: {} }).queryKey,
-      });
-      await queryClient.invalidateQueries({
-        queryKey: orpcQuery.sales.detail.queryOptions({
-          input: { saleId: "" },
-        }).queryKey,
-      });
-    },
-  });
-}
-
 export function useActiveShift() {
   return useQuery({
     ...orpcQuery.shifts.active.queryOptions(),
