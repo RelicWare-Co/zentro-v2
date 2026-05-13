@@ -1418,14 +1418,16 @@ function AccessTab({
 }
 
 function JoinLinkStatusBadge(props: { status: OrganizationJoinLinkStatus }) {
-  const className =
-    props.status === "active"
-      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-200"
-      : props.status === "used"
-        ? "border-sky-500/30 bg-sky-500/10 text-sky-200"
-        : props.status === "revoked"
-          ? "border-red-500/30 bg-red-500/10 text-red-200"
-          : "border-amber-500/30 bg-amber-500/10 text-amber-200";
+  let className: string;
+  if (props.status === "active") {
+    className = "border-emerald-500/30 bg-emerald-500/10 text-emerald-200";
+  } else if (props.status === "used") {
+    className = "border-sky-500/30 bg-sky-500/10 text-sky-200";
+  } else if (props.status === "revoked") {
+    className = "border-red-500/30 bg-red-500/10 text-red-200";
+  } else {
+    className = "border-amber-500/30 bg-amber-500/10 text-amber-200";
+  }
 
   return (
     <Badge className={className} variant="outline">

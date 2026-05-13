@@ -47,18 +47,24 @@ export function RestaurantModuleSettingsCard(
     Record<string, { name: string; seats: string }>
   >({});
 
-  const restaurantConfigMutationError =
-    createRestaurantAreaMutation.error instanceof Error
-      ? createRestaurantAreaMutation.error.message
-      : createRestaurantTableMutation.error instanceof Error
-        ? createRestaurantTableMutation.error.message
-        : deleteRestaurantAreaMutation.error instanceof Error
-          ? deleteRestaurantAreaMutation.error.message
-          : deleteRestaurantTableMutation.error instanceof Error
-            ? deleteRestaurantTableMutation.error.message
-            : updateRestaurantTableMutation.error instanceof Error
-              ? updateRestaurantTableMutation.error.message
-              : null;
+  const restaurantConfigMutationError = (() => {
+    if (createRestaurantAreaMutation.error instanceof Error) {
+      return createRestaurantAreaMutation.error.message;
+    }
+    if (createRestaurantTableMutation.error instanceof Error) {
+      return createRestaurantTableMutation.error.message;
+    }
+    if (deleteRestaurantAreaMutation.error instanceof Error) {
+      return deleteRestaurantAreaMutation.error.message;
+    }
+    if (deleteRestaurantTableMutation.error instanceof Error) {
+      return deleteRestaurantTableMutation.error.message;
+    }
+    if (updateRestaurantTableMutation.error instanceof Error) {
+      return updateRestaurantTableMutation.error.message;
+    }
+    return null;
+  })();
 
   const handleCreateArea = async () => {
     const trimmedName = newAreaName.trim();
