@@ -67,6 +67,16 @@ function formatTransactionType(type: string) {
   return type;
 }
 
+function getTransactionAmountClass(type: string) {
+  if (type === "payment") {
+    return "text-emerald-300";
+  }
+  if (type === "charge") {
+    return "text-rose-300";
+  }
+  return "text-amber-300";
+}
+
 function getTransactionTypeBadgeClass(type: string) {
   if (type === "charge") {
     return "border-rose-500/20 bg-rose-500/10 text-rose-300";
@@ -272,59 +282,67 @@ export function CreditPage() {
             </SheetHeader>
 
             <div className="flex-1 overflow-hidden p-6">
-              {transactionsQuery.isLoading ? (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 className="size-6 animate-spin text-[var(--color-voltage)]" />
-                </div>
-              ) : transactions.length > 0 ? (
-                <VirtualList
-                  className="h-full"
-                  data={transactions}
-                  estimateSize={80}
-                  gap={12}
-                  getItemKey={(tx) => tx.id}
-                  renderItem={(tx) => (
-                    <div className="flex items-center justify-between rounded-xl border border-zinc-800 bg-black/10 p-4">
-                      <div className="min-w-0 space-y-1">
-                        <div className="flex items-center gap-2">
-                          <Badge
-                            className={`${getTransactionTypeBadgeClass(tx.type)} border-0 px-2 py-0.5 text-xs`}
-                          >
-                            {formatTransactionType(tx.type)}
-                          </Badge>
-                          {tx.saleId ? (
-                            <span className="text-xs text-zinc-500">
-                              <Receipt className="inline size-3" />{" "}
-                              {tx.saleId.slice(0, 8)}…
-                            </span>
-                          ) : null}
-                        </div>
-                        {tx.notes ? (
-                          <p className="text-sm text-zinc-400">{tx.notes}</p>
-                        ) : null}
-                        <p className="text-xs text-zinc-500">
-                          {dateTimeFormatter.format(tx.createdAt)}
-                        </p>
-                      </div>
-                      <div className="shrink-0 pl-4 text-right">
-                        <p
-                          className={`font-semibold tabular-nums ${tx.type === "payment" ? "text-emerald-300" : tx.type === "charge" ? "text-rose-300" : "text-amber-300"}`}
-                        >
-                          {tx.type === "payment" ? "-" : "+"}
-                          {currencyFormatter.format(tx.amount)}
-                        </p>
-                      </div>
+              {(() => {
+                if (transactionsQuery.isLoading) {
+                  return (
+                    <div className="flex items-center justify-center py-12">
+                      <Loader2 className="size-6 animate-spin text-[var(--color-voltage)]" />
                     </div>
-                  )}
-                />
-              ) : (
-                <div className="flex flex-col items-center gap-3 py-12 text-center">
-                  <History className="size-8 text-zinc-600" />
-                  <p className="text-sm text-zinc-500">
-                    No hay movimientos registrados.
-                  </p>
-                </div>
-              )}
+                  );
+                }
+                if (transactions.length === 0) {
+                  return (
+                    <div className="flex flex-col items-center gap-3 py-12 text-center">
+                      <History className="size-8 text-zinc-600" />
+                      <p className="text-sm text-zinc-500">
+                        No hay movimientos registrados.
+                      </p>
+                    </div>
+                  );
+                }
+                return (
+                  <VirtualList
+                    className="h-full"
+                    data={transactions}
+                    estimateSize={80}
+                    gap={12}
+                    getItemKey={(tx) => tx.id}
+                    renderItem={(tx) => (
+                      <div className="flex items-center justify-between rounded-xl border border-zinc-800 bg-black/10 p-4">
+                        <div className="min-w-0 space-y-1">
+                          <div className="flex items-center gap-2">
+                            <Badge
+                              className={`${getTransactionTypeBadgeClass(tx.type)} border-0 px-2 py-0.5 text-xs`}
+                            >
+                              {formatTransactionType(tx.type)}
+                            </Badge>
+                            {tx.saleId ? (
+                              <span className="text-xs text-zinc-500">
+                                <Receipt className="inline size-3" />{" "}
+                                {tx.saleId.slice(0, 8)}…
+                              </span>
+                            ) : null}
+                          </div>
+                          {tx.notes ? (
+                            <p className="text-sm text-zinc-400">{tx.notes}</p>
+                          ) : null}
+                          <p className="text-xs text-zinc-500">
+                            {dateTimeFormatter.format(tx.createdAt)}
+                          </p>
+                        </div>
+                        <div className="shrink-0 pl-4 text-right">
+                          <p
+                            className={`font-semibold tabular-nums ${getTransactionAmountClass(tx.type)}`}
+                          >
+                            {tx.type === "payment" ? "-" : "+"}
+                            {currencyFormatter.format(tx.amount)}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  />
+                );
+              })()}
             </div>
             <div className="shrink-0 border-zinc-800 border-t bg-black/30 p-4">
               <Button
