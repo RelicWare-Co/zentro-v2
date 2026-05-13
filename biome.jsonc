@@ -4,5 +4,17 @@
     "ultracite/biome/core",
     "ultracite/biome/react",
     "ultracite/biome/vitest"
+  ],
+  "overrides": [
+    {
+      "include": ["pages/**/+*.ts", "pages/**/+*.tsx"],
+      "linter": {
+        "rules": {
+          "style": {
+            "useFilenamingConvention": "off"
+          }
+        }
+      }
+    }
   ]
 }
