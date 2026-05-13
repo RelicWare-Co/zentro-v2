@@ -649,7 +649,7 @@ export const create = orgRequiredProcedure.create.handler(
 );
 
 export const cancel = orgRequiredProcedure.cancel.handler(
-  async ({ input, context }) => {
+  ({ input, context }) => {
     const { db: txCtx, organizationId, user } = context;
     const userId = user.id;
     const cancelledAt = input.cancelledAt

@@ -244,7 +244,7 @@ export const transactions = orgRequiredProcedure.transactions.handler(
 );
 
 export const registerPayment = orgRequiredProcedure.registerPayment.handler(
-  async ({ input, context }) => {
+  ({ input, context }) => {
     const amount = toPositiveInteger(input.amount, "amount");
     const saleId = normalizeOptionalString(input.saleId);
     const method = normalizeRequiredString(

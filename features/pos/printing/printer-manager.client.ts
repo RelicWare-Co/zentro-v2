@@ -754,19 +754,19 @@ class PosPrinterManager {
     }
   }
 
-  async attemptAutoReconnect(
+  attemptAutoReconnect(
     settings?: PosLocalPrinterSettings,
     organizationId?: string | null
   ) {
     const resolvedSettings =
       settings ?? readPosLocalPrinterSettings(organizationId);
     if (!resolvedSettings.autoReconnect) {
-      return false;
+      return Promise.resolve(false);
     }
 
     const attemptKey = `${this.normalizeOrgKey(organizationId)}:${resolvedSettings.connectionType}`;
     if (this.autoReconnectAttempted.has(attemptKey)) {
-      return this.state.status === "connected";
+      return Promise.resolve(this.state.status === "connected");
     }
 
     this.autoReconnectAttempted.add(attemptKey);
@@ -887,10 +887,12 @@ export function usePosPrinterRuntimeState(organizationId?: string | null) {
   );
 
   useEffect(() => {
-    void posPrinterManager.attemptAutoReconnect(
-      readPosLocalPrinterSettings(organizationId),
-      organizationId
-    );
+    posPrinterManager
+      .attemptAutoReconnect(
+        readPosLocalPrinterSettings(organizationId),
+        organizationId
+      )
+      .catch(() => undefined);
   }, [organizationId]);
 
   return state;

@@ -2,6 +2,7 @@ import { enhance, type UniversalMiddleware } from "@universal-middleware/core";
 import { dbSqlite } from "../database/drizzle/db";
 
 declare global {
+  // biome-ignore lint/style/noNamespace: third-party global namespace required by @universal-middleware/core
   namespace Universal {
     interface Context {
       db: ReturnType<typeof dbSqlite>;
@@ -15,7 +16,7 @@ declare global {
  */
 export const dbMiddleware: UniversalMiddleware = enhance(
   // The context we add here is automatically merged into pageContext
-  async (_request, context, _runtime) => {
+  (_request, context, _runtime) => {
     const db = dbSqlite();
 
     return {

@@ -2,6 +2,7 @@ import { readFileSync, unlinkSync } from "node:fs";
 import { resolve } from "node:path";
 import { type Client, createClient } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
+// biome-ignore lint/performance/noNamespaceImport: drizzle requires all schemas as a namespace object
 import * as schema from "../../database/drizzle/schema";
 
 export type TestDb = ReturnType<typeof drizzle<typeof schema>>;
@@ -50,9 +51,4 @@ export function createTestDb(): CreateTestDbResult {
   };
 
   return { db, client, cleanup };
-}
-
-async function _setupTestDb(): Promise<CreateTestDbResult> {
-  const result = createTestDb();
-  return result;
 }

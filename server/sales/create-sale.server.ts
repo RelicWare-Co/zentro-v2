@@ -92,7 +92,7 @@ function canSettleCompletedSaleWithCashChange(
 
 export type CreateSaleInput = z.infer<typeof CreateSaleInputSchema>;
 
-export async function createCoreSale(
+export function createCoreSale(
   input: CreateSaleInput,
   ctx: {
     db: ReturnType<typeof dbSqlite>;

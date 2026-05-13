@@ -1327,7 +1327,7 @@ export const closeSummary = orgRequiredProcedure.closeSummary.handler(
 );
 
 export const close = orgRequiredProcedure.close.handler(
-  async ({ input, context }) => {
+  ({ input, context }) => {
     const { organizationId, user } = context;
     const closedAt = resolveDate(input.closedAt);
     const notes = normalizeOptionalString(input.notes);
