@@ -1,29 +1,29 @@
 import { Package } from "lucide-react";
 import { useEffect, useRef } from "react";
 import type { Category, Product } from "@/features/pos/types";
+import { CatalogToolbar } from "./CatalogToolbar";
 import { ProductGridCard } from "./ProductGridCard";
 import { ProductListItem } from "./ProductListItem";
-import { CatalogToolbar } from "./CatalogToolbar";
 
 interface ProductCatalogProps {
-  categories: Category[];
   activeCategoryId: string;
-  searchQuery: string;
-  products: Product[];
-  isLoading: boolean;
-  isActiveShift: boolean;
-  viewMode: "grid" | "list";
+  categories: Category[];
   getProductQuantity: (productId: string) => number;
-  onCategoryChange: (id: string) => void;
-  onSearchChange: (query: string) => void;
-  onClearSearch: () => void;
-  onViewModeChange: (mode: "grid" | "list") => void;
-  onProductSelect: (product: Product) => void;
-  onToggleFavorite?: (productId: string) => void;
-  isTogglingFavorite?: boolean;
-  onLoadMore?: () => void;
   hasMore?: boolean;
+  isActiveShift: boolean;
+  isLoading: boolean;
   isLoadingMore?: boolean;
+  isTogglingFavorite?: boolean;
+  onCategoryChange: (id: string) => void;
+  onClearSearch: () => void;
+  onLoadMore?: () => void;
+  onProductSelect: (product: Product) => void;
+  onSearchChange: (query: string) => void;
+  onToggleFavorite?: (productId: string) => void;
+  onViewModeChange: (mode: "grid" | "list") => void;
+  products: Product[];
+  searchQuery: string;
+  viewMode: "grid" | "list";
 }
 
 export function ProductCatalog({
@@ -50,9 +50,13 @@ export function ProductCatalog({
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (!hasMore || !onLoadMore) return;
+    if (!(hasMore && onLoadMore)) {
+      return;
+    }
     const el = loadMoreRef.current;
-    if (!el) return;
+    if (!el) {
+      return;
+    }
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -60,70 +64,73 @@ export function ProductCatalog({
           onLoadMore();
         }
       },
-      { rootMargin: "200px" },
+      { rootMargin: "200px" }
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [hasMore, isLoadingMore, onLoadMore]);
+  }, [hasMore, onLoadMore]);
 
   return (
-    <div className="flex flex-col min-h-0 flex-1 overflow-hidden">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       <CatalogToolbar
-        categories={categories}
         activeCategoryId={activeCategoryId}
+        categories={categories}
+        onCategoryChange={onCategoryChange}
+        onClearSearch={onClearSearch}
+        onSearchChange={onSearchChange}
+        onViewModeChange={onViewModeChange}
         searchQuery={searchQuery}
         viewMode={viewMode}
-        onCategoryChange={onCategoryChange}
-        onSearchChange={onSearchChange}
-        onClearSearch={onClearSearch}
-        onViewModeChange={onViewModeChange}
       />
 
-      <div className="flex-1 min-h-0 overflow-y-auto px-4 md:px-6 py-3">
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3 md:px-6">
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center h-40 text-[#6b6b6b]">
-            <Package className="size-8 mb-3 animate-pulse" />
+          <div className="flex h-40 flex-col items-center justify-center text-[#6b6b6b]">
+            <Package className="mb-3 size-8 animate-pulse" />
             <p className="text-sm">Cargando productos…</p>
           </div>
         ) : regularProducts.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-40 text-[#6b6b6b]">
-            <Package className="size-8 mb-3" />
+          <div className="flex h-40 flex-col items-center justify-center text-[#6b6b6b]">
+            <Package className="mb-3 size-8" />
             <p className="text-sm">No se encontraron productos.</p>
           </div>
         ) : viewMode === "grid" ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 md:gap-4 pb-4">
+          <div className="grid grid-cols-2 gap-3 pb-4 sm:grid-cols-3 md:gap-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
             {regularProducts.map((product) => (
               <ProductGridCard
-                key={product.id}
-                product={product}
-                quantity={getProductQuantity(product.id)}
-                isOutOfStock={product.trackInventory && product.stock <= 0}
                 isActiveShift={isActiveShift}
+                isOutOfStock={product.trackInventory && product.stock <= 0}
+                isTogglingFavorite={isTogglingFavorite}
+                key={product.id}
                 onSelect={() => onProductSelect(product)}
                 onToggleFavorite={onToggleFavorite}
-                isTogglingFavorite={isTogglingFavorite}
+                product={product}
+                quantity={getProductQuantity(product.id)}
               />
             ))}
           </div>
         ) : (
-          <div className="flex flex-col gap-2 md:gap-3 pb-4">
+          <div className="flex flex-col gap-2 pb-4 md:gap-3">
             {regularProducts.map((product) => (
               <ProductListItem
-                key={product.id}
-                product={product}
-                quantity={getProductQuantity(product.id)}
-                isOutOfStock={product.trackInventory && product.stock <= 0}
                 isActiveShift={isActiveShift}
+                isOutOfStock={product.trackInventory && product.stock <= 0}
+                isTogglingFavorite={isTogglingFavorite}
+                key={product.id}
                 onSelect={() => onProductSelect(product)}
                 onToggleFavorite={onToggleFavorite}
-                isTogglingFavorite={isTogglingFavorite}
+                product={product}
+                quantity={getProductQuantity(product.id)}
               />
             ))}
           </div>
         )}
 
         {hasMore && (
-          <div ref={loadMoreRef} className="flex h-16 items-center justify-center text-[#6b6b6b]">
+          <div
+            className="flex h-16 items-center justify-center text-[#6b6b6b]"
+            ref={loadMoreRef}
+          >
             {isLoadingMore ? <p className="text-sm">Cargando más…</p> : null}
           </div>
         )}

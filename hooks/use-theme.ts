@@ -51,7 +51,9 @@ export function useTheme() {
   }, [mode]);
 
   useEffect(() => {
-    if (mode !== "auto") return;
+    if (mode !== "auto") {
+      return;
+    }
 
     const listener = (event: MediaQueryListEvent) => {
       const resolved = event.matches ? "dark" : "light";
@@ -76,7 +78,7 @@ export function useTheme() {
   }, []);
 
   const resolved =
-    typeof window !== "undefined" ? getResolvedTheme(mode) : "light";
+    typeof window === "undefined" ? "light" : getResolvedTheme(mode);
 
   return { mode, resolved, setMode };
 }

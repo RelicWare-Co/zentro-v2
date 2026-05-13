@@ -9,20 +9,20 @@ export function Head() {
     <>
       <meta charSet="utf-8" />
       <meta
-        name="viewport"
         content="width=device-width, initial-scale=1, viewport-fit=cover"
+        name="viewport"
       />
-      <link rel="icon" href={logoUrl} />
-      <meta name="theme-color" content="#0f0f0f" />
-      <meta name="application-name" content="Zentro" />
-      <meta name="mobile-web-app-capable" content="yes" />
-      <meta name="apple-mobile-web-app-capable" content="yes" />
+      <link href={logoUrl} rel="icon" />
+      <meta content="#0f0f0f" name="theme-color" />
+      <meta content="Zentro" name="application-name" />
+      <meta content="yes" name="mobile-web-app-capable" />
+      <meta content="yes" name="apple-mobile-web-app-capable" />
       <meta
-        name="apple-mobile-web-app-status-bar-style"
         content="black-translucent"
+        name="apple-mobile-web-app-status-bar-style"
       />
-      <meta name="apple-mobile-web-app-title" content="Zentro" />
-      <meta name="format-detection" content="telephone=no" />
+      <meta content="Zentro" name="apple-mobile-web-app-title" />
+      <meta content="telephone=no" name="format-detection" />
       {/* biome-ignore lint/security/noDangerouslySetInnerHtml: safe in React 19 native script tags */}
       <script>{THEME_INIT_SCRIPT}</script>
     </>

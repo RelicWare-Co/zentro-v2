@@ -1,17 +1,16 @@
-import { describe, test, expect } from "bun:test";
-import { createTestDb } from "./helpers/test-db";
+import { describe, expect, test } from "bun:test";
+import { eq } from "drizzle-orm";
+import { product } from "../database/drizzle/schema/inventory.schema";
+import { createServerORPCClient } from "../server/orpc/client/server";
+import { buildMockContext } from "./helpers/orpc-context";
 import {
+  makeUser,
+  seedCategory,
+  seedCustomer,
   seedOrganizationWithMember,
   seedProduct,
-  seedCustomer,
-  seedShift,
-  seedCategory,
-  makeUser,
 } from "./helpers/seed";
-import { buildMockContext } from "./helpers/orpc-context";
-import { createServerORPCClient } from "../server/orpc/client/server";
-import { product } from "../database/drizzle/schema/inventory.schema";
-import { eq, and, isNull } from "drizzle-orm";
+import { createTestDb } from "./helpers/test-db";
 
 describe("POS checkout", () => {
   describe("VAL-POS-001: shift open prevents duplicate for same user", () => {
@@ -27,9 +26,9 @@ describe("POS checkout", () => {
       expect(first.status).toBe("open");
 
       // Try open second shift for same user
-      await expect(
-        client.shifts.open({ startingCash: 3000 }),
-      ).rejects.toThrow("El usuario ya tiene un turno abierto");
+      await expect(client.shifts.open({ startingCash: 3000 })).rejects.toThrow(
+        "El usuario ya tiene un turno abierto"
+      );
 
       await cleanup();
     });
@@ -44,32 +43,32 @@ describe("POS checkout", () => {
       const client = createServerORPCClient(ctx);
 
       // Open shift with starting cash
-      const shiftOpen = await client.shifts.open({ startingCash: 10000 });
+      const shiftOpen = await client.shifts.open({ startingCash: 10_000 });
       const shiftId = shiftOpen.id;
 
       // Seed product and create a sale with cash overpayment (change given)
       const productId = await seedProduct(db, {
         organizationId,
         name: "Widget",
-        price: 15000,
+        price: 15_000,
         stock: 10,
         trackInventory: true,
       });
 
       await client.sales.create({
         shiftId,
-        items: [{ productId, quantity: 1, unitPrice: 15000 }],
-        payments: [{ method: "cash", amount: 20000 }],
+        items: [{ productId, quantity: 1, unitPrice: 15_000 }],
+        payments: [{ method: "cash", amount: 20_000 }],
       });
 
       // Close summary: expected cash = startingCash + cashSales - change
       // = 10000 + 20000 - 5000 = 25000
       const summary = await client.shifts.closeSummary({ shiftId });
       const cashSummary = summary.summaryByMethod.find(
-        (s: { paymentMethod: string }) => s.paymentMethod === "cash",
+        (s: { paymentMethod: string }) => s.paymentMethod === "cash"
       );
       expect(cashSummary).toBeDefined();
-      expect(cashSummary?.expectedAmount).toBe(25000);
+      expect(cashSummary?.expectedAmount).toBe(25_000);
 
       await cleanup();
     });
@@ -113,19 +112,19 @@ describe("POS checkout", () => {
       const productId = await seedProduct(db, {
         organizationId,
         name: "Service",
-        price: 10000,
+        price: 10_000,
         stock: 10,
         trackInventory: true,
       });
       await client.sales.create({
         shiftId,
-        items: [{ productId, quantity: 1, unitPrice: 10000 }],
-        payments: [{ method: "card", amount: 10000 }],
+        items: [{ productId, quantity: 1, unitPrice: 10_000 }],
+        payments: [{ method: "card", amount: 10_000 }],
       });
 
       const summary = await client.shifts.closeSummary({ shiftId });
       const cashSummary = summary.summaryByMethod.find(
-        (s: { paymentMethod: string }) => s.paymentMethod === "cash",
+        (s: { paymentMethod: string }) => s.paymentMethod === "cash"
       );
       // expected cash = startingCash 5000 + inflow 3000 - expense 2000 - payout 1000 = 5000
       expect(cashSummary?.expectedAmount).toBe(5000);
@@ -189,7 +188,7 @@ describe("POS checkout", () => {
       expect(categoryIds).toContain(catB);
 
       const modifierIds = bootstrap.modifierProducts.map(
-        (p: { id: string }) => p.id,
+        (p: { id: string }) => p.id
       );
       expect(modifierIds).toContain(modifierId);
       expect(modifierIds.length).toBe(1);
@@ -228,8 +227,8 @@ describe("POS checkout", () => {
             price: (i + 1) * 1000,
             trackInventory: true,
             stock: 10,
-          }),
-        ),
+          })
+        )
       );
 
       // Page 1: limit 2
@@ -366,11 +365,14 @@ describe("POS checkout", () => {
       const client = createServerORPCClient(ctx);
 
       // Bootstrap POS (open shift implicitly)
-      const shiftOpen = await client.shifts.open({ startingCash: 10000 });
+      const shiftOpen = await client.shifts.open({ startingCash: 10_000 });
       const shiftId = shiftOpen.id;
 
       // Create category and product
-      const categoryId = await seedCategory(db, { organizationId, name: "Beverages" });
+      const categoryId = await seedCategory(db, {
+        organizationId,
+        name: "Beverages",
+      });
       const productId = await seedProduct(db, {
         organizationId,
         categoryId,
@@ -396,12 +398,12 @@ describe("POS checkout", () => {
       const saleResult = await client.sales.create({
         shiftId,
         items: [{ productId, quantity: 2, unitPrice: 8000 }],
-        payments: [{ method: "cash", amount: 16000 }],
+        payments: [{ method: "cash", amount: 16_000 }],
       });
 
       expect(saleResult.status).toBe("completed");
-      expect(saleResult.totalAmount).toBe(16000);
-      expect(saleResult.paidAmount).toBe(16000);
+      expect(saleResult.totalAmount).toBe(16_000);
+      expect(saleResult.paidAmount).toBe(16_000);
       expect(saleResult.balanceDue).toBe(0);
 
       // Verify stock decremented

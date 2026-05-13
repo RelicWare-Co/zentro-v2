@@ -1,17 +1,17 @@
 import type { z } from "zod";
-import type {
-	PosBootstrapResultSchema,
-	PosProductSchema,
-	SearchPosProductsResultSchema,
-} from "../../schemas/pos";
 import type { SearchCustomersResultSchema } from "../../schemas/customers";
+import type {
+  PosBootstrapResultSchema,
+  PosProductSchema,
+  SearchPosProductsResultSchema,
+} from "../../schemas/pos";
 
 // Producto retornado por la búsqueda POS
 export type Product = z.infer<typeof PosProductSchema>;
 
 // Cliente retornado por la búsqueda POS
 export type PosCustomer = z.infer<
-	typeof SearchCustomersResultSchema
+  typeof SearchCustomersResultSchema
 >["data"][number];
 
 // Datos del bootstrap del POS
@@ -24,51 +24,51 @@ export type ActiveShift = PosBootstrap["activeShift"];
 type ProductSearchResult = z.infer<typeof SearchPosProductsResultSchema>;
 
 // Categoría de productos
-export type Category = {
-	id: string;
-	name: string;
-};
+export interface Category {
+  id: string;
+  name: string;
+}
 
 // Modificador de un item en el carrito
-export type CartItemModifier = {
-	id: string;
-	name: string;
-	price: number;
-	quantity: number;
-};
+export interface CartItemModifier {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+}
 
 // Item en el carrito
-export type CartItem = {
-	id: string; // ID único para permitir múltiples productos iguales con diferentes modificadores
-	product: Product;
-	quantity: number;
-	modifiers: CartItemModifier[];
-	discountAmount: number;
-};
+export interface CartItem {
+  discountAmount: number;
+  id: string; // ID único para permitir múltiples productos iguales con diferentes modificadores
+  modifiers: CartItemModifier[];
+  product: Product;
+  quantity: number;
+}
 
 // Método de pago
-export type PaymentMethod = {
-	id: string;
-	method: string;
-	amount: string;
-	reference: string;
-};
+export interface PaymentMethod {
+  amount: string;
+  id: string;
+  method: string;
+  reference: string;
+}
 
 // Tipo de movimiento de caja
 export type CashMovementType = "expense" | "payout" | "inflow";
 
 // Totales calculados del carrito
-export type CartTotals = {
-	subTotal: number;
-	tax: number;
-	saleDiscountAmount: number;
-	itemsDiscountAmount: number;
-	discountAmount: number;
-	totalAmount: number;
-};
+export interface CartTotals {
+  discountAmount: number;
+  itemsDiscountAmount: number;
+  saleDiscountAmount: number;
+  subTotal: number;
+  tax: number;
+  totalAmount: number;
+}
 
 // Props comunes para modales
-type ModalProps = {
-	isOpen: boolean;
-	onClose: () => void;
-};
+interface ModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}

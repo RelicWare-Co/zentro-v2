@@ -1,22 +1,22 @@
-import { describe, test, expect } from "bun:test";
-import { createTestDb } from "./helpers/test-db";
-import {
-  seedOrganizationWithMember,
-  seedProduct,
-  seedCustomer,
-  seedShift,
-  makeUser,
-} from "./helpers/seed";
-import { buildMockContext } from "./helpers/orpc-context";
-import { createServerORPCClient } from "../server/orpc/client/server";
-import { createCoreSale } from "../server/sales/create-sale.server";
+import { describe, expect, test } from "bun:test";
+import { and, eq } from "drizzle-orm";
 import {
   creditAccount,
   creditTransaction,
 } from "../database/drizzle/schema/credit.schema";
 import { customer } from "../database/drizzle/schema/customer.schema";
-import { payment, sale } from "../database/drizzle/schema/sales.schema";
-import { eq, and } from "drizzle-orm";
+import { sale } from "../database/drizzle/schema/sales.schema";
+import { createServerORPCClient } from "../server/orpc/client/server";
+import { createCoreSale } from "../server/sales/create-sale.server";
+import { buildMockContext } from "./helpers/orpc-context";
+import {
+  makeUser,
+  seedCustomer,
+  seedOrganizationWithMember,
+  seedProduct,
+  seedShift,
+} from "./helpers/seed";
+import { createTestDb } from "./helpers/test-db";
 
 describe("credit ledger", () => {
   describe("VAL-CRED-001: credit account search returns customer data and balances", () => {
@@ -27,7 +27,7 @@ describe("credit ledger", () => {
         seedProduct(db, {
           organizationId,
           name: "Widget",
-          price: 10000,
+          price: 10_000,
           stock: 10,
           trackInventory: true,
         }),
@@ -49,11 +49,11 @@ describe("credit ledger", () => {
         {
           shiftId,
           customerId,
-          items: [{ productId, quantity: 1, unitPrice: 10000 }],
+          items: [{ productId, quantity: 1, unitPrice: 10_000 }],
           payments: [],
           isCreditSale: true,
         },
-        { db, organizationId, userId },
+        { db, organizationId, userId }
       );
 
       const u = makeUser({ id: userId });
@@ -64,7 +64,7 @@ describe("credit ledger", () => {
       expect(result.data.length).toBe(1);
       const account = result.data[0];
       expect(account.customerId).toBe(customerId);
-      expect(account.balance).toBe(10000);
+      expect(account.balance).toBe(10_000);
       expect(account.customerName).toBe("Alice");
       expect(account.customerDocument).toBe("123456");
       expect(account.customerPhone).toBe("3001234567");
@@ -174,7 +174,7 @@ describe("credit ledger", () => {
         id: accountId,
         organizationId,
         customerId,
-        balance: 15000,
+        balance: 15_000,
         interestRate: 0,
         createdAt: now,
         updatedAt: now,
@@ -238,7 +238,7 @@ describe("credit ledger", () => {
         seedProduct(db, {
           organizationId,
           name: "Widget",
-          price: 20000,
+          price: 20_000,
           stock: 10,
           trackInventory: true,
         }),
@@ -257,11 +257,11 @@ describe("credit ledger", () => {
         {
           shiftId,
           customerId,
-          items: [{ productId, quantity: 1, unitPrice: 20000 }],
+          items: [{ productId, quantity: 1, unitPrice: 20_000 }],
           payments: [{ method: "cash", amount: 5000 }],
           isCreditSale: true,
         },
-        { db, organizationId, userId },
+        { db, organizationId, userId }
       );
 
       const u = makeUser({ id: userId });
@@ -274,11 +274,11 @@ describe("credit ledger", () => {
         .where(
           and(
             eq(creditAccount.organizationId, organizationId),
-            eq(creditAccount.customerId, customerId),
-          ),
+            eq(creditAccount.customerId, customerId)
+          )
         );
       const accountId = accountRows[0].id;
-      expect(accountRows[0].balance).toBe(15000);
+      expect(accountRows[0].balance).toBe(15_000);
 
       const paymentResult = await client.credit.registerPayment({
         shiftId,
@@ -289,14 +289,14 @@ describe("credit ledger", () => {
       });
 
       expect(paymentResult.amount).toBe(5000);
-      expect(paymentResult.newBalance).toBe(10000);
+      expect(paymentResult.newBalance).toBe(10_000);
       expect(paymentResult.saleId).toBe(saleResult.saleId);
 
       const afterAccount = await db
         .select()
         .from(creditAccount)
         .where(eq(creditAccount.id, accountId));
-      expect(afterAccount[0].balance).toBe(10000);
+      expect(afterAccount[0].balance).toBe(10_000);
 
       const transactionRows = await db
         .select()
@@ -304,8 +304,8 @@ describe("credit ledger", () => {
         .where(
           and(
             eq(creditTransaction.creditAccountId, accountId),
-            eq(creditTransaction.type, "payment"),
-          ),
+            eq(creditTransaction.type, "payment")
+          )
         );
       expect(transactionRows.length).toBe(1);
       expect(transactionRows[0].amount).toBe(5000);
@@ -323,7 +323,7 @@ describe("credit ledger", () => {
       const paymentResult2 = await client.credit.registerPayment({
         shiftId,
         creditAccountId: accountId,
-        amount: 10000,
+        amount: 10_000,
         method: "cash",
         saleId: saleResult.saleId,
       });
@@ -346,7 +346,7 @@ describe("credit ledger", () => {
         seedProduct(db, {
           organizationId,
           name: "Widget",
-          price: 20000,
+          price: 20_000,
           stock: 10,
           trackInventory: true,
         }),
@@ -365,11 +365,11 @@ describe("credit ledger", () => {
         {
           shiftId,
           customerId,
-          items: [{ productId, quantity: 1, unitPrice: 20000 }],
+          items: [{ productId, quantity: 1, unitPrice: 20_000 }],
           payments: [{ method: "cash", amount: 5000 }],
           isCreditSale: true,
         },
-        { db, organizationId, userId },
+        { db, organizationId, userId }
       );
 
       const u = makeUser({ id: userId });
@@ -382,8 +382,8 @@ describe("credit ledger", () => {
         .where(
           and(
             eq(creditAccount.organizationId, organizationId),
-            eq(creditAccount.customerId, customerId),
-          ),
+            eq(creditAccount.customerId, customerId)
+          )
         );
       const accountId = accountRows[0].id;
 
@@ -451,8 +451,8 @@ describe("credit ledger", () => {
         .where(
           and(
             eq(creditTransaction.creditAccountId, accountId),
-            eq(creditTransaction.type, "payment"),
-          ),
+            eq(creditTransaction.type, "payment")
+          )
         );
       expect(transactionRows.length).toBe(1);
       expect(transactionRows[0].saleId).toBeNull();
@@ -498,7 +498,7 @@ describe("credit ledger", () => {
           creditAccountId: accountId,
           amount: 6000,
           method: "cash",
-        }),
+        })
       ).rejects.toThrow("El abono no puede superar el saldo pendiente");
 
       await cleanup();
@@ -543,7 +543,7 @@ describe("credit ledger", () => {
           creditAccountId: accountId,
           amount: 1000,
           method: "cash",
-        }),
+        })
       ).rejects.toThrow("No se puede registrar pago en un turno cerrado");
 
       await cleanup();

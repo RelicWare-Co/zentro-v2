@@ -1,7 +1,4 @@
 import { useMemo, useState } from "react";
-import { PosV2Header } from "@/features/posv2/components/PosV2Header";
-import { ProductCatalog } from "@/features/posv2/components/ProductCatalog";
-import { CartPanelV2 } from "@/features/posv2/components/CartPanelV2";
 import { CashMovementModal } from "@/features/pos/components/modals/CashMovementModal";
 import { CheckoutModal } from "@/features/pos/components/modals/CheckoutModal";
 import { CloseShiftModal } from "@/features/pos/components/modals/CloseShiftModal";
@@ -21,9 +18,15 @@ import {
   useToggleProductFavoriteMutation,
 } from "@/features/pos/hooks/use-pos-queries";
 import { usePosShift } from "@/features/pos/hooks/use-pos-shift";
-import type { Product } from "@/features/pos/types";
-import { calculateItemTotal, createPaymentMethodLabelMap } from "@/features/pos/utils";
 import { buildSaleReceiptDocument } from "@/features/pos/printing/receipt-documents";
+import type { Product } from "@/features/pos/types";
+import {
+  calculateItemTotal,
+  createPaymentMethodLabelMap,
+} from "@/features/pos/utils";
+import { CartPanelV2 } from "@/features/posv2/components/CartPanelV2";
+import { PosV2Header } from "@/features/posv2/components/PosV2Header";
+import { ProductCatalog } from "@/features/posv2/components/ProductCatalog";
 import { useActiveOrganization } from "@/lib/auth-client";
 
 export default function PosV2Page() {
@@ -60,7 +63,7 @@ export default function PosV2Page() {
         label: method.label,
         requiresReference: method.requiresReference,
       })) ?? [],
-    [settings?.paymentMethods],
+    [settings?.paymentMethods]
   );
   const allowCreditSales = settings?.allowCreditSales ?? false;
   const defaultTerminalName = settings?.defaultTerminalName ?? "Caja Principal";
@@ -113,9 +116,7 @@ export default function PosV2Page() {
     paymentMethodOptions,
     allowCreditSales,
     async (payload) => {
-      const customer = customers.find(
-        (c) => c.id === selectedCustomerId,
-      );
+      const customer = customers.find((c) => c.id === selectedCustomerId);
       const document = buildSaleReceiptDocument({
         documentId: payload.result.saleId,
         issuedAt: Date.now(),
@@ -155,7 +156,7 @@ export default function PosV2Page() {
         "@/features/pos/printing/print-thermal-receipt.client"
       );
       await printThermalReceipt(document, activeOrganizationId);
-    },
+    }
   );
 
   // Create customer modal
@@ -168,16 +169,20 @@ export default function PosV2Page() {
 
   // Credit account for selected customer
   const selectedCustomerCreditAccount = useMemo(() => {
-    if (!selectedCustomerId) return null;
+    if (!selectedCustomerId) {
+      return null;
+    }
     return (
       creditAccounts.find(
-        (account) => account.customerId === selectedCustomerId,
+        (account) => account.customerId === selectedCustomerId
       ) ?? null
     );
   }, [creditAccounts, selectedCustomerId]);
 
   const projectedCreditBalance = useMemo(() => {
-    if (!selectedCustomerCreditAccount) return checkout.remainingCreditAmount;
+    if (!selectedCustomerCreditAccount) {
+      return checkout.remainingCreditAmount;
+    }
     return (
       selectedCustomerCreditAccount.balance + checkout.remainingCreditAmount
     );
@@ -192,7 +197,7 @@ export default function PosV2Page() {
     handleProductSelection(product);
   };
 
-  const handleBarcodeScan = async (value: string): Promise<boolean> => {
+  const _handleBarcodeScan = async (value: string): Promise<boolean> => {
     if (!activeShift) {
       setIsShiftRequiredOpen(true);
       return false;
@@ -200,7 +205,7 @@ export default function PosV2Page() {
     const matchedProduct = products.find(
       (p) =>
         p.barcode?.trim() === value ||
-        p.sku?.trim().toLowerCase() === value.toLowerCase(),
+        p.sku?.trim().toLowerCase() === value.toLowerCase()
     );
     if (matchedProduct) {
       handleProductSelection(matchedProduct);
@@ -223,158 +228,158 @@ export default function PosV2Page() {
         activeShift={activeShift}
         defaultTerminalName={defaultTerminalName}
         onCashMovement={() => shift.setIsCashMovementModalOpen(true)}
+        onCloseShift={() => shift.setIsCloseShiftModalOpen(true)}
         onOpenDrawer={async () => {
           const { openPosCashDrawer } = await import(
             "@/features/pos/printing/print-thermal-receipt.client"
           );
           await openPosCashDrawer(activeOrganizationId);
         }}
-        onCloseShift={() => shift.setIsCloseShiftModalOpen(true)}
       />
 
-      <div className="flex flex-1 min-h-0 overflow-hidden">
+      <div className="flex min-h-0 flex-1 overflow-hidden">
         <ProductCatalog
-          categories={categories}
           activeCategoryId={activeCategoryId}
-          searchQuery={searchQuery}
-          products={products}
-          isLoading={isBootstrapLoading || isProductsLoading}
-          isActiveShift={!!activeShift}
-          viewMode={viewMode}
+          categories={categories}
           getProductQuantity={getProductQuantity}
+          hasMore={!!hasNextPage}
+          isActiveShift={!!activeShift}
+          isLoading={isBootstrapLoading || isProductsLoading}
+          isLoadingMore={isFetchingNextPage}
+          isTogglingFavorite={toggleFavoriteMutation.isPending}
           onCategoryChange={setActiveCategoryId}
-          onSearchChange={setSearchQuery}
           onClearSearch={() => setSearchQuery("")}
-          onViewModeChange={setViewMode}
+          onLoadMore={fetchNextPage}
           onProductSelect={handleProductSelect}
+          onSearchChange={setSearchQuery}
           onToggleFavorite={(productId) => {
             toggleFavoriteMutation.mutate({ productId });
           }}
-          isTogglingFavorite={toggleFavoriteMutation.isPending}
-          onLoadMore={fetchNextPage}
-          hasMore={!!hasNextPage}
-          isLoadingMore={isFetchingNextPage}
+          onViewModeChange={setViewMode}
+          products={products}
+          searchQuery={searchQuery}
+          viewMode={viewMode}
         />
 
         <CartPanelV2
           cart={cart}
-          totalItems={totalItems}
-          totals={totals}
           isActiveShift={!!activeShift}
-          onUpdateQuantity={updateQuantity}
+          onCheckout={handleCheckout}
+          onClearCart={clearCart}
           onRemoveItem={removeFromCart}
           onUpdateItemDiscount={updateItemDiscount}
-          onClearCart={clearCart}
-          onCheckout={handleCheckout}
+          onUpdateQuantity={updateQuantity}
+          totalItems={totalItems}
+          totals={totals}
         />
       </div>
 
       {/* Modals */}
       <OpenShiftModal
+        canOpenShift={shift.canOpenShift}
+        error={shift.openShiftError}
         isOpen={shift.isShiftOpenModalOpen}
+        isOpening={shift.isOpeningShift}
         onClose={() => shift.setIsShiftOpenModalOpen(false)}
-        startingCash={shift.startingCash}
-        setStartingCash={shift.setStartingCash}
+        onConfirm={shift.handleOpenShift}
         openShiftNotes={shift.openShiftNotes}
         setOpenShiftNotes={shift.setOpenShiftNotes}
-        canOpenShift={shift.canOpenShift}
-        isOpening={shift.isOpeningShift}
-        error={shift.openShiftError}
-        onConfirm={shift.handleOpenShift}
+        setStartingCash={shift.setStartingCash}
+        startingCash={shift.startingCash}
       />
 
       <CashMovementModal
-        isOpen={shift.isCashMovementModalOpen}
-        onClose={() => shift.setIsCashMovementModalOpen(false)}
-        movementType={shift.movementType as "expense" | "payout" | "inflow"}
-        setMovementType={shift.setMovementType}
-        movementPaymentMethod={shift.movementPaymentMethod}
-        setMovementPaymentMethod={shift.setMovementPaymentMethod}
-        paymentMethodOptions={paymentMethodOptions}
-        movementAmount={shift.movementAmount}
-        setMovementAmount={shift.setMovementAmount}
-        movementDescription={shift.movementDescription}
-        setMovementDescription={shift.setMovementDescription}
         canRegister={shift.canRegisterCashMovement}
-        isRegistering={shift.isRegisteringMovement}
-        hasActiveShift={!!activeShift}
         error={shift.cashMovementError}
+        hasActiveShift={!!activeShift}
+        isOpen={shift.isCashMovementModalOpen}
+        isRegistering={shift.isRegisteringMovement}
+        movementAmount={shift.movementAmount}
+        movementDescription={shift.movementDescription}
+        movementPaymentMethod={shift.movementPaymentMethod}
+        movementType={shift.movementType as "expense" | "payout" | "inflow"}
+        onClose={() => shift.setIsCashMovementModalOpen(false)}
         onConfirm={shift.handleCashMovement}
+        paymentMethodOptions={paymentMethodOptions}
+        setMovementAmount={shift.setMovementAmount}
+        setMovementDescription={shift.setMovementDescription}
+        setMovementPaymentMethod={shift.setMovementPaymentMethod}
+        setMovementType={shift.setMovementType}
       />
 
       <CloseShiftModal
-        isOpen={shift.isCloseShiftModalOpen}
-        onClose={() => shift.setIsCloseShiftModalOpen(false)}
         activeShift={activeShift}
-        shiftCloseSummary={shift.shiftCloseSummary}
-        isLoading={shift.isShiftSummaryFetching}
-        closureAmounts={shift.closureAmounts}
-        setClosureAmounts={shift.setClosureAmounts}
         closeShiftNotes={shift.closeShiftNotes}
-        setCloseShiftNotes={shift.setCloseShiftNotes}
+        closureAmounts={shift.closureAmounts}
+        error={shift.closeShiftError}
         hasInvalidAmounts={shift.hasInvalidCloseAmounts}
         isClosing={shift.isClosingShift}
-        error={shift.closeShiftError}
+        isLoading={shift.isShiftSummaryFetching}
+        isOpen={shift.isCloseShiftModalOpen}
+        onClose={() => shift.setIsCloseShiftModalOpen(false)}
         onConfirm={shift.handleCloseShift}
+        setCloseShiftNotes={shift.setCloseShiftNotes}
+        setClosureAmounts={shift.setClosureAmounts}
+        shiftCloseSummary={shift.shiftCloseSummary}
       />
 
       <CheckoutModal
-        isOpen={checkout.isCheckoutModalOpen}
-        onClose={() => checkout.setIsCheckoutModalOpen(false)}
-        totalAmount={totals.totalAmount}
-        discountInput={discountInput}
-        setDiscountInput={setDiscountInput}
-        payments={checkout.payments}
-        paymentMethodOptions={paymentMethodOptions}
         allowCreditSales={allowCreditSales}
-        isCreditSale={checkout.isCreditSale}
-        setIsCreditSale={checkout.setIsCreditSale}
-        customers={customers}
-        selectedCustomerId={selectedCustomerId}
-        onCustomerChange={setSelectedCustomerId}
-        selectedCustomerCreditAccount={selectedCustomerCreditAccount}
-        projectedCreditBalance={projectedCreditBalance}
-        remainingCreditAmount={checkout.remainingCreditAmount}
-        shouldCreateCreditBalance={checkout.shouldCreateCreditBalance}
         canFinalize={checkout.canFinalizeSale}
-        isProcessing={checkout.isProcessing}
-        paymentDifference={checkout.paymentDifference}
-        hasPaymentDifference={checkout.hasPaymentDifference}
         canReturnCashChange={checkout.canReturnCashChange}
         cashChangeDue={checkout.cashChangeDue}
+        customers={customers}
+        discountInput={discountInput}
         error={checkout.error}
+        hasPaymentDifference={checkout.hasPaymentDifference}
+        isCreditSale={checkout.isCreditSale}
+        isOpen={checkout.isCheckoutModalOpen}
+        isProcessing={checkout.isProcessing}
         onAddPaymentMethod={checkout.addPaymentMethod}
+        onClose={() => checkout.setIsCheckoutModalOpen(false)}
+        onConfirm={checkout.handleFinalizeSale}
+        onCustomerChange={setSelectedCustomerId}
         onRemovePaymentMethod={checkout.removePaymentMethod}
         onUpdatePayment={checkout.updatePayment}
-        onConfirm={checkout.handleFinalizeSale}
+        paymentDifference={checkout.paymentDifference}
+        paymentMethodOptions={paymentMethodOptions}
+        payments={checkout.payments}
+        projectedCreditBalance={projectedCreditBalance}
+        remainingCreditAmount={checkout.remainingCreditAmount}
+        selectedCustomerCreditAccount={selectedCustomerCreditAccount}
+        selectedCustomerId={selectedCustomerId}
+        setDiscountInput={setDiscountInput}
+        setIsCreditSale={checkout.setIsCreditSale}
+        shouldCreateCreditBalance={checkout.shouldCreateCreditBalance}
+        totalAmount={totals.totalAmount}
       />
 
       <CreateCustomerModal
-        isOpen={createCustomerModal.isCreateCustomerModalOpen}
-        onClose={() => createCustomerModal.setIsCreateCustomerModalOpen(false)}
-        name={createCustomerModal.newCustomerName}
-        setName={createCustomerModal.setNewCustomerName}
-        phone={createCustomerModal.newCustomerPhone}
-        setPhone={createCustomerModal.setNewCustomerPhone}
-        documentType={createCustomerModal.newCustomerDocumentType}
-        setDocumentType={createCustomerModal.setNewCustomerDocumentType}
-        documentNumber={createCustomerModal.newCustomerDocumentNumber}
-        setDocumentNumber={createCustomerModal.setNewCustomerDocumentNumber}
         canCreate={createCustomerModal.canCreateCustomer}
-        isCreating={createCustomerModal.isCreating}
+        documentNumber={createCustomerModal.newCustomerDocumentNumber}
+        documentType={createCustomerModal.newCustomerDocumentType}
         error={createCustomerModal.error}
+        isCreating={createCustomerModal.isCreating}
+        isOpen={createCustomerModal.isCreateCustomerModalOpen}
+        name={createCustomerModal.newCustomerName}
+        onClose={() => createCustomerModal.setIsCreateCustomerModalOpen(false)}
         onConfirm={createCustomerModal.handleCreateCustomer}
+        phone={createCustomerModal.newCustomerPhone}
+        setDocumentNumber={createCustomerModal.setNewCustomerDocumentNumber}
+        setDocumentType={createCustomerModal.setNewCustomerDocumentType}
+        setName={createCustomerModal.setNewCustomerName}
+        setPhone={createCustomerModal.setNewCustomerPhone}
       />
 
       <ModifierModal
         isOpen={isModifierModalOpen}
-        onClose={handleCloseModifierModal}
-        selectedProduct={selectedProductForModifiers}
         modifierProducts={modifierProducts}
         modifierQuantities={modifierQuantities}
-        onUpdateModifierQuantity={updateModifierQuantity}
+        onClose={handleCloseModifierModal}
         onConfirm={handleConfirmModifiers}
         onQuickAdd={handleQuickAddWithoutModifiers}
+        onUpdateModifierQuantity={updateModifierQuantity}
+        selectedProduct={selectedProductForModifiers}
       />
 
       <ShiftRequiredDialog

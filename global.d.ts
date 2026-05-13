@@ -1,5 +1,5 @@
+import type { Session, User } from "better-auth/types";
 import type { dbSqlite } from "./database/drizzle/db";
-import type { User, Session } from "better-auth/types";
 
 declare global {
   namespace Vike {
@@ -7,8 +7,8 @@ declare global {
       db: ReturnType<typeof dbSqlite>;
     }
     interface PageContext {
-      user: User | null;
       session: Session | null;
+      user: User | null;
     }
     interface Server {
       server: "hono";

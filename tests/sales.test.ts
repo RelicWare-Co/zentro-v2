@@ -1,30 +1,27 @@
-import { describe, test, expect } from "bun:test";
-import { createTestDb } from "./helpers/test-db";
-import {
-  seedOrganizationWithMember,
-  seedProduct,
-  seedCustomer,
-  seedShift,
-  makeUser,
-} from "./helpers/seed";
-import { buildMockContext } from "./helpers/orpc-context";
-import { createServerORPCClient } from "../server/orpc/client/server";
-import { createCoreSale } from "../server/sales/create-sale.server";
-import {
-  product,
-  inventoryMovement,
-} from "../database/drizzle/schema/inventory.schema";
-import {
-  sale,
-  payment,
-} from "../database/drizzle/schema/sales.schema";
+import { describe, expect, test } from "bun:test";
+import { and, eq } from "drizzle-orm";
+import { organization } from "../database/drizzle/schema/auth.schema";
 import {
   creditAccount,
   creditTransaction,
 } from "../database/drizzle/schema/credit.schema";
-import { organization } from "../database/drizzle/schema/auth.schema";
-import { eq, and, isNull } from "drizzle-orm";
+import {
+  inventoryMovement,
+  product,
+} from "../database/drizzle/schema/inventory.schema";
+import { payment } from "../database/drizzle/schema/sales.schema";
 import { serializeOrganizationSettingsMetadata } from "../features/settings/settings.shared";
+import { createServerORPCClient } from "../server/orpc/client/server";
+import { createCoreSale } from "../server/sales/create-sale.server";
+import { buildMockContext } from "./helpers/orpc-context";
+import {
+  makeUser,
+  seedCustomer,
+  seedOrganizationWithMember,
+  seedProduct,
+  seedShift,
+} from "./helpers/seed";
+import { createTestDb } from "./helpers/test-db";
 
 describe("sale creation transactions", () => {
   describe("VAL-SALE-001: createCoreSale decrements stock for tracked products", () => {
@@ -35,7 +32,7 @@ describe("sale creation transactions", () => {
         seedProduct(db, {
           organizationId,
           name: "Widget",
-          price: 10000,
+          price: 10_000,
           stock: 50,
           trackInventory: true,
         }),
@@ -59,12 +56,12 @@ describe("sale creation transactions", () => {
             {
               productId,
               quantity: 3,
-              unitPrice: 10000,
+              unitPrice: 10_000,
             },
           ],
-          payments: [{ method: "cash", amount: 30000 }],
+          payments: [{ method: "cash", amount: 30_000 }],
         },
-        { db, organizationId, userId },
+        { db, organizationId, userId }
       );
 
       const after = await db
@@ -83,7 +80,7 @@ describe("sale creation transactions", () => {
         seedProduct(db, {
           organizationId,
           name: "Burger",
-          price: 15000,
+          price: 15_000,
           stock: 20,
           trackInventory: true,
         }),
@@ -109,7 +106,7 @@ describe("sale creation transactions", () => {
             {
               productId: baseProductId,
               quantity: 2,
-              unitPrice: 15000,
+              unitPrice: 15_000,
               modifiers: [
                 {
                   modifierProductId,
@@ -119,14 +116,20 @@ describe("sale creation transactions", () => {
               ],
             },
           ],
-          payments: [{ method: "cash", amount: 34000 }],
+          payments: [{ method: "cash", amount: 34_000 }],
         },
-        { db, organizationId, userId },
+        { db, organizationId, userId }
       );
 
       const [baseRow, modifierRow] = await Promise.all([
-        db.select({ stock: product.stock }).from(product).where(eq(product.id, baseProductId)),
-        db.select({ stock: product.stock }).from(product).where(eq(product.id, modifierProductId)),
+        db
+          .select({ stock: product.stock })
+          .from(product)
+          .where(eq(product.id, baseProductId)),
+        db
+          .select({ stock: product.stock })
+          .from(product)
+          .where(eq(product.id, modifierProductId)),
       ]);
 
       expect(baseRow[0].stock).toBe(18); // 20 - 2
@@ -142,7 +145,7 @@ describe("sale creation transactions", () => {
         seedProduct(db, {
           organizationId,
           name: "Service",
-          price: 50000,
+          price: 50_000,
           stock: 0,
           trackInventory: false,
         }),
@@ -156,10 +159,10 @@ describe("sale creation transactions", () => {
       await createCoreSale(
         {
           shiftId,
-          items: [{ productId, quantity: 1, unitPrice: 50000 }],
-          payments: [{ method: "cash", amount: 50000 }],
+          items: [{ productId, quantity: 1, unitPrice: 50_000 }],
+          payments: [{ method: "cash", amount: 50_000 }],
         },
-        { db, organizationId, userId },
+        { db, organizationId, userId }
       );
 
       const movements = await db
@@ -180,7 +183,7 @@ describe("sale creation transactions", () => {
         seedProduct(db, {
           organizationId,
           name: "Item",
-          price: 12000,
+          price: 12_000,
           stock: 10,
           trackInventory: true,
         }),
@@ -194,17 +197,17 @@ describe("sale creation transactions", () => {
       const result = await createCoreSale(
         {
           shiftId,
-          items: [{ productId, quantity: 1, unitPrice: 12000 }],
+          items: [{ productId, quantity: 1, unitPrice: 12_000 }],
           payments: [
             { method: "cash", amount: 7000 },
             { method: "card", amount: 5000 },
           ],
         },
-        { db, organizationId, userId },
+        { db, organizationId, userId }
       );
 
-      expect(result.totalAmount).toBe(12000);
-      expect(result.paidAmount).toBe(12000);
+      expect(result.totalAmount).toBe(12_000);
+      expect(result.paidAmount).toBe(12_000);
       expect(result.balanceDue).toBe(0);
 
       const paymentRows = await db
@@ -213,7 +216,7 @@ describe("sale creation transactions", () => {
         .where(eq(payment.saleId, result.saleId));
       expect(paymentRows.length).toBe(2);
       const totalPayments = paymentRows.reduce((s, p) => s + p.amount, 0);
-      expect(totalPayments).toBe(12000);
+      expect(totalPayments).toBe(12_000);
 
       await cleanup();
     });
@@ -225,7 +228,7 @@ describe("sale creation transactions", () => {
         seedProduct(db, {
           organizationId,
           name: "Item",
-          price: 15000,
+          price: 15_000,
           stock: 10,
           trackInventory: true,
         }),
@@ -240,13 +243,13 @@ describe("sale creation transactions", () => {
         createCoreSale(
           {
             shiftId,
-            items: [{ productId, quantity: 1, unitPrice: 15000 }],
-            payments: [{ method: "cash", amount: 10000 }],
+            items: [{ productId, quantity: 1, unitPrice: 15_000 }],
+            payments: [{ method: "cash", amount: 10_000 }],
           },
-          { db, organizationId, userId },
-        ),
+          { db, organizationId, userId }
+        )
       ).rejects.toThrow(
-        "La suma de los pagos debe ser igual al total de la venta",
+        "La suma de los pagos debe ser igual al total de la venta"
       );
 
       await cleanup();
@@ -276,7 +279,7 @@ describe("sale creation transactions", () => {
           items: [{ productId, quantity: 1, unitPrice: 0 }],
           payments: [],
         },
-        { db, organizationId, userId },
+        { db, organizationId, userId }
       );
 
       expect(result.totalAmount).toBe(0);
@@ -294,7 +297,7 @@ describe("sale creation transactions", () => {
         seedProduct(db, {
           organizationId,
           name: "Item",
-          price: 25000,
+          price: 25_000,
           stock: 10,
           trackInventory: true,
         }),
@@ -313,17 +316,17 @@ describe("sale creation transactions", () => {
         {
           shiftId,
           customerId,
-          items: [{ productId, quantity: 1, unitPrice: 25000 }],
+          items: [{ productId, quantity: 1, unitPrice: 25_000 }],
           payments: [{ method: "cash", amount: 5000 }],
           isCreditSale: true,
         },
-        { db, organizationId, userId },
+        { db, organizationId, userId }
       );
 
       expect(result.status).toBe("credit");
-      expect(result.totalAmount).toBe(25000);
+      expect(result.totalAmount).toBe(25_000);
       expect(result.paidAmount).toBe(5000);
-      expect(result.balanceDue).toBe(20000);
+      expect(result.balanceDue).toBe(20_000);
 
       const accountRows = await db
         .select()
@@ -331,11 +334,11 @@ describe("sale creation transactions", () => {
         .where(
           and(
             eq(creditAccount.organizationId, organizationId),
-            eq(creditAccount.customerId, customerId),
-          ),
+            eq(creditAccount.customerId, customerId)
+          )
         );
       expect(accountRows.length).toBe(1);
-      expect(accountRows[0].balance).toBe(20000);
+      expect(accountRows[0].balance).toBe(20_000);
 
       const transactionRows = await db
         .select()
@@ -343,7 +346,7 @@ describe("sale creation transactions", () => {
         .where(eq(creditTransaction.saleId, result.saleId));
       expect(transactionRows.length).toBe(1);
       expect(transactionRows[0].type).toBe("charge");
-      expect(transactionRows[0].amount).toBe(20000);
+      expect(transactionRows[0].amount).toBe(20_000);
 
       await cleanup();
     });
@@ -355,7 +358,7 @@ describe("sale creation transactions", () => {
         seedProduct(db, {
           organizationId,
           name: "Item",
-          price: 10000,
+          price: 10_000,
           stock: 10,
           trackInventory: true,
         }),
@@ -375,11 +378,11 @@ describe("sale creation transactions", () => {
         {
           shiftId,
           customerId,
-          items: [{ productId, quantity: 1, unitPrice: 10000 }],
+          items: [{ productId, quantity: 1, unitPrice: 10_000 }],
           payments: [],
           isCreditSale: true,
         },
-        { db, organizationId, userId },
+        { db, organizationId, userId }
       );
 
       // Second credit sale
@@ -387,11 +390,11 @@ describe("sale creation transactions", () => {
         {
           shiftId,
           customerId,
-          items: [{ productId, quantity: 1, unitPrice: 10000 }],
+          items: [{ productId, quantity: 1, unitPrice: 10_000 }],
           payments: [],
           isCreditSale: true,
         },
-        { db, organizationId, userId },
+        { db, organizationId, userId }
       );
 
       const accountRows = await db
@@ -400,11 +403,11 @@ describe("sale creation transactions", () => {
         .where(
           and(
             eq(creditAccount.organizationId, organizationId),
-            eq(creditAccount.customerId, customerId),
-          ),
+            eq(creditAccount.customerId, customerId)
+          )
         );
       expect(accountRows.length).toBe(1);
-      expect(accountRows[0].balance).toBe(20000);
+      expect(accountRows[0].balance).toBe(20_000);
 
       await cleanup();
     });
@@ -416,7 +419,7 @@ describe("sale creation transactions", () => {
         seedProduct(db, {
           organizationId,
           name: "Item",
-          price: 10000,
+          price: 10_000,
           stock: 10,
           trackInventory: true,
         }),
@@ -431,13 +434,15 @@ describe("sale creation transactions", () => {
         createCoreSale(
           {
             shiftId,
-            items: [{ productId, quantity: 1, unitPrice: 10000 }],
+            items: [{ productId, quantity: 1, unitPrice: 10_000 }],
             payments: [],
             isCreditSale: true,
           },
-          { db, organizationId, userId },
-        ),
-      ).rejects.toThrow("Una venta a crédito requiere seleccionar un cliente registrado");
+          { db, organizationId, userId }
+        )
+      ).rejects.toThrow(
+        "Una venta a crédito requiere seleccionar un cliente registrado"
+      );
 
       await cleanup();
     });
@@ -449,7 +454,7 @@ describe("sale creation transactions", () => {
         seedProduct(db, {
           organizationId,
           name: "Item",
-          price: 10000,
+          price: 10_000,
           stock: 10,
           trackInventory: true,
         }),
@@ -469,13 +474,15 @@ describe("sale creation transactions", () => {
           {
             shiftId,
             customerId,
-            items: [{ productId, quantity: 1, unitPrice: 10000 }],
-            payments: [{ method: "cash", amount: 10000 }],
+            items: [{ productId, quantity: 1, unitPrice: 10_000 }],
+            payments: [{ method: "cash", amount: 10_000 }],
             isCreditSale: true,
           },
-          { db, organizationId, userId },
-        ),
-      ).rejects.toThrow("La venta marcada como crédito debe dejar un saldo pendiente por cobrar");
+          { db, organizationId, userId }
+        )
+      ).rejects.toThrow(
+        "La venta marcada como crédito debe dejar un saldo pendiente por cobrar"
+      );
 
       await cleanup();
     });
@@ -489,7 +496,7 @@ describe("sale creation transactions", () => {
         seedProduct(db, {
           organizationId,
           name: "Item",
-          price: 10000,
+          price: 10_000,
           stock: 20,
           trackInventory: true,
         }),
@@ -506,10 +513,10 @@ describe("sale creation transactions", () => {
       const saleResult = await createCoreSale(
         {
           shiftId,
-          items: [{ productId, quantity: 5, unitPrice: 10000 }],
-          payments: [{ method: "cash", amount: 50000 }],
+          items: [{ productId, quantity: 5, unitPrice: 10_000 }],
+          payments: [{ method: "cash", amount: 50_000 }],
         },
-        { db, organizationId, userId },
+        { db, organizationId, userId }
       );
 
       const afterSale = await db
@@ -532,8 +539,8 @@ describe("sale creation transactions", () => {
         .where(
           and(
             eq(inventoryMovement.productId, productId),
-            eq(inventoryMovement.type, "adjustment"),
-          ),
+            eq(inventoryMovement.type, "adjustment")
+          )
         );
       expect(adjustmentRows.length).toBe(1);
       expect(adjustmentRows[0].quantity).toBe(5);
@@ -548,7 +555,7 @@ describe("sale creation transactions", () => {
         seedProduct(db, {
           organizationId,
           name: "Item",
-          price: 10000,
+          price: 10_000,
           stock: 10,
           trackInventory: true,
         }),
@@ -565,15 +572,15 @@ describe("sale creation transactions", () => {
       const saleResult = await createCoreSale(
         {
           shiftId,
-          items: [{ productId, quantity: 1, unitPrice: 10000 }],
-          payments: [{ method: "cash", amount: 10000 }],
+          items: [{ productId, quantity: 1, unitPrice: 10_000 }],
+          payments: [{ method: "cash", amount: 10_000 }],
         },
-        { db, organizationId, userId },
+        { db, organizationId, userId }
       );
 
       await client.sales.cancel({ saleId: saleResult.saleId });
       await expect(
-        client.sales.cancel({ saleId: saleResult.saleId }),
+        client.sales.cancel({ saleId: saleResult.saleId })
       ).rejects.toThrow("La venta ya está anulada");
 
       await cleanup();
@@ -588,7 +595,7 @@ describe("sale creation transactions", () => {
         seedProduct(db, {
           organizationId,
           name: "Item",
-          price: 30000,
+          price: 30_000,
           stock: 10,
           trackInventory: true,
         }),
@@ -610,11 +617,11 @@ describe("sale creation transactions", () => {
         {
           shiftId,
           customerId,
-          items: [{ productId, quantity: 1, unitPrice: 30000 }],
+          items: [{ productId, quantity: 1, unitPrice: 30_000 }],
           payments: [{ method: "cash", amount: 5000 }],
           isCreditSale: true,
         },
-        { db, organizationId, userId },
+        { db, organizationId, userId }
       );
 
       const accountBefore = await db
@@ -623,10 +630,10 @@ describe("sale creation transactions", () => {
         .where(
           and(
             eq(creditAccount.organizationId, organizationId),
-            eq(creditAccount.customerId, customerId),
-          ),
+            eq(creditAccount.customerId, customerId)
+          )
         );
-      expect(accountBefore[0].balance).toBe(25000);
+      expect(accountBefore[0].balance).toBe(25_000);
 
       await client.sales.cancel({ saleId: saleResult.saleId });
 
@@ -636,8 +643,8 @@ describe("sale creation transactions", () => {
         .where(
           and(
             eq(creditAccount.organizationId, organizationId),
-            eq(creditAccount.customerId, customerId),
-          ),
+            eq(creditAccount.customerId, customerId)
+          )
         );
       expect(accountAfter[0].balance).toBe(0);
 
@@ -653,7 +660,7 @@ describe("sale creation transactions", () => {
         seedProduct(db, {
           organizationId,
           name: "Item",
-          price: 10000,
+          price: 10_000,
           stock: 10,
           trackInventory: true,
         }),
@@ -669,11 +676,11 @@ describe("sale creation transactions", () => {
         createCoreSale(
           {
             shiftId: closedShiftId,
-            items: [{ productId, quantity: 1, unitPrice: 10000 }],
-            payments: [{ method: "cash", amount: 10000 }],
+            items: [{ productId, quantity: 1, unitPrice: 10_000 }],
+            payments: [{ method: "cash", amount: 10_000 }],
           },
-          { db, organizationId, userId },
-        ),
+          { db, organizationId, userId }
+        )
       ).rejects.toThrow("No se puede registrar una venta en un turno cerrado");
 
       await cleanup();
@@ -683,33 +690,37 @@ describe("sale creation transactions", () => {
   describe("VAL-SALE-007: wrong-user shift rejects sale", () => {
     test("sale creation on another user's shift is rejected", async () => {
       const { db, cleanup } = createTestDb();
-      const [
-        { organizationId, userId: ownerId },
-        { userId: cashierId },
-      ] = await Promise.all([
-        seedOrganizationWithMember(db, { userEmail: "owner@example.com" }),
-        seedOrganizationWithMember(db, {
-          orgName: "Same Org",
-          userEmail: "cashier@example.com",
-          memberRole: "member",
-        }),
-      ]);
+      const [{ organizationId, userId: ownerId }, { userId: cashierId }] =
+        await Promise.all([
+          seedOrganizationWithMember(db, { userEmail: "owner@example.com" }),
+          seedOrganizationWithMember(db, {
+            orgName: "Same Org",
+            userEmail: "cashier@example.com",
+            memberRole: "member",
+          }),
+        ]);
       // Add cashier as member of the same organization
       const memberId = crypto.randomUUID();
       const now = new Date();
-      await db.insert(await import("../database/drizzle/schema/auth.schema").then(m => m.member)).values({
-        id: memberId,
-        organizationId,
-        userId: cashierId,
-        role: "member",
-        createdAt: now,
-      });
+      await db
+        .insert(
+          await import("../database/drizzle/schema/auth.schema").then(
+            (m) => m.member
+          )
+        )
+        .values({
+          id: memberId,
+          organizationId,
+          userId: cashierId,
+          role: "member",
+          createdAt: now,
+        });
 
       const [productId, shiftId] = await Promise.all([
         seedProduct(db, {
           organizationId,
           name: "Item",
-          price: 10000,
+          price: 10_000,
           stock: 10,
           trackInventory: true,
         }),
@@ -724,11 +735,11 @@ describe("sale creation transactions", () => {
         createCoreSale(
           {
             shiftId,
-            items: [{ productId, quantity: 1, unitPrice: 10000 }],
-            payments: [{ method: "cash", amount: 10000 }],
+            items: [{ productId, quantity: 1, unitPrice: 10_000 }],
+            payments: [{ method: "cash", amount: 10_000 }],
           },
-          { db, organizationId, userId: cashierId },
-        ),
+          { db, organizationId, userId: cashierId }
+        )
       ).rejects.toThrow("Solo el cajero del turno puede registrar ventas");
 
       await cleanup();
@@ -743,7 +754,7 @@ describe("sale creation transactions", () => {
         seedProduct(db, {
           organizationId,
           name: "Item",
-          price: 10000,
+          price: 10_000,
           stock: 10,
           trackInventory: true,
         }),
@@ -771,11 +782,11 @@ describe("sale creation transactions", () => {
         createCoreSale(
           {
             shiftId,
-            items: [{ productId, quantity: 1, unitPrice: 10000 }],
-            payments: [{ method: "card", amount: 10000 }],
+            items: [{ productId, quantity: 1, unitPrice: 10_000 }],
+            payments: [{ method: "card", amount: 10_000 }],
           },
-          { db, organizationId, userId },
-        ),
+          { db, organizationId, userId }
+        )
       ).rejects.toThrow("Método de pago no habilitado: card");
 
       await cleanup();
@@ -790,7 +801,7 @@ describe("sale creation transactions", () => {
         seedProduct(db, {
           organizationId,
           name: "Item",
-          price: 10000,
+          price: 10_000,
           stock: 10,
           trackInventory: true,
         }),
@@ -804,14 +815,14 @@ describe("sale creation transactions", () => {
       const result = await createCoreSale(
         {
           shiftId,
-          items: [{ productId, quantity: 1, unitPrice: 10000 }],
-          payments: [{ method: "cash", amount: 12000 }],
+          items: [{ productId, quantity: 1, unitPrice: 10_000 }],
+          payments: [{ method: "cash", amount: 12_000 }],
         },
-        { db, organizationId, userId },
+        { db, organizationId, userId }
       );
 
-      expect(result.totalAmount).toBe(10000);
-      expect(result.paidAmount).toBe(12000);
+      expect(result.totalAmount).toBe(10_000);
+      expect(result.paidAmount).toBe(12_000);
 
       await cleanup();
     });
@@ -823,7 +834,7 @@ describe("sale creation transactions", () => {
         seedProduct(db, {
           organizationId,
           name: "Item",
-          price: 10000,
+          price: 10_000,
           stock: 10,
           trackInventory: true,
         }),
@@ -838,16 +849,16 @@ describe("sale creation transactions", () => {
         createCoreSale(
           {
             shiftId,
-            items: [{ productId, quantity: 1, unitPrice: 10000 }],
+            items: [{ productId, quantity: 1, unitPrice: 10_000 }],
             payments: [
-              { method: "card", amount: 12000 },
+              { method: "card", amount: 12_000 },
               { method: "cash", amount: 2000 },
             ],
           },
-          { db, organizationId, userId },
-        ),
+          { db, organizationId, userId }
+        )
       ).rejects.toThrow(
-        "La suma de los pagos debe ser igual al total de la venta",
+        "La suma de los pagos debe ser igual al total de la venta"
       );
 
       await cleanup();
@@ -860,7 +871,7 @@ describe("sale creation transactions", () => {
         seedProduct(db, {
           organizationId,
           name: "Item",
-          price: 10000,
+          price: 10_000,
           stock: 10,
           trackInventory: true,
         }),
@@ -875,13 +886,13 @@ describe("sale creation transactions", () => {
         createCoreSale(
           {
             shiftId,
-            items: [{ productId, quantity: 1, unitPrice: 10000 }],
-            payments: [{ method: "card", amount: 12000 }],
+            items: [{ productId, quantity: 1, unitPrice: 10_000 }],
+            payments: [{ method: "card", amount: 12_000 }],
           },
-          { db, organizationId, userId },
-        ),
+          { db, organizationId, userId }
+        )
       ).rejects.toThrow(
-        "La suma de los pagos debe ser igual al total de la venta",
+        "La suma de los pagos debe ser igual al total de la venta"
       );
 
       await cleanup();
@@ -894,7 +905,7 @@ describe("sale creation transactions", () => {
         seedProduct(db, {
           organizationId,
           name: "Item",
-          price: 10000,
+          price: 10_000,
           stock: 10,
           trackInventory: true,
         }),
@@ -908,17 +919,17 @@ describe("sale creation transactions", () => {
       const result = await createCoreSale(
         {
           shiftId,
-          items: [{ productId, quantity: 1, unitPrice: 10000 }],
+          items: [{ productId, quantity: 1, unitPrice: 10_000 }],
           payments: [
             { method: "card", amount: 6000 },
             { method: "cash", amount: 8000 },
           ],
         },
-        { db, organizationId, userId },
+        { db, organizationId, userId }
       );
 
-      expect(result.totalAmount).toBe(10000);
-      expect(result.paidAmount).toBe(14000);
+      expect(result.totalAmount).toBe(10_000);
+      expect(result.paidAmount).toBe(14_000);
 
       await cleanup();
     });

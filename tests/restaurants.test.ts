@@ -1,31 +1,29 @@
-import { describe, test, expect } from "bun:test";
-import { createTestDb } from "./helpers/test-db";
+import { describe, expect, test } from "bun:test";
+import { eq } from "drizzle-orm";
+import { organization } from "../database/drizzle/schema/auth.schema";
 import {
-  seedOrganizationWithMember,
-  seedProduct,
-  seedShift,
-  seedRestaurantArea,
-  seedRestaurantTable,
-  makeUser,
-} from "./helpers/seed";
-import { buildMockContext } from "./helpers/orpc-context";
-import { createServerORPCClient } from "../server/orpc/client/server";
-import {
+  restaurantKitchenTicket,
   restaurantOrder,
   restaurantOrderItem,
-  restaurantKitchenTicket,
-  restaurantArea,
-  restaurantTable,
 } from "../database/drizzle/schema/restaurant.schema";
 import { sale } from "../database/drizzle/schema/sales.schema";
-import { organization } from "../database/drizzle/schema/auth.schema";
-import { eq, and } from "drizzle-orm";
 import { serializeOrganizationSettingsMetadata } from "../features/settings/settings.shared";
+import { createServerORPCClient } from "../server/orpc/client/server";
+import { buildMockContext } from "./helpers/orpc-context";
+import {
+  makeUser,
+  seedOrganizationWithMember,
+  seedProduct,
+  seedRestaurantArea,
+  seedRestaurantTable,
+  seedShift,
+} from "./helpers/seed";
+import { createTestDb } from "./helpers/test-db";
 
 async function setRestaurantModuleEnabled(
   db: ReturnType<typeof createTestDb>["db"],
   organizationId: string,
-  enabled: boolean,
+  enabled: boolean
 ) {
   await db
     .update(organization)
@@ -49,7 +47,7 @@ async function setRestaurantModuleEnabled(
 async function setKitchenDisplayEnabled(
   db: ReturnType<typeof createTestDb>["db"],
   organizationId: string,
-  displayEnabled: boolean,
+  displayEnabled: boolean
 ) {
   await db
     .update(organization)
@@ -84,7 +82,7 @@ describe("restaurant module", () => {
       const client = createServerORPCClient(ctx);
 
       await expect(client.restaurants.bootstrap()).rejects.toThrow(
-        "El módulo de restaurantes no está habilitado",
+        "El módulo de restaurantes no está habilitado"
       );
 
       await cleanup();
@@ -99,7 +97,10 @@ describe("restaurant module", () => {
       });
       await setRestaurantModuleEnabled(db, organizationId, true);
 
-      const areaId = await seedRestaurantArea(db, { organizationId, name: "Terrace" });
+      const areaId = await seedRestaurantArea(db, {
+        organizationId,
+        name: "Terrace",
+      });
       const [tableId, productId] = await Promise.all([
         seedRestaurantTable(db, {
           organizationId,
@@ -109,7 +110,7 @@ describe("restaurant module", () => {
         seedProduct(db, {
           organizationId,
           name: "Burger",
-          price: 15000,
+          price: 15_000,
           stock: 10,
           trackInventory: false,
         }),
@@ -144,7 +145,7 @@ describe("restaurant module", () => {
         .where(eq(restaurantOrderItem.orderId, result.orderId));
       expect(itemRows.length).toBe(1);
       expect(itemRows[0].quantity).toBe(2);
-      expect(itemRows[0].unitPrice).toBe(15000);
+      expect(itemRows[0].unitPrice).toBe(15_000);
       expect(itemRows[0].status).toBe("draft");
 
       await cleanup();
@@ -159,7 +160,10 @@ describe("restaurant module", () => {
       });
       await setRestaurantModuleEnabled(db, organizationId, true);
 
-      const areaId = await seedRestaurantArea(db, { organizationId, name: "Terrace" });
+      const areaId = await seedRestaurantArea(db, {
+        organizationId,
+        name: "Terrace",
+      });
       const [tableId, productId] = await Promise.all([
         seedRestaurantTable(db, {
           organizationId,
@@ -169,7 +173,7 @@ describe("restaurant module", () => {
         seedProduct(db, {
           organizationId,
           name: "Pizza",
-          price: 20000,
+          price: 20_000,
           stock: 10,
           trackInventory: false,
         }),
@@ -223,7 +227,10 @@ describe("restaurant module", () => {
       });
       await setRestaurantModuleEnabled(db, organizationId, true);
 
-      const areaId = await seedRestaurantArea(db, { organizationId, name: "Terrace" });
+      const areaId = await seedRestaurantArea(db, {
+        organizationId,
+        name: "Terrace",
+      });
       const [tableId, productId, shiftId] = await Promise.all([
         seedRestaurantTable(db, {
           organizationId,
@@ -233,7 +240,7 @@ describe("restaurant module", () => {
         seedProduct(db, {
           organizationId,
           name: "Steak",
-          price: 25000,
+          price: 25_000,
           stock: 10,
           trackInventory: false,
         }),
@@ -259,11 +266,11 @@ describe("restaurant module", () => {
       const closeResult = await client.restaurants.closeOrder({
         orderId: addResult.orderId,
         shiftId,
-        payments: [{ method: "cash", amount: 25000 }],
+        payments: [{ method: "cash", amount: 25_000 }],
       });
       expect(closeResult.saleId).toBeString();
       expect(closeResult.status).toBe("completed");
-      expect(closeResult.totalAmount).toBe(25000);
+      expect(closeResult.totalAmount).toBe(25_000);
 
       // Verify order closed
       const orderRows = await db
@@ -280,7 +287,7 @@ describe("restaurant module", () => {
         .from(sale)
         .where(eq(sale.id, closeResult.saleId));
       expect(saleRows.length).toBe(1);
-      expect(saleRows[0].totalAmount).toBe(25000);
+      expect(saleRows[0].totalAmount).toBe(25_000);
       expect(saleRows[0].status).toBe("completed");
 
       await cleanup();
@@ -290,20 +297,18 @@ describe("restaurant module", () => {
   describe("VAL-REST-005: area/table CRUD requires manager access", () => {
     test("non-manager is rejected from createArea, updateArea, deleteArea", async () => {
       const { db, cleanup } = createTestDb();
-      const [
-        { organizationId, userId: managerId },
-        { userId: cashierId },
-      ] = await Promise.all([
-        seedOrganizationWithMember(db, {
-          memberRole: "owner",
-          userEmail: "manager@example.com",
-        }),
-        seedOrganizationWithMember(db, {
-          orgName: "Same Org",
-          userEmail: "cashier@example.com",
-          memberRole: "member",
-        }),
-      ]);
+      const [{ organizationId, userId: managerId }, { userId: cashierId }] =
+        await Promise.all([
+          seedOrganizationWithMember(db, {
+            memberRole: "owner",
+            userEmail: "manager@example.com",
+          }),
+          seedOrganizationWithMember(db, {
+            orgName: "Same Org",
+            userEmail: "cashier@example.com",
+            memberRole: "member",
+          }),
+        ]);
       // Add cashier as member of same organization
       const memberId = crypto.randomUUID();
       const now = new Date();
@@ -323,7 +328,9 @@ describe("restaurant module", () => {
       const managerCtx = buildMockContext(db, manager, organizationId);
       const managerClient = createServerORPCClient(managerCtx);
 
-      const area = await managerClient.restaurants.createArea({ name: "Patio" });
+      const area = await managerClient.restaurants.createArea({
+        name: "Patio",
+      });
       const areaId = area[0].id;
       const table = await managerClient.restaurants.createTable({
         areaId,
@@ -338,32 +345,39 @@ describe("restaurant module", () => {
 
       // createArea rejected
       await expect(
-        cashierClient.restaurants.createArea({ name: "Forbidden Area" }),
+        cashierClient.restaurants.createArea({ name: "Forbidden Area" })
       ).rejects.toThrow("administrador de la organización");
 
       // updateArea rejected
       await expect(
-        cashierClient.restaurants.updateArea({ id: areaId, name: "New Name" }),
+        cashierClient.restaurants.updateArea({ id: areaId, name: "New Name" })
       ).rejects.toThrow("administrador de la organización");
 
       // deleteArea rejected
       await expect(
-        cashierClient.restaurants.deleteArea({ id: areaId }),
+        cashierClient.restaurants.deleteArea({ id: areaId })
       ).rejects.toThrow("administrador de la organización");
 
       // createTable rejected
       await expect(
-        cashierClient.restaurants.createTable({ areaId, name: "Forbidden Table", seats: 2 }),
+        cashierClient.restaurants.createTable({
+          areaId,
+          name: "Forbidden Table",
+          seats: 2,
+        })
       ).rejects.toThrow("administrador de la organización");
 
       // updateTable rejected
       await expect(
-        cashierClient.restaurants.updateTable({ id: tableId, name: "New Table Name" }),
+        cashierClient.restaurants.updateTable({
+          id: tableId,
+          name: "New Table Name",
+        })
       ).rejects.toThrow("administrador de la organización");
 
       // deleteTable rejected
       await expect(
-        cashierClient.restaurants.deleteTable({ id: tableId }),
+        cashierClient.restaurants.deleteTable({ id: tableId })
       ).rejects.toThrow("administrador de la organización");
 
       await cleanup();
@@ -381,7 +395,9 @@ describe("restaurant module", () => {
       const client = createServerORPCClient(ctx);
 
       // Create area
-      const createAreaResult = await client.restaurants.createArea({ name: "Garden" });
+      const createAreaResult = await client.restaurants.createArea({
+        name: "Garden",
+      });
       expect(createAreaResult.length).toBe(1);
       const areaId = createAreaResult[0].id;
       expect(createAreaResult[0].name).toBe("Garden");
@@ -409,16 +425,22 @@ describe("restaurant module", () => {
         name: "GT1 Updated",
         seats: 8,
       });
-      const updatedTable = updateTableResult[0].tables.find((t: { id: string }) => t.id === tableId);
+      const updatedTable = updateTableResult[0].tables.find(
+        (t: { id: string }) => t.id === tableId
+      );
       expect(updatedTable?.name).toBe("GT1 Updated");
       expect(updatedTable?.seats).toBe(8);
 
       // Delete table
-      const deleteTableResult = await client.restaurants.deleteTable({ id: tableId });
+      const deleteTableResult = await client.restaurants.deleteTable({
+        id: tableId,
+      });
       expect(deleteTableResult[0].tables.length).toBe(0);
 
       // Delete area
-      const deleteAreaResult = await client.restaurants.deleteArea({ id: areaId });
+      const deleteAreaResult = await client.restaurants.deleteArea({
+        id: areaId,
+      });
       expect(deleteAreaResult.length).toBe(0);
 
       await cleanup();
@@ -439,7 +461,7 @@ describe("restaurant module", () => {
       const client = createServerORPCClient(ctx);
 
       await expect(client.restaurants.kitchenBoard()).rejects.toThrow(
-        "La vista de cocina no está habilitada",
+        "La vista de cocina no está habilitada"
       );
 
       await cleanup();
@@ -452,7 +474,10 @@ describe("restaurant module", () => {
       });
       await setKitchenDisplayEnabled(db, organizationId, true);
 
-      const areaId = await seedRestaurantArea(db, { organizationId, name: "Terrace" });
+      const areaId = await seedRestaurantArea(db, {
+        organizationId,
+        name: "Terrace",
+      });
       const [tableId, productId] = await Promise.all([
         seedRestaurantTable(db, {
           organizationId,
@@ -462,7 +487,7 @@ describe("restaurant module", () => {
         seedProduct(db, {
           organizationId,
           name: "Pasta",
-          price: 18000,
+          price: 18_000,
           stock: 10,
           trackInventory: false,
         }),

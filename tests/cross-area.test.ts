@@ -1,24 +1,24 @@
-import { describe, test, expect } from "bun:test";
-import { createTestDb } from "./helpers/test-db";
-import {
-  seedOrganizationWithMember,
-  seedProduct,
-  seedCustomer,
-  makeUser,
-} from "./helpers/seed";
-import { buildMockContext } from "./helpers/orpc-context";
-import { createServerORPCClient } from "../server/orpc/client/server";
-import { createCoreSale } from "../server/sales/create-sale.server";
-import {
-  product,
-  inventoryMovement,
-} from "../database/drizzle/schema/inventory.schema";
-import { sale, payment } from "../database/drizzle/schema/sales.schema";
+import { describe, expect, test } from "bun:test";
+import { and, eq } from "drizzle-orm";
 import {
   creditAccount,
   creditTransaction,
 } from "../database/drizzle/schema/credit.schema";
-import { eq, and } from "drizzle-orm";
+import {
+  inventoryMovement,
+  product,
+} from "../database/drizzle/schema/inventory.schema";
+import { payment, sale } from "../database/drizzle/schema/sales.schema";
+import { createServerORPCClient } from "../server/orpc/client/server";
+import { createCoreSale } from "../server/sales/create-sale.server";
+import { buildMockContext } from "./helpers/orpc-context";
+import {
+  makeUser,
+  seedCustomer,
+  seedOrganizationWithMember,
+  seedProduct,
+} from "./helpers/seed";
+import { createTestDb } from "./helpers/test-db";
 
 describe("cross-area end-to-end flows", () => {
   describe("VAL-CROSS-001: full POS checkout flow works end-to-end and data is consistent across queries", () => {
@@ -30,16 +30,16 @@ describe("cross-area end-to-end flows", () => {
       const client = createServerORPCClient(ctx);
 
       // Step 1: Open shift
-      const shiftOpen = await client.shifts.open({ startingCash: 10000 });
+      const shiftOpen = await client.shifts.open({ startingCash: 10_000 });
       const shiftId = shiftOpen.id;
       expect(shiftOpen.status).toBe("open");
-      expect(shiftOpen.startingCash).toBe(10000);
+      expect(shiftOpen.startingCash).toBe(10_000);
 
       // Step 2: Seed tracked product and verify stock
       const productId = await seedProduct(db, {
         organizationId,
         name: "Coffee Mug",
-        price: 12000,
+        price: 12_000,
         stock: 30,
         trackInventory: true,
       });
@@ -53,13 +53,13 @@ describe("cross-area end-to-end flows", () => {
       // Step 3: Create sale through oRPC (with cash overpayment covering change)
       const saleResult = await client.sales.create({
         shiftId,
-        items: [{ productId, quantity: 2, unitPrice: 12000 }],
-        payments: [{ method: "cash", amount: 25000 }],
+        items: [{ productId, quantity: 2, unitPrice: 12_000 }],
+        payments: [{ method: "cash", amount: 25_000 }],
       });
 
       expect(saleResult.status).toBe("completed");
-      expect(saleResult.totalAmount).toBe(24000);
-      expect(saleResult.paidAmount).toBe(25000);
+      expect(saleResult.totalAmount).toBe(24_000);
+      expect(saleResult.paidAmount).toBe(25_000);
       expect(saleResult.balanceDue).toBe(0);
 
       // Step 4: Verify stock decremented
@@ -76,8 +76,8 @@ describe("cross-area end-to-end flows", () => {
         .where(
           and(
             eq(inventoryMovement.productId, productId),
-            eq(inventoryMovement.type, "sale"),
-          ),
+            eq(inventoryMovement.type, "sale")
+          )
         );
       expect(movementRows.length).toBe(1);
       expect(movementRows[0].quantity).toBe(-2);
@@ -89,7 +89,7 @@ describe("cross-area end-to-end flows", () => {
         .where(eq(payment.saleId, saleResult.saleId));
       expect(paymentRows.length).toBe(1);
       expect(paymentRows[0].method).toBe("cash");
-      expect(paymentRows[0].amount).toBe(25000);
+      expect(paymentRows[0].amount).toBe(25_000);
       expect(paymentRows[0].shiftId).toBe(shiftId);
 
       // Step 7: Verify sale appears in sales list
@@ -100,8 +100,8 @@ describe("cross-area end-to-end flows", () => {
       expect(salesList.data.length).toBe(1);
       expect(salesList.data[0].id).toBe(saleResult.saleId);
       expect(salesList.data[0].status).toBe("completed");
-      expect(salesList.data[0].totalAmount).toBe(24000);
-      expect(salesList.data[0].paidAmount).toBe(25000);
+      expect(salesList.data[0].totalAmount).toBe(24_000);
+      expect(salesList.data[0].paidAmount).toBe(25_000);
       expect(salesList.data[0].balanceDue).toBe(0);
       expect(salesList.data[0].itemCount).toBe(2);
       expect(salesList.data[0].paymentMethods).toContain("cash");
@@ -117,61 +117,61 @@ describe("cross-area end-to-end flows", () => {
       expect(shiftRow.id).toBe(shiftId);
       expect(shiftRow.status).toBe("open");
       expect(shiftRow.operations.paidSalesCount).toBe(1);
-      expect(shiftRow.operations.paidSalesAmount).toBe(24000);
-      expect(shiftRow.totals.totalPayments).toBe(25000);
+      expect(shiftRow.operations.paidSalesAmount).toBe(24_000);
+      expect(shiftRow.totals.totalPayments).toBe(25_000);
       expect(shiftRow.paymentBreakdown.length).toBe(1);
       expect(shiftRow.paymentBreakdown[0].method).toBe("cash");
       // paymentBreakdown includes startingCash (10000) + cash after change (24000)
-      expect(shiftRow.paymentBreakdown[0].amount).toBe(34000);
+      expect(shiftRow.paymentBreakdown[0].amount).toBe(34_000);
 
       // Step 9: Close summary expected cash = startingCash + cashSales - change
       // = 10000 + 25000 - 1000 = 34000
       const closeSummary = await client.shifts.closeSummary({ shiftId });
       const cashSummary = closeSummary.summaryByMethod.find(
-        (s: { paymentMethod: string }) => s.paymentMethod === "cash",
+        (s: { paymentMethod: string }) => s.paymentMethod === "cash"
       );
       expect(cashSummary).toBeDefined();
-      expect(cashSummary!.expectedAmount).toBe(34000);
-      expect(closeSummary.totalExpected).toBe(34000);
+      expect(cashSummary?.expectedAmount).toBe(34_000);
+      expect(closeSummary.totalExpected).toBe(34_000);
 
       // Step 10: Close shift
       const closeResult = await client.shifts.close({
         shiftId,
-        closures: [{ paymentMethod: "cash", actualAmount: 34000 }],
+        closures: [{ paymentMethod: "cash", actualAmount: 34_000 }],
       });
       expect(closeResult.shiftId).toBe(shiftId);
       expect(closeResult.closures.length).toBe(1);
       expect(closeResult.closures[0].paymentMethod).toBe("cash");
-      expect(closeResult.closures[0].expectedAmount).toBe(34000);
-      expect(closeResult.closures[0].actualAmount).toBe(34000);
+      expect(closeResult.closures[0].expectedAmount).toBe(34_000);
+      expect(closeResult.closures[0].actualAmount).toBe(34_000);
       expect(closeResult.closures[0].difference).toBe(0);
 
       // Step 11: After closing, verify shift status changed
       const closedShiftDetail = await client.shifts.detail({ shiftId });
       expect(closedShiftDetail.status).toBe("closed");
-      expect(closedShiftDetail.totals.totalPayments).toBe(25000);
-      expect(closedShiftDetail.totals.totalExpected).toBe(34000);
-      expect(closedShiftDetail.totals.totalActual).toBe(34000);
+      expect(closedShiftDetail.totals.totalPayments).toBe(25_000);
+      expect(closedShiftDetail.totals.totalExpected).toBe(34_000);
+      expect(closedShiftDetail.totals.totalActual).toBe(34_000);
       expect(closedShiftDetail.totals.totalDifference).toBe(0);
       expect(closedShiftDetail.operations.paidSalesCount).toBe(1);
-      expect(closedShiftDetail.operations.paidSalesAmount).toBe(24000);
+      expect(closedShiftDetail.operations.paidSalesAmount).toBe(24_000);
 
       // Step 12: Verify sale detail still consistent
       const saleDetail = await client.sales.detail({
         saleId: saleResult.saleId,
       });
       expect(saleDetail).not.toBeNull();
-      expect(saleDetail!.status).toBe("completed");
-      expect(saleDetail!.totalAmount).toBe(24000);
-      expect(saleDetail!.paidAmount).toBe(25000);
-      expect(saleDetail!.balanceDue).toBe(0);
-      expect(saleDetail!.shift!.id).toBe(shiftId);
-      expect(saleDetail!.items.length).toBe(1);
-      expect(saleDetail!.items[0].name).toBe("Coffee Mug");
-      expect(saleDetail!.items[0].quantity).toBe(2);
-      expect(saleDetail!.payments.length).toBe(1);
-      expect(saleDetail!.payments[0].method).toBe("cash");
-      expect(saleDetail!.payments[0].amount).toBe(25000);
+      expect(saleDetail?.status).toBe("completed");
+      expect(saleDetail?.totalAmount).toBe(24_000);
+      expect(saleDetail?.paidAmount).toBe(25_000);
+      expect(saleDetail?.balanceDue).toBe(0);
+      expect(saleDetail?.shift?.id).toBe(shiftId);
+      expect(saleDetail?.items.length).toBe(1);
+      expect(saleDetail?.items[0].name).toBe("Coffee Mug");
+      expect(saleDetail?.items[0].quantity).toBe(2);
+      expect(saleDetail?.payments.length).toBe(1);
+      expect(saleDetail?.payments[0].method).toBe("cash");
+      expect(saleDetail?.payments[0].amount).toBe(25_000);
 
       await cleanup();
     });
@@ -245,43 +245,47 @@ describe("cross-area end-to-end flows", () => {
       // Verify shift detail
       const shiftDetail = await client.shifts.detail({ shiftId });
       expect(shiftDetail.operations.paidSalesCount).toBe(2);
-      expect(shiftDetail.operations.paidSalesAmount).toBe(11000);
-      expect(shiftDetail.totals.totalPayments).toBe(11000); // 5000 + 6000 (payments only, movements excluded)
+      expect(shiftDetail.operations.paidSalesAmount).toBe(11_000);
+      expect(shiftDetail.totals.totalPayments).toBe(11_000); // 5000 + 6000 (payments only, movements excluded)
       expect(shiftDetail.paymentBreakdown.length).toBe(2);
 
       const cashBreakdown = shiftDetail.paymentBreakdown.find(
-        (p: { method: string }) => p.method === "cash",
+        (p: { method: string }) => p.method === "cash"
       );
       const cardBreakdown = shiftDetail.paymentBreakdown.find(
-        (p: { method: string }) => p.method === "card",
+        (p: { method: string }) => p.method === "card"
       );
       expect(cashBreakdown).toBeDefined();
-      expect(cashBreakdown!.amount).toBe(12000); // 5000 starting + 5000 sale + 2000 inflow
+      expect(cashBreakdown?.amount).toBe(12_000); // 5000 starting + 5000 sale + 2000 inflow
       expect(cardBreakdown).toBeDefined();
-      expect(cardBreakdown!.amount).toBe(6000);
+      expect(cardBreakdown?.amount).toBe(6000);
 
       // Verify close summary
       const closeSummary = await client.shifts.closeSummary({ shiftId });
       const cashSummary = closeSummary.summaryByMethod.find(
-        (s: { paymentMethod: string }) => s.paymentMethod === "cash",
+        (s: { paymentMethod: string }) => s.paymentMethod === "cash"
       );
       const cardSummary = closeSummary.summaryByMethod.find(
-        (s: { paymentMethod: string }) => s.paymentMethod === "card",
+        (s: { paymentMethod: string }) => s.paymentMethod === "card"
       );
-      expect(cashSummary!.expectedAmount).toBe(12000); // 5000 starting + 7000 cash
-      expect(cardSummary!.expectedAmount).toBe(6000);
-      expect(closeSummary.totalExpected).toBe(18000);
+      expect(cashSummary?.expectedAmount).toBe(12_000); // 5000 starting + 7000 cash
+      expect(cardSummary?.expectedAmount).toBe(6000);
+      expect(closeSummary.totalExpected).toBe(18_000);
 
       // Close shift
       const closeResult = await client.shifts.close({
         shiftId,
         closures: [
-          { paymentMethod: "cash", actualAmount: 12000 },
+          { paymentMethod: "cash", actualAmount: 12_000 },
           { paymentMethod: "card", actualAmount: 6000 },
         ],
       });
       expect(closeResult.closures.length).toBe(2);
-      expect(closeResult.closures.every((c: { difference: number }) => c.difference === 0)).toBe(true);
+      expect(
+        closeResult.closures.every(
+          (c: { difference: number }) => c.difference === 0
+        )
+      ).toBe(true);
 
       // Verify sales list shows both sales
       const salesList = await client.sales.list({ limit: 10 });
@@ -309,7 +313,7 @@ describe("cross-area end-to-end flows", () => {
         seedProduct(db, {
           organizationId,
           name: "Gadget",
-          price: 30000,
+          price: 30_000,
           stock: 10,
           trackInventory: true,
         }),
@@ -323,15 +327,15 @@ describe("cross-area end-to-end flows", () => {
       const saleResult = await client.sales.create({
         shiftId,
         customerId,
-        items: [{ productId, quantity: 1, unitPrice: 30000 }],
+        items: [{ productId, quantity: 1, unitPrice: 30_000 }],
         payments: [{ method: "cash", amount: 5000 }],
         isCreditSale: true,
       });
 
       expect(saleResult.status).toBe("credit");
-      expect(saleResult.totalAmount).toBe(30000);
+      expect(saleResult.totalAmount).toBe(30_000);
       expect(saleResult.paidAmount).toBe(5000);
-      expect(saleResult.balanceDue).toBe(25000);
+      expect(saleResult.balanceDue).toBe(25_000);
 
       // Step 4: Verify credit account created with correct balance
       const accountRows = await db
@@ -340,12 +344,12 @@ describe("cross-area end-to-end flows", () => {
         .where(
           and(
             eq(creditAccount.organizationId, organizationId),
-            eq(creditAccount.customerId, customerId),
-          ),
+            eq(creditAccount.customerId, customerId)
+          )
         );
       expect(accountRows.length).toBe(1);
       const accountId = accountRows[0].id;
-      expect(accountRows[0].balance).toBe(25000);
+      expect(accountRows[0].balance).toBe(25_000);
 
       // Step 5: Verify charge transaction exists
       const chargeRows = await db
@@ -354,11 +358,11 @@ describe("cross-area end-to-end flows", () => {
         .where(
           and(
             eq(creditTransaction.creditAccountId, accountId),
-            eq(creditTransaction.type, "charge"),
-          ),
+            eq(creditTransaction.type, "charge")
+          )
         );
       expect(chargeRows.length).toBe(1);
-      expect(chargeRows[0].amount).toBe(25000);
+      expect(chargeRows[0].amount).toBe(25_000);
       expect(chargeRows[0].saleId).toBe(saleResult.saleId);
 
       // Step 6: Verify stock decremented
@@ -372,12 +376,12 @@ describe("cross-area end-to-end flows", () => {
       const payment1 = await client.credit.registerPayment({
         shiftId,
         creditAccountId: accountId,
-        amount: 10000,
+        amount: 10_000,
         method: "cash",
         saleId: saleResult.saleId,
       });
 
-      expect(payment1.newBalance).toBe(15000);
+      expect(payment1.newBalance).toBe(15_000);
       expect(payment1.saleId).toBe(saleResult.saleId);
 
       // Step 8: Verify balance updated
@@ -385,7 +389,7 @@ describe("cross-area end-to-end flows", () => {
         .select()
         .from(creditAccount)
         .where(eq(creditAccount.id, accountId));
-      expect(afterPayment1[0].balance).toBe(15000);
+      expect(afterPayment1[0].balance).toBe(15_000);
 
       // Step 9: Verify payment transaction created
       const paymentRows = await db
@@ -394,11 +398,11 @@ describe("cross-area end-to-end flows", () => {
         .where(
           and(
             eq(creditTransaction.creditAccountId, accountId),
-            eq(creditTransaction.type, "payment"),
-          ),
+            eq(creditTransaction.type, "payment")
+          )
         );
       expect(paymentRows.length).toBe(1);
-      expect(paymentRows[0].amount).toBe(10000);
+      expect(paymentRows[0].amount).toBe(10_000);
       expect(paymentRows[0].saleId).toBe(saleResult.saleId);
 
       // Step 10: Verify sale still in credit status
@@ -412,7 +416,7 @@ describe("cross-area end-to-end flows", () => {
       const payment2 = await client.credit.registerPayment({
         shiftId,
         creditAccountId: accountId,
-        amount: 15000,
+        amount: 15_000,
         method: "cash",
         saleId: saleResult.saleId,
       });
@@ -436,10 +440,10 @@ describe("cross-area end-to-end flows", () => {
       // Step 14: Verify credit account search shows zero balance
       const accountSearch = await client.credit.searchAccounts({});
       const foundAccount = accountSearch.data.find(
-        (a: { customerId: string }) => a.customerId === customerId,
+        (a: { customerId: string }) => a.customerId === customerId
       );
       expect(foundAccount).toBeDefined();
-      expect(foundAccount!.balance).toBe(0);
+      expect(foundAccount?.balance).toBe(0);
 
       // Step 15: Verify transaction listing shows both charge and payments in correct order
       const txList = await client.credit.transactions({
@@ -447,11 +451,11 @@ describe("cross-area end-to-end flows", () => {
       });
       expect(txList.data.length).toBe(3);
       expect(txList.data[0].type).toBe("payment"); // most recent
-      expect(txList.data[0].amount).toBe(15000);
+      expect(txList.data[0].amount).toBe(15_000);
       expect(txList.data[1].type).toBe("payment");
-      expect(txList.data[1].amount).toBe(10000);
+      expect(txList.data[1].amount).toBe(10_000);
       expect(txList.data[2].type).toBe("charge");
-      expect(txList.data[2].amount).toBe(25000);
+      expect(txList.data[2].amount).toBe(25_000);
 
       await cleanup();
     });
@@ -470,7 +474,7 @@ describe("cross-area end-to-end flows", () => {
         seedProduct(db, {
           organizationId,
           name: "Premium Item",
-          price: 50000,
+          price: 50_000,
           stock: 5,
           trackInventory: true,
         }),
@@ -485,16 +489,16 @@ describe("cross-area end-to-end flows", () => {
         {
           shiftId,
           customerId,
-          items: [{ productId, quantity: 1, unitPrice: 50000 }],
+          items: [{ productId, quantity: 1, unitPrice: 50_000 }],
           payments: [],
           isCreditSale: true,
         },
-        { db, organizationId, userId },
+        { db, organizationId, userId }
       );
 
       expect(saleResult.status).toBe("credit");
-      expect(saleResult.totalAmount).toBe(50000);
-      expect(saleResult.balanceDue).toBe(50000);
+      expect(saleResult.totalAmount).toBe(50_000);
+      expect(saleResult.balanceDue).toBe(50_000);
 
       const accountRows = await db
         .select()
@@ -502,17 +506,17 @@ describe("cross-area end-to-end flows", () => {
         .where(
           and(
             eq(creditAccount.organizationId, organizationId),
-            eq(creditAccount.customerId, customerId),
-          ),
+            eq(creditAccount.customerId, customerId)
+          )
         );
       const accountId = accountRows[0].id;
-      expect(accountRows[0].balance).toBe(50000);
+      expect(accountRows[0].balance).toBe(50_000);
 
       // Full payment in one go
       const paymentResult = await client.credit.registerPayment({
         shiftId,
         creditAccountId: accountId,
-        amount: 50000,
+        amount: 50_000,
         method: "cash",
         saleId: saleResult.saleId,
       });
@@ -549,7 +553,7 @@ describe("cross-area end-to-end flows", () => {
         seedProduct(db, {
           organizationId,
           name: "Widget",
-          price: 10000,
+          price: 10_000,
           stock: 20,
           trackInventory: true,
         }),
@@ -565,21 +569,21 @@ describe("cross-area end-to-end flows", () => {
           {
             shiftId,
             customerId,
-            items: [{ productId, quantity: 1, unitPrice: 10000 }],
+            items: [{ productId, quantity: 1, unitPrice: 10_000 }],
             payments: [],
             isCreditSale: true,
           },
-          { db, organizationId, userId },
+          { db, organizationId, userId }
         ),
         createCoreSale(
           {
             shiftId,
             customerId,
-            items: [{ productId, quantity: 1, unitPrice: 10000 }],
+            items: [{ productId, quantity: 1, unitPrice: 10_000 }],
             payments: [],
             isCreditSale: true,
           },
-          { db, organizationId, userId },
+          { db, organizationId, userId }
         ),
       ]);
 
@@ -589,17 +593,17 @@ describe("cross-area end-to-end flows", () => {
         .where(
           and(
             eq(creditAccount.organizationId, organizationId),
-            eq(creditAccount.customerId, customerId),
-          ),
+            eq(creditAccount.customerId, customerId)
+          )
         );
       const accountId = accountRows[0].id;
-      expect(accountRows[0].balance).toBe(20000);
+      expect(accountRows[0].balance).toBe(20_000);
 
       // Pay off first sale via saleId
       await client.credit.registerPayment({
         shiftId,
         creditAccountId: accountId,
-        amount: 10000,
+        amount: 10_000,
         method: "cash",
         saleId: sale1.saleId,
       });
@@ -608,13 +612,13 @@ describe("cross-area end-to-end flows", () => {
         .select()
         .from(creditAccount)
         .where(eq(creditAccount.id, accountId));
-      expect(afterPay1[0].balance).toBe(10000);
+      expect(afterPay1[0].balance).toBe(10_000);
 
       // Pay off remaining balance
       await client.credit.registerPayment({
         shiftId,
         creditAccountId: accountId,
-        amount: 10000,
+        amount: 10_000,
         method: "cash",
         saleId: sale2.saleId,
       });
@@ -636,10 +640,10 @@ describe("cross-area end-to-end flows", () => {
       // Account search shows zero
       const search = await client.credit.searchAccounts({});
       const acc = search.data.find(
-        (a: { customerId: string }) => a.customerId === customerId,
+        (a: { customerId: string }) => a.customerId === customerId
       );
       expect(acc).toBeDefined();
-      expect(acc!.balance).toBe(0);
+      expect(acc?.balance).toBe(0);
 
       await cleanup();
     });

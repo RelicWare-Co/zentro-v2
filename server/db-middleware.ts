@@ -1,5 +1,5 @@
-import { dbSqlite } from "../database/drizzle/db";
 import { enhance, type UniversalMiddleware } from "@universal-middleware/core";
+import { dbSqlite } from "../database/drizzle/db";
 
 declare global {
   namespace Universal {
@@ -21,11 +21,11 @@ export const dbMiddleware: UniversalMiddleware = enhance(
     return {
       ...context,
       // Sets pageContext.db
-      db: db,
+      db,
     };
   },
   {
     name: "my-app:db-middleware",
     immutable: false,
-  },
+  }
 );

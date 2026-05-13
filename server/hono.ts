@@ -1,82 +1,80 @@
-import { dbMiddleware } from "./db-middleware";
 import vike from "@vikejs/hono";
-import { Hono } from "hono";
-import { auth } from "./auth";
-import { orpcHandler } from "./orpc/handler";
-import { dbSqlite } from "../database/drizzle/db";
-import { evlog, type EvlogVariables } from "evlog/hono";
 import { parseError } from "evlog";
+import { type EvlogVariables, evlog } from "evlog/hono";
+import { Hono } from "hono";
+import { dbSqlite } from "../database/drizzle/db";
+import { auth } from "./auth";
+import { dbMiddleware } from "./db-middleware";
+import { orpcHandler } from "./orpc/handler";
 
 const BODY_PARSER_METHODS = new Set([
-	"arrayBuffer",
-	"blob",
-	"formData",
-	"json",
-	"text",
+  "arrayBuffer",
+  "blob",
+  "formData",
+  "json",
+  "text",
 ] as const);
 
 type BodyParserMethod =
-	typeof BODY_PARSER_METHODS extends Set<infer T> ? T : never;
+  typeof BODY_PARSER_METHODS extends Set<infer T> ? T : never;
 
 function getApp() {
-	const app = new Hono<EvlogVariables>();
+  const app = new Hono<EvlogVariables>();
 
-	// evlog wide-event logging
-	app.use(evlog());
+  // evlog wide-event logging
+  app.use(evlog());
 
-	// Global error handler — captures unexpected throws
-	app.onError((error, c) => {
-		c.get("log").error(error);
-		const parsed = parseError(error);
-		return c.json(
-			{
-				message: parsed.message,
-				why: parsed.why,
-				fix: parsed.fix,
-				link: parsed.link,
-			},
-			(parsed.status as any) ?? 500,
-		);
-	});
+  // Global error handler — captures unexpected throws
+  app.onError((error, c) => {
+    c.get("log").error(error);
+    const parsed = parseError(error);
+    return c.json(
+      {
+        message: parsed.message,
+        why: parsed.why,
+        fix: parsed.fix,
+        link: parsed.link,
+      },
+      (parsed.status as any) ?? 500
+    );
+  });
 
-	// Better Auth handler
-	app.on(["POST", "GET"], "/api/auth/*", (c) => {
-		return auth.handler(c.req.raw);
-	});
+  // Better Auth handler
+  app.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));
 
-	// oRPC OpenAPI handler (REST transport + Scalar docs)
-	app.use("/api/*", async (c, next) => {
-		const request = new Proxy(c.req.raw, {
-			get(target, prop) {
-				if (BODY_PARSER_METHODS.has(prop as BodyParserMethod)) {
-					return () => c.req[prop as BodyParserMethod]();
-				}
-				return Reflect.get(target, prop, target);
-			},
-		});
+  // oRPC OpenAPI handler (REST transport + Scalar docs)
+  app.use("/api/*", async (c, next) => {
+    const request = new Proxy(c.req.raw, {
+      get(target, prop) {
+        if (BODY_PARSER_METHODS.has(prop as BodyParserMethod)) {
+          return () => c.req[prop as BodyParserMethod]();
+        }
+        return Reflect.get(target, prop, target);
+      },
+    });
 
-		const { matched, response } = await orpcHandler.handle(request, {
-			prefix: "/api",
-			context: {
-				headers: c.req.raw.headers,
-				db: dbSqlite(),
-				log: c.get("log"),
-			},
-		});
+    const { matched, response } = await orpcHandler.handle(request, {
+      prefix: "/api",
+      context: {
+        headers: c.req.raw.headers,
+        db: dbSqlite(),
+        log: c.get("log"),
+      },
+    });
 
-		if (matched) {
-			return c.newResponse(response.body, response);
-		}
+    if (matched) {
+      return c.newResponse(response.body, response);
+    }
 
-		await next();
-	});
+    await next();
+  });
 
-	vike(app, [
-		// Make database available in Context as `context.db`
-		dbMiddleware,
-	]);
+  vike(app, [
+    // Make database available in Context as `context.db`
+    dbMiddleware,
+  ]);
 
-	return app;
+  return app;
 }
 
 export const app = getApp();

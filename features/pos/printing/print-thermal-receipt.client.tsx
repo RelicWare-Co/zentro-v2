@@ -5,135 +5,132 @@ import { readPosLocalPrinterSettings } from "@/features/pos/printing/printer-set
 import type { ThermalReceiptDocument } from "@/features/pos/printing/thermal-receipt-document";
 
 function isBrowserEnvironment() {
-	return typeof window !== "undefined";
+  return typeof window !== "undefined";
 }
 
 export async function printThermalReceipt(
-	document: ThermalReceiptDocument,
-	organizationId?: string | null,
+  document: ThermalReceiptDocument,
+  organizationId?: string | null
 ) {
-	if (!isBrowserEnvironment()) {
-		return false;
-	}
+  if (!isBrowserEnvironment()) {
+    return false;
+  }
 
-	const settings = readPosLocalPrinterSettings(organizationId);
-	if (settings.outputMode === "pdf") {
-		return printReceiptAsPdf(document);
-	}
+  const settings = readPosLocalPrinterSettings(organizationId);
+  if (settings.outputMode === "pdf") {
+    return printReceiptAsPdf(document);
+  }
 
-	try {
-		await getPosPrinterManager().printReceipt(document, organizationId);
-		return true;
-	} catch (error) {
-		console.error(
-			"No se pudo imprimir en impresora POS, fallback a PDF",
-			error,
-		);
-		return printReceiptAsPdf(document);
-	}
+  try {
+    await getPosPrinterManager().printReceipt(document, organizationId);
+    return true;
+  } catch (error) {
+    console.error(
+      "No se pudo imprimir en impresora POS, fallback a PDF",
+      error
+    );
+    return printReceiptAsPdf(document);
+  }
 }
 
 export async function connectPosPrinter(organizationId?: string | null) {
-	if (!isBrowserEnvironment()) {
-		return false;
-	}
+  if (!isBrowserEnvironment()) {
+    return false;
+  }
 
-	await getPosPrinterManager().connectWithPrompt(
-		readPosLocalPrinterSettings(organizationId),
-		organizationId,
-	);
-	return true;
+  await getPosPrinterManager().connectWithPrompt(
+    readPosLocalPrinterSettings(organizationId),
+    organizationId
+  );
+  return true;
 }
 
 export async function reconnectPosPrinter(
-	options?: { silent?: boolean },
-	organizationId?: string | null,
+  options?: { silent?: boolean },
+  organizationId?: string | null
 ) {
-	if (!isBrowserEnvironment()) {
-		return false;
-	}
+  if (!isBrowserEnvironment()) {
+    return false;
+  }
 
-	return getPosPrinterManager().reconnectSaved(
-		readPosLocalPrinterSettings(organizationId),
-		{
-			silent: options?.silent,
-		},
-		organizationId,
-	);
+  return getPosPrinterManager().reconnectSaved(
+    readPosLocalPrinterSettings(organizationId),
+    {
+      silent: options?.silent,
+    },
+    organizationId
+  );
 }
 
 export async function disconnectPosPrinter() {
-	if (!isBrowserEnvironment()) {
-		return false;
-	}
+  if (!isBrowserEnvironment()) {
+    return false;
+  }
 
-	await getPosPrinterManager().disconnect();
-	return true;
+  await getPosPrinterManager().disconnect();
+  return true;
 }
 
 export async function openPosCashDrawer(organizationId?: string | null) {
-	if (!isBrowserEnvironment()) {
-		return false;
-	}
+  if (!isBrowserEnvironment()) {
+    return false;
+  }
 
-	await getPosPrinterManager().openCashDrawer(organizationId);
-	return true;
+  await getPosPrinterManager().openCashDrawer(organizationId);
+  return true;
 }
 
 const dateFormatter = new Intl.DateTimeFormat("es-CO", {
-	dateStyle: "medium",
-	timeStyle: "short",
+  dateStyle: "medium",
+  timeStyle: "short",
 });
 
 function buildPosPrinterTestDocument(): ThermalReceiptDocument {
-	const issuedAt = dateFormatter.format(new Date());
+  const issuedAt = dateFormatter.format(new Date());
 
-	const receipt = {
-		title: "Prueba de impresión",
-		documentLabel: "Ticket de validación",
-		issuedAtLabel: issuedAt,
-		statusLabel: "Estado: Conectado",
-		infoLines: [
-			{ label: "Sistema", value: "Zentro POS" },
-			{ label: "Canal", value: "Ajustes > Impresión local" },
-		],
-		items: [
-			{
-				label: "Item de prueba",
-				quantity: 1,
-				unitPriceLabel: "$ 1.000 c/u",
-				totalLabel: "$ 1.000",
-				secondaryLines: ["Verifica texto, acentos y alineación"],
-			},
-		],
-		payments: [
-			{
-				label: "Efectivo",
-				amountLabel: "$ 1.000",
-			},
-		],
-		totals: [
-			{
-				label: "Total",
-				value: "$ 1.000",
-				emphasis: true,
-			},
-		],
-		footerLines: ["Si ves este mensaje, la impresora responde correctamente."],
-	};
+  const receipt = {
+    title: "Prueba de impresión",
+    documentLabel: "Ticket de validación",
+    issuedAtLabel: issuedAt,
+    statusLabel: "Estado: Conectado",
+    infoLines: [
+      { label: "Sistema", value: "Zentro POS" },
+      { label: "Canal", value: "Ajustes > Impresión local" },
+    ],
+    items: [
+      {
+        label: "Item de prueba",
+        quantity: 1,
+        unitPriceLabel: "$ 1.000 c/u",
+        totalLabel: "$ 1.000",
+        secondaryLines: ["Verifica texto, acentos y alineación"],
+      },
+    ],
+    payments: [
+      {
+        label: "Efectivo",
+        amountLabel: "$ 1.000",
+      },
+    ],
+    totals: [
+      {
+        label: "Total",
+        value: "$ 1.000",
+        emphasis: true,
+      },
+    ],
+    footerLines: ["Si ves este mensaje, la impresora responde correctamente."],
+  };
 
-	return {
-		title: "Prueba impresora POS",
-		receipt,
-		content: <ThermalReceipt {...receipt} />,
-	};
+  return {
+    title: "Prueba impresora POS",
+    receipt,
+    content: <ThermalReceipt {...receipt} />,
+  };
 }
 
 export async function printPosPrinterTestDocument(
-	organizationId?: string | null,
+  organizationId?: string | null
 ) {
-	return printThermalReceipt(
-		buildPosPrinterTestDocument(),
-		organizationId,
-	);
+  return printThermalReceipt(buildPosPrinterTestDocument(), organizationId);
 }

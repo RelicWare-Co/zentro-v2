@@ -2,7 +2,6 @@ import { dbSqlite } from "../../../database/drizzle/db";
 import { base } from "../context";
 
 export const dbMiddleware = base.middleware(async ({ context, next }) => {
-	const db = context.db ?? dbSqlite();
-	return next({ context: { db } });
+  const db = context.db ?? dbSqlite();
+  return next({ context: { db } });
 });
-

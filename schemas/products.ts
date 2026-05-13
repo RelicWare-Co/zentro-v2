@@ -3,131 +3,131 @@ import { z } from "zod";
 const NullableStringSchema = z.string().trim().optional().nullable();
 
 export const ProductSchema = z.object({
-	id: z.string(),
-	name: z.string(),
-	categoryId: z.string().nullable().optional(),
-	categoryName: z.string().nullable().optional(),
-	sku: z.string().nullable().optional(),
-	barcode: z.string().nullable().optional(),
-	price: z.number(),
-	cost: z.number(),
-	taxRate: z.number(),
-	stock: z.number(),
-	trackInventory: z.boolean(),
-	isModifier: z.boolean(),
-	isFavorite: z.boolean(),
-	createdAt: z.number(),
+  id: z.string(),
+  name: z.string(),
+  categoryId: z.string().nullable().optional(),
+  categoryName: z.string().nullable().optional(),
+  sku: z.string().nullable().optional(),
+  barcode: z.string().nullable().optional(),
+  price: z.number(),
+  cost: z.number(),
+  taxRate: z.number(),
+  stock: z.number(),
+  trackInventory: z.boolean(),
+  isModifier: z.boolean(),
+  isFavorite: z.boolean(),
+  createdAt: z.number(),
 });
 
 export const CategorySchema = z.object({
-	id: z.string(),
-	name: z.string(),
-	description: z.string().nullable().optional(),
+  id: z.string(),
+  name: z.string(),
+  description: z.string().nullable().optional(),
 });
 
 export const CreateProductSchema = z.object({
-	name: z.string().trim().min(1, "El nombre es obligatorio"),
-	categoryId: NullableStringSchema,
-	sku: NullableStringSchema,
-	barcode: NullableStringSchema,
-	price: z.number().min(0),
-	cost: z.number().min(0).optional(),
-	taxRate: z.number().min(0).max(100).optional(),
-	stock: z.number().int().min(0).optional(),
-	trackInventory: z.boolean().optional(),
-	isModifier: z.boolean().optional(),
+  name: z.string().trim().min(1, "El nombre es obligatorio"),
+  categoryId: NullableStringSchema,
+  sku: NullableStringSchema,
+  barcode: NullableStringSchema,
+  price: z.number().min(0),
+  cost: z.number().min(0).optional(),
+  taxRate: z.number().min(0).max(100).optional(),
+  stock: z.number().int().min(0).optional(),
+  trackInventory: z.boolean().optional(),
+  isModifier: z.boolean().optional(),
 });
 
 export const UpdateProductSchema = z
-	.object({
-		id: z.string().trim().min(1),
-		name: z.string().trim().min(1).optional(),
-		categoryId: NullableStringSchema,
-		sku: NullableStringSchema,
-		barcode: NullableStringSchema,
-		price: z.number().min(0).optional(),
-		cost: z.number().min(0).optional(),
-		taxRate: z.number().min(0).max(100).optional(),
-		stock: z.number().int().min(0).optional(),
-		trackInventory: z.boolean().optional(),
-		isModifier: z.boolean().optional(),
-	})
-	.refine(
-		(input) =>
-			input.name !== undefined ||
-			input.categoryId !== undefined ||
-			input.sku !== undefined ||
-			input.barcode !== undefined ||
-			input.price !== undefined ||
-			input.cost !== undefined ||
-			input.taxRate !== undefined ||
-			input.stock !== undefined ||
-			input.trackInventory !== undefined ||
-			input.isModifier !== undefined,
-		{
-			message: "Debes enviar al menos un campo para actualizar",
-		},
-	);
+  .object({
+    id: z.string().trim().min(1),
+    name: z.string().trim().min(1).optional(),
+    categoryId: NullableStringSchema,
+    sku: NullableStringSchema,
+    barcode: NullableStringSchema,
+    price: z.number().min(0).optional(),
+    cost: z.number().min(0).optional(),
+    taxRate: z.number().min(0).max(100).optional(),
+    stock: z.number().int().min(0).optional(),
+    trackInventory: z.boolean().optional(),
+    isModifier: z.boolean().optional(),
+  })
+  .refine(
+    (input) =>
+      input.name !== undefined ||
+      input.categoryId !== undefined ||
+      input.sku !== undefined ||
+      input.barcode !== undefined ||
+      input.price !== undefined ||
+      input.cost !== undefined ||
+      input.taxRate !== undefined ||
+      input.stock !== undefined ||
+      input.trackInventory !== undefined ||
+      input.isModifier !== undefined,
+    {
+      message: "Debes enviar al menos un campo para actualizar",
+    }
+  );
 
 export const RegisterInventoryMovementSchema = z.object({
-	productId: z.string().trim().min(1),
-	type: z.enum(["restock", "waste", "adjustment"]),
-	quantity: z.number().int(),
-	restockMode: z.enum(["add_to_stock", "set_as_total"]).optional(),
-	notes: NullableStringSchema,
-	createdAt: z.number().int().min(0).optional(),
+  productId: z.string().trim().min(1),
+  type: z.enum(["restock", "waste", "adjustment"]),
+  quantity: z.number().int(),
+  restockMode: z.enum(["add_to_stock", "set_as_total"]).optional(),
+  notes: NullableStringSchema,
+  createdAt: z.number().int().min(0).optional(),
 });
 
 export const DeleteProductSchema = z.object({
-	id: z.string().trim().min(1),
+  id: z.string().trim().min(1),
 });
 
 export const CreateCategorySchema = z.object({
-	name: z.string().trim().min(1, "El nombre es obligatorio"),
-	description: NullableStringSchema,
+  name: z.string().trim().min(1, "El nombre es obligatorio"),
+  description: NullableStringSchema,
 });
 
 export const UpdateCategorySchema = z
-	.object({
-		id: z.string().trim().min(1),
-		name: z.string().trim().min(1).optional(),
-		description: NullableStringSchema,
-	})
-	.refine(
-		(input) => input.name !== undefined || input.description !== undefined,
-		{
-			message: "Debes enviar al menos un campo para actualizar",
-		},
-	);
+  .object({
+    id: z.string().trim().min(1),
+    name: z.string().trim().min(1).optional(),
+    description: NullableStringSchema,
+  })
+  .refine(
+    (input) => input.name !== undefined || input.description !== undefined,
+    {
+      message: "Debes enviar al menos un campo para actualizar",
+    }
+  );
 
 export const DeleteCategorySchema = z.object({
-	id: z.string().trim().min(1),
+  id: z.string().trim().min(1),
 });
 
 export const IdResultSchema = z.object({
-	id: z.string(),
+  id: z.string(),
 });
 
 export const SuccessResultSchema = z.object({
-	success: z.boolean(),
+  success: z.boolean(),
 });
 
 export const InventoryMovementResultSchema = z.object({
-	id: z.string(),
-	productId: z.string(),
-	quantity: z.number(),
+  id: z.string(),
+  productId: z.string(),
+  quantity: z.number(),
 });
 
 export const ListProductsInputSchema = z.object({
-	page: z.coerce.number().int().min(0).optional(),
-	pageSize: z.coerce.number().int().min(1).max(100).optional(),
-	query: NullableStringSchema,
-	categoryId: NullableStringSchema,
+  page: z.coerce.number().int().min(0).optional(),
+  pageSize: z.coerce.number().int().min(1).max(100).optional(),
+  query: NullableStringSchema,
+  categoryId: NullableStringSchema,
 });
 
 export const ListProductsResultSchema = z.object({
-	items: ProductSchema.array(),
-	total: z.number().int(),
-	page: z.number().int(),
-	pageSize: z.number().int(),
+  items: ProductSchema.array(),
+  total: z.number().int(),
+  page: z.number().int(),
+  pageSize: z.number().int(),
 });

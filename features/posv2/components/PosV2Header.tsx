@@ -6,8 +6,8 @@ interface PosV2HeaderProps {
   activeShift: ActiveShift | null;
   defaultTerminalName: string;
   onCashMovement: () => void;
-  onOpenDrawer: () => void;
   onCloseShift: () => void;
+  onOpenDrawer: () => void;
 }
 
 export function PosV2Header({
@@ -18,42 +18,42 @@ export function PosV2Header({
   onCloseShift,
 }: PosV2HeaderProps) {
   return (
-    <header className="shrink-0 px-4 py-3 md:px-6 md:py-4 bg-[#0a0a0a]">
+    <header className="shrink-0 bg-[#0a0a0a] px-4 py-3 md:px-6 md:py-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-xl md:text-2xl font-extrabold tracking-tight text-white">
+          <span className="font-extrabold text-white text-xl tracking-tight md:text-2xl">
             Zentro
           </span>
-          <span className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-[#dfff06] bg-[#dfff06]/10 px-1.5 py-0.5 rounded">
+          <span className="rounded bg-[#dfff06]/10 px-1.5 py-0.5 font-bold text-[#dfff06] text-[10px] uppercase tracking-wider md:text-xs">
             POS
           </span>
         </div>
 
         <div className="flex items-center gap-2">
           <Button
-            variant="ghost"
-            size="icon"
-            onClick={onCashMovement}
+            className="size-9 rounded-lg text-[#6b6b6b] hover:bg-[rgba(255,255,255,0.06)] hover:text-white disabled:opacity-40 md:h-10 md:w-10"
             disabled={!activeShift}
-            className="size-9 md:h-10 md:w-10 rounded-lg text-[#6b6b6b] hover:text-white hover:bg-[rgba(255,255,255,0.06)] disabled:opacity-40"
+            onClick={onCashMovement}
+            size="icon"
+            variant="ghost"
           >
             <ArrowLeftRight className="size-4 md:h-5 md:w-5" />
           </Button>
           <Button
-            variant="ghost"
-            size="icon"
-            onClick={onOpenDrawer}
+            className="size-9 rounded-lg text-[#6b6b6b] hover:bg-[rgba(255,255,255,0.06)] hover:text-white disabled:opacity-40 md:h-10 md:w-10"
             disabled={!activeShift}
-            className="size-9 md:h-10 md:w-10 rounded-lg text-[#6b6b6b] hover:text-white hover:bg-[rgba(255,255,255,0.06)] disabled:opacity-40"
+            onClick={onOpenDrawer}
+            size="icon"
+            variant="ghost"
           >
             <Printer className="size-4 md:h-5 md:w-5" />
           </Button>
           <Button
-            variant="ghost"
-            size="icon"
-            onClick={onCloseShift}
+            className="size-9 rounded-lg text-[#ef4444] hover:bg-[rgba(239,68,68,0.1)] hover:text-red-400 disabled:opacity-40 md:h-10 md:w-10"
             disabled={!activeShift}
-            className="size-9 md:h-10 md:w-10 rounded-lg text-[#ef4444] hover:text-red-400 hover:bg-[rgba(239,68,68,0.1)] disabled:opacity-40"
+            onClick={onCloseShift}
+            size="icon"
+            variant="ghost"
           >
             <Lock className="size-4 md:h-5 md:w-5" />
           </Button>

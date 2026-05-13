@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-import { readFile, writeFile } from "fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 
 const file = "components/OrganizationSelection.tsx";
 let content = await readFile(file, "utf-8");

@@ -1,16 +1,16 @@
 import { Heart, Package } from "lucide-react";
-import { cn } from "@/lib/utils";
 import type { Product } from "@/features/pos/types";
 import { calculatePriceWithTax, formatCurrency } from "@/features/pos/utils";
+import { cn } from "@/lib/utils";
 
 interface ProductListItemProps {
-  product: Product;
-  quantity: number;
-  isOutOfStock: boolean;
   isActiveShift: boolean;
+  isOutOfStock: boolean;
+  isTogglingFavorite?: boolean;
   onSelect: () => void;
   onToggleFavorite?: (productId: string) => void;
-  isTogglingFavorite?: boolean;
+  product: Product;
+  quantity: number;
 }
 
 export function ProductListItem({
@@ -30,33 +30,33 @@ export function ProductListItem({
 
   return (
     <button
-      type="button"
-      onClick={onSelect}
       className={cn(
-        "w-full text-left flex items-center gap-3 md:gap-4 rounded-xl border p-3 md:p-4 transition-all",
-        "bg-[#151515] border-[rgba(255,255,255,0.06)]",
+        "flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-all md:gap-4 md:p-4",
+        "border-[rgba(255,255,255,0.06)] bg-[#151515]",
         "hover:border-[#dfff06]/40 hover:shadow-[0_0_20px_rgba(223,255,6,0.08)]",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#dfff06]",
         isOutOfStock && "opacity-45"
       )}
+      onClick={onSelect}
+      type="button"
     >
       {/* Icon */}
       <div className="shrink-0">
-        <div className="flex size-10 md:h-11 md:w-11 items-center justify-center rounded-lg bg-[#1c1c1c] border border-[rgba(255,255,255,0.06)]">
-          <Package className="size-4 md:h-5 md:w-5 text-[#3d3d3d]" />
+        <div className="flex size-10 items-center justify-center rounded-lg border border-[rgba(255,255,255,0.06)] bg-[#1c1c1c] md:h-11 md:w-11">
+          <Package className="size-4 text-[#3d3d3d] md:h-5 md:w-5" />
         </div>
       </div>
 
       {/* Info */}
-      <div className="flex-1 min-w-0">
-        <h3 className="text-sm md:text-[15px] font-medium text-white truncate">
+      <div className="min-w-0 flex-1">
+        <h3 className="truncate font-medium text-sm text-white md:text-[15px]">
           {product.name}
         </h3>
-        <div className="flex items-center gap-2 mt-0.5">
+        <div className="mt-0.5 flex items-center gap-2">
           {stockLabel && (
             <span
               className={cn(
-                "text-[10px] md:text-[11px] font-medium",
+                "font-medium text-[10px] md:text-[11px]",
                 product.stock > 0 ? "text-[#dfff06]" : "text-red-500"
               )}
             >
@@ -68,7 +68,7 @@ export function ProductListItem({
 
       {/* Price */}
       <div className="shrink-0 text-right">
-        <p className="text-sm md:text-base font-bold text-white tabular-nums">
+        <p className="font-bold text-sm text-white tabular-nums md:text-base">
           {formatCurrency(calculatePriceWithTax(product))}
         </p>
       </div>
@@ -76,17 +76,17 @@ export function ProductListItem({
       {/* Favorite */}
       {onToggleFavorite && (
         <button
-          type="button"
+          className="shrink-0 rounded-md p-1.5 hover:bg-[rgba(255,255,255,0.06)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#dfff06] disabled:opacity-50"
           disabled={isTogglingFavorite}
           onClick={(e) => {
             e.stopPropagation();
             onToggleFavorite(product.id);
           }}
-          className="shrink-0 p-1.5 rounded-md hover:bg-[rgba(255,255,255,0.06)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#dfff06] disabled:opacity-50"
+          type="button"
         >
           <Heart
             className={cn(
-              "size-4 md:h-5 md:w-5 transition-colors",
+              "size-4 transition-colors md:h-5 md:w-5",
               product.isFavorite
                 ? "fill-red-500 text-red-500"
                 : "text-[#3d3d3d] hover:text-red-400"
