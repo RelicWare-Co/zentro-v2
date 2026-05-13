@@ -24,6 +24,24 @@
   - `bun run db:push`
   - `bun run db:studio`
 
+## Code Quality (Ultracite)
+
+- This project uses **Ultracite** with the **Biome** backend for zero-config linting and formatting.
+- Configuration lives in `biome.jsonc` and extends `ultracite/biome/core`, `ultracite/biome/react`, and `ultracite/biome/vitest`.
+- **Commands**:
+  - `bun run check` — read-only lint/format check.
+  - `bun run fix` — auto-fix issues. Run this before committing if you touched JS/TS/JSON/CSS files.
+- **Lefthook** runs `ultracite fix` automatically on pre-commit for staged `.{js,jsx,ts,tsx,json,jsonc,css}` files and re-stages fixes. Do not disable `stage_fixed`.
+- **Do not** create legacy config files (`.eslintrc.*`, `.prettierrc.*`) or manually override formatting rules. If rules need changing, update `biome.jsonc` within the Ultracite preset system.
+- Follow Ultracite standards when writing or editing code:
+  - Prefer `const`, destructuring, optional chaining, nullish coalescing, template literals, `for...of`, and concise arrow functions.
+  - Prefer `async/await` over promise chains; always `await` promises in async functions.
+  - Use explicit types when they improve clarity. Prefer `unknown` over `any`. Use `as const` for immutable values and rely on type narrowing.
+  - Do not leave `console.log`, `debugger`, or `alert` in production code. On the server use `evlog` (see Logging). On the client, avoid debug logs in committed code.
+  - Keep React components as function components, hooks top-level with correct dependency arrays, and avoid nested component definitions.
+  - Use semantic HTML with proper labels, headings, alt text, and keyboard affordances.
+  - Keep tests free of `.only` and `.skip`.
+
 ## Stack
 
 - App framework: Vike with React.
