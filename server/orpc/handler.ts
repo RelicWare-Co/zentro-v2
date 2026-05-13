@@ -1,14 +1,18 @@
 import { OpenAPIHandler } from "@orpc/openapi/fetch";
 import { OpenAPIReferencePlugin } from "@orpc/openapi/plugins";
 import { ZodToJsonSchemaConverter } from "@orpc/zod/zod4";
-import { onError } from "@orpc/server";
 import { router } from "./routers";
 
 export const orpcHandler = new OpenAPIHandler(router, {
 	interceptors: [
-		onError((error) => {
-			console.error(error);
-		}),
+		async ({ context, next }) => {
+			try {
+				return await next();
+			} catch (error) {
+				context.log.error(error as Error);
+				throw error;
+			}
+		},
 	],
 	plugins: [
 		new OpenAPIReferencePlugin({

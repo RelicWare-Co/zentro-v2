@@ -1,10 +1,7 @@
 import { createRouterClient } from "@orpc/server";
-import type { dbSqlite } from "../../../database/drizzle/db";
+import type { AppContext } from "../context";
 import { router } from "../routers";
 
-export function createServerORPCClient(context: {
-	headers: Headers;
-	db: ReturnType<typeof dbSqlite>;
-}) {
+export function createServerORPCClient(context: AppContext) {
 	return createRouterClient(router, { context });
 }

@@ -14,6 +14,7 @@ import {
 	saleItem,
 } from "../../../database/drizzle/schema/sales.schema";
 import { dbSqlite } from "../../../database/drizzle/db";
+import type { AppContext } from "../context";
 import {
 	buildPaymentMethodLabelMap,
 	buildPaymentMethodOptions,
@@ -35,10 +36,7 @@ type AggregateSalesMetrics = {
 	distinctCustomers: number;
 };
 
-const dashboardImplementer = implement(dashboardContract).$context<{
-	headers: Headers;
-	db: ReturnType<typeof dbSqlite>;
-}>();
+const dashboardImplementer = implement(dashboardContract).$context<AppContext>();
 
 const orgRequiredProcedure = dashboardImplementer
 	.use(dbMiddleware)

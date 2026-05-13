@@ -1,5 +1,6 @@
+import { createRequestLogger } from "evlog";
 import type { TestDb } from "./test-db";
-import { user } from "../../database/drizzle/schema/auth.schema";
+import type { user } from "../../database/drizzle/schema/auth.schema";
 
 type UserRow = typeof user.$inferSelect;
 
@@ -8,6 +9,7 @@ export function buildMockContext(db: TestDb, user: UserRow, orgId?: string | nul
 	return {
 		headers: new Headers(),
 		db,
+		log: createRequestLogger({ method: "GET", path: "/test" }),
 		session: {
 			id: crypto.randomUUID(),
 			token: crypto.randomUUID(),

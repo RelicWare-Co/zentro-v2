@@ -6,15 +6,13 @@ import {
 	product,
 } from "../../../database/drizzle/schema/inventory.schema";
 import { dbSqlite } from "../../../database/drizzle/db";
+import type { AppContext } from "../context";
 import { productsContract } from "../contracts/products";
 import { authMiddleware } from "../middlewares/auth";
 import { dbMiddleware } from "../middlewares/db";
 import { requireOrgMiddleware } from "../middlewares/require-org";
 
-const productsImplementer = implement(productsContract).$context<{
-	headers: Headers;
-	db: ReturnType<typeof dbSqlite>;
-}>();
+const productsImplementer = implement(productsContract).$context<AppContext>();
 
 const orgRequiredProcedure = productsImplementer
 	.use(dbMiddleware)

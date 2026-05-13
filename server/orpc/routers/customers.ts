@@ -2,15 +2,13 @@ import { and, asc, eq, isNull, ne, sql } from "drizzle-orm";
 import { implement, ORPCError } from "@orpc/server";
 import { customer } from "../../../database/drizzle/schema/customer.schema";
 import { dbSqlite } from "../../../database/drizzle/db";
+import type { AppContext } from "../context";
 import { customersContract } from "../contracts/customers";
 import { authMiddleware } from "../middlewares/auth";
 import { dbMiddleware } from "../middlewares/db";
 import { requireOrgMiddleware } from "../middlewares/require-org";
 
-const customersImplementer = implement(customersContract).$context<{
-	headers: Headers;
-	db: ReturnType<typeof dbSqlite>;
-}>();
+const customersImplementer = implement(customersContract).$context<AppContext>();
 
 const orgRequiredProcedure = customersImplementer
 	.use(dbMiddleware)

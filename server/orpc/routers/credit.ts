@@ -9,6 +9,7 @@ import { customer } from "../../../database/drizzle/schema/customer.schema";
 import { shift } from "../../../database/drizzle/schema/pos.schema";
 import { payment, sale } from "../../../database/drizzle/schema/sales.schema";
 import { dbSqlite } from "../../../database/drizzle/db";
+import type { AppContext } from "../context";
 import {
 	getEnabledPaymentMethods,
 	parseOrganizationSettingsMetadata,
@@ -18,10 +19,7 @@ import { authMiddleware } from "../middlewares/auth";
 import { dbMiddleware } from "../middlewares/db";
 import { requireOrgMiddleware } from "../middlewares/require-org";
 
-const creditImplementer = implement(creditContract).$context<{
-	headers: Headers;
-	db: ReturnType<typeof dbSqlite>;
-}>();
+const creditImplementer = implement(creditContract).$context<AppContext>();
 
 const orgRequiredProcedure = creditImplementer
 	.use(dbMiddleware)

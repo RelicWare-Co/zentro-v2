@@ -7,6 +7,7 @@ import {
 } from "../../../database/drizzle/schema/inventory.schema";
 import { shift } from "../../../database/drizzle/schema/pos.schema";
 import { dbSqlite } from "../../../database/drizzle/db";
+import type { AppContext } from "../context";
 import {
 	getEnabledPaymentMethods,
 	parseOrganizationSettingsMetadata,
@@ -16,10 +17,7 @@ import { authMiddleware } from "../middlewares/auth";
 import { dbMiddleware } from "../middlewares/db";
 import { requireOrgMiddleware } from "../middlewares/require-org";
 
-const posImplementer = implement(posContract).$context<{
-	headers: Headers;
-	db: ReturnType<typeof dbSqlite>;
-}>();
+const posImplementer = implement(posContract).$context<AppContext>();
 
 const orgRequiredProcedure = posImplementer
 	.use(dbMiddleware)

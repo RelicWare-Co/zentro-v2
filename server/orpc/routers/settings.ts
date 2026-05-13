@@ -10,6 +10,7 @@ import { customer } from "../../../database/drizzle/schema/customer.schema";
 import { organizationModuleEntitlement } from "../../../database/drizzle/schema/feature.schema";
 import { product } from "../../../database/drizzle/schema/inventory.schema";
 import { dbSqlite } from "../../../database/drizzle/db";
+import type { AppContext } from "../context";
 import {
 	isOrganizationManagerRole,
 	isPlatformAdminRole,
@@ -33,10 +34,7 @@ import { authMiddleware } from "../middlewares/auth";
 import { dbMiddleware } from "../middlewares/db";
 import { requireOrgMiddleware } from "../middlewares/require-org";
 
-const settingsImplementer = implement(settingsContract).$context<{
-	headers: Headers;
-	db: ReturnType<typeof dbSqlite>;
-}>();
+const settingsImplementer = implement(settingsContract).$context<AppContext>();
 
 const orgRequiredProcedure = settingsImplementer
 	.use(dbMiddleware)

@@ -7,6 +7,7 @@ import {
 } from "../../../database/drizzle/schema/auth.schema";
 import { organizationModuleEntitlement } from "../../../database/drizzle/schema/feature.schema";
 import { dbSqlite } from "../../../database/drizzle/db";
+import type { AppContext } from "../context";
 import {
 	isOrganizationManagerRole,
 	isPlatformAdminRole,
@@ -25,10 +26,7 @@ import { authMiddleware } from "../middlewares/auth";
 import { dbMiddleware } from "../middlewares/db";
 import { requireOrgMiddleware } from "../middlewares/require-org";
 
-const modulesImplementer = implement(modulesContract).$context<{
-	headers: Headers;
-	db: ReturnType<typeof dbSqlite>;
-}>();
+const modulesImplementer = implement(modulesContract).$context<AppContext>();
 
 const orgRequiredProcedure = modulesImplementer
 	.use(dbMiddleware)

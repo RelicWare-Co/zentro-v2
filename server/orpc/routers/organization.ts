@@ -8,16 +8,14 @@ import {
 	user as userTable,
 } from "../../../database/drizzle/schema/auth.schema";
 import { dbSqlite, type Database } from "../../../database/drizzle/db";
+import type { AppContext } from "../context";
 import { getOrganizationAccessPolicy } from "../../organization/organization-policy";
 import { organizationContract } from "../contracts/organization";
 import { authMiddleware } from "../middlewares/auth";
 import { dbMiddleware } from "../middlewares/db";
 import { requireOrgMiddleware } from "../middlewares/require-org";
 
-const organizationImplementer = implement(organizationContract).$context<{
-	headers: Headers;
-	db: ReturnType<typeof dbSqlite>;
-}>();
+const organizationImplementer = implement(organizationContract).$context<AppContext>();
 
 const publicProcedure = organizationImplementer.use(dbMiddleware);
 const authedProcedure = publicProcedure.use(authMiddleware);

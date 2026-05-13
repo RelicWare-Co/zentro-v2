@@ -18,6 +18,7 @@ import {
 	restaurantTable,
 } from "../../../database/drizzle/schema/restaurant.schema";
 import type { dbSqlite } from "../../../database/drizzle/db";
+import type { AppContext } from "../context";
 import {
 	getEnabledPaymentMethods,
 	parseOrganizationSettingsMetadata,
@@ -31,10 +32,7 @@ import { requireOrgMiddleware } from "../middlewares/require-org";
 import { isOrganizationManagerRole } from "../../organization/access-control.shared";
 import { member } from "../../../database/drizzle/schema/auth.schema";
 
-const restaurantsImplementer = implement(restaurantsContract).$context<{
-	headers: Headers;
-	db: ReturnType<typeof dbSqlite>;
-}>();
+const restaurantsImplementer = implement(restaurantsContract).$context<AppContext>();
 
 const orgRequiredProcedure = restaurantsImplementer
 	.use(dbMiddleware)

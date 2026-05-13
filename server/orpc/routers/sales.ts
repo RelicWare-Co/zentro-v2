@@ -21,6 +21,7 @@ import {
 	saleItemModifier,
 } from "../../../database/drizzle/schema/sales.schema";
 import { dbSqlite } from "../../../database/drizzle/db";
+import type { AppContext } from "../context";
 import {
 	buildPaymentMethodOptions,
 	getAllPaymentMethods,
@@ -32,10 +33,7 @@ import { authMiddleware } from "../middlewares/auth";
 import { dbMiddleware } from "../middlewares/db";
 import { requireOrgMiddleware } from "../middlewares/require-org";
 
-const salesImplementer = implement(salesContract).$context<{
-	headers: Headers;
-	db: ReturnType<typeof dbSqlite>;
-}>();
+const salesImplementer = implement(salesContract).$context<AppContext>();
 
 const orgRequiredProcedure = salesImplementer
 	.use(dbMiddleware)

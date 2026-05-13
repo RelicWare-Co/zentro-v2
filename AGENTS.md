@@ -33,6 +33,17 @@
 - Database: Drizzle ORM over SQLite/libSQL.
 - Server state: TanStack Query.
 - API: oRPC in OpenAPI mode only.
+- Logging: **evlog** with `evlog/vite` plugin and `evlog/hono` middleware.
+
+## Logging (evlog)
+
+- The `evlog/vite` plugin in `vite.config.ts` auto-initializes the logger with `service: 'zentro'`.
+- The Hono app uses `evlog()` middleware from `evlog/hono`, making a request-scoped logger available via `c.get('log')`.
+- oRPC routers receive the logger through context (`context.log`). The base context type lives in `server/orpc/context.ts` as `AppContext`.
+- Use `context.log.set({ ... })` inside oRPC handlers to enrich the current request's wide event with structured data.
+- Use `createError({ message, status, why, fix, link })` from `evlog` for structured errors; handle them in Hono's `app.onError` with `parseError()`.
+- Do not use `console.log` / `console.error` in server code. Use `context.log.info()`, `context.log.warn()`, or `context.log.error()` instead.
+- CLI scripts (`scripts/*.ts`) may still use prefixed `console.log` since they run outside the Hono/evlog lifecycle.
 
 ## Vike
 

@@ -4,6 +4,8 @@ import { Hono } from "hono";
 import { auth } from "./auth";
 import { orpcHandler } from "./orpc/handler";
 import { dbSqlite } from "../database/drizzle/db";
+import { evlog, type EvlogVariables } from "evlog/hono";
+import { parseError } from "evlog";
 
 const BODY_PARSER_METHODS = new Set([
 	"arrayBuffer",
@@ -17,7 +19,25 @@ type BodyParserMethod =
 	typeof BODY_PARSER_METHODS extends Set<infer T> ? T : never;
 
 function getApp() {
-	const app = new Hono();
+	const app = new Hono<EvlogVariables>();
+
+	// evlog wide-event logging
+	app.use(evlog());
+
+	// Global error handler — captures unexpected throws
+	app.onError((error, c) => {
+		c.get("log").error(error);
+		const parsed = parseError(error);
+		return c.json(
+			{
+				message: parsed.message,
+				why: parsed.why,
+				fix: parsed.fix,
+				link: parsed.link,
+			},
+			(parsed.status as any) ?? 500,
+		);
+	});
 
 	// Better Auth handler
 	app.on(["POST", "GET"], "/api/auth/*", (c) => {
@@ -40,6 +60,7 @@ function getApp() {
 			context: {
 				headers: c.req.raw.headers,
 				db: dbSqlite(),
+				log: c.get("log"),
 			},
 		});
 
