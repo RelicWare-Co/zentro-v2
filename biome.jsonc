@@ -15,6 +15,16 @@
           }
         }
       }
+    },
+    {
+      "includes": ["database/drizzle/schema/index.ts"],
+      "linter": {
+        "rules": {
+          "performance": {
+            "noBarrelFile": "off"
+          }
+        }
+      }
     }
   ]
 }
