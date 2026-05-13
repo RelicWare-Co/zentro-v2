@@ -1,7 +1,13 @@
 import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
 import { implement, ORPCError } from "@orpc/server";
-import { organization, user } from "../../../database/drizzle/schema/auth.schema";
-import { category, product } from "../../../database/drizzle/schema/inventory.schema";
+import {
+	organization,
+	user,
+} from "../../../database/drizzle/schema/auth.schema";
+import {
+	category,
+	product,
+} from "../../../database/drizzle/schema/inventory.schema";
 import { shift } from "../../../database/drizzle/schema/pos.schema";
 import {
 	restaurantArea,
@@ -11,7 +17,7 @@ import {
 	restaurantOrderItemModifier,
 	restaurantTable,
 } from "../../../database/drizzle/schema/restaurant.schema";
-import { dbSqlite } from "../../../database/drizzle/db";
+import type { dbSqlite } from "../../../database/drizzle/db";
 import {
 	getEnabledPaymentMethods,
 	parseOrganizationSettingsMetadata,
@@ -104,7 +110,8 @@ async function assertManagerAccess(context: {
 
 	if (!memberRow || !isOrganizationManagerRole(memberRow.role)) {
 		throw new ORPCError("FORBIDDEN", {
-			message: "Esta acción requiere permisos de administrador de la organización.",
+			message:
+				"Esta acción requiere permisos de administrador de la organización.",
 		});
 	}
 }
@@ -164,7 +171,13 @@ function buildOrderSummary(
 		if (item.status === "served") servedItemsCount += item.quantity;
 	}
 
-	return { itemCount, totalAmount, draftItemsCount, readyItemsCount, servedItemsCount };
+	return {
+		itemCount,
+		totalAmount,
+		draftItemsCount,
+		readyItemsCount,
+		servedItemsCount,
+	};
 }
 
 async function getLayoutRows(
@@ -211,7 +224,12 @@ type TableShape<OpenOrder = unknown> = {
 function groupAreasWithTables<OpenOrder = unknown>(
 	areas: Array<{ id: string; name: string; sortOrder: number }>,
 	tables: TableShape<OpenOrder>[],
-): Array<{ id: string; name: string; sortOrder: number; tables: TableShape<OpenOrder>[] }> {
+): Array<{
+	id: string;
+	name: string;
+	sortOrder: number;
+	tables: TableShape<OpenOrder>[];
+}> {
 	const tablesByAreaId = new Map<string, TableShape<OpenOrder>[]>();
 	for (const table of tables) {
 		const collection = tablesByAreaId.get(table.areaId) ?? [];
@@ -533,8 +551,7 @@ async function getOrderItemsWithModifiers(
 					.select({
 						id: restaurantOrderItemModifier.id,
 						orderItemId: restaurantOrderItemModifier.orderItemId,
-						modifierProductId:
-							restaurantOrderItemModifier.modifierProductId,
+						modifierProductId: restaurantOrderItemModifier.modifierProductId,
 						quantity: restaurantOrderItemModifier.quantity,
 						unitPrice: restaurantOrderItemModifier.unitPrice,
 						name: product.name,
@@ -542,17 +559,11 @@ async function getOrderItemsWithModifiers(
 					.from(restaurantOrderItemModifier)
 					.innerJoin(
 						product,
-						eq(
-							restaurantOrderItemModifier.modifierProductId,
-							product.id,
-						),
+						eq(restaurantOrderItemModifier.modifierProductId, product.id),
 					)
 					.where(
 						and(
-							eq(
-								restaurantOrderItemModifier.organizationId,
-								organizationId,
-							),
+							eq(restaurantOrderItemModifier.organizationId, organizationId),
 							inArray(restaurantOrderItemModifier.orderItemId, itemIds),
 						),
 					)
@@ -705,57 +716,62 @@ export const bootstrap = orgRequiredProcedure.bootstrap.handler(
 		await requireRestaurantModuleAccess(context);
 		const organizationId = context.organizationId;
 
-		const [activeShiftRows, categories, organizationRows, layoutRows, openOrderRows] =
-			await Promise.all([
-				context.db
-					.select({
-						id: shift.id,
-						terminalId: shift.terminalId,
-						terminalName: shift.terminalName,
-						status: shift.status,
-						startingCash: shift.startingCash,
-						openedAt: shift.openedAt,
-						closedAt: shift.closedAt,
-						notes: shift.notes,
-					})
-					.from(shift)
-					.where(
-						and(
-							eq(shift.organizationId, organizationId),
-							eq(shift.userId, context.user.id),
-							eq(shift.status, "open"),
-						),
-					)
-					.orderBy(desc(shift.openedAt))
-					.limit(1),
-				context.db
-					.select({
-						id: category.id,
-						name: category.name,
-					})
-					.from(category)
-					.where(eq(category.organizationId, organizationId))
-					.orderBy(asc(category.name)),
-				context.db
-					.select({ metadata: organization.metadata })
-					.from(organization)
-					.where(eq(organization.id, organizationId))
-					.limit(1),
-				getLayoutRows(context.db, organizationId),
-				context.db
-					.select({
-						id: restaurantOrder.id,
-						tableId: restaurantOrder.tableId,
-						orderNumber: restaurantOrder.orderNumber,
-					})
-					.from(restaurantOrder)
-					.where(
-						and(
-							eq(restaurantOrder.organizationId, organizationId),
-							eq(restaurantOrder.status, "open"),
-						),
+		const [
+			activeShiftRows,
+			categories,
+			organizationRows,
+			layoutRows,
+			openOrderRows,
+		] = await Promise.all([
+			context.db
+				.select({
+					id: shift.id,
+					terminalId: shift.terminalId,
+					terminalName: shift.terminalName,
+					status: shift.status,
+					startingCash: shift.startingCash,
+					openedAt: shift.openedAt,
+					closedAt: shift.closedAt,
+					notes: shift.notes,
+				})
+				.from(shift)
+				.where(
+					and(
+						eq(shift.organizationId, organizationId),
+						eq(shift.userId, context.user.id),
+						eq(shift.status, "open"),
 					),
-			]);
+				)
+				.orderBy(desc(shift.openedAt))
+				.limit(1),
+			context.db
+				.select({
+					id: category.id,
+					name: category.name,
+				})
+				.from(category)
+				.where(eq(category.organizationId, organizationId))
+				.orderBy(asc(category.name)),
+			context.db
+				.select({ metadata: organization.metadata })
+				.from(organization)
+				.where(eq(organization.id, organizationId))
+				.limit(1),
+			getLayoutRows(context.db, organizationId),
+			context.db
+				.select({
+					id: restaurantOrder.id,
+					tableId: restaurantOrder.tableId,
+					orderNumber: restaurantOrder.orderNumber,
+				})
+				.from(restaurantOrder)
+				.where(
+					and(
+						eq(restaurantOrder.organizationId, organizationId),
+						eq(restaurantOrder.status, "open"),
+					),
+				),
+		]);
 
 		const activeShift = activeShiftRows[0] ?? null;
 		const organizationSettings = parseOrganizationSettingsMetadata(
@@ -779,7 +795,10 @@ export const bootstrap = orgRequiredProcedure.bootstrap.handler(
 			),
 		);
 
-		const summaryByOrderId = new Map<string, ReturnType<typeof buildOrderSummary>>();
+		const summaryByOrderId = new Map<
+			string,
+			ReturnType<typeof buildOrderSummary>
+		>();
 		for (const [orderId, items] of itemGroups) {
 			summaryByOrderId.set(orderId, buildOrderSummary(items));
 		}
@@ -844,16 +863,8 @@ export const tableDetail = orgRequiredProcedure.tableDetail.handler(
 		await requireRestaurantModuleAccess(context);
 		const organizationId = context.organizationId;
 		const [table, openOrder] = await Promise.all([
-			assertTableFromOrganization(
-				context.db,
-				organizationId,
-				input.tableId,
-			),
-			getOpenOrderForTable(
-				context.db,
-				organizationId,
-				input.tableId,
-			),
+			assertTableFromOrganization(context.db, organizationId, input.tableId),
+			getOpenOrderForTable(context.db, organizationId, input.tableId),
 		]);
 
 		if (!openOrder) {
@@ -1146,16 +1157,8 @@ export const sendToKitchen = orgRequiredProcedure.sendToKitchen.handler(
 				input.orderId,
 			);
 			const [table, items] = await Promise.all([
-				assertTableFromOrganization(
-					database,
-					organizationId,
-					order.tableId,
-				),
-				getOrderItemsWithModifiers(
-					database,
-					organizationId,
-					order.id,
-				),
+				assertTableFromOrganization(database, organizationId, order.tableId),
+				getOrderItemsWithModifiers(database, organizationId, order.id),
 			]);
 			const draftItems = items.filter((item) => item.status === "draft");
 			if (draftItems.length === 0) {
@@ -1429,7 +1432,11 @@ export const updateArea = orgRequiredProcedure.updateArea.handler(
 			updates.name = normalizeRequiredString(input.name, "name");
 		}
 
-		await assertAreaFromOrganization(context.db, context.organizationId, input.id);
+		await assertAreaFromOrganization(
+			context.db,
+			context.organizationId,
+			input.id,
+		);
 		await context.db
 			.update(restaurantArea)
 			.set(updates)
@@ -1639,10 +1646,7 @@ export const kitchenBoard = orgRequiredProcedure.kitchenBoard.handler(
 							notes: restaurantOrderItem.notes,
 						})
 						.from(restaurantOrderItem)
-						.innerJoin(
-							product,
-							eq(restaurantOrderItem.productId, product.id),
-						)
+						.innerJoin(product, eq(restaurantOrderItem.productId, product.id))
 						.where(
 							and(
 								eq(restaurantOrderItem.organizationId, organizationId),
@@ -1671,12 +1675,12 @@ export const kitchenBoard = orgRequiredProcedure.kitchenBoard.handler(
 				Array<{
 					id: string;
 					orderId: string;
-					orderNumber: string;
+					orderNumber: number;
 					sequenceNumber: number;
 					status: string;
 					createdAt: number;
 					table: { id: string; name: string; areaName: string };
-					items: typeof ticketRows[number];
+					items: typeof itemRows;
 				}>
 			>((acc, ticketRow) => {
 				const items = itemsByTicketId.get(ticketRow.id) ?? [];

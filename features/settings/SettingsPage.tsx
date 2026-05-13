@@ -30,9 +30,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { RestaurantModuleSettingsCard } from "@/features/restaurants/components/RestaurantModuleSettingsCard";
-import {
-	useRestaurantConfiguration,
-} from "@/features/restaurants/hooks/use-restaurants";
+import { useRestaurantConfiguration } from "@/features/restaurants/hooks/use-restaurants";
 import {
 	useSettings,
 	useUpdateSettingsMutation,
@@ -80,7 +78,10 @@ export function SettingsPage() {
 				>
 					<AlertTitle>No se pudo cargar configuración</AlertTitle>
 					<AlertDescription>
-						{getErrorMessage(settingsQuery.error, "Intenta recargar la página.")}
+						{getErrorMessage(
+							settingsQuery.error,
+							"Intenta recargar la página.",
+						)}
 					</AlertDescription>
 				</Alert>
 			</div>
@@ -102,17 +103,17 @@ function LocalPrinterSettingsSection({
 }: {
 	organizationId: string;
 }) {
-	const [CardComponent, setCardComponent] = useState<
-		React.ComponentType<{ organizationId: string }> | null
-	>(null);
+	const [CardComponent, setCardComponent] = useState<React.ComponentType<{
+		organizationId: string;
+	}> | null>(null);
 
 	useEffect(() => {
 		let mounted = true;
-		import("@/features/settings/components/LocalPrinterSettingsCard.client").then(
-			(mod) => {
-				if (mounted) setCardComponent(() => mod.LocalPrinterSettingsCard);
-			},
-		);
+		import(
+			"@/features/settings/components/LocalPrinterSettingsCard.client"
+		).then((mod) => {
+			if (mounted) setCardComponent(() => mod.LocalPrinterSettingsCard);
+		});
 		return () => {
 			mounted = false;
 		};
@@ -153,7 +154,6 @@ function SettingsForm({
 		normalizeOrganizationSettings(data.settings),
 	);
 	const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
-	const showSavedMessage = lastSavedAt !== null && !hasChanges;
 	const [newPaymentMethodLabel, setNewPaymentMethodLabel] = useState("");
 	const [paymentMethodDraftError, setPaymentMethodDraftError] = useState<
 		string | null
@@ -165,7 +165,6 @@ function SettingsForm({
 	const defaultTaxRateId = useId();
 	const newPaymentMethodId = useId();
 
-
 	const persistedSettings = useMemo(
 		() => normalizeOrganizationSettings(data.settings),
 		[data.settings],
@@ -174,6 +173,7 @@ function SettingsForm({
 		() => JSON.stringify(draftSettings) !== JSON.stringify(persistedSettings),
 		[draftSettings, persistedSettings],
 	);
+	const showSavedMessage = lastSavedAt !== null && !hasChanges;
 	const newPaymentMethodSlug = useMemo(
 		() => normalizePaymentMethodId(newPaymentMethodLabel),
 		[newPaymentMethodLabel],
@@ -326,7 +326,10 @@ function SettingsForm({
 				>
 					<AlertTitle>No se pudo guardar</AlertTitle>
 					<AlertDescription>
-						{getErrorMessage(saveError, "Revisa los campos e intenta otra vez.")}
+						{getErrorMessage(
+							saveError,
+							"Revisa los campos e intenta otra vez.",
+						)}
 					</AlertDescription>
 				</Alert>
 			) : null}
@@ -373,174 +376,179 @@ function SettingsForm({
 							</CardDescription>
 						</CardHeader>
 						<CardContent className="space-y-6">
-						<div className="grid gap-2">
-							<Label htmlFor={defaultTerminalNameId}>
-								Nombre por defecto de caja
-							</Label>
-							<Input
-								id={defaultTerminalNameId}
-								value={draftSettings.pos.defaultTerminalName}
-								onChange={(event) =>
-									setDraftSettings((currentValue) => ({
-										...currentValue,
-										pos: {
-											...currentValue.pos,
-											defaultTerminalName: event.target.value,
-										},
-									}))
-								}
-								disabled={!canManageSettings}
-								className="border-zinc-700 bg-black/20"
-							/>
-						</div>
-
-						<div className="grid gap-2">
-							<Label htmlFor={defaultStartingCashId}>
-								Base inicial sugerida
-							</Label>
-							<Input
-								id={defaultStartingCashId}
-								type="text"
-								inputMode="numeric"
-								value={formatMoneyInput(draftSettings.pos.defaultStartingCash)}
-								onChange={(event) =>
-									setDraftSettings((currentValue) => ({
-										...currentValue,
-										pos: {
-											...currentValue.pos,
-											defaultStartingCash: parseMoneyInput(event.target.value),
-										},
-									}))
-								}
-								disabled={!canManageSettings}
-								className="border-zinc-700 bg-black/20"
-							/>
-						</div>
-
-						<Separator className="bg-zinc-800" />
-
-						<div className="space-y-4">
-							<div>
-								<h3 className="font-medium text-white">Métodos de pago</h3>
-								<p className="mt-1 text-sm text-zinc-400">
-									Configura etiquetas, disponibilidad y referencia obligatoria.
-								</p>
+							<div className="grid gap-2">
+								<Label htmlFor={defaultTerminalNameId}>
+									Nombre por defecto de caja
+								</Label>
+								<Input
+									id={defaultTerminalNameId}
+									value={draftSettings.pos.defaultTerminalName}
+									onChange={(event) =>
+										setDraftSettings((currentValue) => ({
+											...currentValue,
+											pos: {
+												...currentValue.pos,
+												defaultTerminalName: event.target.value,
+											},
+										}))
+									}
+									disabled={!canManageSettings}
+									className="border-zinc-700 bg-black/20"
+								/>
 							</div>
 
-							<div className="space-y-3">
-								{draftSettings.pos.paymentMethods.map((paymentMethod) => (
-									<div
-										key={paymentMethod.id}
-										className="rounded-2xl border border-zinc-800 bg-black/20 p-4"
-									>
-										<div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-											<div className="min-w-0 flex-1 space-y-3">
-												<div className="grid gap-2">
-													<Label htmlFor={`payment-method-${paymentMethod.id}`}>
-														Nombre visible
-													</Label>
-													<Input
-														id={`payment-method-${paymentMethod.id}`}
-														value={paymentMethod.label}
-														onChange={(event) =>
+							<div className="grid gap-2">
+								<Label htmlFor={defaultStartingCashId}>
+									Base inicial sugerida
+								</Label>
+								<Input
+									id={defaultStartingCashId}
+									type="text"
+									inputMode="numeric"
+									value={formatMoneyInput(
+										draftSettings.pos.defaultStartingCash,
+									)}
+									onChange={(event) =>
+										setDraftSettings((currentValue) => ({
+											...currentValue,
+											pos: {
+												...currentValue.pos,
+												defaultStartingCash: parseMoneyInput(
+													event.target.value,
+												),
+											},
+										}))
+									}
+									disabled={!canManageSettings}
+									className="border-zinc-700 bg-black/20"
+								/>
+							</div>
+
+							<Separator className="bg-zinc-800" />
+
+							<div className="space-y-4">
+								<div>
+									<h3 className="font-medium text-white">Métodos de pago</h3>
+									<p className="mt-1 text-sm text-zinc-400">
+										Configura etiquetas, disponibilidad y referencia
+										obligatoria.
+									</p>
+								</div>
+
+								<div className="space-y-3">
+									{draftSettings.pos.paymentMethods.map((paymentMethod) => (
+										<div
+											key={paymentMethod.id}
+											className="rounded-2xl border border-zinc-800 bg-black/20 p-4"
+										>
+											<div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+												<div className="min-w-0 flex-1 space-y-3">
+													<div className="grid gap-2">
+														<Label
+															htmlFor={`payment-method-${paymentMethod.id}`}
+														>
+															Nombre visible
+														</Label>
+														<Input
+															id={`payment-method-${paymentMethod.id}`}
+															value={paymentMethod.label}
+															onChange={(event) =>
+																handlePaymentMethodChange(paymentMethod.id, {
+																	label: event.target.value,
+																})
+															}
+															disabled={!canManageSettings}
+															className="border-zinc-700 bg-black/20"
+														/>
+													</div>
+													<p className="text-xs text-zinc-500">
+														Código interno:{" "}
+														<span className="text-zinc-400">
+															{paymentMethod.id}
+														</span>
+													</p>
+												</div>
+
+												<div className="flex flex-wrap items-center gap-6">
+													<ToggleControl
+														label="Activo"
+														checked={paymentMethod.enabled}
+														disabled={
+															!canManageSettings || paymentMethod.id === "cash"
+														}
+														onCheckedChange={(checked) =>
 															handlePaymentMethodChange(paymentMethod.id, {
-																label: event.target.value,
+																enabled: checked,
 															})
 														}
-														disabled={!canManageSettings}
-														className="border-zinc-700 bg-black/20"
+													/>
+													<ToggleControl
+														label="Requiere referencia"
+														checked={paymentMethod.requiresReference}
+														disabled={
+															!canManageSettings || paymentMethod.id === "cash"
+														}
+														onCheckedChange={(checked) =>
+															handlePaymentMethodChange(paymentMethod.id, {
+																requiresReference: checked,
+															})
+														}
 													/>
 												</div>
-												<p className="text-xs text-zinc-500">
-													Código interno:{" "}
-													<span className="text-zinc-400">
-														{paymentMethod.id}
-													</span>
-												</p>
-											</div>
-
-											<div className="flex flex-wrap items-center gap-6">
-												<ToggleControl
-													label="Activo"
-													checked={paymentMethod.enabled}
-													disabled={
-														!canManageSettings || paymentMethod.id === "cash"
-													}
-													onCheckedChange={(checked) =>
-														handlePaymentMethodChange(paymentMethod.id, {
-															enabled: checked,
-														})
-													}
-												/>
-												<ToggleControl
-													label="Requiere referencia"
-													checked={paymentMethod.requiresReference}
-													disabled={
-														!canManageSettings || paymentMethod.id === "cash"
-													}
-													onCheckedChange={(checked) =>
-														handlePaymentMethodChange(paymentMethod.id, {
-															requiresReference: checked,
-														})
-													}
-												/>
 											</div>
 										</div>
-									</div>
-								))}
-							</div>
-
-							<div className="rounded-2xl border border-dashed border-zinc-700 bg-black/10 p-4">
-								<div className="grid gap-3 lg:grid-cols-[1fr_auto] lg:items-end">
-									<div className="space-y-2">
-										<Label htmlFor={newPaymentMethodId}>
-											Agregar método personalizado
-										</Label>
-										<Input
-											id={newPaymentMethodId}
-											value={newPaymentMethodLabel}
-											onChange={(event) => {
-												if (paymentMethodDraftError) {
-													setPaymentMethodDraftError(null);
-												}
-												setNewPaymentMethodLabel(event.target.value);
-											}}
-											disabled={!canManageSettings}
-											placeholder="Ej. Daviplata, QR, Zelle"
-											className="border-zinc-700 bg-black/20"
-										/>
-										<p className="text-xs text-zinc-500">
-											Código interno:{" "}
-											<span className="text-zinc-400">
-												{newPaymentMethodSlug || "Se genera automáticamente"}
-											</span>
-										</p>
-									</div>
-									<Button
-										type="button"
-										variant="outline"
-										onClick={handleAddPaymentMethod}
-										disabled={!canManageSettings}
-										className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5 hover:text-white"
-									>
-										<Plus className="size-4" />
-										Agregar
-									</Button>
+									))}
 								</div>
-								{paymentMethodDraftError ? (
-									<p className="mt-3 text-sm text-red-400">
-										{paymentMethodDraftError}
-									</p>
-								) : null}
-							</div>
-						</div>
-					</CardContent>
-				</Card>
 
-				<LocalPrinterSettingsSection
-					organizationId={data.organization.id}
-				/>
-			</div>
+								<div className="rounded-2xl border border-dashed border-zinc-700 bg-black/10 p-4">
+									<div className="grid gap-3 lg:grid-cols-[1fr_auto] lg:items-end">
+										<div className="space-y-2">
+											<Label htmlFor={newPaymentMethodId}>
+												Agregar método personalizado
+											</Label>
+											<Input
+												id={newPaymentMethodId}
+												value={newPaymentMethodLabel}
+												onChange={(event) => {
+													if (paymentMethodDraftError) {
+														setPaymentMethodDraftError(null);
+													}
+													setNewPaymentMethodLabel(event.target.value);
+												}}
+												disabled={!canManageSettings}
+												placeholder="Ej. Daviplata, QR, Zelle"
+												className="border-zinc-700 bg-black/20"
+											/>
+											<p className="text-xs text-zinc-500">
+												Código interno:{" "}
+												<span className="text-zinc-400">
+													{newPaymentMethodSlug || "Se genera automáticamente"}
+												</span>
+											</p>
+										</div>
+										<Button
+											type="button"
+											variant="outline"
+											onClick={handleAddPaymentMethod}
+											disabled={!canManageSettings}
+											className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5 hover:text-white"
+										>
+											<Plus className="size-4" />
+											Agregar
+										</Button>
+									</div>
+									{paymentMethodDraftError ? (
+										<p className="mt-3 text-sm text-red-400">
+											{paymentMethodDraftError}
+										</p>
+									) : null}
+								</div>
+							</div>
+						</CardContent>
+					</Card>
+
+					<LocalPrinterSettingsSection organizationId={data.organization.id} />
+				</div>
 
 				<div className="space-y-6">
 					<RestaurantConfigurationCard
