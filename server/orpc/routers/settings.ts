@@ -12,12 +12,14 @@ import { organizationModuleEntitlement } from "../../../database/drizzle/schema/
 import { product } from "../../../database/drizzle/schema/inventory.schema";
 import {
   isModuleEntitled,
-  MODULE_KEYS,
   type ModuleAccessState,
-  type ModuleEntitlementStatus,
-  type ModuleKey,
 } from "../../../features/modules/module-access.shared";
-import { getModuleDefinition } from "../../../features/modules/module-registry";
+import type { ModuleEntitlementStatus } from "../../../features/modules/module-definition";
+import {
+  getModuleDefinition,
+  MODULE_KEYS,
+  type ModuleKey,
+} from "../../../features/modules/module-registry";
 import { getRestaurantModuleToggleSettings } from "../../../features/restaurants/restaurants.module";
 import {
   normalizeOrganizationSettings,
