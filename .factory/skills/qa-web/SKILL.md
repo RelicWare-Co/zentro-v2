@@ -2,7 +2,7 @@
 name: qa-web
 description: >
   QA tests for the Zentro web app. Tests POS flows, organization management,
-  auth, products, customers, sales, settings, and shifts. Uses agent-browser for
+  auth, products, customers, sales, settings, and shifts. Uses browser-harness for
   interactive web testing against the local dev server.
 ---
 

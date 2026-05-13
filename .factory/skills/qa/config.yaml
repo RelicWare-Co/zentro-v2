@@ -76,8 +76,8 @@ apps:
       - "+*.ts"
       - "+*.tsx"
     skill: qa-web
-    test_tool: agent-browser
-    build_command: "bun run build"
+    test_tool: browser-harness
+    start_command: "bun run dev"
 
 feature_flags:
   provider: none

@@ -3,7 +3,7 @@ name: qa
 description: >
   Run QA tests for Zentro. Analyzes git diff to determine affected areas,
   runs configured test flows with multiple personas, and generates diff-targeted tests.
-  Uses agent-browser for web testing.
+  Uses browser-harness for web testing.
   Use when testing PRs, releases, or smoke testing environments.
 ---
 
@@ -70,10 +70,10 @@ The sub-skill contains a MENU of available test flows. You must:
 
 After each significant test step, capture evidence. Use **text snapshots as primary evidence** -- they render inline in the PR comment with no image hosting issues.
 
-For web apps (agent-browser):
+For web apps (browser-harness):
 
-- Use `agent-browser snapshot` to capture the page's accessibility tree as text evidence
-- Save screenshot files to `./qa-results/$RUN_ID/` for the artifact upload
+- Use `browser-harness <<'PY'` with `print(page_info())` or `print(js("..."))` to capture page state as text evidence
+- Use `capture_screenshot()` inside a `browser-harness` heredoc to obtain visual evidence, then save image data to `./qa-results/$RUN_ID/` for the artifact upload
 - Do NOT embed `![image](url)` markdown in the report -- screenshot images cannot be displayed inline in GitHub PR comments. Instead, mention the filename and note that it's available in the downloadable artifacts.
 
 Evidence quality rules:
