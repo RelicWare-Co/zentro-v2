@@ -449,16 +449,19 @@ class PosPrinterManager {
         this.resolveOrgIdFromKey(this.runtimeOrganizationKey)
       );
 
+      let resolvedLanguage: EncodablePrinterLanguage | null = null;
+      if (isPosEncodablePrinterLanguage(payload.language)) {
+        resolvedLanguage = payload.language;
+      } else if (isPosEncodablePrinterLanguage(savedDevice.language)) {
+        resolvedLanguage = savedDevice.language;
+      }
+
       this.setState({
         status: "connected",
         message: null,
         connectionType: activeConnectionType,
         device: savedDevice,
-        language: isPosEncodablePrinterLanguage(payload.language)
-          ? payload.language
-          : isPosEncodablePrinterLanguage(savedDevice.language)
-            ? savedDevice.language
-            : null,
+        language: resolvedLanguage,
         codepageMapping:
           toNullableString(payload.codepageMapping) ??
           savedDevice.codepageMapping,

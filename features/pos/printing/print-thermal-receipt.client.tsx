@@ -45,7 +45,7 @@ export async function connectPosPrinter(organizationId?: string | null) {
   return true;
 }
 
-export function reconnectPosPrinter(
+export async function reconnectPosPrinter(
   options?: { silent?: boolean },
   organizationId?: string | null
 ) {
@@ -53,7 +53,7 @@ export function reconnectPosPrinter(
     return false;
   }
 
-  return getPosPrinterManager().reconnectSaved(
+  return await getPosPrinterManager().reconnectSaved(
     readPosLocalPrinterSettings(organizationId),
     {
       silent: options?.silent,
@@ -129,8 +129,6 @@ function buildPosPrinterTestDocument(): ThermalReceiptDocument {
   };
 }
 
-export function printPosPrinterTestDocument(
-  organizationId?: string | null
-) {
+export function printPosPrinterTestDocument(organizationId?: string | null) {
   return printThermalReceipt(buildPosPrinterTestDocument(), organizationId);
 }
