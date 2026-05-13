@@ -8,7 +8,7 @@ export const requireOrgMiddleware = os
   .$context<{
     session?: AuthSession["session"];
   }>()
-  .middleware(async ({ context, next }) => {
+  .middleware(({ context, next }) => {
     const organizationId = context.session?.activeOrganizationId;
 
     if (!organizationId) {

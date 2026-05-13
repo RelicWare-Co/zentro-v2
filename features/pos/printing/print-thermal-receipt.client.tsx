@@ -45,7 +45,7 @@ export async function connectPosPrinter(organizationId?: string | null) {
   return true;
 }
 
-export async function reconnectPosPrinter(
+export function reconnectPosPrinter(
   options?: { silent?: boolean },
   organizationId?: string | null
 ) {
@@ -129,7 +129,7 @@ function buildPosPrinterTestDocument(): ThermalReceiptDocument {
   };
 }
 
-export async function printPosPrinterTestDocument(
+export function printPosPrinterTestDocument(
   organizationId?: string | null
 ) {
   return printThermalReceipt(buildPosPrinterTestDocument(), organizationId);

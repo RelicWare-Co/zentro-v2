@@ -291,7 +291,9 @@ function SettingsForm({
           <Button
             className="bg-[var(--color-voltage)] text-black hover:bg-[#d9f15c]"
             disabled={!(canManageSettings && hasChanges) || isSaving}
-            onClick={() => void handleSave()}
+            onClick={() => {
+              handleSave().catch(() => undefined);
+            }}
             type="button"
           >
             <Save className="size-4" />

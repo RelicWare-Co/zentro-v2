@@ -6,17 +6,10 @@ import {
 } from "@tanstack/react-query";
 import { useDeferredValue } from "react";
 import type { z } from "zod";
-import type {
-  CreateCustomerSchema,
-  CustomerSchema,
-  UpdateCustomerSchema,
-} from "@/schemas/customers";
+import type { CustomerSchema } from "@/schemas/customers";
 import { orpcQuery } from "@/server/orpc/client/query";
 
 export type Customer = z.infer<typeof CustomerSchema>;
-type CreateCustomerInput = z.infer<typeof CreateCustomerSchema>;
-type UpdateCustomerInput = z.infer<typeof UpdateCustomerSchema>;
-
 function getCustomersSearchQueryKey(searchQuery: string | null) {
   return orpcQuery.customers.search.queryOptions({
     input: {
@@ -31,9 +24,11 @@ function invalidateCustomersSearch(
   queryClient: ReturnType<typeof useQueryClient>,
   searchQuery: string | null
 ) {
-  void queryClient.invalidateQueries({
-    queryKey: getCustomersSearchQueryKey(searchQuery),
-  });
+  queryClient
+    .invalidateQueries({
+      queryKey: getCustomersSearchQueryKey(searchQuery),
+    })
+    .catch(() => undefined);
 }
 
 export function useCustomersSearch(searchQuery: string) {

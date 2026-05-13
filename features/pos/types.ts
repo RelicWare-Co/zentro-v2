@@ -3,7 +3,6 @@ import type { SearchCustomersResultSchema } from "../../schemas/customers";
 import type {
   PosBootstrapResultSchema,
   PosProductSchema,
-  SearchPosProductsResultSchema,
 } from "../../schemas/pos";
 
 // Producto retornado por la búsqueda POS
@@ -19,9 +18,6 @@ export type PosBootstrap = z.infer<typeof PosBootstrapResultSchema>;
 
 // Turno activo
 export type ActiveShift = PosBootstrap["activeShift"];
-
-// Resultado de búsqueda de productos
-type ProductSearchResult = z.infer<typeof SearchPosProductsResultSchema>;
 
 // Categoría de productos
 export interface Category {
@@ -65,10 +61,4 @@ export interface CartTotals {
   subTotal: number;
   tax: number;
   totalAmount: number;
-}
-
-// Props comunes para modales
-interface ModalProps {
-  isOpen: boolean;
-  onClose: () => void;
 }

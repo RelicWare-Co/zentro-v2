@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { usePageContext } from "vike-react/usePageContext";
-import { OrganizationSelection } from "@/components/OrganizationSelection";
+import { OrganizationSelection } from "@/components/organization-selection";
 import { authClient } from "@/lib/auth-client";
 import { queryClient } from "@/lib/query-client";
 import { cn } from "@/lib/utils";

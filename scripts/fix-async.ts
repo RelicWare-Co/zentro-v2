@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 import { readFile, writeFile } from "node:fs/promises";
 
-const file = "components/OrganizationSelection.tsx";
+const file = "components/organization-selection.tsx";
 let content = await readFile(file, "utf-8");
 
 // Replace the second block of sequential awaits

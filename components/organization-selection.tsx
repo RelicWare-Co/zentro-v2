@@ -83,8 +83,8 @@ export function OrganizationSelection() {
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
-        void refetchOrganizations();
-        void refetchSelectionData();
+        refetchOrganizations().catch(() => undefined);
+        refetchSelectionData().catch(() => undefined);
       }
     };
 
@@ -94,7 +94,7 @@ export function OrganizationSelection() {
     };
   }, [refetchSelectionData, refetchOrganizations]);
 
-  const refreshAndEnter = async () => {
+  const refreshAndEnter = () => {
     queryClient.clear();
     window.location.href = "/dashboard";
   };
@@ -331,7 +331,9 @@ export function OrganizationSelection() {
                     className="flex w-full items-center justify-between rounded-2xl border border-zinc-800 bg-black/20 p-4 text-left transition-colors hover:border-[var(--color-voltage)]/40 hover:bg-black/30 disabled:cursor-not-allowed disabled:opacity-60"
                     disabled={isSelectingId !== null}
                     key={org.id}
-                    onClick={() => void handleSelect(org.id)}
+                    onClick={() => {
+                      handleSelect(org.id).catch(() => undefined);
+                    }}
                     type="button"
                   >
                     <div className="flex min-w-0 items-center gap-3">
@@ -415,9 +417,11 @@ export function OrganizationSelection() {
                             isAcceptingInvitationId !== null ||
                             isRejectingInvitationId !== null
                           }
-                          onClick={() =>
-                            void handleAcceptInvitation(invitation)
-                          }
+                          onClick={() => {
+                            handleAcceptInvitation(invitation).catch(
+                              () => undefined
+                            );
+                          }}
                           type="button"
                         >
                           {isAcceptingInvitationId === invitation.id ? (
@@ -435,9 +439,11 @@ export function OrganizationSelection() {
                             isAcceptingInvitationId !== null ||
                             isRejectingInvitationId !== null
                           }
-                          onClick={() =>
-                            void handleRejectInvitation(invitation.id)
-                          }
+                          onClick={() => {
+                            handleRejectInvitation(invitation.id).catch(
+                              () => undefined
+                            );
+                          }}
                           type="button"
                           variant="outline"
                         >

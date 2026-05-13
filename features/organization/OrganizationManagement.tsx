@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { useId, useState } from "react";
 import type { z } from "zod";
-import { OrganizationSelection } from "@/components/OrganizationSelection";
+import { OrganizationSelection } from "@/components/organization-selection";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   AlertDialog,
