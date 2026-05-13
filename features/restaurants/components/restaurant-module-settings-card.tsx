@@ -283,12 +283,6 @@ export function RestaurantModuleSettingsCard(
                       area.tables.length > 0
                     }
                     onClick={() => {
-                      const confirmed = window.confirm(
-                        "¿Eliminar esta zona? Solo funciona si ya no tiene mesas."
-                      );
-                      if (!confirmed) {
-                        return;
-                      }
                       deleteRestaurantAreaMutation.mutate({
                         id: area.id,
                       });
@@ -337,12 +331,6 @@ export function RestaurantModuleSettingsCard(
                             deleteRestaurantTableMutation.isPending
                           }
                           onClick={() => {
-                            const confirmed = window.confirm(
-                              "¿Eliminar esta mesa? Si ya tiene historial, la operación será rechazada."
-                            );
-                            if (!confirmed) {
-                              return;
-                            }
                             deleteRestaurantTableMutation.mutate({
                               id: table.id,
                             });
