@@ -4,7 +4,11 @@ import type { user } from "../../database/drizzle/schema/auth.schema";
 
 type UserRow = typeof user.$inferSelect;
 
-export function buildMockContext(db: TestDb, user: UserRow, orgId?: string | null) {
+export function buildMockContext(
+	db: TestDb,
+	user: UserRow,
+	orgId?: string | null,
+) {
 	const now = new Date();
 	return {
 		headers: new Headers(),

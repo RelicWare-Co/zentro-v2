@@ -63,7 +63,9 @@
   function ClientOnlyWrapper(props) {
     const [Component, setComponent] = useState(null);
     useEffect(() => {
-      import("./MyComponent.client").then((m) => setComponent(() => m.MyComponent));
+      import("./MyComponent.client").then((m) =>
+        setComponent(() => m.MyComponent),
+      );
     }, []);
     if (!Component) return <Skeleton />;
     return <Component {...props} />;
