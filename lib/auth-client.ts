@@ -6,6 +6,3 @@ export const authClient = createAuthClient({
 });
 
 export const { useActiveOrganization } = authClient;
-
-type Session = typeof authClient.$Infer.Session;
-type User = typeof authClient.$Infer.Session.user;
