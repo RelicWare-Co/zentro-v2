@@ -7,7 +7,7 @@
   ],
   "overrides": [
     {
-      "include": ["pages/**/+*.ts", "pages/**/+*.tsx"],
+      "includes": ["pages/**/+*.ts", "pages/**/+*.tsx"],
       "linter": {
         "rules": {
           "style": {
