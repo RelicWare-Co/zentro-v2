@@ -19,7 +19,15 @@ export const orpcHandler = new OpenAPIHandler(router, {
 			docsConfig: {
 				theme: "deepSpace",
 				layout: "modern",
-				hideDownloadButton: false,
+				forceDarkModeState: "dark",
+				metaData: {
+					title: "Zentro API Reference",
+					description: "Interactive API documentation for the Zentro platform",
+				},
+				defaultOpenAllTags: true,
+				showOperationId: true,
+				documentDownloadType: "both",
+				withDefaultFonts: true,
 			},
 			schemaConverters: [new ZodToJsonSchemaConverter()],
 			specGenerateOptions: {
