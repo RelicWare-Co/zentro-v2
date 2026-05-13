@@ -726,7 +726,9 @@ function MembersTab({
                         <Button
                           className="text-emerald-400 hover:text-emerald-300"
                           disabled={updateRoleMutation.isPending}
-                          onClick={() => void saveRole(member.memberId)}
+                          onClick={() => {
+                            saveRole(member.memberId).catch(() => undefined);
+                          }}
                           size="icon-sm"
                           variant="ghost"
                         >
@@ -1315,7 +1317,9 @@ function AccessTab({
                     <Button
                       className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5"
                       disabled={!isJoinLinkActive(joinLink.status)}
-                      onClick={() => void copyJoinUrl(joinLink.joinPath)}
+                      onClick={() => {
+                        copyJoinUrl(joinLink.joinPath).catch(() => undefined);
+                      }}
                       size="sm"
                       type="button"
                       variant="outline"
@@ -1330,7 +1334,11 @@ function AccessTab({
                           joinLink.status === "revoked" ||
                           revokeJoinLinkMutation.isPending
                         }
-                        onClick={() => void handleRevokeJoinLink(joinLink.id)}
+                        onClick={() => {
+                          handleRevokeJoinLink(joinLink.id).catch(
+                            () => undefined
+                          );
+                        }}
                         size="sm"
                         type="button"
                         variant="outline"

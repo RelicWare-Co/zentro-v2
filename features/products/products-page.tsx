@@ -710,9 +710,11 @@ export function ProductsPage() {
               className="bg-red-500 text-white hover:bg-red-600"
               onClick={() => {
                 if (productToDelete) {
-                  void deleteProductMutation.mutateAsync({
-                    id: productToDelete.id,
-                  });
+                  deleteProductMutation
+                    .mutateAsync({
+                      id: productToDelete.id,
+                    })
+                    .catch(() => undefined);
                 }
               }}
             >
@@ -1119,10 +1121,10 @@ function CategoryDialogContent({
           className="space-y-4"
           onSubmit={(event) => {
             event.preventDefault();
-            void onSave({
+            onSave({
               name,
               description: description || null,
-            });
+            }).catch(() => undefined);
           }}
         >
           <Field label="Nombre" required>
@@ -1150,7 +1152,9 @@ function CategoryDialogContent({
               <Button
                 className="border-red-500/30 bg-transparent text-red-200 hover:bg-red-500/10"
                 disabled={isPending}
-                onClick={() => void onDelete()}
+                onClick={() => {
+                  onDelete()?.catch(() => undefined);
+                }}
                 type="button"
                 variant="outline"
               >
@@ -1318,7 +1322,9 @@ function InventoryDialog({
               !Number.isFinite(Number(quantity)) ||
               Number(quantity) === 0
             }
-            onClick={() => void onSave()}
+            onClick={() => {
+              onSave()?.catch(() => undefined);
+            }}
             type="button"
           >
             {isPending ? "Guardando..." : "Registrar"}
