@@ -1,0 +1,94 @@
+project: Zentro
+imagemagick: true
+
+environments:
+  development:
+    url: http://localhost:3000
+    restrictions: []
+
+default_target: development
+
+auth:
+  method: email-password
+  provider: better-auth
+
+personas:
+  - name: owner
+    description: 'Full access. Can manage org settings, delete org, manage all members, invite users, create/revoke join links, access all POS features (shifts, sales, products, customers, credit, settings).'
+    email_pattern: 'qa+owner_{RUN_ID}@example.com'
+    credentials_source: manual
+    test_focus:
+      - organization-management
+      - pos-checkout
+      - member-management
+      - settings
+      - join-links
+    cannot_do:
+      - be removed by a non-owner
+
+  - name: admin
+    description: 'Can manage members (edit roles, remove), invite users, create/revoke join links, access all POS features. Cannot delete the organization.'
+    email_pattern: 'qa+admin_{RUN_ID}@example.com'
+    credentials_source: manual
+    test_focus:
+      - organization-management
+      - pos-checkout
+      - member-management
+      - settings
+    cannot_do:
+      - delete the organization
+
+  - name: member
+    description: 'Can use POS (open shifts, make sales, view products/customers), view org info. Cannot manage members, cannot invite, cannot create join links, cannot delete org.'
+    email_pattern: 'qa+member_{RUN_ID}@example.com'
+    credentials_source: manual
+    test_focus:
+      - pos-checkout
+      - view-products
+      - view-customers
+    cannot_do:
+      - manage members
+      - invite users
+      - create or revoke join links
+      - delete the organization
+      - edit organization settings
+
+  - name: new_user
+    description: 'Fresh signup, no existing data'
+    email_pattern: 'qa+signup_{RUN_ID}@example.com'
+    test_focus:
+      - onboarding
+      - empty states
+      - first-run experience
+      - signup-flow
+
+apps:
+  web:
+    path_patterns:
+      - "pages/**"
+      - "features/**"
+      - "components/**"
+      - "lib/**"
+      - "hooks/**"
+      - "server/orpc/routers/**"
+      - "server/orpc/contracts/**"
+      - "database/**"
+      - "+*.ts"
+      - "+*.tsx"
+    skill: qa-web
+    test_tool: agent-browser
+    build_command: "bun run build"
+
+feature_flags:
+  provider: none
+  dashboard_url: ""
+  how_to_override: ""
+
+integrations: {}
+
+cleanup:
+  auto_cleanup: true
+  strategy: reset-db
+  instructions: "QA runs use the local dev SQLite database (file:./dev.db). The database is ephemeral and can be reset by removing dev.db and re-running migrations/seeds before the QA run. Alternatively, the test suite creates isolated in-memory test DBs per test."
+
+failure_learning: suggest_in_report

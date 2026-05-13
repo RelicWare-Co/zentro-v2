@@ -1,0 +1,74 @@
+phase: completed
+categories:
+  - name: default_target
+    completed: true
+    answers:
+      default_target: development
+      restrictions: []
+  - name: personas_roles
+    completed: true
+    answers:
+      owner_can_do:
+        - manage org settings
+        - delete org
+        - manage all members
+        - invite users
+        - create/revoke join links
+        - access all POS features
+      owner_cannot_do:
+        - be removed by a non-owner
+      admin_can_do:
+        - manage members (edit roles, remove)
+        - invite users
+        - create/revoke join links
+        - access all POS features
+      admin_cannot_do:
+        - delete the organization
+      member_can_do:
+        - use POS (open shifts, make sales)
+        - view products/customers
+        - view org info
+      member_cannot_do:
+        - manage members
+        - invite users
+        - create or revoke join links
+        - delete the organization
+        - edit organization settings
+      test_account_creation: qa_creates_via_signup
+  - name: critical_flows
+    completed: true
+    answers:
+      flows:
+        - Auth (login, register, join via link)
+        - Dashboard overview
+        - POS (open shift, browse products, add to cart, checkout, close shift)
+        - Products & categories CRUD
+        - Customers management
+        - Sales history & reporting
+        - Organization management (members, invitations, join links)
+        - Settings
+        - Credit accounts
+        - Shift management
+        - Kitchen display
+      confirmed: true
+  - name: external_services
+    completed: true
+    answers:
+      integrations: {}
+  - name: cleanup
+    completed: true
+    answers:
+      strategy: reset-db
+      auto_cleanup: true
+  - name: imagemagick
+    completed: true
+    answers:
+      installed: true
+  - name: github_action
+    completed: true
+    answers:
+      create_workflow: false
+  - name: failure_learning
+    completed: true
+    answers:
+      strategy: suggest_in_report
