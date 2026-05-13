@@ -2,7 +2,7 @@ import { ArrowLeftRight, Lock, Plus, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import type { ActiveShift, PosCustomer } from "../types";
-import { CustomerPicker } from "./CustomerPicker";
+import { CustomerPicker } from "./customer-picker";
 
 interface PosHeaderProps {
   activeShift: ActiveShift | null;

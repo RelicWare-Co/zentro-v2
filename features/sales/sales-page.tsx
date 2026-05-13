@@ -16,7 +16,7 @@ import {
   useState,
   useTransition,
 } from "react";
-import { Link } from "@/components/Link";
+import { Link } from "@/components/link";
 import {
   AlertDialog,
   AlertDialogAction,

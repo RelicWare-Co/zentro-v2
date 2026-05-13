@@ -1,4 +1,4 @@
-import { SalesPage } from "@/features/sales/SalesPage";
+import { SalesPage } from "@/features/sales/sales-page";
 
 export default function Page() {
   return <SalesPage />;

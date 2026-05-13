@@ -1,12 +1,11 @@
 import { Search, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
+import type { CartItem, CartTotals } from "@/features/pos/types";
+import { formatCurrency } from "@/features/pos/utils";
 import { cn } from "@/lib/utils";
-import type { CartItem, CartTotals } from "../types";
-import { formatCurrency } from "../utils";
-import { CartItemCard } from "./CartItemCard";
+import { CartItemCardV2 } from "./cart-item-card-v2";
 
-interface CartPanelProps {
+interface CartPanelV2Props {
   cart: CartItem[];
   className?: string;
   isActiveShift: boolean;
@@ -19,7 +18,7 @@ interface CartPanelProps {
   totals: CartTotals;
 }
 
-export function CartPanel({
+export function CartPanelV2({
   cart,
   totalItems,
   totals,
@@ -30,28 +29,28 @@ export function CartPanel({
   onClearCart,
   onCheckout,
   className,
-}: CartPanelProps) {
+}: CartPanelV2Props) {
   const { subTotal, tax, discountAmount, totalAmount } = totals;
   const hasDiscount = discountAmount > 0;
 
   return (
     <div
       className={cn(
-        "flex min-h-0 w-[380px] shrink-0 flex-col overflow-hidden border-zinc-800 border-l bg-[var(--color-carbon)]",
+        "flex min-h-0 w-[380px] shrink-0 flex-col overflow-hidden border-[rgba(255,255,255,0.06)] border-l bg-[#111111]",
         className
       )}
     >
       {/* Header */}
-      <div className="flex shrink-0 items-center justify-between border-zinc-800 border-b bg-[#0f0f0f] p-4">
+      <div className="flex shrink-0 items-center justify-between border-[rgba(255,255,255,0.06)] border-b bg-[#111111] p-4">
         <div>
-          <h2 className="font-semibold text-lg text-white leading-none">
+          <h2 className="font-semibold text-base text-white leading-none">
             Orden Actual
           </h2>
-          <p className="mt-1 text-xs text-zinc-400">{totalItems} artículos</p>
+          <p className="mt-1 text-[#6b6b6b] text-xs">{totalItems} artículos</p>
         </div>
         <Button
           aria-label="Limpiar carrito"
-          className="h-8 rounded-md px-2 font-medium text-red-400 text-xs transition-all hover:bg-red-400/10 hover:text-red-300"
+          className="h-8 rounded-lg px-2 font-medium text-red-400 text-xs transition-all hover:bg-red-400/10 hover:text-red-300"
           disabled={cart.length === 0}
           onClick={onClearCart}
           variant="ghost"
@@ -62,10 +61,10 @@ export function CartPanel({
       </div>
 
       {/* Items */}
-      <div className="min-h-0 flex-1 overflow-y-auto bg-[#0f0f0f] px-2 py-1">
-        <div className="space-y-1 py-2">
+      <div className="min-h-0 flex-1 overflow-y-auto bg-[#111111] px-2 py-1">
+        <div className="space-y-1.5 py-2">
           {cart.map((item) => (
-            <CartItemCard
+            <CartItemCardV2
               item={item}
               key={item.id}
               onRemove={() => onRemoveItem(item.id)}
@@ -75,9 +74,9 @@ export function CartPanel({
           ))}
 
           {cart.length === 0 && (
-            <div className="flex h-40 flex-col items-center justify-center gap-2 text-zinc-500">
-              <div className="flex size-12 items-center justify-center rounded-full border border-zinc-800 bg-zinc-900">
-                <Search className="size-5 text-zinc-600" />
+            <div className="flex h-40 flex-col items-center justify-center gap-2 text-[#6b6b6b]">
+              <div className="flex size-10 items-center justify-center rounded-full border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.04)]">
+                <Search className="size-4 text-[#3d3d3d]" />
               </div>
               <p className="text-sm">Escanea o selecciona un producto</p>
             </div>
@@ -86,18 +85,18 @@ export function CartPanel({
       </div>
 
       {/* Payment Summary */}
-      <div className="shrink-0 border-zinc-800 border-t bg-[#0a0a0a] p-4">
+      <div className="shrink-0 border-[rgba(255,255,255,0.06)] border-t bg-[#0a0a0a] p-4">
         <div className="space-y-3">
           <div className="space-y-1.5">
-            <div className="flex justify-between text-sm text-zinc-400">
+            <div className="flex justify-between text-[#6b6b6b] text-sm">
               <span>Subtotal</span>
-              <span className="text-zinc-200 tabular-nums">
+              <span className="text-white tabular-nums">
                 {formatCurrency(subTotal)}
               </span>
             </div>
-            <div className="flex justify-between text-sm text-zinc-400">
+            <div className="flex justify-between text-[#6b6b6b] text-sm">
               <span>Impuestos</span>
-              <span className="text-zinc-200 tabular-nums">
+              <span className="text-white tabular-nums">
                 {formatCurrency(tax)}
               </span>
             </div>
@@ -110,16 +109,16 @@ export function CartPanel({
               </div>
             )}
 
-            <div className="mt-2 flex items-center justify-between border-zinc-800/80 border-t pt-2">
+            <div className="mt-2 flex items-center justify-between border-[rgba(255,255,255,0.08)] border-t pt-2">
               <span className="font-bold text-base text-white">Total</span>
-              <span className="font-bold text-[var(--color-voltage)] text-xl tabular-nums">
+              <span className="font-bold text-[#dfff06] text-xl tabular-nums">
                 {formatCurrency(totalAmount)}
               </span>
             </div>
           </div>
 
           <Button
-            className="mt-2 h-12 w-full rounded-xl bg-[var(--color-voltage)] font-bold text-base text-black shadow-[0_4px_14px_rgba(201,230,5,0.2)] transition-all hover:bg-[#c9e605] hover:shadow-[0_6px_20px_rgba(201,230,5,0.3)]"
+            className="h-11 w-full rounded-xl bg-[#dfff06] font-bold text-black text-sm shadow-[0_4px_14px_rgba(201,230,5,0.15)] transition-all hover:bg-[#c9e605] hover:shadow-[0_6px_20px_rgba(201,230,5,0.25)]"
             disabled={cart.length === 0 || !isActiveShift}
             onClick={onCheckout}
           >

@@ -21,7 +21,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { formatMoneyInput, sanitizeMoneyInput } from "@/lib/utils";
 import type { PaymentMethod, PosCustomer } from "../../types";
 import { formatCurrency } from "../../utils";
-import { CustomerPicker } from "../CustomerPicker";
+import { CustomerPicker } from "../customer-picker";
 
 interface CheckoutModalProps {
   allowCreditSales: boolean;

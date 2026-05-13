@@ -1,4 +1,4 @@
-import { CreditPage } from "@/features/credit/CreditPage";
+import { CreditPage } from "@/features/credit/credit-page";
 
 export default function Page() {
   return <CreditPage />;

@@ -1,9 +1,9 @@
 import { Package } from "lucide-react";
 import { useEffect, useRef } from "react";
 import type { Category, Product } from "@/features/pos/types";
-import { CatalogToolbar } from "./CatalogToolbar";
-import { ProductGridCard } from "./ProductGridCard";
-import { ProductListItem } from "./ProductListItem";
+import { CatalogToolbar } from "./catalog-toolbar";
+import { ProductGridCard } from "./product-grid-card";
+import { ProductListItem } from "./product-list-item";
 
 interface ProductCatalogProps {
   activeCategoryId: string;

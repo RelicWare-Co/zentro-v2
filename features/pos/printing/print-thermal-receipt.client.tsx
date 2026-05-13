@@ -1,4 +1,4 @@
-import { ThermalReceipt } from "@/features/pos/components/ThermalReceipt";
+import { ThermalReceipt } from "@/features/pos/components/thermal-receipt";
 import { printReceiptAsPdf } from "@/features/pos/printing/print-receipt-as-pdf.client";
 import { getPosPrinterManager } from "@/features/pos/printing/printer-manager.client";
 import { readPosLocalPrinterSettings } from "@/features/pos/printing/printer-settings.local.client";
