@@ -24,4 +24,3 @@ export const contract = {
   restaurants: restaurantsContract,
 };
 
-type AppContract = typeof contract;

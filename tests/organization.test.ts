@@ -262,7 +262,7 @@ describe("organization access control", () => {
   describe("VAL-ORG-006: operations without active organization are rejected", () => {
     test("organization-scoped procedure rejects when no active organization", async () => {
       const { db, cleanup } = createTestDb();
-      const { organizationId, userId } = await seedOrganizationWithMember(db);
+      const { userId } = await seedOrganizationWithMember(db);
 
       const u = makeUser({ id: userId, email: "noorg@example.com" });
       // Build context without activeOrganizationId

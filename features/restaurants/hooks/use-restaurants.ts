@@ -6,19 +6,11 @@ import {
 } from "@tanstack/react-query";
 import type { z } from "zod";
 import { orpcQuery } from "@/server/orpc/client/query";
-import type {
-  KitchenBoardSchema,
-  RestaurantBootstrapSchema,
-  RestaurantConfigurationSchema,
-  RestaurantTableDetailSchema,
-} from "../../../schemas/restaurants";
+import type { RestaurantConfigurationSchema } from "../../../schemas/restaurants";
 
-type RestaurantBootstrap = z.infer<typeof RestaurantBootstrapSchema>;
-type RestaurantTableDetail = z.infer<typeof RestaurantTableDetailSchema>;
 export type RestaurantConfiguration = z.infer<
   typeof RestaurantConfigurationSchema
 >;
-type KitchenBoard = z.infer<typeof KitchenBoardSchema>;
 
 async function invalidateRestaurantQueries(queryClient: QueryClient) {
   await Promise.all([
@@ -170,19 +162,6 @@ export function useCreateRestaurantAreaMutation() {
 
   return useMutation({
     ...orpcQuery.restaurants.createArea.mutationOptions(),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: orpcQuery.restaurants.configuration.queryOptions().queryKey,
-      });
-    },
-  });
-}
-
-function _useUpdateRestaurantAreaMutation() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    ...orpcQuery.restaurants.updateArea.mutationOptions(),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: orpcQuery.restaurants.configuration.queryOptions().queryKey,
