@@ -23,4 +23,3 @@ export const contract = {
   pos: posContract,
   restaurants: restaurantsContract,
 };
-

@@ -149,7 +149,7 @@ export default function Page() {
                     disabled={
                       isSessionPending || isJoining || !preview?.canJoin
                     }
-                    onClick={() => void joinWithCurrentAccount()}
+                    onClick={joinWithCurrentAccount}
                     type="button"
                   >
                     {isJoining ? (

@@ -14,5 +14,3 @@ export function useShiftsList(params: ShiftsListParams = {}) {
     placeholderData: keepPreviousData,
   });
 }
-
-

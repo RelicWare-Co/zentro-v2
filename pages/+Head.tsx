@@ -23,7 +23,6 @@ export function Head() {
       />
       <meta content="Zentro" name="apple-mobile-web-app-title" />
       <meta content="telephone=no" name="format-detection" />
-      {/* biome-ignore lint/security/noDangerouslySetInnerHtml: safe in React 19 native script tags */}
       <script>{THEME_INIT_SCRIPT}</script>
     </>
   );

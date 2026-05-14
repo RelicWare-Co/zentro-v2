@@ -4,7 +4,7 @@ import { auth } from "../server/auth";
 export async function onCreatePageContext(pageContext: PageContextServer) {
   const headers = pageContext.headersOriginal as Headers;
 
-  let session = null;
+  let session: Awaited<ReturnType<typeof auth.api.getSession>> | null = null;
   try {
     session = await auth.api.getSession({
       headers,
