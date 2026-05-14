@@ -1,0 +1,394 @@
+diff --git a/server/orpc/routers/credit.ts b/server/orpc/routers/credit.ts
+index 95be465..2a67b3d 100644
+--- a/server/orpc/routers/credit.ts
++++ b/server/orpc/routers/credit.ts
+@@ -105,6 +105,172 @@ function resolveDate(input: number | undefined, fieldName: string) {
+   return new Date(Math.round(input));
+ }
+ 
++async function validateShiftForPayment(
++  tx: AppContext["db"],
++  shiftId: string,
++  organizationId: string,
++  userId: string
++) {
++  const [targetShift] = await tx
++    .select({ id: shift.id, userId: shift.userId, status: shift.status })
++    .from(shift)
++    .where(and(eq(shift.id, shiftId), eq(shift.organizationId, organizationId)))
++    .limit(1);
++
++  if (!targetShift) {
++    throw new ORPCError("NOT_FOUND", {
++      message: "Turno no encontrado para la organización activa",
++    });
++  }
++  if (targetShift.status !== "open") {
++    throw new ORPCError("BAD_REQUEST", {
++      message: "No se puede registrar pago en un turno cerrado",
++    });
++  }
++  if (targetShift.userId !== userId) {
++    throw new ORPCError("FORBIDDEN", {
++      message: "Solo el cajero del turno puede registrar pagos",
++    });
++  }
++}
++
++async function validateEnabledPaymentMethod(
++  tx: AppContext["db"],
++  organizationId: string,
++  method: string
++) {
++  const [organizationRow] = await tx
++    .select({
++      metadata: organization.metadata,
++    })
++    .from(organization)
++    .where(eq(organization.id, organizationId))
++    .limit(1);
++  const enabledPaymentMethodIds = new Set(
++    getEnabledPaymentMethods(
++      parseOrganizationSettingsMetadata(organizationRow?.metadata)
++    ).map((paymentMethod) => paymentMethod.id)
++  );
++  if (!enabledPaymentMethodIds.has(method)) {
++    throw new ORPCError("BAD_REQUEST", {
++      message: `Método de pago no habilitado: ${method}`,
++    });
++  }
++}
++
++async function fetchAndValidateCreditAccount(
++  tx: AppContext["db"],
++  creditAccountId: string,
++  organizationId: string,
++  amount: number
++) {
++  const [accountRow] = await tx
++    .select({
++      id: creditAccount.id,
++      customerId: creditAccount.customerId,
++      balance: creditAccount.balance,
++      customerDeletedAt: customer.deletedAt,
++    })
++    .from(creditAccount)
++    .innerJoin(
++      customer,
++      and(
++        eq(customer.id, creditAccount.customerId),
++        eq(customer.organizationId, organizationId)
++      )
++    )
++    .where(
++      and(
++        eq(creditAccount.id, creditAccountId),
++        eq(creditAccount.organizationId, organizationId)
++      )
++    )
++    .limit(1);
++
++  if (!accountRow || accountRow.customerDeletedAt) {
++    throw new ORPCError("NOT_FOUND", {
++      message: "Cuenta de crédito no encontrada o cliente inactivo",
++    });
++  }
++  if (accountRow.balance <= 0) {
++    throw new ORPCError("BAD_REQUEST", {
++      message: "La cuenta no tiene saldo pendiente por cobrar",
++    });
++  }
++  if (amount > accountRow.balance) {
++    throw new ORPCError("BAD_REQUEST", {
++      message: "El abono no puede superar el saldo pendiente",
++    });
++  }
++
++  return accountRow;
++}
++
++async function fetchAndValidateSaleForPayment(
++  tx: AppContext["db"],
++  saleId: string,
++  organizationId: string,
++  customerId: string,
++  amount: number
++) {
++  const [saleRow] = await tx
++    .select({
++      id: sale.id,
++      customerId: sale.customerId,
++      status: sale.status,
++      totalAmount: sale.totalAmount,
++    })
++    .from(sale)
++    .where(and(eq(sale.id, saleId), eq(sale.organizationId, organizationId)))
++    .limit(1);
++
++  if (!saleRow) {
++    throw new ORPCError("NOT_FOUND", {
++      message: "Venta no encontrada para la organización activa",
++    });
++  }
++  if (!saleRow.customerId || saleRow.customerId !== customerId) {
++    throw new ORPCError("BAD_REQUEST", {
++      message:
++        "La venta seleccionada no pertenece a la cuenta de crédito indicada",
++    });
++  }
++  if (saleRow.status === "cancelled") {
++    throw new ORPCError("BAD_REQUEST", {
++      message: "No se puede registrar un abono sobre una venta cancelada",
++    });
++  }
++
++  const salePaymentRows = await tx
++    .select({ amount: payment.amount })
++    .from(payment)
++    .where(
++      and(
++        eq(payment.organizationId, organizationId),
++        eq(payment.saleId, saleRow.id)
++      )
++    );
++
++  const saleBalanceDue =
++    saleRow.totalAmount -
++    salePaymentRows.reduce(
++      (total, currentPayment) => total + currentPayment.amount,
++      0
++    );
++  if (saleBalanceDue <= 0) {
++    throw new ORPCError("BAD_REQUEST", {
++      message: "La venta seleccionada ya no tiene saldo pendiente",
++    });
++  }
++  if (amount > saleBalanceDue) {
++    throw new ORPCError("BAD_REQUEST", {
++      message: "El abono no puede superar el saldo pendiente de la venta",
++    });
++  }
++
++  return { saleRow, saleBalanceDue };
++}
++
+ export const searchAccounts = orgRequiredProcedure.searchAccounts.handler(
+   async ({ input, context }) => {
+     const limit = normalizeLimit(input.limit);
+@@ -256,89 +422,19 @@ export const registerPayment = orgRequiredProcedure.registerPayment.handler(
+     const createdAt = resolveDate(input.createdAt, "createdAt");
+ 
+     return context.db.transaction(async (tx) => {
+-      const [targetShift] = await tx
+-        .select({ id: shift.id, userId: shift.userId, status: shift.status })
+-        .from(shift)
+-        .where(
+-          and(
+-            eq(shift.id, input.shiftId),
+-            eq(shift.organizationId, context.organizationId)
+-          )
+-        )
+-        .limit(1);
+-
+-      if (!targetShift) {
+-        throw new ORPCError("NOT_FOUND", {
+-          message: "Turno no encontrado para la organización activa",
+-        });
+-      }
+-      if (targetShift.status !== "open") {
+-        throw new ORPCError("BAD_REQUEST", {
+-          message: "No se puede registrar pago en un turno cerrado",
+-        });
+-      }
+-      if (targetShift.userId !== context.user.id) {
+-        throw new ORPCError("FORBIDDEN", {
+-          message: "Solo el cajero del turno puede registrar pagos",
+-        });
+-      }
+-
+-      const [organizationRow] = await tx
+-        .select({
+-          metadata: organization.metadata,
+-        })
+-        .from(organization)
+-        .where(eq(organization.id, context.organizationId))
+-        .limit(1);
+-      const enabledPaymentMethodIds = new Set(
+-        getEnabledPaymentMethods(
+-          parseOrganizationSettingsMetadata(organizationRow?.metadata)
+-        ).map((paymentMethod) => paymentMethod.id)
++      await validateShiftForPayment(
++        tx,
++        input.shiftId,
++        context.organizationId,
++        context.user.id
++      );
++      await validateEnabledPaymentMethod(tx, context.organizationId, method);
++      const accountRow = await fetchAndValidateCreditAccount(
++        tx,
++        input.creditAccountId,
++        context.organizationId,
++        amount
+       );
+-      if (!enabledPaymentMethodIds.has(method)) {
+-        throw new ORPCError("BAD_REQUEST", {
+-          message: `Método de pago no habilitado: ${method}`,
+-        });
+-      }
+-
+-      const [accountRow] = await tx
+-        .select({
+-          id: creditAccount.id,
+-          customerId: creditAccount.customerId,
+-          balance: creditAccount.balance,
+-          customerDeletedAt: customer.deletedAt,
+-        })
+-        .from(creditAccount)
+-        .innerJoin(
+-          customer,
+-          and(
+-            eq(customer.id, creditAccount.customerId),
+-            eq(customer.organizationId, context.organizationId)
+-          )
+-        )
+-        .where(
+-          and(
+-            eq(creditAccount.id, input.creditAccountId),
+-            eq(creditAccount.organizationId, context.organizationId)
+-          )
+-        )
+-        .limit(1);
+-
+-      if (!accountRow || accountRow.customerDeletedAt) {
+-        throw new ORPCError("NOT_FOUND", {
+-          message: "Cuenta de crédito no encontrada o cliente inactivo",
+-        });
+-      }
+-      if (accountRow.balance <= 0) {
+-        throw new ORPCError("BAD_REQUEST", {
+-          message: "La cuenta no tiene saldo pendiente por cobrar",
+-        });
+-      }
+-      if (amount > accountRow.balance) {
+-        throw new ORPCError("BAD_REQUEST", {
+-          message: "El abono no puede superar el saldo pendiente",
+-        });
+-      }
+ 
+       let targetSale: {
+         id: string;
+@@ -348,70 +444,15 @@ export const registerPayment = orgRequiredProcedure.registerPayment.handler(
+       } | null = null;
+       let saleBalanceDue: number | null = null;
+       if (saleId) {
+-        const [saleRow] = await tx
+-          .select({
+-            id: sale.id,
+-            customerId: sale.customerId,
+-            status: sale.status,
+-            totalAmount: sale.totalAmount,
+-          })
+-          .from(sale)
+-          .where(
+-            and(
+-              eq(sale.id, saleId),
+-              eq(sale.organizationId, context.organizationId)
+-            )
+-          )
+-          .limit(1);
+-
+-        if (!saleRow) {
+-          throw new ORPCError("NOT_FOUND", {
+-            message: "Venta no encontrada para la organización activa",
+-          });
+-        }
+-        if (
+-          !saleRow.customerId ||
+-          saleRow.customerId !== accountRow.customerId
+-        ) {
+-          throw new ORPCError("BAD_REQUEST", {
+-            message:
+-              "La venta seleccionada no pertenece a la cuenta de crédito indicada",
+-          });
+-        }
+-        if (saleRow.status === "cancelled") {
+-          throw new ORPCError("BAD_REQUEST", {
+-            message: "No se puede registrar un abono sobre una venta cancelada",
+-          });
+-        }
+-
+-        const salePaymentRows = await tx
+-          .select({ amount: payment.amount })
+-          .from(payment)
+-          .where(
+-            and(
+-              eq(payment.organizationId, context.organizationId),
+-              eq(payment.saleId, saleRow.id)
+-            )
+-          );
+-
+-        saleBalanceDue =
+-          saleRow.totalAmount -
+-          salePaymentRows.reduce(
+-            (total, currentPayment) => total + currentPayment.amount,
+-            0
+-          );
+-        if (saleBalanceDue <= 0) {
+-          throw new ORPCError("BAD_REQUEST", {
+-            message: "La venta seleccionada ya no tiene saldo pendiente",
+-          });
+-        }
+-        if (amount > saleBalanceDue) {
+-          throw new ORPCError("BAD_REQUEST", {
+-            message: "El abono no puede superar el saldo pendiente de la venta",
+-          });
+-        }
+-
+-        targetSale = saleRow;
++        const result = await fetchAndValidateSaleForPayment(
++          tx,
++          saleId,
++          context.organizationId,
++          accountRow.customerId,
++          amount
++        );
++        targetSale = result.saleRow;
++        saleBalanceDue = result.saleBalanceDue;
+       }
+ 
+       const paymentId = crypto.randomUUID();
+@@ -420,6 +461,7 @@ export const registerPayment = orgRequiredProcedure.registerPayment.handler(
+         method,
+         reference,
+         amount,
++        notes,
+         createdAt,
+       });
+ 
+       const newBalance = accountRow.balance - amount;
+@@ -446,7 +488,6 @@ export const registerPayment = orgRequiredProcedure.registerPayment.handler(
+       if (targetSale && saleBalanceDue !== null) {
+         const remainingSaleBalance = saleBalanceDue - amount;
+         await tx
+-          .update(sale)
++          .update(sale)
+           .set({
+             status: remainingSaleBalance > 0 ? "credit" : "completed",
+           })
+@@ -456,7 +497,7 @@ export const registerPayment = orgRequiredProcedure.registerPayment.handler(
+               eq(sale.organizationId, context.organizationId)
+             )
+           );
+       }
+ 
+       return {
+         creditAccountId: input.creditAccountId,
+         saleId,
+         paymentId,
+         transactionId,
+         amount,
+         newBalance,
+       };
+     });
+   }
+ );
