@@ -6,6 +6,7 @@
     "@orpc/openapi-client": "^1.14.2",
     "@orpc/server": "^1.14.3",
     "@orpc/tanstack-query": "^1.14.2",
+    "@orpc/zod": "^1.14.3",
     "@point-of-sale/receipt-printer-encoder": "^3.0.3",
     "@point-of-sale/receipt-printer-status": "^2.0.0",
     "@point-of-sale/webbluetooth-receipt-printer": "^2.0.0",
