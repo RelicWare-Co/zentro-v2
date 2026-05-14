@@ -16,7 +16,13 @@ import {
   Search,
   Trash2,
 } from "lucide-react";
-import { type FormEvent, useEffect, useMemo, useState } from "react";
+import {
+  type FormEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   AlertDialog,
@@ -100,12 +106,6 @@ const currencyFormatter = new Intl.NumberFormat("es-CO", {
   maximumFractionDigits: 0,
 });
 
-const _dateFormatter = new Intl.DateTimeFormat("es-CO", {
-  day: "numeric",
-  month: "short",
-  year: "numeric",
-});
-
 interface ProductFormState {
   barcode: string;
   categoryId: string;
@@ -156,10 +156,6 @@ function getProductFormInitialValue(product: Product | null): ProductFormState {
     trackInventory: product.trackInventory,
     isModifier: product.isModifier,
   };
-}
-
-function _normalizeSearchTerm(value: string) {
-  return value.trim().toLowerCase();
 }
 
 export function ProductsPage() {
@@ -224,12 +220,14 @@ export function ProductsPage() {
     },
   });
 
-  const resolvedCategoryId =
-    categoryFilter === ALL_FILTER_VALUE
-      ? null
-      : categoryFilter === UNCATEGORIZED_FILTER_VALUE
-        ? "uncategorized"
-        : categoryFilter;
+  let resolvedCategoryId: string | null;
+  if (categoryFilter === ALL_FILTER_VALUE) {
+    resolvedCategoryId = null;
+  } else if (categoryFilter === UNCATEGORIZED_FILTER_VALUE) {
+    resolvedCategoryId = "uncategorized";
+  } else {
+    resolvedCategoryId = categoryFilter;
+  }
 
   const { products, total, categories, isPending, isError, error } =
     useProductsQueries({
@@ -249,10 +247,10 @@ export function ProductsPage() {
     setIsSheetOpen(true);
   };
 
-  const openEditProduct = (product: Product) => {
+  const openEditProduct = useCallback((product: Product) => {
     setEditingProduct(product);
     setIsSheetOpen(true);
-  };
+  }, []);
 
   const columnHelper = createColumnHelper<Product>();
 
@@ -736,22 +734,24 @@ function StockBadge({ product }: { product: Product }) {
     );
   }
 
-  const className =
-    product.stock <= 0
-      ? "border-red-500/20 bg-red-500/10 text-red-300"
-      : product.stock < 10
-        ? "border-amber-500/20 bg-amber-500/10 text-amber-300"
-        : "border-emerald-500/20 bg-emerald-500/10 text-emerald-300";
+  let className: string;
+  let stockLabel: string;
+  if (product.stock <= 0) {
+    className = "border-red-500/20 bg-red-500/10 text-red-300";
+    stockLabel = "Sin stock";
+  } else if (product.stock < 10) {
+    className = "border-amber-500/20 bg-amber-500/10 text-amber-300";
+    stockLabel = "Stock bajo";
+  } else {
+    className = "border-emerald-500/20 bg-emerald-500/10 text-emerald-300";
+    stockLabel = "En stock";
+  }
 
   return (
     <div className="flex items-center gap-2">
       <span className="font-medium text-zinc-200">{product.stock}</span>
       <Badge className={className} variant="outline">
-        {product.stock <= 0
-          ? "Sin stock"
-          : product.stock < 10
-            ? "Stock bajo"
-            : "En stock"}
+        {stockLabel}
       </Badge>
     </div>
   );
