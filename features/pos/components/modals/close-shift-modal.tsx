@@ -67,11 +67,11 @@ export function CloseShiftModal({
       Object.fromEntries(
         shiftCloseSummary.summaryByMethod.map((row) => [
           row.paymentMethod,
-          row.actualAmount == null
-            ? row.paymentMethod === "cash"
-              ? ""
-              : String(row.expectedAmount)
-            : String(row.actualAmount),
+          getInitialClosureAmount(
+            row.actualAmount,
+            row.paymentMethod,
+            row.expectedAmount
+          ),
         ])
       )
     );
@@ -362,6 +362,20 @@ export function CloseShiftModal({
       </DialogContent>
     </Dialog>
   );
+}
+
+function getInitialClosureAmount(
+  actualAmount: number | null | undefined,
+  paymentMethod: string,
+  expectedAmount: number
+): string {
+  if (actualAmount != null) {
+    return String(actualAmount);
+  }
+  if (paymentMethod === "cash") {
+    return "";
+  }
+  return String(expectedAmount);
 }
 
 function formatMovementType(type: string) {

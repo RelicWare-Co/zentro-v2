@@ -449,16 +449,19 @@ class PosPrinterManager {
         this.resolveOrgIdFromKey(this.runtimeOrganizationKey)
       );
 
+      let resolvedLanguage: EncodablePrinterLanguage | null = null;
+      if (isPosEncodablePrinterLanguage(payload.language)) {
+        resolvedLanguage = payload.language;
+      } else if (isPosEncodablePrinterLanguage(savedDevice.language)) {
+        resolvedLanguage = savedDevice.language;
+      }
+
       this.setState({
         status: "connected",
         message: null,
         connectionType: activeConnectionType,
         device: savedDevice,
-        language: isPosEncodablePrinterLanguage(payload.language)
-          ? payload.language
-          : isPosEncodablePrinterLanguage(savedDevice.language)
-            ? savedDevice.language
-            : null,
+        language: resolvedLanguage,
         codepageMapping:
           toNullableString(payload.codepageMapping) ??
           savedDevice.codepageMapping,
@@ -754,19 +757,19 @@ class PosPrinterManager {
     }
   }
 
-  async attemptAutoReconnect(
+  attemptAutoReconnect(
     settings?: PosLocalPrinterSettings,
     organizationId?: string | null
   ) {
     const resolvedSettings =
       settings ?? readPosLocalPrinterSettings(organizationId);
     if (!resolvedSettings.autoReconnect) {
-      return false;
+      return Promise.resolve(false);
     }
 
     const attemptKey = `${this.normalizeOrgKey(organizationId)}:${resolvedSettings.connectionType}`;
     if (this.autoReconnectAttempted.has(attemptKey)) {
-      return this.state.status === "connected";
+      return Promise.resolve(this.state.status === "connected");
     }
 
     this.autoReconnectAttempted.add(attemptKey);
@@ -887,10 +890,12 @@ export function usePosPrinterRuntimeState(organizationId?: string | null) {
   );
 
   useEffect(() => {
-    void posPrinterManager.attemptAutoReconnect(
-      readPosLocalPrinterSettings(organizationId),
-      organizationId
-    );
+    posPrinterManager
+      .attemptAutoReconnect(
+        readPosLocalPrinterSettings(organizationId),
+        organizationId
+      )
+      .catch(() => undefined);
   }, [organizationId]);
 
   return state;

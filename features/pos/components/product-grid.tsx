@@ -4,8 +4,8 @@ import { Input } from "@/components/ui/input";
 
 import { cn } from "@/lib/utils";
 import type { Category, Product } from "../types";
-import { CategoryTabs } from "./CategoryTabs";
-import { ProductCard } from "./ProductCard";
+import { CategoryTabs } from "./category-tabs";
+import { ProductCard } from "./product-card";
 
 const SCANNER_MIN_LENGTH = 6;
 const SCANNER_MAX_AVERAGE_INTERVAL_MS = 45;
@@ -31,6 +31,111 @@ interface ProductGridProps {
   products: Product[];
   searchQuery: string;
   shouldAutoFocusSearch: boolean;
+}
+
+function shouldIgnoreKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+  return (
+    event.ctrlKey ||
+    event.metaKey ||
+    event.altKey ||
+    event.nativeEvent.isComposing
+  );
+}
+
+function isDeletionKey(key: string) {
+  return key === "Backspace" || key === "Delete";
+}
+
+function tryHandleEscape(
+  event: React.KeyboardEvent<HTMLInputElement>,
+  searchQuery: string,
+  resetScannerMetrics: () => void,
+  onClearSearch: () => void
+) {
+  if (event.key === "Escape" && searchQuery.trim().length > 0) {
+    event.preventDefault();
+    resetScannerMetrics();
+    onClearSearch();
+    return true;
+  }
+  return false;
+}
+
+function tryHandleEnter(
+  event: React.KeyboardEvent<HTMLInputElement>,
+  metricsRef: React.RefObject<{
+    startedAt: number;
+    lastAt: number;
+    keyCount: number;
+  }>,
+  submitScannerValue: (value: string) => Promise<void> | void,
+  submitSingleVisibleProduct: (value: string) => boolean
+) {
+  if (event.key !== "Enter") {
+    return false;
+  }
+  const currentValue = event.currentTarget.value;
+  if (looksLikeScannerInput(metricsRef.current, currentValue)) {
+    event.preventDefault();
+    submitScannerValue(currentValue);
+    return true;
+  }
+  if (submitSingleVisibleProduct(currentValue)) {
+    event.preventDefault();
+  }
+  return true;
+}
+
+function tryHandleTab(
+  event: React.KeyboardEvent<HTMLInputElement>,
+  metricsRef: React.RefObject<{
+    startedAt: number;
+    lastAt: number;
+    keyCount: number;
+  }>,
+  submitScannerValue: (value: string) => Promise<void> | void
+) {
+  if (event.key !== "Tab") {
+    return false;
+  }
+  if (looksLikeScannerInput(metricsRef.current, event.currentTarget.value)) {
+    event.preventDefault();
+    submitScannerValue(event.currentTarget.value);
+  }
+  return true;
+}
+
+function updateScanMetrics(
+  metricsRef: React.RefObject<{
+    startedAt: number;
+    lastAt: number;
+    keyCount: number;
+  }>
+) {
+  const now = performance.now();
+  const previousTimestamp = metricsRef.current.lastAt;
+  const isNewSequence =
+    previousTimestamp === 0 || now - previousTimestamp > SCANNER_IDLE_DELAY_MS;
+
+  metricsRef.current = {
+    startedAt: isNewSequence ? now : metricsRef.current.startedAt,
+    lastAt: now,
+    keyCount: isNewSequence ? 1 : metricsRef.current.keyCount + 1,
+  };
+}
+
+function shouldScheduleScanner(
+  value: string,
+  metricsRef: React.RefObject<{
+    startedAt: number;
+    lastAt: number;
+    keyCount: number;
+  }>
+) {
+  return (
+    value.trim().length >= SCANNER_MIN_LENGTH &&
+    looksLikeScannerInput(metricsRef.current, value)
+  );
 }
 
 export function ProductGrid({
@@ -170,7 +275,7 @@ export function ProductGrid({
       }
 
       scanTimeoutRef.current = setTimeout(() => {
-        void submitScannerValue(value);
+        submitScannerValue(value);
       }, SCANNER_IDLE_DELAY_MS);
     },
     [submitScannerValue]
@@ -246,6 +351,67 @@ export function ProductGrid({
     [resetScannerMetrics]
   );
 
+  const handleSearchChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const nextValue = event.target.value;
+      onSearchChange(nextValue);
+      if (nextValue.trim().length === 0) {
+        resetScannerMetrics();
+        return;
+      }
+      if (shouldScheduleScanner(nextValue, scanMetricsRef)) {
+        scheduleScannerAttempt(nextValue);
+        return;
+      }
+      if (scanTimeoutRef.current) {
+        clearTimeout(scanTimeoutRef.current);
+        scanTimeoutRef.current = null;
+      }
+    },
+    [onSearchChange, resetScannerMetrics, scheduleScannerAttempt]
+  );
+
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLInputElement>) => {
+      if (
+        tryHandleEscape(event, searchQuery, resetScannerMetrics, onClearSearch)
+      ) {
+        return;
+      }
+      if (shouldIgnoreKeyDown(event)) {
+        return;
+      }
+      if (
+        tryHandleEnter(
+          event,
+          scanMetricsRef,
+          submitScannerValue,
+          submitSingleVisibleProduct
+        )
+      ) {
+        return;
+      }
+      if (tryHandleTab(event, scanMetricsRef, submitScannerValue)) {
+        return;
+      }
+      if (isDeletionKey(event.key)) {
+        resetScannerMetrics();
+        return;
+      }
+      if (event.key.length !== 1) {
+        return;
+      }
+      updateScanMetrics(scanMetricsRef);
+    },
+    [
+      searchQuery,
+      resetScannerMetrics,
+      onClearSearch,
+      submitScannerValue,
+      submitSingleVisibleProduct,
+    ]
+  );
+
   return (
     <div
       className={cn(
@@ -259,98 +425,8 @@ export function ProductGrid({
             <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-zinc-500" />
             <Input
               className="h-10 rounded-lg border-zinc-800 bg-black/40 pr-10 pl-9 text-white transition-all placeholder:text-zinc-600 focus-visible:border-[var(--color-voltage)] focus-visible:ring-1 focus-visible:ring-[var(--color-voltage)]"
-              onChange={(event) => {
-                const nextValue = event.target.value;
-                onSearchChange(nextValue);
-                if (nextValue.trim().length === 0) {
-                  resetScannerMetrics();
-                  return;
-                }
-
-                if (
-                  nextValue.trim().length >= SCANNER_MIN_LENGTH &&
-                  looksLikeScannerInput(scanMetricsRef.current, nextValue)
-                ) {
-                  scheduleScannerAttempt(nextValue);
-                  return;
-                }
-
-                if (scanTimeoutRef.current) {
-                  clearTimeout(scanTimeoutRef.current);
-                  scanTimeoutRef.current = null;
-                }
-              }}
-              onKeyDown={(event) => {
-                if (event.key === "Escape" && searchQuery.trim().length > 0) {
-                  event.preventDefault();
-                  resetScannerMetrics();
-                  onClearSearch();
-                  return;
-                }
-
-                if (
-                  event.ctrlKey ||
-                  event.metaKey ||
-                  event.altKey ||
-                  event.nativeEvent.isComposing
-                ) {
-                  return;
-                }
-
-                if (event.key === "Enter") {
-                  const currentValue = event.currentTarget.value;
-                  if (
-                    looksLikeScannerInput(scanMetricsRef.current, currentValue)
-                  ) {
-                    event.preventDefault();
-                    void submitScannerValue(currentValue);
-                    return;
-                  }
-
-                  if (submitSingleVisibleProduct(currentValue)) {
-                    event.preventDefault();
-                  }
-                  return;
-                }
-
-                if (event.key === "Tab") {
-                  if (
-                    looksLikeScannerInput(
-                      scanMetricsRef.current,
-                      event.currentTarget.value
-                    )
-                  ) {
-                    event.preventDefault();
-                    void submitScannerValue(event.currentTarget.value);
-                  }
-                  return;
-                }
-
-                if (event.key === "Backspace" || event.key === "Delete") {
-                  resetScannerMetrics();
-                  return;
-                }
-
-                if (event.key.length !== 1) {
-                  return;
-                }
-
-                const now = performance.now();
-                const previousTimestamp = scanMetricsRef.current.lastAt;
-                const isNewSequence =
-                  previousTimestamp === 0 ||
-                  now - previousTimestamp > SCANNER_IDLE_DELAY_MS;
-
-                scanMetricsRef.current = {
-                  startedAt: isNewSequence
-                    ? now
-                    : scanMetricsRef.current.startedAt,
-                  lastAt: now,
-                  keyCount: isNewSequence
-                    ? 1
-                    : scanMetricsRef.current.keyCount + 1,
-                };
-              }}
+              onChange={handleSearchChange}
+              onKeyDown={handleKeyDown}
               placeholder="Buscar productos, código de barras..."
               ref={searchInputRef}
               value={searchQuery}

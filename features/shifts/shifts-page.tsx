@@ -9,7 +9,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { useDeferredValue, useEffect, useId, useMemo, useState } from "react";
-import { Link } from "@/components/Link";
+import { Link } from "@/components/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -179,8 +179,6 @@ export function ShiftsPage() {
   };
   const totalResults = shiftsQuery.data?.total ?? shifts.length;
   const nextCursor = shiftsQuery.data?.nextCursor ?? null;
-  const _hasMore = shiftsQuery.data?.hasMore ?? false;
-
   const summary = useMemo(
     () =>
       shifts.reduce(
@@ -617,27 +615,41 @@ export function ShiftsPage() {
 
         <div className="min-h-0 flex-1 overflow-y-auto p-4">
           <div className="space-y-4">
-            {shiftsQuery.isLoading && !shiftsQuery.isPlaceholderData ? (
-              <div className="rounded-xl border border-zinc-800 border-dashed px-4 py-16 text-center text-sm text-zinc-500">
-                Cargando turnos…
-              </div>
-            ) : shiftsQuery.isError ? (
-              <div className="rounded-xl border border-rose-800 border-dashed px-4 py-16 text-center text-rose-300 text-sm">
-                <p className="font-medium">Error al cargar turnos</p>
-                <p className="mt-1 text-xs text-zinc-400">
-                  {shiftsQuery.error?.message ?? "Intenta de nuevo más tarde."}
-                </p>
-                <Button
-                  className="mt-4 border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5 hover:text-white"
-                  onClick={() => shiftsQuery.refetch()}
-                  type="button"
-                  variant="outline"
-                >
-                  Reintentar
-                </Button>
-              </div>
-            ) : shifts.length > 0 ? (
-              shifts.map((shift) => (
+            {(() => {
+              if (shiftsQuery.isLoading && !shiftsQuery.isPlaceholderData) {
+                return (
+                  <div className="rounded-xl border border-zinc-800 border-dashed px-4 py-16 text-center text-sm text-zinc-500">
+                    Cargando turnos…
+                  </div>
+                );
+              }
+              if (shiftsQuery.isError) {
+                return (
+                  <div className="rounded-xl border border-rose-800 border-dashed px-4 py-16 text-center text-rose-300 text-sm">
+                    <p className="font-medium">Error al cargar turnos</p>
+                    <p className="mt-1 text-xs text-zinc-400">
+                      {shiftsQuery.error?.message ??
+                        "Intenta de nuevo más tarde."}
+                    </p>
+                    <Button
+                      className="mt-4 border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5 hover:text-white"
+                      onClick={() => shiftsQuery.refetch()}
+                      type="button"
+                      variant="outline"
+                    >
+                      Reintentar
+                    </Button>
+                  </div>
+                );
+              }
+              if (shifts.length === 0) {
+                return (
+                  <div className="rounded-xl border border-zinc-800 border-dashed px-4 py-16 text-center text-sm text-zinc-500">
+                    No hay turnos que coincidan con los filtros actuales.
+                  </div>
+                );
+              }
+              return shifts.map((shift) => (
                 <div
                   className="overflow-hidden rounded-xl border border-zinc-800 bg-black/10 transition-colors hover:border-zinc-700 hover:bg-white/5"
                   key={shift.id}
@@ -867,12 +879,8 @@ export function ShiftsPage() {
                     </div>
                   </div>
                 </div>
-              ))
-            ) : (
-              <div className="rounded-xl border border-zinc-800 border-dashed px-4 py-16 text-center text-sm text-zinc-500">
-                No hay turnos que coincidan con los filtros actuales.
-              </div>
-            )}
+              ));
+            })()}
           </div>
         </div>
 

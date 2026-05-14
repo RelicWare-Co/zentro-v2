@@ -1,9 +1,9 @@
 import { Package } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { type ReactNode, useEffect, useRef } from "react";
 import type { Category, Product } from "@/features/pos/types";
-import { CatalogToolbar } from "./CatalogToolbar";
-import { ProductGridCard } from "./ProductGridCard";
-import { ProductListItem } from "./ProductListItem";
+import { CatalogToolbar } from "./catalog-toolbar";
+import { ProductGridCard } from "./product-grid-card";
+import { ProductListItem } from "./product-list-item";
 
 interface ProductCatalogProps {
   activeCategoryId: string;
@@ -70,6 +70,57 @@ export function ProductCatalog({
     return () => observer.disconnect();
   }, [hasMore, onLoadMore]);
 
+  let productContent: ReactNode;
+  if (isLoading) {
+    productContent = (
+      <div className="flex h-40 flex-col items-center justify-center text-[#6b6b6b]">
+        <Package className="mb-3 size-8 animate-pulse" />
+        <p className="text-sm">Cargando productos…</p>
+      </div>
+    );
+  } else if (regularProducts.length === 0) {
+    productContent = (
+      <div className="flex h-40 flex-col items-center justify-center text-[#6b6b6b]">
+        <Package className="mb-3 size-8" />
+        <p className="text-sm">No se encontraron productos.</p>
+      </div>
+    );
+  } else if (viewMode === "grid") {
+    productContent = (
+      <div className="grid grid-cols-2 gap-3 pb-4 sm:grid-cols-3 md:gap-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+        {regularProducts.map((product) => (
+          <ProductGridCard
+            isActiveShift={isActiveShift}
+            isOutOfStock={product.trackInventory && product.stock <= 0}
+            isTogglingFavorite={isTogglingFavorite}
+            key={product.id}
+            onSelect={() => onProductSelect(product)}
+            onToggleFavorite={onToggleFavorite}
+            product={product}
+            quantity={getProductQuantity(product.id)}
+          />
+        ))}
+      </div>
+    );
+  } else {
+    productContent = (
+      <div className="flex flex-col gap-2 pb-4 md:gap-3">
+        {regularProducts.map((product) => (
+          <ProductListItem
+            isActiveShift={isActiveShift}
+            isOutOfStock={product.trackInventory && product.stock <= 0}
+            isTogglingFavorite={isTogglingFavorite}
+            key={product.id}
+            onSelect={() => onProductSelect(product)}
+            onToggleFavorite={onToggleFavorite}
+            product={product}
+            quantity={getProductQuantity(product.id)}
+          />
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       <CatalogToolbar
@@ -84,47 +135,7 @@ export function ProductCatalog({
       />
 
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3 md:px-6">
-        {isLoading ? (
-          <div className="flex h-40 flex-col items-center justify-center text-[#6b6b6b]">
-            <Package className="mb-3 size-8 animate-pulse" />
-            <p className="text-sm">Cargando productos…</p>
-          </div>
-        ) : regularProducts.length === 0 ? (
-          <div className="flex h-40 flex-col items-center justify-center text-[#6b6b6b]">
-            <Package className="mb-3 size-8" />
-            <p className="text-sm">No se encontraron productos.</p>
-          </div>
-        ) : viewMode === "grid" ? (
-          <div className="grid grid-cols-2 gap-3 pb-4 sm:grid-cols-3 md:gap-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
-            {regularProducts.map((product) => (
-              <ProductGridCard
-                isActiveShift={isActiveShift}
-                isOutOfStock={product.trackInventory && product.stock <= 0}
-                isTogglingFavorite={isTogglingFavorite}
-                key={product.id}
-                onSelect={() => onProductSelect(product)}
-                onToggleFavorite={onToggleFavorite}
-                product={product}
-                quantity={getProductQuantity(product.id)}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="flex flex-col gap-2 pb-4 md:gap-3">
-            {regularProducts.map((product) => (
-              <ProductListItem
-                isActiveShift={isActiveShift}
-                isOutOfStock={product.trackInventory && product.stock <= 0}
-                isTogglingFavorite={isTogglingFavorite}
-                key={product.id}
-                onSelect={() => onProductSelect(product)}
-                onToggleFavorite={onToggleFavorite}
-                product={product}
-                quantity={getProductQuantity(product.id)}
-              />
-            ))}
-          </div>
-        )}
+        {productContent}
 
         {hasMore && (
           <div

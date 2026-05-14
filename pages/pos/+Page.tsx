@@ -8,16 +8,16 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
-import { CartPanel } from "@/features/pos/components/CartPanel";
-import { CashMovementModal } from "@/features/pos/components/modals/CashMovementModal";
-import { CheckoutModal } from "@/features/pos/components/modals/CheckoutModal";
-import { CloseShiftModal } from "@/features/pos/components/modals/CloseShiftModal";
-import { CreateCustomerModal } from "@/features/pos/components/modals/CreateCustomerModal";
-import { ModifierModal } from "@/features/pos/components/modals/ModifierModal";
-import { OpenShiftModal } from "@/features/pos/components/modals/OpenShiftModal";
-import { ShiftRequiredDialog } from "@/features/pos/components/modals/ShiftRequiredDialog";
-import { PosHeader } from "@/features/pos/components/PosHeader";
-import { ProductGrid } from "@/features/pos/components/ProductGrid";
+import { CartPanel } from "@/features/pos/components/cart-panel";
+import { CashMovementModal } from "@/features/pos/components/modals/cash-movement-modal";
+import { CheckoutModal } from "@/features/pos/components/modals/checkout-modal";
+import { CloseShiftModal } from "@/features/pos/components/modals/close-shift-modal";
+import { CreateCustomerModal } from "@/features/pos/components/modals/create-customer-modal";
+import { ModifierModal } from "@/features/pos/components/modals/modifier-modal";
+import { OpenShiftModal } from "@/features/pos/components/modals/open-shift-modal";
+import { ShiftRequiredDialog } from "@/features/pos/components/modals/shift-required-dialog";
+import { PosHeader } from "@/features/pos/components/pos-header";
+import { ProductGrid } from "@/features/pos/components/product-grid";
 import { useCreateCustomerModal } from "@/features/pos/hooks/use-create-customer-modal";
 import { useModifierModal } from "@/features/pos/hooks/use-modifier-modal";
 import { usePosCart } from "@/features/pos/hooks/use-pos-cart";
@@ -101,7 +101,7 @@ export default function PosPage() {
   // Modifier modal
   const {
     isModifierModalOpen,
-    setIsModifierModalOpen,
+    setIsModifierModalOpen: _setIsModifierModalOpen,
     selectedProductForModifiers,
     modifierQuantities,
     updateModifierQuantity,
@@ -207,7 +207,7 @@ export default function PosPage() {
     handleProductSelection(product);
   };
 
-  const handleBarcodeScan = async (value: string): Promise<boolean> => {
+  const handleBarcodeScan = (value: string): boolean => {
     if (!activeShift) {
       setIsShiftRequiredOpen(true);
       return false;

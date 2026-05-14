@@ -9,9 +9,6 @@ import {
   type ModuleKey,
 } from "./module-registry";
 
-export type { ModuleEntitlementStatus };
-export { MODULE_KEYS, type ModuleKey };
-
 export interface ModuleAccessState {
   accessible: boolean;
   activationPolicy: ModuleActivationPolicy;

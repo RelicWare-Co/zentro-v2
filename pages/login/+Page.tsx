@@ -234,6 +234,15 @@ function LoginForm(props: {
     }
   };
 
+  let submitLabel: string;
+  if (props.isCompletingJoin) {
+    submitLabel = "Completando acceso…";
+  } else if (isPending) {
+    submitLabel = "Ingresando…";
+  } else {
+    submitLabel = "Ingresar";
+  }
+
   return (
     <form className="space-y-6" onSubmit={handleLogin}>
       <div className="space-y-2">
@@ -308,11 +317,7 @@ function LoginForm(props: {
         disabled={isPending || props.isCompletingJoin}
         type="submit"
       >
-        {props.isCompletingJoin
-          ? "Completando acceso…"
-          : isPending
-            ? "Ingresando…"
-            : "Ingresar"}
+        {submitLabel}
       </button>
     </form>
   );
@@ -370,6 +375,15 @@ function RegisterForm(props: {
       window.location.href = "/dashboard";
     }
   };
+
+  let submitLabel: string;
+  if (props.isCompletingJoin) {
+    submitLabel = "Completando acceso…";
+  } else if (isPending) {
+    submitLabel = "Creando cuenta…";
+  } else {
+    submitLabel = "Crear cuenta";
+  }
 
   return (
     <form className="space-y-6" onSubmit={handleRegister}>
@@ -505,11 +519,7 @@ function RegisterForm(props: {
         disabled={isPending || props.isCompletingJoin}
         type="submit"
       >
-        {props.isCompletingJoin
-          ? "Completando acceso…"
-          : isPending
-            ? "Creando cuenta…"
-            : "Crear cuenta"}
+        {submitLabel}
       </button>
     </form>
   );
@@ -539,7 +549,9 @@ function CardForSignedInUser(props: {
           disabled={
             props.isSessionPending || props.isCompletingJoin || !props.canJoin
           }
-          onClick={() => void props.onJoin()}
+          onClick={() => {
+            props.onJoin();
+          }}
           type="button"
         >
           {props.isCompletingJoin
@@ -548,7 +560,9 @@ function CardForSignedInUser(props: {
         </button>
         <button
           className="inline-flex h-9 cursor-pointer items-center justify-center rounded-lg border border-zinc-700 bg-transparent px-3 font-medium text-sm text-zinc-200 transition-colors hover:bg-white/5 hover:text-white"
-          onClick={() => void props.onSwitchAccount()}
+          onClick={() => {
+            props.onSwitchAccount();
+          }}
           type="button"
         >
           Usar otra cuenta

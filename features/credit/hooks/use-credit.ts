@@ -9,14 +9,11 @@ import type { z } from "zod";
 import type {
   CreditAccountSchema,
   CreditTransactionSchema,
-  RegisterCreditPaymentSchema,
 } from "@/schemas/credit";
 import { orpcQuery } from "@/server/orpc/client/query";
 
 export type CreditAccount = z.infer<typeof CreditAccountSchema>;
 export type CreditTransaction = z.infer<typeof CreditTransactionSchema>;
-type RegisterCreditPaymentInput = z.infer<typeof RegisterCreditPaymentSchema>;
-
 export function useActiveShift() {
   return useQuery({
     ...orpcQuery.shifts.active.queryOptions(),

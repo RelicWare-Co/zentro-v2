@@ -27,7 +27,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
-import { RestaurantModuleSettingsCard } from "@/features/restaurants/components/RestaurantModuleSettingsCard";
+import { RestaurantModuleSettingsCard } from "@/features/restaurants/components/restaurant-module-settings-card";
 import { useRestaurantConfiguration } from "@/features/restaurants/hooks/use-restaurants";
 import {
   type SettingsPageData,
@@ -109,7 +109,7 @@ function LocalPrinterSettingsSection({
   useEffect(() => {
     let mounted = true;
     import(
-      "@/features/settings/components/LocalPrinterSettingsCard.client"
+      "@/features/settings/components/local-printer-settings-card.client"
     ).then((mod) => {
       if (mounted) {
         setCardComponent(() => mod.LocalPrinterSettingsCard);
@@ -291,7 +291,9 @@ function SettingsForm({
           <Button
             className="bg-[var(--color-voltage)] text-black hover:bg-[#d9f15c]"
             disabled={!(canManageSettings && hasChanges) || isSaving}
-            onClick={() => void handleSave()}
+            onClick={() => {
+              handleSave().catch(() => undefined);
+            }}
             type="button"
           >
             <Save className="size-4" />

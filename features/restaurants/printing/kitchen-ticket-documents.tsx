@@ -1,4 +1,4 @@
-import { ThermalReceipt } from "@/features/pos/components/ThermalReceipt";
+import { ThermalReceipt } from "@/features/pos/components/thermal-receipt";
 import type { ThermalReceiptDocument } from "@/features/pos/printing/thermal-receipt-document";
 import { formatCurrency } from "@/features/pos/utils";
 

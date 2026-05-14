@@ -334,7 +334,7 @@ export const deleteProduct = orgRequiredProcedure.delete.handler(
 
 export const registerInventoryMovement =
   orgRequiredProcedure.registerInventoryMovement.handler(
-    async ({ input, context }) => {
+    ({ input, context }) => {
       const baseQuantity = toInteger(input.quantity, "quantity");
       if (baseQuantity === 0) {
         throw new ORPCError("BAD_REQUEST", {

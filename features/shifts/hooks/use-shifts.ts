@@ -14,12 +14,3 @@ export function useShiftsList(params: ShiftsListParams = {}) {
     placeholderData: keepPreviousData,
   });
 }
-
-function _useShiftDetail(shiftId: string | null) {
-  return useQuery({
-    ...orpcQuery.shifts.detail.queryOptions(
-      shiftId ? { input: { shiftId } } : { input: { shiftId: "" } }
-    ),
-    enabled: Boolean(shiftId),
-  });
-}

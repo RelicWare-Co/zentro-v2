@@ -408,7 +408,7 @@ function subscribePosLocalPrinterSettings(
   organizationId?: string | null
 ) {
   if (typeof window === "undefined") {
-    return () => {};
+    return () => undefined;
   }
 
   const storageKey = getStorageKey(organizationId);

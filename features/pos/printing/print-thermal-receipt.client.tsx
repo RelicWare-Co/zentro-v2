@@ -1,4 +1,4 @@
-import { ThermalReceipt } from "@/features/pos/components/ThermalReceipt";
+import { ThermalReceipt } from "@/features/pos/components/thermal-receipt";
 import { printReceiptAsPdf } from "@/features/pos/printing/print-receipt-as-pdf.client";
 import { getPosPrinterManager } from "@/features/pos/printing/printer-manager.client";
 import { readPosLocalPrinterSettings } from "@/features/pos/printing/printer-settings.local.client";
@@ -53,7 +53,7 @@ export async function reconnectPosPrinter(
     return false;
   }
 
-  return getPosPrinterManager().reconnectSaved(
+  return await getPosPrinterManager().reconnectSaved(
     readPosLocalPrinterSettings(organizationId),
     {
       silent: options?.silent,
@@ -129,8 +129,6 @@ function buildPosPrinterTestDocument(): ThermalReceiptDocument {
   };
 }
 
-export async function printPosPrinterTestDocument(
-  organizationId?: string | null
-) {
+export function printPosPrinterTestDocument(organizationId?: string | null) {
   return printThermalReceipt(buildPosPrinterTestDocument(), organizationId);
 }

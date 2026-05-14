@@ -16,7 +16,7 @@ import {
   useState,
   useTransition,
 } from "react";
-import { Link } from "@/components/Link";
+import { Link } from "@/components/link";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -143,6 +143,444 @@ function formatItemCountLabel(itemCount: number) {
   return `${itemCount} item${itemCount === 1 ? "" : "s"}`;
 }
 
+function resolveDateFilters(
+  activeView: SalesView,
+  todayDate: string,
+  startDate: string,
+  endDate: string
+) {
+  if (activeView === "today") {
+    return { startDate: todayDate, endDate: todayDate };
+  }
+  return { startDate: startDate || null, endDate: endDate || null };
+}
+
+function resolveAmountRange(amountMin: string, amountMax: string) {
+  const min = amountMin ? Number(amountMin) : null;
+  const max = amountMax ? Number(amountMax) : null;
+  const resolvedMin =
+    min !== null && Number.isFinite(min) && min >= 0 ? Math.trunc(min) : null;
+  const resolvedMax =
+    max !== null && Number.isFinite(max) && max >= 0 ? Math.trunc(max) : null;
+  if (
+    resolvedMin !== null &&
+    resolvedMax !== null &&
+    resolvedMin > resolvedMax
+  ) {
+    return { min: resolvedMax, max: resolvedMin };
+  }
+  return { min: resolvedMin, max: resolvedMax };
+}
+
+function resolveSaleStatus(status: string) {
+  if ((SALE_STATUS_VALUES as readonly string[]).includes(status)) {
+    return status as "completed" | "credit" | "cancelled";
+  }
+  return null;
+}
+
+function resolveBalanceStatus(balanceStatus: string) {
+  if (
+    (SALE_BALANCE_STATUS_VALUES as readonly string[]).includes(balanceStatus)
+  ) {
+    return balanceStatus as "with_balance" | "settled";
+  }
+  return null;
+}
+
+function useSalesListParams({
+  activeView,
+  amountMax,
+  amountMin,
+  balanceStatus,
+  cashierId,
+  cursor,
+  deferredSearchQuery,
+  endDate,
+  pageSize,
+  paymentMethod,
+  startDate,
+  status,
+  terminalName,
+  todayDate,
+}: {
+  activeView: SalesView;
+  amountMax: string;
+  amountMin: string;
+  balanceStatus: string;
+  cashierId: string;
+  cursor: number;
+  deferredSearchQuery: string;
+  endDate: string;
+  pageSize: number;
+  paymentMethod: string;
+  startDate: string;
+  status: string;
+  terminalName: string;
+  todayDate: string;
+}) {
+  return useMemo(() => {
+    const resolvedDateFilters = resolveDateFilters(
+      activeView,
+      todayDate,
+      startDate,
+      endDate
+    );
+    const { min: finalMin, max: finalMax } = resolveAmountRange(
+      amountMin,
+      amountMax
+    );
+
+    return {
+      limit: pageSize,
+      cursor,
+      searchQuery: deferredSearchQuery.trim() || null,
+      status: resolveSaleStatus(status),
+      paymentMethod: paymentMethod || null,
+      cashierId: cashierId || null,
+      terminalName: terminalName || null,
+      balanceStatus: resolveBalanceStatus(balanceStatus),
+      amountMin: finalMin,
+      amountMax: finalMax,
+      startDate: resolvedDateFilters.startDate,
+      endDate: resolvedDateFilters.endDate,
+    };
+  }, [
+    activeView,
+    amountMax,
+    amountMin,
+    balanceStatus,
+    cashierId,
+    cursor,
+    deferredSearchQuery,
+    endDate,
+    pageSize,
+    paymentMethod,
+    startDate,
+    status,
+    terminalName,
+    todayDate,
+  ]);
+}
+
+function useSalesViewSummary(
+  isTodayView: boolean,
+  todayLabel: string,
+  activeFilterCount: number
+) {
+  return useMemo(() => {
+    if (isTodayView) {
+      return {
+        kicker: `Solo ${todayLabel}`,
+        title: "Ventas de hoy",
+        description:
+          "Consulta lo que pasó hoy sin mezclar operaciones anteriores.",
+        resultsTitle: "Ventas del dia",
+        resultsDescription: "Registros creados durante el dia actual",
+        revenueTitle: "Ingreso del dia",
+        revenueDescription: "Total facturado hoy",
+        pendingTitle: "Saldo pendiente hoy",
+        pendingDescription: "Pendientes abiertos del dia actual",
+        listTitle: "Ventas de hoy",
+        listDescription:
+          "Vista operativa del día con acceso rápido al detalle de cada venta.",
+        emptyTitle: "No hay ventas registradas hoy.",
+      };
+    }
+    return {
+      kicker: "Consulta completa",
+      title: "Historial de ventas",
+      description:
+        "Consulta ventas pasadas con filtros por fecha, estado y medio de pago.",
+      resultsTitle: "Ventas cargadas",
+      resultsDescription:
+        activeFilterCount > 0
+          ? "Resultados del filtro actual"
+          : "Ultimos registros disponibles en pantalla",
+      revenueTitle: "Monto acumulado",
+      revenueDescription: "Suma de las ventas listadas",
+      pendingTitle: "Saldo pendiente",
+      pendingDescription: "Principalmente ventas a credito",
+      listTitle: "Historial de ventas",
+      listDescription:
+        "Usa esta vista para revisar ventas anteriores, pagos y saldos.",
+      emptyTitle: "No se han registrado ventas todavia.",
+    };
+  }, [isTodayView, todayLabel, activeFilterCount]);
+}
+
+function AdvancedFilters({
+  mode,
+  isTodayView,
+  todayLabel,
+  paymentMethod,
+  setPaymentMethod,
+  cashierId,
+  setCashierId,
+  terminalName,
+  setTerminalName,
+  balanceStatus,
+  setBalanceStatus,
+  amountMin,
+  setAmountMin,
+  amountMax,
+  setAmountMax,
+  startDate,
+  setStartDate,
+  endDate,
+  setEndDate,
+  ids,
+  options,
+}: {
+  mode: "mobile" | "desktop";
+  isTodayView: boolean;
+  todayLabel: string;
+  paymentMethod: string;
+  setPaymentMethod: (value: string) => void;
+  cashierId: string;
+  setCashierId: (value: string) => void;
+  terminalName: string;
+  setTerminalName: (value: string) => void;
+  balanceStatus: string;
+  setBalanceStatus: (value: string) => void;
+  amountMin: string;
+  setAmountMin: (value: string) => void;
+  amountMax: string;
+  setAmountMax: (value: string) => void;
+  startDate: string;
+  setStartDate: (value: string) => void;
+  endDate: string;
+  setEndDate: (value: string) => void;
+  ids: {
+    paymentMethod: string;
+    cashier: string;
+    terminal: string;
+    balanceStatus: string;
+    amountMin: string;
+    amountMax: string;
+    startDate: string;
+    endDate: string;
+  };
+  options: {
+    paymentMethods: Array<{ id: string; label: string }>;
+    cashiers: Array<{ id: string; name: string | null }>;
+    terminals: string[];
+  };
+}) {
+  const isMobile = mode === "mobile";
+  const idPrefix = isMobile ? "mobile-" : "";
+  const inputClassName = isMobile
+    ? "h-11 border-zinc-700 bg-black/20 text-white placeholder:text-zinc-500"
+    : "h-9 border-zinc-700 bg-black/20 text-white placeholder:text-zinc-500";
+  const selectClassName = `${isMobile ? "h-11" : "h-9"} w-full border-zinc-700 bg-black/20 text-white`;
+
+  return (
+    <div className={isMobile ? "space-y-4" : "grid gap-4 md:grid-cols-2"}>
+      <FilterField
+        htmlFor={`${idPrefix}${ids.paymentMethod}`}
+        label="Medio de pago"
+      >
+        <Select
+          onValueChange={(value) =>
+            setPaymentMethod(value === ALL_FILTER_VALUE ? "" : value)
+          }
+          value={paymentMethod || ALL_FILTER_VALUE}
+        >
+          <SelectTrigger
+            className={selectClassName}
+            id={`${idPrefix}${ids.paymentMethod}`}
+          >
+            <SelectValue placeholder="Todos" />
+          </SelectTrigger>
+          <SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
+            <SelectItem value={ALL_FILTER_VALUE}>Todos</SelectItem>
+            {options.paymentMethods.map((pm) => (
+              <SelectItem key={pm.id} value={pm.id}>
+                {pm.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </FilterField>
+
+      <FilterField htmlFor={`${idPrefix}${ids.cashier}`} label="Cajero">
+        <Select
+          onValueChange={(value) =>
+            setCashierId(value === ALL_FILTER_VALUE ? "" : value)
+          }
+          value={cashierId || ALL_FILTER_VALUE}
+        >
+          <SelectTrigger
+            className={selectClassName}
+            id={`${idPrefix}${ids.cashier}`}
+          >
+            <SelectValue placeholder="Todos" />
+          </SelectTrigger>
+          <SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
+            <SelectItem value={ALL_FILTER_VALUE}>Todos</SelectItem>
+            {options.cashiers.map((cashier) => (
+              <SelectItem key={cashier.id} value={cashier.id}>
+                {cashier.name ?? "Cajero"}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </FilterField>
+
+      <FilterField htmlFor={`${idPrefix}${ids.terminal}`} label="Terminal">
+        <Select
+          onValueChange={(value) =>
+            setTerminalName(value === ALL_FILTER_VALUE ? "" : value)
+          }
+          value={terminalName || ALL_FILTER_VALUE}
+        >
+          <SelectTrigger
+            className={selectClassName}
+            id={`${idPrefix}${ids.terminal}`}
+          >
+            <SelectValue placeholder="Todas" />
+          </SelectTrigger>
+          <SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
+            <SelectItem value={ALL_FILTER_VALUE}>Todas</SelectItem>
+            {options.terminals.map((terminal) => (
+              <SelectItem key={terminal} value={terminal}>
+                {terminal}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </FilterField>
+
+      <FilterField
+        htmlFor={`${idPrefix}${ids.balanceStatus}`}
+        label="Estado de saldo"
+      >
+        <Select
+          onValueChange={(value) =>
+            setBalanceStatus(value === ALL_FILTER_VALUE ? "" : value)
+          }
+          value={balanceStatus || ALL_FILTER_VALUE}
+        >
+          <SelectTrigger
+            className={selectClassName}
+            id={`${idPrefix}${ids.balanceStatus}`}
+          >
+            <SelectValue placeholder="Todos" />
+          </SelectTrigger>
+          <SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
+            <SelectItem value={ALL_FILTER_VALUE}>Todos</SelectItem>
+            <SelectItem value="with_balance">Con saldo pendiente</SelectItem>
+            <SelectItem value="settled">Sin saldo</SelectItem>
+          </SelectContent>
+        </Select>
+      </FilterField>
+
+      <FilterField htmlFor={`${idPrefix}${ids.amountMin}`} label="Monto mínimo">
+        <Input
+          autoComplete="off"
+          className={inputClassName}
+          id={`${idPrefix}${ids.amountMin}`}
+          inputMode="numeric"
+          min={0}
+          onChange={(e) => setAmountMin(e.target.value)}
+          placeholder="Ej. 5000…"
+          step={500}
+          type="number"
+          value={amountMin}
+        />
+      </FilterField>
+
+      <FilterField htmlFor={`${idPrefix}${ids.amountMax}`} label="Monto máximo">
+        <Input
+          autoComplete="off"
+          className={inputClassName}
+          id={`${idPrefix}${ids.amountMax}`}
+          inputMode="numeric"
+          min={0}
+          onChange={(e) => setAmountMax(e.target.value)}
+          placeholder="Ej. 25000…"
+          step={500}
+          type="number"
+          value={amountMax}
+        />
+      </FilterField>
+
+      {isTodayView ? (
+        <div
+          className={
+            isMobile
+              ? "rounded-2xl border border-[var(--color-voltage)]/20 border-dashed bg-[var(--color-voltage)]/5 px-4 py-3 text-sm text-zinc-300"
+              : "rounded-2xl border border-[var(--color-voltage)]/20 border-dashed bg-[var(--color-voltage)]/5 px-4 py-3 text-sm text-zinc-300 md:col-span-2"
+          }
+        >
+          <p className="font-medium text-white">Fecha fija en hoy</p>
+          <p className="mt-0.5 text-xs text-zinc-400">
+            Mostrando solo ventas del {todayLabel}.
+          </p>
+        </div>
+      ) : (
+        <>
+          <FilterField htmlFor={`${idPrefix}${ids.startDate}`} label="Desde">
+            <Input
+              autoComplete="off"
+              className={inputClassName}
+              id={`${idPrefix}${ids.startDate}`}
+              onChange={(e) => setStartDate(e.target.value)}
+              type="date"
+              value={startDate}
+            />
+          </FilterField>
+          <FilterField htmlFor={`${idPrefix}${ids.endDate}`} label="Hasta">
+            <Input
+              autoComplete="off"
+              className={inputClassName}
+              id={`${idPrefix}${ids.endDate}`}
+              onChange={(e) => setEndDate(e.target.value)}
+              type="date"
+              value={endDate}
+            />
+          </FilterField>
+        </>
+      )}
+    </div>
+  );
+}
+
+function SaleDetailPane({
+  saleDetailQuery,
+  activeShiftId,
+  cancelSaleMutation,
+  onRequestCancel,
+}: {
+  saleDetailQuery: ReturnType<typeof useSaleDetail>;
+  activeShiftId?: string;
+  cancelSaleMutation: ReturnType<typeof useCancelSaleMutation>;
+  onRequestCancel: () => void;
+}) {
+  if (saleDetailQuery.isLoading) {
+    return (
+      <div className="py-12 text-center text-sm text-zinc-400">
+        Cargando detalle…
+      </div>
+    );
+  }
+  if (saleDetailQuery.data) {
+    return (
+      <SaleDetailContent
+        activeShiftId={activeShiftId}
+        isCancelling={cancelSaleMutation.isPending}
+        onRequestCancel={onRequestCancel}
+        sale={saleDetailQuery.data}
+      />
+    );
+  }
+  return (
+    <div className="py-12 text-center text-sm text-zinc-400">
+      No se encontró el detalle.
+    </div>
+  );
+}
+
 export function SalesPage() {
   const salesSearchId = useId();
   const salesStatusId = useId();
@@ -180,43 +618,7 @@ export function SalesPage() {
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
 
-  const listParams = useMemo(() => {
-    const resolvedDateFilters =
-      activeView === "today"
-        ? { startDate: todayDate, endDate: todayDate }
-        : { startDate: startDate || null, endDate: endDate || null };
-    const min = amountMin ? Number(amountMin) : null;
-    const max = amountMax ? Number(amountMax) : null;
-    const resolvedMin =
-      min !== null && Number.isFinite(min) && min >= 0 ? Math.trunc(min) : null;
-    const resolvedMax =
-      max !== null && Number.isFinite(max) && max >= 0 ? Math.trunc(max) : null;
-    const [finalMin, finalMax] =
-      resolvedMin !== null && resolvedMax !== null && resolvedMin > resolvedMax
-        ? [resolvedMax, resolvedMin]
-        : [resolvedMin, resolvedMax];
-
-    return {
-      limit: pageSize,
-      cursor,
-      searchQuery: deferredSearchQuery.trim() || null,
-      status: (SALE_STATUS_VALUES as readonly string[]).includes(status)
-        ? (status as "completed" | "credit" | "cancelled")
-        : null,
-      paymentMethod: paymentMethod || null,
-      cashierId: cashierId || null,
-      terminalName: terminalName || null,
-      balanceStatus: (SALE_BALANCE_STATUS_VALUES as readonly string[]).includes(
-        balanceStatus
-      )
-        ? (balanceStatus as "with_balance" | "settled")
-        : null,
-      amountMin: finalMin,
-      amountMax: finalMax,
-      startDate: resolvedDateFilters.startDate,
-      endDate: resolvedDateFilters.endDate,
-    };
-  }, [
+  const listParams = useSalesListParams({
     activeView,
     amountMax,
     amountMin,
@@ -231,7 +633,7 @@ export function SalesPage() {
     status,
     terminalName,
     todayDate,
-  ]);
+  });
 
   const salesQuery = useSalesList(listParams);
   const sales = salesQuery.data?.data ?? [];
@@ -242,7 +644,6 @@ export function SalesPage() {
   };
   const totalResults = salesQuery.data?.total ?? sales.length;
   const nextCursor = salesQuery.data?.nextCursor ?? null;
-  const _hasMore = salesQuery.data?.hasMore ?? false;
 
   const saleDetailQuery = useSaleDetail(isDetailOpen ? selectedSaleId : null);
   const activeShiftQuery = useActiveShift();
@@ -302,42 +703,11 @@ export function SalesPage() {
   const isSalesViewRefreshing = isViewPending || salesQuery.isFetching;
 
   const todayLabel = dayFormatter.format(new Date(`${todayDate}T00:00:00`));
-  const viewSummary = isTodayView
-    ? {
-        kicker: `Solo ${todayLabel}`,
-        title: "Ventas de hoy",
-        description:
-          "Consulta lo que pasó hoy sin mezclar operaciones anteriores.",
-        resultsTitle: "Ventas del dia",
-        resultsDescription: "Registros creados durante el dia actual",
-        revenueTitle: "Ingreso del dia",
-        revenueDescription: "Total facturado hoy",
-        pendingTitle: "Saldo pendiente hoy",
-        pendingDescription: "Pendientes abiertos del dia actual",
-        listTitle: "Ventas de hoy",
-        listDescription:
-          "Vista operativa del día con acceso rápido al detalle de cada venta.",
-        emptyTitle: "No hay ventas registradas hoy.",
-      }
-    : {
-        kicker: "Consulta completa",
-        title: "Historial de ventas",
-        description:
-          "Consulta ventas pasadas con filtros por fecha, estado y medio de pago.",
-        resultsTitle: "Ventas cargadas",
-        resultsDescription:
-          activeFilterCount > 0
-            ? "Resultados del filtro actual"
-            : "Ultimos registros disponibles en pantalla",
-        revenueTitle: "Monto acumulado",
-        revenueDescription: "Suma de las ventas listadas",
-        pendingTitle: "Saldo pendiente",
-        pendingDescription: "Principalmente ventas a credito",
-        listTitle: "Historial de ventas",
-        listDescription:
-          "Usa esta vista para revisar ventas anteriores, pagos y saldos.",
-        emptyTitle: "No se han registrado ventas todavia.",
-      };
+  const viewSummary = useSalesViewSummary(
+    isTodayView,
+    todayLabel,
+    activeFilterCount
+  );
 
   const clearFilters = () => {
     setIsMobileFilterOpen(false);
@@ -374,195 +744,6 @@ export function SalesPage() {
       ),
     [salesFilterOptions.paymentMethods]
   );
-
-  const renderAdvancedFilters = (mode: "mobile" | "desktop") => {
-    const isMobile = mode === "mobile";
-    const idPrefix = isMobile ? "mobile-" : "";
-    const inputClassName = isMobile
-      ? "h-11 border-zinc-700 bg-black/20 text-white placeholder:text-zinc-500"
-      : "h-9 border-zinc-700 bg-black/20 text-white placeholder:text-zinc-500";
-    const selectClassName = `${isMobile ? "h-11" : "h-9"} w-full border-zinc-700 bg-black/20 text-white`;
-
-    return (
-      <div className={isMobile ? "space-y-4" : "grid gap-4 md:grid-cols-2"}>
-        <FilterField
-          htmlFor={`${idPrefix}${salesPaymentMethodId}`}
-          label="Medio de pago"
-        >
-          <Select
-            onValueChange={(value) =>
-              setPaymentMethod(value === ALL_FILTER_VALUE ? "" : value)
-            }
-            value={paymentMethod || ALL_FILTER_VALUE}
-          >
-            <SelectTrigger
-              className={selectClassName}
-              id={`${idPrefix}${salesPaymentMethodId}`}
-            >
-              <SelectValue placeholder="Todos" />
-            </SelectTrigger>
-            <SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
-              <SelectItem value={ALL_FILTER_VALUE}>Todos</SelectItem>
-              {salesFilterOptions.paymentMethods.map((pm) => (
-                <SelectItem key={pm.id} value={pm.id}>
-                  {pm.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </FilterField>
-
-        <FilterField htmlFor={`${idPrefix}${salesCashierId}`} label="Cajero">
-          <Select
-            onValueChange={(value) =>
-              setCashierId(value === ALL_FILTER_VALUE ? "" : value)
-            }
-            value={cashierId || ALL_FILTER_VALUE}
-          >
-            <SelectTrigger
-              className={selectClassName}
-              id={`${idPrefix}${salesCashierId}`}
-            >
-              <SelectValue placeholder="Todos" />
-            </SelectTrigger>
-            <SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
-              <SelectItem value={ALL_FILTER_VALUE}>Todos</SelectItem>
-              {salesFilterOptions.cashiers.map((cashier) => (
-                <SelectItem key={cashier.id} value={cashier.id}>
-                  {cashier.name ?? "Cajero"}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </FilterField>
-
-        <FilterField htmlFor={`${idPrefix}${salesTerminalId}`} label="Terminal">
-          <Select
-            onValueChange={(value) =>
-              setTerminalName(value === ALL_FILTER_VALUE ? "" : value)
-            }
-            value={terminalName || ALL_FILTER_VALUE}
-          >
-            <SelectTrigger
-              className={selectClassName}
-              id={`${idPrefix}${salesTerminalId}`}
-            >
-              <SelectValue placeholder="Todas" />
-            </SelectTrigger>
-            <SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
-              <SelectItem value={ALL_FILTER_VALUE}>Todas</SelectItem>
-              {salesFilterOptions.terminals.map((terminal) => (
-                <SelectItem key={terminal} value={terminal}>
-                  {terminal}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </FilterField>
-
-        <FilterField
-          htmlFor={`${idPrefix}${salesBalanceStatusId}`}
-          label="Estado de saldo"
-        >
-          <Select
-            onValueChange={(value) =>
-              setBalanceStatus(value === ALL_FILTER_VALUE ? "" : value)
-            }
-            value={balanceStatus || ALL_FILTER_VALUE}
-          >
-            <SelectTrigger
-              className={selectClassName}
-              id={`${idPrefix}${salesBalanceStatusId}`}
-            >
-              <SelectValue placeholder="Todos" />
-            </SelectTrigger>
-            <SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
-              <SelectItem value={ALL_FILTER_VALUE}>Todos</SelectItem>
-              <SelectItem value="with_balance">Con saldo pendiente</SelectItem>
-              <SelectItem value="settled">Sin saldo</SelectItem>
-            </SelectContent>
-          </Select>
-        </FilterField>
-
-        <FilterField
-          htmlFor={`${idPrefix}${salesAmountMinId}`}
-          label="Monto mínimo"
-        >
-          <Input
-            autoComplete="off"
-            className={inputClassName}
-            id={`${idPrefix}${salesAmountMinId}`}
-            inputMode="numeric"
-            min={0}
-            onChange={(e) => setAmountMin(e.target.value)}
-            placeholder="Ej. 5000…"
-            step={500}
-            type="number"
-            value={amountMin}
-          />
-        </FilterField>
-
-        <FilterField
-          htmlFor={`${idPrefix}${salesAmountMaxId}`}
-          label="Monto máximo"
-        >
-          <Input
-            autoComplete="off"
-            className={inputClassName}
-            id={`${idPrefix}${salesAmountMaxId}`}
-            inputMode="numeric"
-            min={0}
-            onChange={(e) => setAmountMax(e.target.value)}
-            placeholder="Ej. 25000…"
-            step={500}
-            type="number"
-            value={amountMax}
-          />
-        </FilterField>
-
-        {isTodayView ? (
-          <div
-            className={
-              isMobile
-                ? "rounded-2xl border border-[var(--color-voltage)]/20 border-dashed bg-[var(--color-voltage)]/5 px-4 py-3 text-sm text-zinc-300"
-                : "rounded-2xl border border-[var(--color-voltage)]/20 border-dashed bg-[var(--color-voltage)]/5 px-4 py-3 text-sm text-zinc-300 md:col-span-2"
-            }
-          >
-            <p className="font-medium text-white">Fecha fija en hoy</p>
-            <p className="mt-0.5 text-xs text-zinc-400">
-              Mostrando solo ventas del {todayLabel}.
-            </p>
-          </div>
-        ) : (
-          <>
-            <FilterField
-              htmlFor={`${idPrefix}${salesStartDateId}`}
-              label="Desde"
-            >
-              <Input
-                autoComplete="off"
-                className={inputClassName}
-                id={`${idPrefix}${salesStartDateId}`}
-                onChange={(e) => setStartDate(e.target.value)}
-                type="date"
-                value={startDate}
-              />
-            </FilterField>
-            <FilterField htmlFor={`${idPrefix}${salesEndDateId}`} label="Hasta">
-              <Input
-                autoComplete="off"
-                className={inputClassName}
-                id={`${idPrefix}${salesEndDateId}`}
-                onChange={(e) => setEndDate(e.target.value)}
-                type="date"
-                value={endDate}
-              />
-            </FilterField>
-          </>
-        )}
-      </div>
-    );
-  };
 
   return (
     <>
@@ -712,7 +893,38 @@ export function SalesPage() {
                         </SheetTitle>
                       </SheetHeader>
                       <div className="flex-1 overflow-y-auto p-4">
-                        {renderAdvancedFilters("mobile")}
+                        <AdvancedFilters
+                          amountMax={amountMax}
+                          amountMin={amountMin}
+                          balanceStatus={balanceStatus}
+                          cashierId={cashierId}
+                          endDate={endDate}
+                          ids={{
+                            amountMax: salesAmountMaxId,
+                            amountMin: salesAmountMinId,
+                            balanceStatus: salesBalanceStatusId,
+                            cashier: salesCashierId,
+                            endDate: salesEndDateId,
+                            paymentMethod: salesPaymentMethodId,
+                            startDate: salesStartDateId,
+                            terminal: salesTerminalId,
+                          }}
+                          isTodayView={isTodayView}
+                          mode="mobile"
+                          options={salesFilterOptions}
+                          paymentMethod={paymentMethod}
+                          setAmountMax={setAmountMax}
+                          setAmountMin={setAmountMin}
+                          setBalanceStatus={setBalanceStatus}
+                          setCashierId={setCashierId}
+                          setEndDate={setEndDate}
+                          setPaymentMethod={setPaymentMethod}
+                          setStartDate={setStartDate}
+                          setTerminalName={setTerminalName}
+                          startDate={startDate}
+                          terminalName={terminalName}
+                          todayLabel={todayLabel}
+                        />
                       </div>
                     </SheetContent>
                   </Sheet>
@@ -741,7 +953,38 @@ export function SalesPage() {
                         <h4 className="font-medium text-sm text-zinc-200">
                           Filtros avanzados
                         </h4>
-                        {renderAdvancedFilters("desktop")}
+                        <AdvancedFilters
+                          amountMax={amountMax}
+                          amountMin={amountMin}
+                          balanceStatus={balanceStatus}
+                          cashierId={cashierId}
+                          endDate={endDate}
+                          ids={{
+                            amountMax: salesAmountMaxId,
+                            amountMin: salesAmountMinId,
+                            balanceStatus: salesBalanceStatusId,
+                            cashier: salesCashierId,
+                            endDate: salesEndDateId,
+                            paymentMethod: salesPaymentMethodId,
+                            startDate: salesStartDateId,
+                            terminal: salesTerminalId,
+                          }}
+                          isTodayView={isTodayView}
+                          mode="desktop"
+                          options={salesFilterOptions}
+                          paymentMethod={paymentMethod}
+                          setAmountMax={setAmountMax}
+                          setAmountMin={setAmountMin}
+                          setBalanceStatus={setBalanceStatus}
+                          setCashierId={setCashierId}
+                          setEndDate={setEndDate}
+                          setPaymentMethod={setPaymentMethod}
+                          setStartDate={setStartDate}
+                          setTerminalName={setTerminalName}
+                          startDate={startDate}
+                          terminalName={terminalName}
+                          todayLabel={todayLabel}
+                        />
                       </div>
                     </PopoverContent>
                   </Popover>
@@ -950,22 +1193,12 @@ export function SalesPage() {
             </SheetDescription>
           </SheetHeader>
           <div className="flex-1 overflow-y-auto p-6">
-            {saleDetailQuery.isLoading ? (
-              <div className="py-12 text-center text-sm text-zinc-400">
-                Cargando detalle…
-              </div>
-            ) : saleDetailQuery.data ? (
-              <SaleDetailContent
-                activeShiftId={activeShiftId}
-                isCancelling={cancelSaleMutation.isPending}
-                onRequestCancel={() => setIsCancelDialogOpen(true)}
-                sale={saleDetailQuery.data}
-              />
-            ) : (
-              <div className="py-12 text-center text-sm text-zinc-400">
-                No se encontró el detalle.
-              </div>
-            )}
+            <SaleDetailPane
+              activeShiftId={activeShiftId}
+              cancelSaleMutation={cancelSaleMutation}
+              onRequestCancel={() => setIsCancelDialogOpen(true)}
+              saleDetailQuery={saleDetailQuery}
+            />
           </div>
         </SheetContent>
       </Sheet>

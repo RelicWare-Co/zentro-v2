@@ -12,6 +12,7 @@ import {
   or,
   sql,
 } from "drizzle-orm";
+import type { z } from "zod";
 import {
   organization,
   user,
@@ -29,6 +30,7 @@ import {
   getEnabledPaymentMethods,
   parseOrganizationSettingsMetadata,
 } from "../../../features/settings/settings.shared";
+import type { ListShiftsInputSchema } from "../../../schemas/shifts";
 import type { AppContext } from "../context";
 import { shiftsContract } from "../contracts/shifts";
 import { authMiddleware } from "../middlewares/auth";
@@ -208,46 +210,45 @@ function parseDateBoundary(value: string | null | undefined) {
   return Number.isNaN(parsedDate.getTime()) ? null : parsedDate.getTime();
 }
 
-export const list = orgRequiredProcedure.list.handler(
-  async ({ input, context }) => {
-    const { organizationId } = context;
-    const limit = Math.min(Math.max(input.limit ?? 10, 1), 50);
-    const cursor = Math.max(input.cursor ?? 0, 0);
-    const trimmedSearchQuery = input.searchQuery?.trim();
-    const startDateMs = parseDateBoundary(input.startDate);
-    const endDateMs = parseDateBoundary(input.endDate);
-    const endDateExclusiveMs =
-      endDateMs === null ? null : endDateMs + 24 * 60 * 60 * 1000;
-    const totalDifferenceExpression = sql<number>`coalesce((
+function buildShiftWhereConditions(
+  input: z.infer<typeof ListShiftsInputSchema>,
+  organizationId: string
+) {
+  const trimmedSearchQuery = input.searchQuery?.trim();
+  const startDateMs = parseDateBoundary(input.startDate);
+  const endDateMs = parseDateBoundary(input.endDate);
+  const endDateExclusiveMs =
+    endDateMs === null ? null : endDateMs + 24 * 60 * 60 * 1000;
+  const totalDifferenceExpression = sql<number>`coalesce((
 			select sum(${shiftClosure.difference})
 			from ${shiftClosure}
 			where ${shiftClosure.shiftId} = ${shift.id}
 		), 0)`;
 
-    const whereConditions = [eq(shift.organizationId, organizationId)];
-    if (input.status) {
-      whereConditions.push(eq(shift.status, input.status));
-    }
-    if (input.cashierId) {
-      whereConditions.push(eq(shift.userId, input.cashierId));
-    }
-    if (input.terminalName) {
-      whereConditions.push(eq(shift.terminalName, input.terminalName));
-    }
-    if (trimmedSearchQuery) {
-      const searchPattern = `%${trimmedSearchQuery}%`;
-      whereConditions.push(
-        sql`(
+  const whereConditions = [eq(shift.organizationId, organizationId)];
+  if (input.status) {
+    whereConditions.push(eq(shift.status, input.status));
+  }
+  if (input.cashierId) {
+    whereConditions.push(eq(shift.userId, input.cashierId));
+  }
+  if (input.terminalName) {
+    whereConditions.push(eq(shift.terminalName, input.terminalName));
+  }
+  if (trimmedSearchQuery) {
+    const searchPattern = `%${trimmedSearchQuery}%`;
+    whereConditions.push(
+      sql`(
 					${shift.id} like ${searchPattern}
 					or ${user.name} like ${searchPattern}
 					or coalesce(${shift.terminalName}, '') like ${searchPattern}
 					or coalesce(${shift.notes}, '') like ${searchPattern}
 				)`
-      );
-    }
-    if (input.paymentMethod) {
-      whereConditions.push(
-        sql`(
+    );
+  }
+  if (input.paymentMethod) {
+    whereConditions.push(
+      sql`(
 					exists (
 						select 1
 						from ${payment}
@@ -269,49 +270,59 @@ export const list = orgRequiredProcedure.list.handler(
 							and ${shiftClosure.paymentMethod} = ${input.paymentMethod}
 					)
 				)`
-      );
-    }
-    if (input.hasMovements === "yes") {
-      whereConditions.push(
-        sql`exists (
+    );
+  }
+  if (input.hasMovements === "yes") {
+    whereConditions.push(
+      sql`exists (
 					select 1
 					from ${cashMovementTable}
 					where ${cashMovementTable.organizationId} = ${organizationId}
 						and ${cashMovementTable.shiftId} = ${shift.id}
 				)`
-      );
-    }
-    if (input.hasMovements === "no") {
-      whereConditions.push(
-        sql`not exists (
+    );
+  }
+  if (input.hasMovements === "no") {
+    whereConditions.push(
+      sql`not exists (
 					select 1
 					from ${cashMovementTable}
 					where ${cashMovementTable.organizationId} = ${organizationId}
 						and ${cashMovementTable.shiftId} = ${shift.id}
 				)`
-      );
-    }
-    if (input.differenceStatus === "over") {
-      whereConditions.push(sql`${totalDifferenceExpression} > 0`);
-    }
-    if (input.differenceStatus === "short") {
-      whereConditions.push(sql`${totalDifferenceExpression} < 0`);
-    }
-    if (input.differenceStatus === "balanced") {
-      whereConditions.push(
-        sql`exists (
+    );
+  }
+  if (input.differenceStatus === "over") {
+    whereConditions.push(sql`${totalDifferenceExpression} > 0`);
+  }
+  if (input.differenceStatus === "short") {
+    whereConditions.push(sql`${totalDifferenceExpression} < 0`);
+  }
+  if (input.differenceStatus === "balanced") {
+    whereConditions.push(
+      sql`exists (
 					select 1
 					from ${shiftClosure}
 					where ${shiftClosure.shiftId} = ${shift.id}
 				) and ${totalDifferenceExpression} = 0`
-      );
-    }
-    if (startDateMs !== null) {
-      whereConditions.push(gte(shift.openedAt, new Date(startDateMs)));
-    }
-    if (endDateExclusiveMs !== null) {
-      whereConditions.push(lt(shift.openedAt, new Date(endDateExclusiveMs)));
-    }
+    );
+  }
+  if (startDateMs !== null) {
+    whereConditions.push(gte(shift.openedAt, new Date(startDateMs)));
+  }
+  if (endDateExclusiveMs !== null) {
+    whereConditions.push(lt(shift.openedAt, new Date(endDateExclusiveMs)));
+  }
+
+  return whereConditions;
+}
+
+export const list = orgRequiredProcedure.list.handler(
+  async ({ input, context }) => {
+    const { organizationId } = context;
+    const limit = Math.min(Math.max(input.limit ?? 10, 1), 50);
+    const cursor = Math.max(input.cursor ?? 0, 0);
+    const whereConditions = buildShiftWhereConditions(input, organizationId);
 
     const [
       shiftRows,
@@ -1260,6 +1271,8 @@ export const closeSummary = orgRequiredProcedure.closeSummary.handler(
         case "payout":
           movementTotals.payout += normalizedAmount;
           break;
+        default:
+          break;
       }
 
       return {
@@ -1327,7 +1340,7 @@ export const closeSummary = orgRequiredProcedure.closeSummary.handler(
 );
 
 export const close = orgRequiredProcedure.close.handler(
-  async ({ input, context }) => {
+  ({ input, context }) => {
     const { organizationId, user } = context;
     const closedAt = resolveDate(input.closedAt);
     const notes = normalizeOptionalString(input.notes);

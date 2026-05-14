@@ -1,5 +1,15 @@
 import { implement, ORPCError } from "@orpc/server";
-import { and, asc, desc, eq, gte, inArray, lt, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  gte,
+  inArray,
+  lt,
+  type SQL,
+  sql,
+} from "drizzle-orm";
 import {
   organization,
   user,
@@ -31,6 +41,10 @@ import { salesContract } from "../contracts/sales";
 import { authMiddleware } from "../middlewares/auth";
 import { dbMiddleware } from "../middlewares/db";
 import { requireOrgMiddleware } from "../middlewares/require-org";
+
+type DbTransaction = Parameters<
+  Parameters<AppContext["db"]["transaction"]>[0]
+>[0];
 
 const salesImplementer = implement(salesContract).$context<AppContext>();
 
@@ -98,6 +112,85 @@ function resolveAmountRange(
   };
 }
 
+function buildSalesWhereConditions(
+  organizationId: string,
+  filters: {
+    status?: string | null;
+    cashierId?: string | null;
+    terminalName?: string | null;
+    paymentMethod?: string | null;
+    balanceStatus?: string | null;
+    trimmedSearchQuery?: string;
+    startDateMs: number | null;
+    endDateExclusiveMs: number | null;
+    amountRange: { minimum: number | null; maximum: number | null };
+  },
+  paidAmountExpression: SQL<number>
+) {
+  const baseWhereConditions = [eq(sale.organizationId, organizationId)];
+  if (filters.status) {
+    baseWhereConditions.push(eq(sale.status, filters.status));
+  }
+  if (filters.cashierId) {
+    baseWhereConditions.push(eq(sale.userId, filters.cashierId));
+  }
+  if (filters.terminalName) {
+    baseWhereConditions.push(eq(shift.terminalName, filters.terminalName));
+  }
+  if (filters.startDateMs !== null) {
+    baseWhereConditions.push(
+      gte(sale.createdAt, new Date(filters.startDateMs))
+    );
+  }
+  if (filters.endDateExclusiveMs !== null) {
+    baseWhereConditions.push(
+      lt(sale.createdAt, new Date(filters.endDateExclusiveMs))
+    );
+  }
+  if (filters.amountRange.minimum !== null) {
+    baseWhereConditions.push(
+      gte(sale.totalAmount, filters.amountRange.minimum)
+    );
+  }
+  if (filters.amountRange.maximum !== null) {
+    baseWhereConditions.push(
+      sql`${sale.totalAmount} <= ${filters.amountRange.maximum}`
+    );
+  }
+  if (filters.paymentMethod) {
+    baseWhereConditions.push(sql`exists (
+			select 1
+			from ${payment}
+			where ${payment.organizationId} = ${organizationId}
+				and ${payment.saleId} = ${sale.id}
+				and ${payment.method} = ${filters.paymentMethod}
+		)`);
+  }
+  if (filters.balanceStatus === "with_balance") {
+    baseWhereConditions.push(
+      sql`${sale.status} <> 'cancelled' and ${paidAmountExpression} < ${sale.totalAmount}`
+    );
+  }
+  if (filters.balanceStatus === "settled") {
+    baseWhereConditions.push(
+      sql`(${sale.status} = 'cancelled' or ${paidAmountExpression} >= ${sale.totalAmount})`
+    );
+  }
+
+  const searchCondition = filters.trimmedSearchQuery
+    ? sql`(
+			${sale.id} like ${`%${filters.trimmedSearchQuery}%`}
+			or coalesce(${customer.name}, '') like ${`%${filters.trimmedSearchQuery}%`}
+			or coalesce(${user.name}, '') like ${`%${filters.trimmedSearchQuery}%`}
+			or coalesce(${shift.terminalName}, '') like ${`%${filters.trimmedSearchQuery}%`}
+		)`
+    : null;
+
+  return searchCondition
+    ? [...baseWhereConditions, searchCondition]
+    : baseWhereConditions;
+}
+
 export const list = orgRequiredProcedure.list.handler(
   async ({ input, context }) => {
     const organizationId = context.organizationId;
@@ -117,63 +210,21 @@ export const list = orgRequiredProcedure.list.handler(
 				and ${payment.saleId} = ${sale.id}
 		), 0)`;
 
-    const baseWhereConditions = [eq(sale.organizationId, organizationId)];
-    if (input.status) {
-      baseWhereConditions.push(eq(sale.status, input.status));
-    }
-    if (input.cashierId) {
-      baseWhereConditions.push(eq(sale.userId, input.cashierId));
-    }
-    if (input.terminalName) {
-      baseWhereConditions.push(eq(shift.terminalName, input.terminalName));
-    }
-    if (startDateMs !== null) {
-      baseWhereConditions.push(gte(sale.createdAt, new Date(startDateMs)));
-    }
-    if (endDateExclusiveMs !== null) {
-      baseWhereConditions.push(
-        lt(sale.createdAt, new Date(endDateExclusiveMs))
-      );
-    }
-    if (amountRange.minimum !== null) {
-      baseWhereConditions.push(gte(sale.totalAmount, amountRange.minimum));
-    }
-    if (amountRange.maximum !== null) {
-      baseWhereConditions.push(
-        sql`${sale.totalAmount} <= ${amountRange.maximum}`
-      );
-    }
-    if (input.paymentMethod) {
-      baseWhereConditions.push(sql`exists (
-				select 1
-				from ${payment}
-				where ${payment.organizationId} = ${organizationId}
-					and ${payment.saleId} = ${sale.id}
-					and ${payment.method} = ${input.paymentMethod}
-			)`);
-    }
-    if (input.balanceStatus === "with_balance") {
-      baseWhereConditions.push(
-        sql`${sale.status} <> 'cancelled' and ${paidAmountExpression} < ${sale.totalAmount}`
-      );
-    }
-    if (input.balanceStatus === "settled") {
-      baseWhereConditions.push(
-        sql`(${sale.status} = 'cancelled' or ${paidAmountExpression} >= ${sale.totalAmount})`
-      );
-    }
-
-    const searchCondition = trimmedSearchQuery
-      ? sql`(
-				${sale.id} like ${`%${trimmedSearchQuery}%`}
-				or coalesce(${customer.name}, '') like ${`%${trimmedSearchQuery}%`}
-				or coalesce(${user.name}, '') like ${`%${trimmedSearchQuery}%`}
-				or coalesce(${shift.terminalName}, '') like ${`%${trimmedSearchQuery}%`}
-			)`
-      : null;
-    const salesWhereConditions = searchCondition
-      ? [...baseWhereConditions, searchCondition]
-      : baseWhereConditions;
+    const salesWhereConditions = buildSalesWhereConditions(
+      organizationId,
+      {
+        status: input.status,
+        cashierId: input.cashierId,
+        terminalName: input.terminalName,
+        paymentMethod: input.paymentMethod,
+        balanceStatus: input.balanceStatus,
+        trimmedSearchQuery,
+        startDateMs,
+        endDateExclusiveMs,
+        amountRange,
+      },
+      paidAmountExpression
+    );
 
     const [
       salesRows,
@@ -648,8 +699,225 @@ export const create = orgRequiredProcedure.create.handler(
     })
 );
 
+async function fetchAndValidateCancellationTarget(
+  tx: DbTransaction,
+  saleId: string,
+  organizationId: string,
+  userId: string
+) {
+  const [targetSale] = await tx
+    .select({
+      id: sale.id,
+      shiftId: sale.shiftId,
+      customerId: sale.customerId,
+      status: sale.status,
+    })
+    .from(sale)
+    .where(and(eq(sale.id, saleId), eq(sale.organizationId, organizationId)))
+    .limit(1);
+
+  if (!targetSale) {
+    throw new ORPCError("NOT_FOUND", {
+      message: "Venta no encontrada para la organización activa",
+    });
+  }
+  if (targetSale.status === "cancelled") {
+    throw new ORPCError("BAD_REQUEST", {
+      message: "La venta ya está anulada",
+    });
+  }
+
+  const [targetShift] = await tx
+    .select({
+      id: shift.id,
+      status: shift.status,
+      userId: shift.userId,
+    })
+    .from(shift)
+    .where(
+      and(
+        eq(shift.id, targetSale.shiftId),
+        eq(shift.organizationId, organizationId)
+      )
+    )
+    .limit(1);
+
+  if (!targetShift) {
+    throw new ORPCError("NOT_FOUND", {
+      message: "Turno no encontrado para la venta seleccionada",
+    });
+  }
+  if (targetShift.status !== "open") {
+    throw new ORPCError("BAD_REQUEST", {
+      message: "Solo se puede anular una venta de un turno abierto",
+    });
+  }
+  if (targetShift.userId !== userId) {
+    throw new ORPCError("FORBIDDEN", {
+      message: "Solo el cajero del turno puede anular la venta",
+    });
+  }
+
+  return targetSale;
+}
+
+function validateCreditTransactionRules(
+  chargeTransactions: Array<{
+    id: string;
+    creditAccountId: string;
+    amount: number;
+  }>,
+  paymentTransactions: Array<{ id: string }>,
+  targetSale: { status: string; id: string }
+) {
+  if (paymentTransactions.length > 0) {
+    throw new ORPCError("BAD_REQUEST", {
+      message: "No se puede anular una venta con abonos registrados",
+    });
+  }
+
+  if (targetSale.status === "credit" && chargeTransactions.length === 0) {
+    throw new ORPCError("BAD_REQUEST", {
+      message:
+        "La venta a crédito no tiene un cargo asociado para poder anularse",
+    });
+  }
+}
+
+function buildStockRestorations(
+  saleItemRows: Array<{
+    productId: string;
+    quantity: number;
+    productName: string;
+    trackInventory: boolean;
+  }>,
+  saleModifierRows: Array<{
+    productId: string;
+    baseQuantity: number;
+    modifierQuantity: number;
+    productName: string;
+    trackInventory: boolean;
+  }>
+) {
+  const stockRestorations = new Map<
+    string,
+    { quantity: number; productName: string; trackInventory: boolean }
+  >();
+  for (const itemRow of saleItemRows) {
+    stockRestorations.set(itemRow.productId, {
+      quantity:
+        (stockRestorations.get(itemRow.productId)?.quantity ?? 0) +
+        itemRow.quantity,
+      productName: itemRow.productName,
+      trackInventory: itemRow.trackInventory,
+    });
+  }
+  for (const modifierRow of saleModifierRows) {
+    stockRestorations.set(modifierRow.productId, {
+      quantity:
+        (stockRestorations.get(modifierRow.productId)?.quantity ?? 0) +
+        modifierRow.baseQuantity * modifierRow.modifierQuantity,
+      productName: modifierRow.productName,
+      trackInventory: modifierRow.trackInventory,
+    });
+  }
+  return stockRestorations;
+}
+
+function restoreProductStock(
+  tx: DbTransaction,
+  entriesToRestore: Array<{
+    productId: string;
+    restoration: {
+      quantity: number;
+      productName: string;
+      trackInventory: boolean;
+    };
+  }>,
+  organizationId: string
+) {
+  return Promise.all(
+    entriesToRestore.map(({ productId, restoration }) =>
+      tx
+        .update(product)
+        .set({
+          stock: sql`${product.stock} + ${restoration.quantity}`,
+        })
+        .where(
+          and(
+            eq(product.id, productId),
+            eq(product.organizationId, organizationId)
+          )
+        )
+        .returning({ id: product.id })
+        .then((updatedProducts) => {
+          if (updatedProducts.length === 0) {
+            throw new ORPCError("BAD_REQUEST", {
+              message: `No fue posible restaurar el stock de ${restoration.productName}`,
+            });
+          }
+          return { productId, restoration };
+        })
+    )
+  );
+}
+
+async function reverseCreditCharges(
+  tx: DbTransaction,
+  chargeTransactions: Array<{
+    id: string;
+    creditAccountId: string;
+    amount: number;
+  }>,
+  organizationId: string,
+  cancelledAt: Date
+) {
+  await Promise.all(
+    chargeTransactions.map(async (chargeTransaction) => {
+      const [creditAccountRow] = await tx
+        .select({
+          id: creditAccount.id,
+          balance: creditAccount.balance,
+        })
+        .from(creditAccount)
+        .where(
+          and(
+            eq(creditAccount.id, chargeTransaction.creditAccountId),
+            eq(creditAccount.organizationId, organizationId)
+          )
+        )
+        .limit(1);
+
+      if (!creditAccountRow) {
+        throw new ORPCError("NOT_FOUND", {
+          message: "Cuenta de crédito no encontrada para anular la venta",
+        });
+      }
+      if (creditAccountRow.balance < chargeTransaction.amount) {
+        throw new ORPCError("BAD_REQUEST", {
+          message:
+            "La cuenta de crédito ya no coincide con la deuda de esta venta",
+        });
+      }
+
+      await tx
+        .update(creditAccount)
+        .set({
+          balance: creditAccountRow.balance - chargeTransaction.amount,
+          updatedAt: cancelledAt,
+        })
+        .where(
+          and(
+            eq(creditAccount.id, creditAccountRow.id),
+            eq(creditAccount.organizationId, organizationId)
+          )
+        );
+    })
+  );
+}
+
 export const cancel = orgRequiredProcedure.cancel.handler(
-  async ({ input, context }) => {
+  ({ input, context }) => {
     const { db: txCtx, organizationId, user } = context;
     const userId = user.id;
     const cancelledAt = input.cancelledAt
@@ -657,63 +925,12 @@ export const cancel = orgRequiredProcedure.cancel.handler(
       : new Date();
 
     return txCtx.transaction(async (tx) => {
-      const [targetSale] = await tx
-        .select({
-          id: sale.id,
-          shiftId: sale.shiftId,
-          customerId: sale.customerId,
-          status: sale.status,
-        })
-        .from(sale)
-        .where(
-          and(
-            eq(sale.id, input.saleId),
-            eq(sale.organizationId, organizationId)
-          )
-        )
-        .limit(1);
-
-      if (!targetSale) {
-        throw new ORPCError("NOT_FOUND", {
-          message: "Venta no encontrada para la organización activa",
-        });
-      }
-      if (targetSale.status === "cancelled") {
-        throw new ORPCError("BAD_REQUEST", {
-          message: "La venta ya está anulada",
-        });
-      }
-
-      const [targetShift] = await tx
-        .select({
-          id: shift.id,
-          status: shift.status,
-          userId: shift.userId,
-        })
-        .from(shift)
-        .where(
-          and(
-            eq(shift.id, targetSale.shiftId),
-            eq(shift.organizationId, organizationId)
-          )
-        )
-        .limit(1);
-
-      if (!targetShift) {
-        throw new ORPCError("NOT_FOUND", {
-          message: "Turno no encontrado para la venta seleccionada",
-        });
-      }
-      if (targetShift.status !== "open") {
-        throw new ORPCError("BAD_REQUEST", {
-          message: "Solo se puede anular una venta de un turno abierto",
-        });
-      }
-      if (targetShift.userId !== userId) {
-        throw new ORPCError("FORBIDDEN", {
-          message: "Solo el cajero del turno puede anular la venta",
-        });
-      }
+      const targetSale = await fetchAndValidateCancellationTarget(
+        tx,
+        input.saleId,
+        organizationId,
+        userId
+      );
 
       const [chargeTransactions, paymentTransactions] = await Promise.all([
         tx
@@ -743,18 +960,11 @@ export const cancel = orgRequiredProcedure.cancel.handler(
           .limit(1),
       ]);
 
-      if (paymentTransactions.length > 0) {
-        throw new ORPCError("BAD_REQUEST", {
-          message: "No se puede anular una venta con abonos registrados",
-        });
-      }
-
-      if (targetSale.status === "credit" && chargeTransactions.length === 0) {
-        throw new ORPCError("BAD_REQUEST", {
-          message:
-            "La venta a crédito no tiene un cargo asociado para poder anularse",
-        });
-      }
+      validateCreditTransactionRules(
+        chargeTransactions,
+        paymentTransactions,
+        targetSale
+      );
 
       const [saleItemRows, saleModifierRows] = await Promise.all([
         tx
@@ -809,30 +1019,19 @@ export const cancel = orgRequiredProcedure.cancel.handler(
           ),
       ]);
 
-      const stockRestorations = new Map<
-        string,
-        { quantity: number; productName: string; trackInventory: boolean }
-      >();
-      for (const itemRow of saleItemRows) {
-        stockRestorations.set(itemRow.productId, {
-          quantity:
-            (stockRestorations.get(itemRow.productId)?.quantity ?? 0) +
-            itemRow.quantity,
-          productName: itemRow.productName,
-          trackInventory: itemRow.trackInventory,
-        });
-      }
-      for (const modifierRow of saleModifierRows) {
-        stockRestorations.set(modifierRow.productId, {
-          quantity:
-            (stockRestorations.get(modifierRow.productId)?.quantity ?? 0) +
-            modifierRow.baseQuantity * modifierRow.modifierQuantity,
-          productName: modifierRow.productName,
-          trackInventory: modifierRow.trackInventory,
-        });
-      }
+      const stockRestorations = buildStockRestorations(
+        saleItemRows,
+        saleModifierRows
+      );
 
-      const entriesToRestore = [];
+      const entriesToRestore: Array<{
+        productId: string;
+        restoration: {
+          quantity: number;
+          productName: string;
+          trackInventory: boolean;
+        };
+      }> = [];
       for (const [productId, restoration] of stockRestorations.entries()) {
         if (!restoration.trackInventory || restoration.quantity <= 0) {
           continue;
@@ -840,29 +1039,10 @@ export const cancel = orgRequiredProcedure.cancel.handler(
         entriesToRestore.push({ productId, restoration });
       }
 
-      const restoreResults = await Promise.all(
-        entriesToRestore.map(({ productId, restoration }) =>
-          tx
-            .update(product)
-            .set({
-              stock: sql`${product.stock} + ${restoration.quantity}`,
-            })
-            .where(
-              and(
-                eq(product.id, productId),
-                eq(product.organizationId, organizationId)
-              )
-            )
-            .returning({ id: product.id })
-            .then((updatedProducts) => {
-              if (updatedProducts.length === 0) {
-                throw new ORPCError("BAD_REQUEST", {
-                  message: `No fue posible restaurar el stock de ${restoration.productName}`,
-                });
-              }
-              return { productId, restoration };
-            })
-        )
+      const restoreResults = await restoreProductStock(
+        tx,
+        entriesToRestore,
+        organizationId
       );
 
       const inventoryRows: (typeof inventoryMovement.$inferInsert)[] =
@@ -881,47 +1061,11 @@ export const cancel = orgRequiredProcedure.cancel.handler(
         await tx.insert(inventoryMovement).values(inventoryRows);
       }
 
-      await Promise.all(
-        chargeTransactions.map(async (chargeTransaction) => {
-          const [creditAccountRow] = await tx
-            .select({
-              id: creditAccount.id,
-              balance: creditAccount.balance,
-            })
-            .from(creditAccount)
-            .where(
-              and(
-                eq(creditAccount.id, chargeTransaction.creditAccountId),
-                eq(creditAccount.organizationId, organizationId)
-              )
-            )
-            .limit(1);
-
-          if (!creditAccountRow) {
-            throw new ORPCError("NOT_FOUND", {
-              message: "Cuenta de crédito no encontrada para anular la venta",
-            });
-          }
-          if (creditAccountRow.balance < chargeTransaction.amount) {
-            throw new ORPCError("BAD_REQUEST", {
-              message:
-                "La cuenta de crédito ya no coincide con la deuda de esta venta",
-            });
-          }
-
-          await tx
-            .update(creditAccount)
-            .set({
-              balance: creditAccountRow.balance - chargeTransaction.amount,
-              updatedAt: cancelledAt,
-            })
-            .where(
-              and(
-                eq(creditAccount.id, creditAccountRow.id),
-                eq(creditAccount.organizationId, organizationId)
-              )
-            );
-        })
+      await reverseCreditCharges(
+        tx,
+        chargeTransactions,
+        organizationId,
+        cancelledAt
       );
 
       await tx

@@ -17,16 +17,22 @@ export function ProductGridCard({
   product,
   quantity,
   isOutOfStock,
-  isActiveShift,
+  isActiveShift: _isActiveShift,
   onSelect,
   onToggleFavorite,
   isTogglingFavorite,
 }: ProductGridCardProps) {
-  const stockLabel = product.trackInventory
-    ? product.stock > 0
-      ? `${product.stock} Unids.`
-      : "Sin Stock"
-    : null;
+  function getStockLabel() {
+    if (!product.trackInventory) {
+      return null;
+    }
+    if (product.stock > 0) {
+      return `${product.stock} Unids.`;
+    }
+    return "Sin Stock";
+  }
+
+  const stockLabel = getStockLabel();
 
   return (
     <div className="relative">

@@ -3,7 +3,7 @@ import type {
   ThermalReceiptInfoLine,
   ThermalReceiptProps,
   ThermalReceiptTotal,
-} from "@/features/pos/components/ThermalReceipt";
+} from "@/features/pos/components/thermal-receipt";
 import type { PosPrinterLanguage } from "@/features/pos/printing/printer-settings.local.client";
 
 type EncodablePrinterLanguage = Exclude<PosPrinterLanguage, "auto">;

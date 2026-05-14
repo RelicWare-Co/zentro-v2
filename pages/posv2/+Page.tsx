@@ -1,11 +1,11 @@
 import { useMemo, useState } from "react";
-import { CashMovementModal } from "@/features/pos/components/modals/CashMovementModal";
-import { CheckoutModal } from "@/features/pos/components/modals/CheckoutModal";
-import { CloseShiftModal } from "@/features/pos/components/modals/CloseShiftModal";
-import { CreateCustomerModal } from "@/features/pos/components/modals/CreateCustomerModal";
-import { ModifierModal } from "@/features/pos/components/modals/ModifierModal";
-import { OpenShiftModal } from "@/features/pos/components/modals/OpenShiftModal";
-import { ShiftRequiredDialog } from "@/features/pos/components/modals/ShiftRequiredDialog";
+import { CashMovementModal } from "@/features/pos/components/modals/cash-movement-modal";
+import { CheckoutModal } from "@/features/pos/components/modals/checkout-modal";
+import { CloseShiftModal } from "@/features/pos/components/modals/close-shift-modal";
+import { CreateCustomerModal } from "@/features/pos/components/modals/create-customer-modal";
+import { ModifierModal } from "@/features/pos/components/modals/modifier-modal";
+import { OpenShiftModal } from "@/features/pos/components/modals/open-shift-modal";
+import { ShiftRequiredDialog } from "@/features/pos/components/modals/shift-required-dialog";
 import { useCreateCustomerModal } from "@/features/pos/hooks/use-create-customer-modal";
 import { useModifierModal } from "@/features/pos/hooks/use-modifier-modal";
 import { usePosCart } from "@/features/pos/hooks/use-pos-cart";
@@ -24,9 +24,9 @@ import {
   calculateItemTotal,
   createPaymentMethodLabelMap,
 } from "@/features/pos/utils";
-import { CartPanelV2 } from "@/features/posv2/components/CartPanelV2";
-import { PosV2Header } from "@/features/posv2/components/PosV2Header";
-import { ProductCatalog } from "@/features/posv2/components/ProductCatalog";
+import { CartPanelV2 } from "@/features/posv2/components/cart-panel-v2";
+import { PosV2Header } from "@/features/posv2/components/pos-v2-header";
+import { ProductCatalog } from "@/features/posv2/components/product-catalog";
 import { useActiveOrganization } from "@/lib/auth-client";
 
 export default function PosV2Page() {
@@ -91,7 +91,7 @@ export default function PosV2Page() {
   // Modifier modal
   const {
     isModifierModalOpen,
-    setIsModifierModalOpen,
+    setIsModifierModalOpen: _setIsModifierModalOpen,
     selectedProductForModifiers,
     modifierQuantities,
     updateModifierQuantity,
@@ -197,7 +197,7 @@ export default function PosV2Page() {
     handleProductSelection(product);
   };
 
-  const _handleBarcodeScan = async (value: string): Promise<boolean> => {
+  const _handleBarcodeScan = (value: string): boolean => {
     if (!activeShift) {
       setIsShiftRequiredOpen(true);
       return false;

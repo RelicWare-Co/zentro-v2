@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { useId, useState } from "react";
 import type { z } from "zod";
-import { OrganizationSelection } from "@/components/OrganizationSelection";
+import { OrganizationSelection } from "@/components/organization-selection";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   AlertDialog,
@@ -726,7 +726,9 @@ function MembersTab({
                         <Button
                           className="text-emerald-400 hover:text-emerald-300"
                           disabled={updateRoleMutation.isPending}
-                          onClick={() => void saveRole(member.memberId)}
+                          onClick={() => {
+                            saveRole(member.memberId).catch(() => undefined);
+                          }}
                           size="icon-sm"
                           variant="ghost"
                         >
@@ -1315,7 +1317,9 @@ function AccessTab({
                     <Button
                       className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5"
                       disabled={!isJoinLinkActive(joinLink.status)}
-                      onClick={() => void copyJoinUrl(joinLink.joinPath)}
+                      onClick={() => {
+                        copyJoinUrl(joinLink.joinPath).catch(() => undefined);
+                      }}
                       size="sm"
                       type="button"
                       variant="outline"
@@ -1330,7 +1334,11 @@ function AccessTab({
                           joinLink.status === "revoked" ||
                           revokeJoinLinkMutation.isPending
                         }
-                        onClick={() => void handleRevokeJoinLink(joinLink.id)}
+                        onClick={() => {
+                          handleRevokeJoinLink(joinLink.id).catch(
+                            () => undefined
+                          );
+                        }}
                         size="sm"
                         type="button"
                         variant="outline"
@@ -1410,14 +1418,16 @@ function AccessTab({
 }
 
 function JoinLinkStatusBadge(props: { status: OrganizationJoinLinkStatus }) {
-  const className =
-    props.status === "active"
-      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-200"
-      : props.status === "used"
-        ? "border-sky-500/30 bg-sky-500/10 text-sky-200"
-        : props.status === "revoked"
-          ? "border-red-500/30 bg-red-500/10 text-red-200"
-          : "border-amber-500/30 bg-amber-500/10 text-amber-200";
+  let className: string;
+  if (props.status === "active") {
+    className = "border-emerald-500/30 bg-emerald-500/10 text-emerald-200";
+  } else if (props.status === "used") {
+    className = "border-sky-500/30 bg-sky-500/10 text-sky-200";
+  } else if (props.status === "revoked") {
+    className = "border-red-500/30 bg-red-500/10 text-red-200";
+  } else {
+    className = "border-amber-500/30 bg-amber-500/10 text-amber-200";
+  }
 
   return (
     <Badge className={className} variant="outline">

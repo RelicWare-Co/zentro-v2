@@ -222,7 +222,7 @@ export function usePosCheckout(
       },
       {
         onSuccess: (result) => {
-          void Promise.resolve(
+          Promise.resolve(
             onSaleCreated?.({
               result,
               snapshot: receiptSnapshot,

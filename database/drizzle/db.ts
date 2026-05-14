@@ -1,5 +1,6 @@
 import { createClient } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
+// biome-ignore lint/performance/noNamespaceImport: drizzle requires all schemas as a namespace object
 import * as schema from "./schema";
 
 function createDb() {

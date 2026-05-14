@@ -149,6 +149,7 @@ export function CatalogToolbar({
                 )}
                 key={cat.id}
                 onClick={() => onCategoryChange(cat.id)}
+                type="button"
               >
                 {cat.name}
               </button>
@@ -165,6 +166,7 @@ export function CatalogToolbar({
                 : "text-[#6b6b6b] hover:text-white"
             )}
             onClick={() => onViewModeChange("grid")}
+            type="button"
           >
             <LayoutGrid className="size-4" />
             <span className="hidden sm:inline">Cuadrícula</span>
@@ -177,6 +179,7 @@ export function CatalogToolbar({
                 : "text-[#6b6b6b] hover:text-white"
             )}
             onClick={() => onViewModeChange("list")}
+            type="button"
           >
             <List className="size-4" />
             <span className="hidden sm:inline">Lista</span>

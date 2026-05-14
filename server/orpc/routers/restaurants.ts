@@ -690,13 +690,16 @@ async function refreshKitchenTicketStatus(
     }
     return acc;
   }, []);
-  const nextStatus = activeStatuses.every((status) => status === "served")
-    ? "served"
-    : activeStatuses.every(
-          (status) => status === "ready" || status === "served"
-        )
-      ? "ready"
-      : "sent";
+  let nextStatus: "served" | "ready" | "sent";
+  if (activeStatuses.every((status) => status === "served")) {
+    nextStatus = "served";
+  } else if (
+    activeStatuses.every((status) => status === "ready" || status === "served")
+  ) {
+    nextStatus = "ready";
+  } else {
+    nextStatus = "sent";
+  }
 
   await database
     .update(restaurantKitchenTicket)

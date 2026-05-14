@@ -88,6 +88,23 @@ function getCustomerFormInitialValue(
   };
 }
 
+function formatCustomerDocument(
+  documentType?: string | null,
+  documentNumber?: string | null
+) {
+  if (documentType && documentNumber) {
+    return (
+      <span>
+        {documentType} {documentNumber}
+      </span>
+    );
+  }
+  if (documentNumber) {
+    return <span>{documentNumber}</span>;
+  }
+  return <span className="text-zinc-500">-</span>;
+}
+
 export function CustomersPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -139,7 +156,9 @@ export function CustomersPage() {
             )}
             <Button
               className="mt-1 w-fit border-red-500/30 bg-transparent text-red-200 hover:bg-red-500/10"
-              onClick={() => void customersQuery.refetch()}
+              onClick={() => {
+                customersQuery.refetch().catch(() => undefined);
+              }}
               size="sm"
               type="button"
               variant="outline"
@@ -241,14 +260,9 @@ export function CustomersPage() {
               </div>
             </TableCell>
             <TableCell className="text-sm text-zinc-300">
-              {customer.documentType && customer.documentNumber ? (
-                <span>
-                  {customer.documentType} {customer.documentNumber}
-                </span>
-              ) : customer.documentNumber ? (
-                <span>{customer.documentNumber}</span>
-              ) : (
-                <span className="text-zinc-500">-</span>
+              {formatCustomerDocument(
+                customer.documentType,
+                customer.documentNumber
               )}
             </TableCell>
             <TableCell className="text-sm text-zinc-300">
@@ -332,9 +346,11 @@ export function CustomersPage() {
               className="bg-red-500 text-white hover:bg-red-600"
               onClick={() => {
                 if (customerToDelete) {
-                  void deleteMutation.mutateAsync({
-                    id: customerToDelete.id,
-                  });
+                  deleteMutation
+                    .mutateAsync({
+                      id: customerToDelete.id,
+                    })
+                    .catch(() => undefined);
                 }
                 setCustomerToDelete(null);
               }}

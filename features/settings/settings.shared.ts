@@ -34,10 +34,7 @@ const PAYMENT_METHOD_CATALOG = [
   },
 ] as const;
 
-const _PAYMENT_METHOD_IDS = PAYMENT_METHOD_CATALOG.map((method) => method.id);
 export const PAYMENT_METHOD_ID_PATTERN = /^[a-z0-9]+(?:_[a-z0-9]+)*$/;
-
-type PaymentMethodCatalogId = (typeof PAYMENT_METHOD_CATALOG)[number]["id"];
 
 export interface OrganizationPaymentMethodSettings {
   enabled: boolean;

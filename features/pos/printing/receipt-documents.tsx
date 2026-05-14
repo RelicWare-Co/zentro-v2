@@ -1,7 +1,7 @@
 import {
   ThermalReceipt,
   type ThermalReceiptItem,
-} from "@/features/pos/components/ThermalReceipt";
+} from "@/features/pos/components/thermal-receipt";
 import type { ThermalReceiptDocument } from "@/features/pos/printing/thermal-receipt-document";
 import { formatCurrency, formatPaymentMethodLabel } from "@/features/pos/utils";
 

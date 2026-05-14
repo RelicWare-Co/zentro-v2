@@ -9,12 +9,14 @@ import {
 import { organizationModuleEntitlement } from "../../../database/drizzle/schema/feature.schema";
 import {
   isModuleEntitled,
-  MODULE_KEYS,
   type ModuleAccessState,
-  type ModuleEntitlementStatus,
-  type ModuleKey,
 } from "../../../features/modules/module-access.shared";
-import { getModuleDefinition } from "../../../features/modules/module-registry";
+import type { ModuleEntitlementStatus } from "../../../features/modules/module-definition";
+import {
+  getModuleDefinition,
+  MODULE_KEYS,
+  type ModuleKey,
+} from "../../../features/modules/module-registry";
 import { parseOrganizationSettingsMetadata } from "../../../features/settings/settings.shared";
 import {
   isOrganizationManagerRole,
