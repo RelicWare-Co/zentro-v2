@@ -91,7 +91,7 @@ export default function PosV2Page() {
   // Modifier modal
   const {
     isModifierModalOpen,
-    setIsModifierModalOpen,
+    setIsModifierModalOpen: _setIsModifierModalOpen,
     selectedProductForModifiers,
     modifierQuantities,
     updateModifierQuantity,
@@ -197,7 +197,7 @@ export default function PosV2Page() {
     handleProductSelection(product);
   };
 
-  const _handleBarcodeScan = async (value: string): Promise<boolean> => {
+  const _handleBarcodeScan = (value: string): boolean => {
     if (!activeShift) {
       setIsShiftRequiredOpen(true);
       return false;
