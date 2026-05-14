@@ -1,7 +1,7 @@
 "use client";
 
 import { Slider as SliderPrimitive } from "radix-ui";
-import { type ComponentProps, useMemo } from "react";
+import { type ComponentProps, useId, useMemo } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -13,6 +13,7 @@ function Slider({
   max = 100,
   ...props
 }: ComponentProps<typeof SliderPrimitive.Root>) {
+  const id = useId();
   const _values = useMemo(() => {
     if (Array.isArray(value)) {
       return value;
@@ -22,6 +23,8 @@ function Slider({
     }
     return [min, max];
   }, [value, defaultValue, min, max]);
+
+  const thumbKeys = _values.map((_, i) => `${id}-thumb-${i}`);
 
   return (
     <SliderPrimitive.Root
@@ -45,11 +48,11 @@ function Slider({
           data-slot="slider-range"
         />
       </SliderPrimitive.Track>
-      {Array.from({ length: _values.length }, (_, i) => (
+      {_values.map((_val, i) => (
         <SliderPrimitive.Thumb
           className="relative block size-3 shrink-0 select-none rounded-full border border-ring bg-white ring-ring/50 transition-[color,box-shadow] after:absolute after:-inset-2 hover:ring-3 focus-visible:outline-hidden focus-visible:ring-3 active:ring-3 disabled:pointer-events-none disabled:opacity-50"
           data-slot="slider-thumb"
-          key={`thumb-${i}`}
+          key={thumbKeys[i]}
         />
       ))}
     </SliderPrimitive.Root>
