@@ -563,29 +563,27 @@ describe("cross-area end-to-end flows", () => {
         }),
       ]);
 
-      // Two credit sales
-      const [sale1, sale2] = await Promise.all([
-        createCoreSale(
-          {
-            shiftId,
-            customerId,
-            items: [{ productId, quantity: 1, unitPrice: 10_000 }],
-            payments: [],
-            isCreditSale: true,
-          },
-          { db, organizationId, userId }
-        ),
-        createCoreSale(
-          {
-            shiftId,
-            customerId,
-            items: [{ productId, quantity: 1, unitPrice: 10_000 }],
-            payments: [],
-            isCreditSale: true,
-          },
-          { db, organizationId, userId }
-        ),
-      ]);
+      // Two credit sales (sequential to avoid SQLite BUSY on a single test DB connection)
+      const sale1 = await createCoreSale(
+        {
+          shiftId,
+          customerId,
+          items: [{ productId, quantity: 1, unitPrice: 10_000 }],
+          payments: [],
+          isCreditSale: true,
+        },
+        { db, organizationId, userId }
+      );
+      const sale2 = await createCoreSale(
+        {
+          shiftId,
+          customerId,
+          items: [{ productId, quantity: 1, unitPrice: 10_000 }],
+          payments: [],
+          isCreditSale: true,
+        },
+        { db, organizationId, userId }
+      );
 
       const accountRows = await db
         .select()
