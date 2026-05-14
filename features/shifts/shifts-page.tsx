@@ -9,7 +9,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { useDeferredValue, useEffect, useId, useMemo, useState } from "react";
-import { Link } from "@/components/link";
+import { Link } from "@/components/Link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
