@@ -518,6 +518,7 @@ describe("sale creation transactions", () => {
         },
         { db, organizationId, userId }
       );
+      expect(saleResult.saleId).toBeDefined();
 
       const afterSale = await db
         .select({ stock: product.stock })
@@ -623,6 +624,7 @@ describe("sale creation transactions", () => {
         },
         { db, organizationId, userId }
       );
+      expect(saleResult.saleId).toBeDefined();
 
       const accountBefore = await db
         .select()

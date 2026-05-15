@@ -574,6 +574,7 @@ describe("cross-area end-to-end flows", () => {
         },
         { db, organizationId, userId }
       );
+      expect(sale1.saleId).toBeDefined();
       const sale2 = await createCoreSale(
         {
           shiftId,

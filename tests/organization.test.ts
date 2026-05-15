@@ -736,6 +736,8 @@ describe("organization access control", () => {
         seedUser(db, { name: "Owner1", email: "owner1@example.com" }),
         seedUser(db, { name: "Owner2", email: "owner2@example.com" }),
       ]);
+      expect(owner1.id).toBeDefined();
+      expect(owner2.id).toBeDefined();
       await db.insert(member).values([
         {
           id: crypto.randomUUID(),

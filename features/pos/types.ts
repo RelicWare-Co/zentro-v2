@@ -13,11 +13,10 @@ export type PosCustomer = z.infer<
   typeof SearchCustomersResultSchema
 >["data"][number];
 
-// Datos del bootstrap del POS
-export type PosBootstrap = z.infer<typeof PosBootstrapResultSchema>;
-
 // Turno activo
-export type ActiveShift = PosBootstrap["activeShift"];
+export type ActiveShift = z.infer<
+  typeof PosBootstrapResultSchema
+>["activeShift"];
 
 // Categoría de productos
 export interface Category {

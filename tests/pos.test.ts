@@ -176,6 +176,7 @@ describe("POS checkout", () => {
 
       // Open shift
       const shiftOpen = await client.shifts.open({ startingCash: 0 });
+      expect(shiftOpen.id).toBeDefined();
 
       const bootstrap = await client.pos.bootstrap();
 
@@ -278,6 +279,8 @@ describe("POS checkout", () => {
           price: 2000,
         }),
       ]);
+      expect(prodA).toBeDefined();
+      expect(prodB).toBeDefined();
 
       const [resultA, resultB] = await Promise.all([
         client.pos.searchProducts({ categoryId: catA }),
@@ -339,6 +342,7 @@ describe("POS checkout", () => {
         organizationId,
         name: "Deleted Customer",
       });
+      expect(customerId).toBeDefined();
 
       // Verify customer exists before deletion
       const before = await client.customers.search({ searchQuery: "Deleted" });

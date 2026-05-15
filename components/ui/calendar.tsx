@@ -9,7 +9,7 @@ import {
   type ComponentProps,
   createContext,
   type Ref,
-  useContext,
+  use,
   useEffect,
   useRef,
 } from "react";
@@ -58,7 +58,7 @@ function CalendarChevron({
 }
 
 function CalendarDayButtonWrapper(props: ComponentProps<typeof DayButton>) {
-  const locale = useContext(CalendarLocaleContext);
+  const locale = use(CalendarLocaleContext);
   return <CalendarDayButton locale={locale} {...props} />;
 }
 

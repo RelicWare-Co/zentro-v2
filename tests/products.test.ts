@@ -136,6 +136,7 @@ describe("product CRUD", () => {
         price: 5000,
         stock: 100,
       });
+      expect(createResult.id).toBeDefined();
 
       // Product appears in list
       const listBefore = await client.products.list({});
@@ -181,6 +182,7 @@ describe("product CRUD", () => {
         }),
         seedOrganizationWithMember(db, { orgName: "Other Org" }),
       ]);
+      expect(otherOrgId).toBeDefined();
       const externalCategoryId = await seedCategory(db, {
         organizationId: otherOrgId,
         name: "External",
