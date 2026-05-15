@@ -728,12 +728,11 @@ export function createCoreSale(
   const isCreditSale = input.isCreditSale ?? false;
 
   return txCtx.transaction(async (tx) => {
-    await validateShift(tx, input.shiftId, organizationId, userId);
-    const enabledPaymentMethodIds = await getEnabledPaymentMethodIds(
-      tx,
-      organizationId
-    );
-    await validateCustomer(tx, customerId, organizationId);
+    const [, enabledPaymentMethodIds] = await Promise.all([
+      validateShift(tx, input.shiftId, organizationId, userId),
+      getEnabledPaymentMethodIds(tx, organizationId),
+      validateCustomer(tx, customerId, organizationId),
+    ]);
 
     const referencedProductIds = new Set<string>();
     for (const item of input.items) {

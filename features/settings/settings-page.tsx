@@ -12,7 +12,7 @@ import {
   Sun,
   Users,
 } from "lucide-react";
-import { useEffect, useId, useMemo, useState } from "react";
+import { lazy, Suspense, useId, useMemo, useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -42,6 +42,12 @@ import {
 } from "@/features/settings/settings.shared";
 import { type ThemeMode, useTheme } from "@/hooks/use-theme";
 import { formatMoneyInput, parseMoneyInput } from "@/lib/utils";
+
+const LocalPrinterSettingsCard = lazy(() =>
+  import(
+    "@/features/settings/components/local-printer-settings-card.client"
+  ).then((mod) => ({ default: mod.LocalPrinterSettingsCard }))
+);
 
 const dateFormatter = new Intl.DateTimeFormat("es-CO", {
   day: "numeric",
@@ -91,6 +97,7 @@ export function SettingsPage() {
     <SettingsForm
       data={settingsQuery.data}
       isSaving={updateSettingsMutation.isPending}
+      key={JSON.stringify(settingsQuery.data.settings)}
       onSave={(settings) => updateSettingsMutation.mutateAsync({ settings })}
       saveError={updateSettingsMutation.error}
     />
@@ -102,41 +109,27 @@ function LocalPrinterSettingsSection({
 }: {
   organizationId: string;
 }) {
-  const [CardComponent, setCardComponent] = useState<React.ComponentType<{
-    organizationId: string;
-  }> | null>(null);
+  return (
+    <Suspense fallback={<LocalPrinterSettingsFallback />}>
+      <LocalPrinterSettingsCard organizationId={organizationId} />
+    </Suspense>
+  );
+}
 
-  useEffect(() => {
-    let mounted = true;
-    import(
-      "@/features/settings/components/local-printer-settings-card.client"
-    ).then((mod) => {
-      if (mounted) {
-        setCardComponent(() => mod.LocalPrinterSettingsCard);
-      }
-    });
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  if (!CardComponent) {
-    return (
-      <Card className="border-zinc-800 bg-[var(--color-carbon)] text-[var(--color-photon)] shadow-none">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Settings2 className="size-4 text-[var(--color-voltage)]" />
-            Impresión local
-          </CardTitle>
-          <CardDescription className="text-zinc-400">
-            Cargando configuración de impresora…
-          </CardDescription>
-        </CardHeader>
-      </Card>
-    );
-  }
-
-  return <CardComponent organizationId={organizationId} />;
+function LocalPrinterSettingsFallback() {
+  return (
+    <Card className="border-zinc-800 bg-[var(--color-carbon)] text-[var(--color-photon)] shadow-none">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Settings2 className="size-4 text-[var(--color-voltage)]" />
+          Impresión local
+        </CardTitle>
+        <CardDescription className="text-zinc-400">
+          Cargando configuración de impresora…
+        </CardDescription>
+      </CardHeader>
+    </Card>
+  );
 }
 
 function SettingsForm({
@@ -179,10 +172,6 @@ function SettingsForm({
     () => normalizePaymentMethodId(newPaymentMethodLabel),
     [newPaymentMethodLabel]
   );
-
-  useEffect(() => {
-    setDraftSettings(persistedSettings);
-  }, [persistedSettings]);
 
   const handlePaymentMethodChange = (
     methodId: string,

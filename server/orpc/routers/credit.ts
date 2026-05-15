@@ -426,19 +426,21 @@ export const registerPayment = orgRequiredProcedure.registerPayment.handler(
     const createdAt = resolveDate(input.createdAt, "createdAt");
 
     return context.db.transaction(async (tx) => {
-      await validateShiftForPayment(
-        tx,
-        input.shiftId,
-        context.organizationId,
-        context.user.id
-      );
-      await validateEnabledPaymentMethod(tx, context.organizationId, method);
-      const accountRow = await fetchAndValidateCreditAccount(
-        tx,
-        input.creditAccountId,
-        context.organizationId,
-        amount
-      );
+      const [, , accountRow] = await Promise.all([
+        validateShiftForPayment(
+          tx,
+          input.shiftId,
+          context.organizationId,
+          context.user.id
+        ),
+        validateEnabledPaymentMethod(tx, context.organizationId, method),
+        fetchAndValidateCreditAccount(
+          tx,
+          input.creditAccountId,
+          context.organizationId,
+          amount
+        ),
+      ]);
 
       let targetSale: {
         id: string;

@@ -9,6 +9,7 @@ import {
   use,
   useCallback,
   useEffect,
+  useRef,
   useState,
 } from "react";
 import { Button } from "@/components/ui/button";
@@ -65,14 +66,19 @@ function Carousel({
   );
   const [canScrollPrev, setCanScrollPrev] = useState(false);
   const [canScrollNext, setCanScrollNext] = useState(false);
+  const setApiRef = useRef(setApi);
 
-  const onSelect = useCallback((api: CarouselApi) => {
+  useEffect(() => {
+    setApiRef.current = setApi;
+  }, [setApi]);
+
+  const onSelectRef = useRef((api: CarouselApi) => {
     if (!api) {
       return;
     }
     setCanScrollPrev(api.canScrollPrev());
     setCanScrollNext(api.canScrollNext());
-  }, []);
+  });
 
   const scrollPrev = useCallback(() => {
     api?.scrollPrev();
@@ -96,24 +102,26 @@ function Carousel({
   );
 
   useEffect(() => {
-    if (!(api && setApi)) {
-      return;
-    }
-    setApi(api);
-  }, [api, setApi]);
+    setApiRef.current?.(api);
+  }, [api]);
 
   useEffect(() => {
     if (!api) {
       return;
     }
-    onSelect(api);
-    api.on("reInit", onSelect);
-    api.on("select", onSelect);
+    const handleSelect = (selectedApi: CarouselApi) => {
+      onSelectRef.current(selectedApi);
+    };
+
+    handleSelect(api);
+    api.on("reInit", handleSelect);
+    api.on("select", handleSelect);
 
     return () => {
-      api?.off("select", onSelect);
+      api.off("reInit", handleSelect);
+      api.off("select", handleSelect);
     };
-  }, [api, onSelect]);
+  }, [api]);
 
   return (
     <CarouselContext.Provider
@@ -130,11 +138,9 @@ function Carousel({
       }}
     >
       <section
-        aria-roledescription="carousel"
         className={cn("relative", className)}
         data-slot="carousel"
         onKeyDownCapture={handleKeyDown}
-        role="region"
         {...props}
       >
         {children}

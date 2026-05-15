@@ -13,6 +13,7 @@ import {
   useEffect,
   useId,
   useMemo,
+  useReducer,
   useState,
   useTransition,
 } from "react";
@@ -66,6 +67,39 @@ const DEFAULT_LIST_PARAMS = {
 const ALL_FILTER_VALUE = "all";
 const SALES_VIEW_VALUES = ["today", "history"] as const;
 const DEFAULT_SALES_VIEW = "today" as const;
+
+interface SaleDetailState {
+  isOpen: boolean;
+  selectedSaleId: string | null;
+}
+
+type SaleDetailAction =
+  | { type: "close" }
+  | { type: "open"; saleId: string }
+  | { type: "sync"; fallbackSaleId: string | null; saleIds: Set<string> };
+
+function saleDetailReducer(
+  state: SaleDetailState,
+  action: SaleDetailAction
+): SaleDetailState {
+  switch (action.type) {
+    case "close":
+      return { ...state, isOpen: false };
+    case "open":
+      return { isOpen: true, selectedSaleId: action.saleId };
+    case "sync": {
+      if (!action.fallbackSaleId) {
+        return { isOpen: false, selectedSaleId: null };
+      }
+      if (state.selectedSaleId && action.saleIds.has(state.selectedSaleId)) {
+        return state;
+      }
+      return { ...state, selectedSaleId: action.fallbackSaleId };
+    }
+    default:
+      return state;
+  }
+}
 const SALE_STATUS_VALUES = ["completed", "credit", "cancelled"] as const;
 const SALE_BALANCE_STATUS_VALUES = ["with_balance", "settled"] as const;
 
@@ -613,8 +647,11 @@ export function SalesPage() {
   const [isViewPending, startViewTransition] = useTransition();
   const deferredSearchQuery = useDeferredValue(searchQuery);
 
-  const [selectedSaleId, setSelectedSaleId] = useState<string | null>(null);
-  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [saleDetailState, dispatchSaleDetail] = useReducer(saleDetailReducer, {
+    isOpen: false,
+    selectedSaleId: null,
+  });
+  const { isOpen: isDetailOpen, selectedSaleId } = saleDetailState;
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
 
@@ -651,15 +688,12 @@ export function SalesPage() {
   const cancelSaleMutation = useCancelSaleMutation();
 
   useEffect(() => {
-    if (sales.length === 0) {
-      setSelectedSaleId(null);
-      setIsDetailOpen(false);
-      return;
-    }
-    if (!(selectedSaleId && sales.some((s) => s.id === selectedSaleId))) {
-      setSelectedSaleId(sales[0]?.id ?? null);
-    }
-  }, [sales, selectedSaleId]);
+    dispatchSaleDetail({
+      type: "sync",
+      fallbackSaleId: sales[0]?.id ?? null,
+      saleIds: new Set(sales.map((sale) => sale.id)),
+    });
+  }, [sales]);
 
   const selectedSaleSummary = useMemo(
     () => sales.find((s) => s.id === selectedSaleId) ?? null,
@@ -1030,8 +1064,10 @@ export function SalesPage() {
                             }`}
                             key={sale.id}
                             onClick={() => {
-                              setSelectedSaleId(sale.id);
-                              setIsDetailOpen(true);
+                              dispatchSaleDetail({
+                                type: "open",
+                                saleId: sale.id,
+                              });
                             }}
                             type="button"
                           >
@@ -1179,7 +1215,14 @@ export function SalesPage() {
         </Tabs>
       </div>
 
-      <Sheet onOpenChange={setIsDetailOpen} open={isDetailOpen}>
+      <Sheet
+        onOpenChange={(open) => {
+          if (!open) {
+            dispatchSaleDetail({ type: "close" });
+          }
+        }}
+        open={isDetailOpen}
+      >
         <SheetContent
           className="!w-full !max-w-full sm:!w-[1000px] overflow-hidden border-zinc-800 bg-[var(--color-carbon)] p-0 text-[var(--color-photon)]"
           side="right"
@@ -1234,7 +1277,7 @@ export function SalesPage() {
                   saleId: selectedSaleId,
                 });
                 setIsCancelDialogOpen(false);
-                setIsDetailOpen(false);
+                dispatchSaleDetail({ type: "close" });
               }}
             >
               {cancelSaleMutation.isPending

@@ -123,23 +123,25 @@ type ChartTooltipContentProps = ComponentProps<"div"> &
     labelKey?: string;
   };
 
-function ChartTooltipContent({
-  active,
-  payload,
-  className,
-  indicator = "dot",
-  hideLabel = false,
-  hideIndicator = false,
+function ChartTooltipLabel({
+  config,
+  hideLabel,
   label,
-  labelFormatter,
   labelClassName,
-  formatter,
-  color,
-  nameKey,
+  labelFormatter,
   labelKey,
-}: ChartTooltipContentProps) {
-  const { config } = useChart();
-
+  payload,
+}: Pick<
+  ChartTooltipContentProps,
+  | "hideLabel"
+  | "label"
+  | "labelClassName"
+  | "labelFormatter"
+  | "labelKey"
+  | "payload"
+> & {
+  config: ChartConfig;
+}) {
   const tooltipLabel = useMemo(() => {
     if (hideLabel || !payload?.length) {
       return null;
@@ -167,20 +169,51 @@ function ChartTooltipContent({
 
     return <div className={cn("font-medium", labelClassName)}>{value}</div>;
   }, [
-    label,
-    labelFormatter,
-    payload,
-    hideLabel,
-    labelClassName,
     config,
+    hideLabel,
+    label,
+    labelClassName,
+    labelFormatter,
     labelKey,
+    payload,
   ]);
+
+  return tooltipLabel;
+}
+
+function ChartTooltipContent({
+  active,
+  payload,
+  className,
+  indicator = "dot",
+  hideLabel = false,
+  hideIndicator = false,
+  label,
+  labelFormatter,
+  labelClassName,
+  formatter,
+  color,
+  nameKey,
+  labelKey,
+}: ChartTooltipContentProps) {
+  const { config } = useChart();
 
   if (!(active && payload?.length)) {
     return null;
   }
 
   const nestLabel = payload.length === 1 && indicator !== "dot";
+  const tooltipLabel = (
+    <ChartTooltipLabel
+      config={config}
+      hideLabel={hideLabel}
+      label={label}
+      labelClassName={labelClassName}
+      labelFormatter={labelFormatter}
+      labelKey={labelKey}
+      payload={payload}
+    />
+  );
 
   return (
     <div

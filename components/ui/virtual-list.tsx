@@ -1,6 +1,52 @@
-import { useVirtualizer } from "@tanstack/react-virtual";
-import { type ReactNode, useRef } from "react";
+import { useVirtualizer, type VirtualItem } from "@tanstack/react-virtual";
+import { type CSSProperties, type ReactNode, useRef } from "react";
 import { cn } from "@/lib/utils";
+
+const virtualListOuterStyle: CSSProperties = {
+  position: "relative",
+  width: "100%",
+};
+
+const virtualListInnerBaseStyle: CSSProperties = {
+  position: "absolute",
+  top: 0,
+  left: 0,
+  width: "100%",
+  display: "flex",
+  flexDirection: "column",
+};
+
+interface VirtualListRowProps<T> {
+  data: T[];
+  estimateSize: number;
+  measureElement: (node: Element | null) => void;
+  renderItem: (item: T, index: number) => ReactNode;
+  virtualRow: VirtualItem;
+}
+
+function VirtualListRow<T>({
+  data,
+  estimateSize,
+  measureElement,
+  renderItem,
+  virtualRow,
+}: VirtualListRowProps<T>) {
+  const item = data[virtualRow.index];
+
+  if (item === undefined) {
+    return null;
+  }
+
+  return (
+    <div
+      data-index={virtualRow.index}
+      ref={measureElement}
+      style={{ minHeight: estimateSize }}
+    >
+      {renderItem(item, virtualRow.index)}
+    </div>
+  );
+}
 
 interface VirtualListProps<T> {
   className?: string;
@@ -47,33 +93,27 @@ export function VirtualList<T>({
     <div className={cn("overflow-auto", className)} ref={parentRef}>
       <div
         style={{
+          ...virtualListOuterStyle,
           height: `${virtualizer.getTotalSize()}px`,
-          position: "relative",
-          width: "100%",
         }}
       >
         <div
           className={innerClassName}
           style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: "100%",
+            ...virtualListInnerBaseStyle,
             transform: `translateY(${virtualItems[0]?.start ?? 0}px)`,
-            display: "flex",
-            flexDirection: "column",
             gap,
           }}
         >
           {virtualItems.map((virtualRow) => (
-            <div
-              data-index={virtualRow.index}
+            <VirtualListRow
+              data={data}
+              estimateSize={estimateSize}
               key={virtualRow.key}
-              ref={virtualizer.measureElement}
-              style={{ minHeight: estimateSize }}
-            >
-              {renderItem(data[virtualRow.index], virtualRow.index)}
-            </div>
+              measureElement={virtualizer.measureElement}
+              renderItem={renderItem}
+              virtualRow={virtualRow}
+            />
           ))}
         </div>
       </div>

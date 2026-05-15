@@ -1,7 +1,47 @@
-import { useVirtualizer } from "@tanstack/react-virtual";
+import { useVirtualizer, type VirtualItem } from "@tanstack/react-virtual";
 import { type ReactNode, useRef } from "react";
 import { Table, TableBody, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+
+interface VirtualTableRowProps<T> {
+  data: T[];
+  estimateSize: number;
+  fixedSize: boolean;
+  measureElement?: (node: Element | null) => void;
+  renderRow: (item: T, index: number) => ReactNode;
+  virtualRow: VirtualItem;
+}
+
+function VirtualTableRow<T>({
+  data,
+  estimateSize,
+  fixedSize,
+  measureElement,
+  renderRow,
+  virtualRow,
+}: VirtualTableRowProps<T>) {
+  const item = data[virtualRow.index];
+
+  if (item === undefined) {
+    return null;
+  }
+
+  return (
+    <TableRow
+      className={cn(
+        "border-zinc-800 hover:bg-white/5",
+        fixedSize && "overflow-hidden"
+      )}
+      data-index={virtualRow.index}
+      ref={fixedSize ? undefined : measureElement}
+      style={{
+        height: fixedSize ? `${estimateSize}px` : `${virtualRow.size}px`,
+      }}
+    >
+      {renderRow(item, virtualRow.index)}
+    </TableRow>
+  );
+}
 
 interface VirtualTableProps<T> {
   className?: string;
@@ -52,8 +92,8 @@ export function VirtualTable<T>({
   const totalSize = virtualizer.getTotalSize();
 
   const paddingTop = virtualItems.length > 0 ? virtualItems[0].start : 0;
-  const paddingBottom =
-    virtualItems.length > 0 ? totalSize - virtualItems.at(-1).end : 0;
+  const lastVirtualItem = virtualItems.at(-1);
+  const paddingBottom = lastVirtualItem ? totalSize - lastVirtualItem.end : 0;
 
   return (
     <div
@@ -82,27 +122,17 @@ export function VirtualTable<T>({
                   <td colSpan={100} style={{ height: `${paddingTop}px` }} />
                 </tr>
               )}
-              {virtualItems.map((virtualRow) => {
-                const item = data[virtualRow.index];
-                return (
-                  <TableRow
-                    className={cn(
-                      "border-zinc-800 hover:bg-white/5",
-                      fixedSize && "overflow-hidden"
-                    )}
-                    data-index={virtualRow.index}
-                    key={virtualRow.key}
-                    ref={fixedSize ? undefined : virtualizer.measureElement}
-                    style={{
-                      height: fixedSize
-                        ? `${estimateSize}px`
-                        : `${virtualRow.size}px`,
-                    }}
-                  >
-                    {renderRow(item, virtualRow.index)}
-                  </TableRow>
-                );
-              })}
+              {virtualItems.map((virtualRow) => (
+                <VirtualTableRow
+                  data={data}
+                  estimateSize={estimateSize}
+                  fixedSize={fixedSize}
+                  key={virtualRow.key}
+                  measureElement={virtualizer.measureElement}
+                  renderRow={renderRow}
+                  virtualRow={virtualRow}
+                />
+              ))}
               {paddingBottom > 0 && (
                 <tr>
                   <td colSpan={100} style={{ height: `${paddingBottom}px` }} />

@@ -1,6 +1,26 @@
-import { useVirtualizer } from "@tanstack/react-virtual";
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { useVirtualizer, type VirtualItem } from "@tanstack/react-virtual";
+import {
+  type CSSProperties,
+  type ReactNode,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { cn } from "@/lib/utils";
+
+const virtualOuterStyle: CSSProperties = {
+  position: "relative",
+  width: "100%",
+};
+
+const virtualInnerListStyle: CSSProperties = {
+  position: "absolute",
+  top: 0,
+  left: 0,
+  width: "100%",
+  display: "flex",
+  flexDirection: "column",
+};
 
 interface VirtualProductCatalogProps<T> {
   className?: string;
@@ -127,35 +147,97 @@ function VirtualList<T>({
     <div className={cn("overflow-auto", className)} ref={parentRef}>
       <div
         style={{
+          ...virtualOuterStyle,
           height: `${virtualizer.getTotalSize()}px`,
-          position: "relative",
-          width: "100%",
         }}
       >
         <div
           style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: "100%",
+            ...virtualInnerListStyle,
             transform: `translateY(${virtualItems[0]?.start ?? 0}px)`,
-            display: "flex",
-            flexDirection: "column",
             gap,
           }}
         >
           {virtualItems.map((virtualRow) => (
-            <div
-              data-index={virtualRow.index}
+            <VirtualProductListItem
+              estimateSize={estimateSize}
+              item={items[virtualRow.index]}
               key={virtualRow.key}
-              ref={virtualizer.measureElement}
-              style={{ minHeight: estimateSize }}
-            >
-              {renderItem(items[virtualRow.index])}
-            </div>
+              measureElement={virtualizer.measureElement}
+              renderItem={renderItem}
+              virtualRow={virtualRow}
+            />
           ))}
         </div>
       </div>
+    </div>
+  );
+}
+
+function VirtualProductListItem<T>({
+  estimateSize,
+  item,
+  measureElement,
+  renderItem,
+  virtualRow,
+}: {
+  estimateSize: number;
+  item: T | undefined;
+  measureElement: (node: Element | null) => void;
+  renderItem: (item: T) => ReactNode;
+  virtualRow: VirtualItem;
+}) {
+  if (item === undefined) {
+    return null;
+  }
+
+  return (
+    <div
+      data-index={virtualRow.index}
+      ref={measureElement}
+      style={{ minHeight: estimateSize }}
+    >
+      {renderItem(item)}
+    </div>
+  );
+}
+
+function VirtualProductGridRow<T>({
+  columns,
+  gap,
+  getItemId,
+  items,
+  measureElement,
+  renderItem,
+  virtualRow,
+}: {
+  columns: number;
+  gap: number;
+  getItemId: (item: T) => string;
+  items: T[];
+  measureElement: (node: Element | null) => void;
+  renderItem: (item: T) => ReactNode;
+  virtualRow: VirtualItem;
+}) {
+  const startIndex = virtualRow.index * columns;
+  const rowItems = items.slice(startIndex, startIndex + columns);
+
+  return (
+    <div
+      className="absolute left-0 grid w-full"
+      data-index={virtualRow.index}
+      ref={measureElement}
+      style={{
+        height: `${virtualRow.size}px`,
+        transform: `translateY(${virtualRow.start}px)`,
+        gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
+        gap,
+        paddingBottom: gap,
+      }}
+    >
+      {rowItems.map((item) => (
+        <div key={getItemId(item)}>{renderItem(item)}</div>
+      ))}
     </div>
   );
 }
@@ -195,37 +277,22 @@ function VirtualGrid<T>({
     <div className={cn("overflow-auto", className)} ref={parentRef}>
       <div
         style={{
+          ...virtualOuterStyle,
           height: `${virtualizer.getTotalSize()}px`,
-          position: "relative",
-          width: "100%",
         }}
       >
-        {virtualItems.map((virtualRow) => {
-          const rowIndex = virtualRow.index;
-          const startIndex = rowIndex * columns;
-          const rowItems = items.slice(startIndex, startIndex + columns);
-
-          return (
-            <div
-              className="absolute left-0 w-full"
-              data-index={virtualRow.index}
-              key={virtualRow.key}
-              ref={virtualizer.measureElement}
-              style={{
-                height: `${virtualRow.size}px`,
-                transform: `translateY(${virtualRow.start}px)`,
-                display: "grid",
-                gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
-                gap,
-                paddingBottom: gap,
-              }}
-            >
-              {rowItems.map((item) => (
-                <div key={getItemId(item)}>{renderItem(item)}</div>
-              ))}
-            </div>
-          );
-        })}
+        {virtualItems.map((virtualRow) => (
+          <VirtualProductGridRow
+            columns={columns}
+            gap={gap}
+            getItemId={getItemId}
+            items={items}
+            key={virtualRow.key}
+            measureElement={virtualizer.measureElement}
+            renderItem={renderItem}
+            virtualRow={virtualRow}
+          />
+        ))}
       </div>
     </div>
   );

@@ -140,34 +140,32 @@ export const joinLinkPreview = publicProcedure.joinLinkPreview.handler(
       .where(eq(organizationJoinLink.token, input.token))
       .limit(1);
 
-    if (!row) {
-      return {
-        status: "not-found" as const,
-        canJoin: false,
-        message: "Este enlace ya no es válido.",
-        organization: null,
-        role: null,
-        label: null,
-        expiresAt: null,
-      };
-    }
+    const rowStatus = row ? getJoinLinkStatus(row) : null;
+    const canJoin = rowStatus === "active";
 
-    const status = getJoinLinkStatus(row);
-    const canJoin = status === "active";
-
-    return {
-      status,
-      canJoin,
-      message: canJoin ? null : getJoinLinkErrorMessage(status),
-      organization: {
-        id: row.organizationId,
-        name: row.organizationName,
-        slug: row.organizationSlug,
-      },
-      role: row.role,
-      label: row.label,
-      expiresAt: toTimestamp(row.expiresAt),
-    };
+    return row && rowStatus
+      ? {
+          status: rowStatus,
+          canJoin,
+          message: canJoin ? null : getJoinLinkErrorMessage(rowStatus),
+          organization: {
+            id: row.organizationId,
+            name: row.organizationName,
+            slug: row.organizationSlug,
+          },
+          role: row.role,
+          label: row.label,
+          expiresAt: toTimestamp(row.expiresAt),
+        }
+      : {
+          status: "not-found" as const,
+          canJoin: false,
+          message: "Este enlace ya no es válido.",
+          organization: null,
+          role: null,
+          label: null,
+          expiresAt: null,
+        };
   }
 );
 
@@ -219,34 +217,30 @@ export const joinLinkRedeem = authedProcedure.joinLinkRedeem.handler(
         )
         .limit(1);
 
-      if (existingMembership) {
-        return {
-          status: "already-member" as const,
+      if (!existingMembership) {
+        const now = new Date();
+        await tx.insert(member).values({
+          id: crypto.randomUUID(),
           organizationId: row.organizationId,
-          organizationName: row.organizationName,
-        };
+          userId,
+          role: row.role,
+          createdAt: now,
+        });
+
+        await tx
+          .update(organizationJoinLink)
+          .set({
+            useCount: row.useCount + 1,
+            lastUsedAt: now,
+            lastUsedByUserId: userId,
+          })
+          .where(eq(organizationJoinLink.id, row.id));
       }
 
-      const now = new Date();
-      await tx.insert(member).values({
-        id: crypto.randomUUID(),
-        organizationId: row.organizationId,
-        userId,
-        role: row.role,
-        createdAt: now,
-      });
-
-      await tx
-        .update(organizationJoinLink)
-        .set({
-          useCount: row.useCount + 1,
-          lastUsedAt: now,
-          lastUsedByUserId: userId,
-        })
-        .where(eq(organizationJoinLink.id, row.id));
-
       return {
-        status: "joined" as const,
+        status: existingMembership
+          ? ("already-member" as const)
+          : ("joined" as const),
         organizationId: row.organizationId,
         organizationName: row.organizationName,
       };

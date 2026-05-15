@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useSyncExternalStore } from "react";
 
 const POS_PRINTER_SETTINGS_STORAGE_KEY = "zentro:pos-printer-settings:v1";
 const POS_PRINTER_SETTINGS_EVENT = "zentro:pos-printer-settings:updated";
@@ -387,22 +387,6 @@ export function patchPosLocalPrinterSettings(
   return writePosLocalPrinterSettings(nextValue, organizationId);
 }
 
-function _clearSavedDeviceForConnection(
-  connectionType: PosPrinterConnectionType,
-  organizationId?: string | null
-) {
-  return patchPosLocalPrinterSettings(
-    (currentValue) => ({
-      ...currentValue,
-      savedDevices: {
-        ...currentValue.savedDevices,
-        [connectionType]: null,
-      },
-    }),
-    organizationId
-  );
-}
-
 function subscribePosLocalPrinterSettings(
   listener: () => void,
   organizationId?: string | null
@@ -439,43 +423,46 @@ function subscribePosLocalPrinterSettings(
 }
 
 export function usePosLocalPrinterSettings(organizationId?: string | null) {
-  const [settings, setSettings] = useState<PosLocalPrinterSettings>(() =>
-    readPosLocalPrinterSettings(organizationId)
+  const storageKey = getStorageKey(organizationId);
+  const storageValue = useSyncExternalStore(
+    (listener) => subscribePosLocalPrinterSettings(listener, organizationId),
+    () => {
+      if (typeof window === "undefined") {
+        return null;
+      }
+      return window.localStorage.getItem(storageKey);
+    },
+    () => null
   );
+  const settings = useMemo(() => {
+    if (!storageValue) {
+      return DEFAULT_POS_LOCAL_PRINTER_SETTINGS;
+    }
 
-  useEffect(() => {
-    setSettings(readPosLocalPrinterSettings(organizationId));
-  }, [organizationId]);
-
-  useEffect(
-    () =>
-      subscribePosLocalPrinterSettings(() => {
-        setSettings(readPosLocalPrinterSettings(organizationId));
-      }, organizationId),
-    [organizationId]
-  );
+    try {
+      return normalizePosLocalPrinterSettings(JSON.parse(storageValue));
+    } catch {
+      return DEFAULT_POS_LOCAL_PRINTER_SETTINGS;
+    }
+  }, [storageValue]);
 
   const updateSettings = useCallback(
     (
       updater:
         | Partial<PosLocalPrinterSettings>
         | ((currentValue: PosLocalPrinterSettings) => PosLocalPrinterSettings)
-    ) => {
-      const nextValue = patchPosLocalPrinterSettings(updater, organizationId);
-      setSettings(nextValue);
-      return nextValue;
-    },
+    ) => patchPosLocalPrinterSettings(updater, organizationId),
     [organizationId]
   );
 
-  const resetSettings = useCallback(() => {
-    const nextValue = writePosLocalPrinterSettings(
-      DEFAULT_POS_LOCAL_PRINTER_SETTINGS,
-      organizationId
-    );
-    setSettings(nextValue);
-    return nextValue;
-  }, [organizationId]);
+  const resetSettings = useCallback(
+    () =>
+      writePosLocalPrinterSettings(
+        DEFAULT_POS_LOCAL_PRINTER_SETTINGS,
+        organizationId
+      ),
+    [organizationId]
+  );
 
   return useMemo(
     () => ({

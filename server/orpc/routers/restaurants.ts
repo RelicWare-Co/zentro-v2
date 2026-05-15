@@ -879,12 +879,19 @@ export const tableDetail = orgRequiredProcedure.tableDetail.handler(
   async ({ input, context }) => {
     await requireRestaurantModuleAccess(context);
     const organizationId = context.organizationId;
-    const [table, openOrder] = await Promise.all([
-      assertTableFromOrganization(context.db, organizationId, input.tableId),
-      getOpenOrderForTable(context.db, organizationId, input.tableId),
-    ]);
+    const openOrder = await getOpenOrderForTable(
+      context.db,
+      organizationId,
+      input.tableId
+    );
 
     if (!openOrder) {
+      const table = await assertTableFromOrganization(
+        context.db,
+        organizationId,
+        input.tableId
+      );
+
       return {
         table: {
           ...table,
@@ -893,7 +900,8 @@ export const tableDetail = orgRequiredProcedure.tableDetail.handler(
       };
     }
 
-    const [items, tickets] = await Promise.all([
+    const [table, items, tickets] = await Promise.all([
+      assertTableFromOrganization(context.db, organizationId, input.tableId),
       getOrderItemsWithModifiers(context.db, organizationId, openOrder.id),
       getKitchenTicketsForOrder(context.db, organizationId, openOrder.id),
     ]);
