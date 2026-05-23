@@ -203,6 +203,9 @@ export function CustomersPage() {
           placeholder="Buscar por nombre, teléfono, documento o email…"
           value={searchQuery}
         />
+        {customersQuery.isSearching ? (
+          <Loader2 className="absolute top-1/2 right-3 size-4 -translate-y-1/2 animate-spin text-zinc-500" />
+        ) : null}
       </div>
 
       <VirtualTable

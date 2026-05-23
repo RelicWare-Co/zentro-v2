@@ -1,6 +1,6 @@
 import { useZero, useQuery as useZeroQuery } from "@rocicorp/zero/react";
 import { useMutation } from "@tanstack/react-query";
-import { useDeferredValue } from "react";
+import { useDeferredValue, useRef } from "react";
 import type { z } from "zod";
 import type {
   CreateCustomerSchema,
@@ -70,16 +70,32 @@ export function useCustomersSearch(searchQuery: string, limit = 50) {
   const error = getQueryError(status);
   const normalizedCustomers = customers.map(normalizeCustomer);
 
+  const hasLoadedRef = useRef(false);
+  const staleDataRef = useRef<Customer[]>([]);
+
+  const isQueryLoading =
+    status.type === "unknown" && normalizedCustomers.length === 0;
+
+  if (!isQueryLoading) {
+    staleDataRef.current = normalizedCustomers;
+    hasLoadedRef.current = true;
+  }
+
+  const displayCustomers = isQueryLoading
+    ? staleDataRef.current
+    : normalizedCustomers;
+
   return {
     data: {
-      data: normalizedCustomers,
+      data: displayCustomers,
       hasMore: false,
       nextCursor: null,
-      total: normalizedCustomers.length,
+      total: displayCustomers.length,
     },
     error,
     isError: Boolean(error),
-    isPending: status.type === "unknown" && normalizedCustomers.length === 0,
+    isPending: isQueryLoading && !hasLoadedRef.current,
+    isSearching: isQueryLoading && hasLoadedRef.current,
     refetch: () => {
       if (status.type === "error") {
         status.retry();
