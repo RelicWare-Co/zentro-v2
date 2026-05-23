@@ -12,6 +12,7 @@
     "@point-of-sale/webbluetooth-receipt-printer": "^2.0.0",
     "@point-of-sale/webserial-receipt-printer": "^2.0.0",
     "@point-of-sale/webusb-receipt-printer": "^2.0.0",
+    "@rocicorp/zero": "^1.5.0",
     "@tanstack/react-query": "^5.100.13",
     "@tanstack/react-table": "^8.21.3",
     "@tanstack/react-virtual": "^3.13.25",
@@ -55,6 +56,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.2",
     "bun-types": "^1.3.14",
+    "drizzle-zero": "^0.18.0",
     "lefthook": "^2.1.8",
     "tailwindcss": "^4.3.0",
     "typescript": "^6.0.3",
@@ -72,11 +74,16 @@
     "db:push": "drizzle-kit push",
     "db:pull": "drizzle-kit pull",
     "db:studio": "drizzle-kit studio",
+    "zero:schema:gen": "drizzle-zero generate --output src/zero/schema.gen.ts --format",
+    "zero:dev": "zero-cache-dev",
     "shadcn": "npx shadcn@latest",
     "prod": "vike build && node ./dist/server/index.mjs",
     "check": "ultracite check",
     "fix": "ultracite fix",
     "prepare": "lefthook install"
   },
+  "trustedDependencies": [
+    "@rocicorp/zero-sqlite3"
+  ],
   "type": "module"
 }

@@ -13,8 +13,12 @@ const config: Config = {
     suppressHydrationWarning: "true",
   },
 
+  // The app shell is client-rendered. The Hono server remains for API, auth,
+  // Vike routing/pageContext, and Zero query/mutate endpoints.
+  ssr: false,
+
   extends: [vikeReact],
-  passToClient: ["user"],
+  passToClient: ["user", "zeroContext"],
 };
 
 export default config;

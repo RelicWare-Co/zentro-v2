@@ -7,6 +7,7 @@ import { dbSqlite } from "@/database/drizzle/db";
 import { auth } from "./auth";
 import { dbMiddleware } from "./db-middleware";
 import { orpcHandler } from "./orpc/handler";
+import { createZeroApp } from "./zero/handler.server";
 
 const BODY_PARSER_METHODS = new Set([
   "arrayBuffer",
@@ -42,6 +43,10 @@ function getApp() {
 
   // Better Auth handler
   app.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));
+
+  // Zero authoritative endpoints — must be mounted BEFORE the oRPC `/api/*`
+  // catch-all so `/api/zero/{query,mutate}` is not swallowed by oRPC.
+  app.route("/api/zero", createZeroApp());
 
   // oRPC OpenAPI handler (REST transport + Scalar docs)
   app.use("/api/*", async (c, next) => {
