@@ -31,12 +31,51 @@ const productsSearchArgsSchema = z.object({
   searchQuery: z.string().trim().optional().nullable(),
 });
 
+const shiftByIdArgsSchema = z.object({
+  shiftId: z.string().trim().min(1),
+});
+
+const SHIFTS_SYNC_LIMIT = 500;
+
 function normalizeLimit(limit?: number) {
   return Math.min(Math.max(limit ?? 50, 1), 100);
 }
 
 function normalizeProductLimit(limit?: number) {
   return Math.min(Math.max(limit ?? 1000, 1), 1000);
+}
+
+function buildShiftDetailQuery(shiftId: string, organizationId: string) {
+  return zql.shift
+    .where("id", shiftId)
+    .where("organizationId", organizationId)
+    .related("user")
+    .related("cashMovements", (query) =>
+      query.orderBy("createdAt", "desc").orderBy("id", "desc")
+    )
+    .related("closures")
+    .related("sales")
+    .related("payments", (query) =>
+      query.related("sale").orderBy("createdAt", "desc").orderBy("id", "desc")
+    )
+    .limit(1);
+}
+
+function buildShiftsByOrgQuery(organizationId: string) {
+  return zql.shift
+    .where("organizationId", organizationId)
+    .related("user")
+    .related("cashMovements", (query) =>
+      query.orderBy("createdAt", "desc").orderBy("id", "desc")
+    )
+    .related("closures")
+    .related("sales")
+    .related("payments", (query) =>
+      query.related("sale").orderBy("createdAt", "desc").orderBy("id", "desc")
+    )
+    .orderBy("openedAt", "desc")
+    .orderBy("id", "desc")
+    .limit(SHIFTS_SYNC_LIMIT);
 }
 
 export const queries = defineQueries({
@@ -129,6 +168,42 @@ export const queries = defineQueries({
         .orderBy("name", "asc")
         .orderBy("id", "asc")
         .limit(normalizeProductLimit(args.limit));
+    }),
+  },
+  shifts: {
+    active: defineQuery(({ ctx }) => {
+      if (!ctx) {
+        return zql.shift.where(({ cmpLit }) => cmpLit(false, "=", true));
+      }
+
+      return zql.shift
+        .where("organizationId", ctx.orgID)
+        .where("userId", ctx.id)
+        .where("status", "open")
+        .orderBy("openedAt", "desc")
+        .orderBy("id", "desc")
+        .limit(1);
+    }),
+    byOrg: defineQuery(({ ctx }) => {
+      if (!ctx) {
+        return zql.shift.where(({ cmpLit }) => cmpLit(false, "=", true));
+      }
+
+      return buildShiftsByOrgQuery(ctx.orgID);
+    }),
+    byId: defineQuery(shiftByIdArgsSchema, ({ args, ctx }) => {
+      if (!ctx) {
+        return zql.shift.where(({ cmpLit }) => cmpLit(false, "=", true));
+      }
+
+      return buildShiftDetailQuery(args.shiftId, ctx.orgID);
+    }),
+    organization: defineQuery(({ ctx }) => {
+      if (!ctx) {
+        return zql.organization.where(({ cmpLit }) => cmpLit(false, "=", true));
+      }
+
+      return zql.organization.where("id", ctx.orgID).limit(1);
     }),
   },
 });

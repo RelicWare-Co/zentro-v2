@@ -15,24 +15,38 @@ import {
   seedProduct,
 } from "./helpers/seed";
 import { createTestDb } from "./helpers/test-db";
+import {
+  createZeroContext,
+  createZeroTestDb,
+  getShiftCloseSummaryViaZero,
+  openShiftViaZero,
+  registerCashMovementViaZero,
+} from "./helpers/zero-shifts";
 
 describe("POS checkout", () => {
   describe("VAL-POS-001: shift open prevents duplicate for same user", () => {
     test("opening a second shift for same user is rejected", async () => {
       const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const u = makeUser({ id: userId });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
 
       // Open first shift
-      const first = await client.shifts.open({ startingCash: 5000 });
+      const first = await openShiftViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: { startingCash: 5000 },
+      });
       expect(first.status).toBe("open");
 
       // Try open second shift for same user
-      await expect(client.shifts.open({ startingCash: 3000 })).rejects.toThrow(
-        "El usuario ya tiene un turno abierto"
-      );
+      await expect(
+        openShiftViaZero({
+          zeroDb,
+          ctx: zeroCtx,
+          input: { startingCash: 3000 },
+        })
+      ).rejects.toThrow("El usuario ya tiene un turno abierto");
 
       await cleanup();
     });
@@ -45,9 +59,15 @@ describe("POS checkout", () => {
       const u = makeUser({ id: userId });
       const ctx = buildMockContext(db, u, organizationId);
       const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
 
       // Open shift with starting cash
-      const shiftOpen = await client.shifts.open({ startingCash: 10_000 });
+      const shiftOpen = await openShiftViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: { startingCash: 10_000 },
+      });
       const shiftId = shiftOpen.id;
 
       // Seed product and create a sale with cash overpayment (change given)
@@ -67,7 +87,11 @@ describe("POS checkout", () => {
 
       // Close summary: expected cash = startingCash + cashSales - change
       // = 10000 + 20000 - 5000 = 25000
-      const summary = await client.shifts.closeSummary({ shiftId });
+      const summary = await getShiftCloseSummaryViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        shiftId,
+      });
       const cashSummary = summary.summaryByMethod.find(
         (s: { paymentMethod: string }) => s.paymentMethod === "cash"
       );
@@ -85,31 +109,49 @@ describe("POS checkout", () => {
       const u = makeUser({ id: userId });
       const ctx = buildMockContext(db, u, organizationId);
       const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
 
-      const shiftOpen = await client.shifts.open({ startingCash: 5000 });
+      const shiftOpen = await openShiftViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: { startingCash: 5000 },
+      });
       const shiftId = shiftOpen.id;
 
       // Register movements
-      await client.shifts.cashMovement({
-        shiftId,
-        type: "inflow",
-        paymentMethod: "cash",
-        amount: 3000,
-        description: "Extra inflow",
+      await registerCashMovementViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          shiftId,
+          type: "inflow",
+          paymentMethod: "cash",
+          amount: 3000,
+          description: "Extra inflow",
+        },
       });
-      await client.shifts.cashMovement({
-        shiftId,
-        type: "expense",
-        paymentMethod: "cash",
-        amount: 2000,
-        description: "Office supplies",
+      await registerCashMovementViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          shiftId,
+          type: "expense",
+          paymentMethod: "cash",
+          amount: 2000,
+          description: "Office supplies",
+        },
       });
-      await client.shifts.cashMovement({
-        shiftId,
-        type: "payout",
-        paymentMethod: "cash",
-        amount: 1000,
-        description: "Payout to vendor",
+      await registerCashMovementViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          shiftId,
+          type: "payout",
+          paymentMethod: "cash",
+          amount: 1000,
+          description: "Payout to vendor",
+        },
       });
 
       // Create a sale with card (so cash only has movements + starting cash)
@@ -126,7 +168,11 @@ describe("POS checkout", () => {
         payments: [{ method: "card", amount: 10_000 }],
       });
 
-      const summary = await client.shifts.closeSummary({ shiftId });
+      const summary = await getShiftCloseSummaryViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        shiftId,
+      });
       const cashSummary = summary.summaryByMethod.find(
         (s: { paymentMethod: string }) => s.paymentMethod === "cash"
       );
@@ -150,6 +196,8 @@ describe("POS checkout", () => {
       const u = makeUser({ id: userId });
       const ctx = buildMockContext(db, u, organizationId);
       const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
 
       // Seed categories
       const [catA, catB] = await Promise.all([
@@ -179,7 +227,11 @@ describe("POS checkout", () => {
       ]);
 
       // Open shift
-      const shiftOpen = await client.shifts.open({ startingCash: 0 });
+      const shiftOpen = await openShiftViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: { startingCash: 0 },
+      });
       expect(shiftOpen.id).toBeDefined();
 
       const bootstrap = await client.pos.bootstrap();
@@ -391,9 +443,15 @@ describe("POS checkout", () => {
       const u = makeUser({ id: userId });
       const ctx = buildMockContext(db, u, organizationId);
       const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
 
       // Bootstrap POS (open shift implicitly)
-      const shiftOpen = await client.shifts.open({ startingCash: 10_000 });
+      const shiftOpen = await openShiftViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: { startingCash: 10_000 },
+      });
       const shiftId = shiftOpen.id;
 
       // Create category and product

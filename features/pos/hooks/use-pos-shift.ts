@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
-import { parseMoneyInput } from "@/lib/utils";
-import type { ActiveShift } from "../types";
 import {
   useCloseShiftMutation,
   useOpenShiftMutation,
   useRegisterCashMovementMutation,
   useShiftCloseSummary,
-} from "./use-pos-queries";
+} from "@/features/shifts/hooks/use-shifts";
+import { parseMoneyInput } from "@/lib/utils";
+import type { ActiveShift } from "../types";
 
 function getDefaultMovementPaymentMethodId(
   paymentMethodOptions: Array<{ id: string }>

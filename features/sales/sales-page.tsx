@@ -52,8 +52,8 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useActiveShift } from "@/features/shifts/hooks/use-shifts";
 import {
-  useActiveShift,
   useCancelSaleMutation,
   useSaleDetail,
   useSalesList,

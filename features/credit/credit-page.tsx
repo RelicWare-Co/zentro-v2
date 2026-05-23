@@ -33,12 +33,12 @@ import { VirtualTable } from "@/components/ui/virtual-table";
 import {
   type CreditAccount,
   type CreditTransaction,
-  useActiveShift,
   useCreditAccountsSearch,
   useCreditTransactions,
   useOrganizationSettings,
   useRegisterCreditPaymentMutation,
 } from "@/features/credit/hooks/use-credit";
+import { useActiveShift } from "@/features/shifts/hooks/use-shifts";
 import { getErrorMessage } from "@/lib/utils";
 
 const currencyFormatter = new Intl.NumberFormat("es-CO", {

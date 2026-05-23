@@ -6,7 +6,6 @@ import { posContract } from "./pos";
 import { restaurantsContract } from "./restaurants";
 import { salesContract } from "./sales";
 import { settingsContract } from "./settings";
-import { shiftsContract } from "./shifts";
 
 export const contract = {
   organization: organizationContract,
@@ -15,7 +14,6 @@ export const contract = {
   credit: creditContract,
   dashboard: dashboardContract,
   sales: salesContract,
-  shifts: shiftsContract,
   pos: posContract,
   restaurants: restaurantsContract,
 };

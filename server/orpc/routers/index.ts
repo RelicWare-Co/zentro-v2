@@ -51,15 +51,6 @@ import {
   detail as saleDetail,
 } from "./sales";
 import { get as getSettings, update as updateSettings } from "./settings";
-import {
-  active as activeShift,
-  close as closeShift,
-  list as listShifts,
-  open as openShift,
-  cashMovement as registerCashMovement,
-  closeSummary as shiftCloseSummary,
-  detail as shiftDetail,
-} from "./shifts";
 
 export const router = {
   organization: {
@@ -98,15 +89,6 @@ export const router = {
     detail: saleDetail,
     create: createSale,
     cancel: cancelSale,
-  },
-  shifts: {
-    list: listShifts,
-    detail: shiftDetail,
-    active: activeShift,
-    open: openShift,
-    close: closeShift,
-    cashMovement: registerCashMovement,
-    closeSummary: shiftCloseSummary,
   },
   pos: {
     bootstrap: posBootstrap,

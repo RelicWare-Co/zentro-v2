@@ -29,15 +29,6 @@ export function useSaleDetail(saleId: string | null) {
   });
 }
 
-export function useActiveShift() {
-  return useQuery({
-    ...orpcQuery.shifts.active.queryOptions(),
-    staleTime: 60_000,
-    gcTime: 5 * 60_000,
-    refetchOnWindowFocus: false,
-  });
-}
-
 export function useCancelSaleMutation() {
   const queryClient = useQueryClient();
   return useMutation({

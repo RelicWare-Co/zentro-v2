@@ -14,14 +14,6 @@ import { orpcQuery } from "@/server/orpc/client/query";
 
 export type CreditAccount = z.infer<typeof CreditAccountSchema>;
 export type CreditTransaction = z.infer<typeof CreditTransactionSchema>;
-export function useActiveShift() {
-  return useQuery({
-    ...orpcQuery.shifts.active.queryOptions(),
-    staleTime: 60_000,
-    gcTime: 5 * 60_000,
-    refetchOnWindowFocus: false,
-  });
-}
 
 export function useOrganizationSettings() {
   return useQuery({

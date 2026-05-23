@@ -36,6 +36,7 @@ import {
   calculateItemTotal,
   createPaymentMethodLabelMap,
 } from "@/features/pos/utils";
+import { useActiveShift } from "@/features/shifts/hooks/use-shifts";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useActiveOrganization } from "@/lib/auth-client";
 
@@ -51,6 +52,8 @@ export default function PosPage() {
 
   // Data queries
   const { data: bootstrap, isLoading: isBootstrapLoading } = usePosBootstrap();
+  const { data: activeShiftData, isLoading: isActiveShiftLoading } =
+    useActiveShift();
   const {
     data: productsData,
     fetchNextPage,
@@ -62,7 +65,7 @@ export default function PosPage() {
   const { data: creditAccountsData } = useCreditAccounts();
 
   // Extract data
-  const activeShift = bootstrap?.activeShift ?? null;
+  const activeShift = activeShiftData?.shift ?? null;
   const categories = bootstrap?.categories ?? [];
   const modifierProducts = bootstrap?.modifierProducts ?? [];
   const settings = bootstrap?.settings;
@@ -262,7 +265,9 @@ export default function PosPage() {
           getProductQuantity={getProductQuantity}
           hasMore={!!hasNextPage}
           isActiveShift={!!activeShift}
-          isLoading={isBootstrapLoading || isProductsLoading}
+          isLoading={
+            isBootstrapLoading || isActiveShiftLoading || isProductsLoading
+          }
           isLoadingMore={isFetchingNextPage}
           isTogglingFavorite={toggleFavoriteMutation.isPending}
           onBarcodeScan={handleBarcodeScan}

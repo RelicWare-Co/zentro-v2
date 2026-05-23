@@ -147,11 +147,6 @@ export function useCloseRestaurantOrderMutation() {
         queryClient.invalidateQueries({
           queryKey: orpcQuery.pos.bootstrap.queryOptions().queryKey,
         }),
-        queryClient.invalidateQueries({
-          queryKey: orpcQuery.shifts.closeSummary.queryOptions({
-            input: { shiftId: "" },
-          }).queryKey,
-        }),
       ]);
     },
   });

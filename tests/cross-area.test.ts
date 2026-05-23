@@ -19,6 +19,16 @@ import {
   seedProduct,
 } from "./helpers/seed";
 import { createTestDb } from "./helpers/test-db";
+import {
+  closeShiftViaZero,
+  createZeroContext,
+  createZeroTestDb,
+  getShiftCloseSummaryViaZero,
+  getShiftDetailViaZero,
+  listShiftsViaZero,
+  openShiftViaZero,
+  registerCashMovementViaZero,
+} from "./helpers/zero-shifts";
 
 describe("cross-area end-to-end flows", () => {
   describe("VAL-CROSS-001: full POS checkout flow works end-to-end and data is consistent across queries", () => {
@@ -28,9 +38,15 @@ describe("cross-area end-to-end flows", () => {
       const u = makeUser({ id: userId });
       const ctx = buildMockContext(db, u, organizationId);
       const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
 
       // Step 1: Open shift
-      const shiftOpen = await client.shifts.open({ startingCash: 10_000 });
+      const shiftOpen = await openShiftViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: { startingCash: 10_000 },
+      });
       const shiftId = shiftOpen.id;
       expect(shiftOpen.status).toBe("open");
       expect(shiftOpen.startingCash).toBe(10_000);
@@ -108,9 +124,13 @@ describe("cross-area end-to-end flows", () => {
       expect(salesList.total).toBe(1);
 
       // Step 8: Verify shift history reflects the sale
-      const shiftsList = await client.shifts.list({
-        status: "open",
-        limit: 10,
+      const shiftsList = await listShiftsViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          status: "open",
+          limit: 10,
+        },
       });
       expect(shiftsList.data.length).toBe(1);
       const shiftRow = shiftsList.data[0];
@@ -126,7 +146,11 @@ describe("cross-area end-to-end flows", () => {
 
       // Step 9: Close summary expected cash = startingCash + cashSales - change
       // = 10000 + 25000 - 1000 = 34000
-      const closeSummary = await client.shifts.closeSummary({ shiftId });
+      const closeSummary = await getShiftCloseSummaryViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        shiftId,
+      });
       const cashSummary = closeSummary.summaryByMethod.find(
         (s: { paymentMethod: string }) => s.paymentMethod === "cash"
       );
@@ -135,9 +159,13 @@ describe("cross-area end-to-end flows", () => {
       expect(closeSummary.totalExpected).toBe(34_000);
 
       // Step 10: Close shift
-      const closeResult = await client.shifts.close({
-        shiftId,
-        closures: [{ paymentMethod: "cash", actualAmount: 34_000 }],
+      const closeResult = await closeShiftViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          shiftId,
+          closures: [{ paymentMethod: "cash", actualAmount: 34_000 }],
+        },
       });
       expect(closeResult.shiftId).toBe(shiftId);
       expect(closeResult.closures.length).toBe(1);
@@ -147,7 +175,11 @@ describe("cross-area end-to-end flows", () => {
       expect(closeResult.closures[0].difference).toBe(0);
 
       // Step 11: After closing, verify shift status changed
-      const closedShiftDetail = await client.shifts.detail({ shiftId });
+      const closedShiftDetail = await getShiftDetailViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        shiftId,
+      });
       expect(closedShiftDetail.status).toBe("closed");
       expect(closedShiftDetail.totals.totalPayments).toBe(25_000);
       expect(closedShiftDetail.totals.totalExpected).toBe(34_000);
@@ -182,9 +214,15 @@ describe("cross-area end-to-end flows", () => {
       const u = makeUser({ id: userId });
       const ctx = buildMockContext(db, u, organizationId);
       const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
 
       // Open shift
-      const shiftOpen = await client.shifts.open({ startingCash: 5000 });
+      const shiftOpen = await openShiftViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: { startingCash: 5000 },
+      });
       const shiftId = shiftOpen.id;
 
       // Seed products
@@ -206,12 +244,16 @@ describe("cross-area end-to-end flows", () => {
       ]);
 
       // Cash movement
-      await client.shifts.cashMovement({
-        shiftId,
-        type: "inflow",
-        paymentMethod: "cash",
-        amount: 2000,
-        description: "Extra inflow",
+      await registerCashMovementViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          shiftId,
+          type: "inflow",
+          paymentMethod: "cash",
+          amount: 2000,
+          description: "Extra inflow",
+        },
       });
 
       // Sale 1: cash payment
@@ -243,7 +285,11 @@ describe("cross-area end-to-end flows", () => {
       expect(stockB[0].stock).toBe(13);
 
       // Verify shift detail
-      const shiftDetail = await client.shifts.detail({ shiftId });
+      const shiftDetail = await getShiftDetailViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        shiftId,
+      });
       expect(shiftDetail.operations.paidSalesCount).toBe(2);
       expect(shiftDetail.operations.paidSalesAmount).toBe(11_000);
       expect(shiftDetail.totals.totalPayments).toBe(11_000); // 5000 + 6000 (payments only, movements excluded)
@@ -261,7 +307,11 @@ describe("cross-area end-to-end flows", () => {
       expect(cardBreakdown?.amount).toBe(6000);
 
       // Verify close summary
-      const closeSummary = await client.shifts.closeSummary({ shiftId });
+      const closeSummary = await getShiftCloseSummaryViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        shiftId,
+      });
       const cashSummary = closeSummary.summaryByMethod.find(
         (s: { paymentMethod: string }) => s.paymentMethod === "cash"
       );
@@ -273,12 +323,16 @@ describe("cross-area end-to-end flows", () => {
       expect(closeSummary.totalExpected).toBe(18_000);
 
       // Close shift
-      const closeResult = await client.shifts.close({
-        shiftId,
-        closures: [
-          { paymentMethod: "cash", actualAmount: 12_000 },
-          { paymentMethod: "card", actualAmount: 6000 },
-        ],
+      const closeResult = await closeShiftViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          shiftId,
+          closures: [
+            { paymentMethod: "cash", actualAmount: 12_000 },
+            { paymentMethod: "card", actualAmount: 6000 },
+          ],
+        },
       });
       expect(closeResult.closures.length).toBe(2);
       expect(
@@ -303,9 +357,15 @@ describe("cross-area end-to-end flows", () => {
       const u = makeUser({ id: userId });
       const ctx = buildMockContext(db, u, organizationId);
       const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
 
       // Step 1: Open shift
-      const shiftOpen = await client.shifts.open({ startingCash: 5000 });
+      const shiftOpen = await openShiftViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: { startingCash: 5000 },
+      });
       const shiftId = shiftOpen.id;
 
       // Step 2: Seed product and customer
@@ -466,8 +526,14 @@ describe("cross-area end-to-end flows", () => {
       const u = makeUser({ id: userId });
       const ctx = buildMockContext(db, u, organizationId);
       const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
 
-      const shiftOpen = await client.shifts.open({ startingCash: 0 });
+      const shiftOpen = await openShiftViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: { startingCash: 0 },
+      });
       const shiftId = shiftOpen.id;
 
       const [productId, customerId] = await Promise.all([
@@ -545,8 +611,14 @@ describe("cross-area end-to-end flows", () => {
       const u = makeUser({ id: userId });
       const ctx = buildMockContext(db, u, organizationId);
       const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
 
-      const shiftOpen = await client.shifts.open({ startingCash: 0 });
+      const shiftOpen = await openShiftViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: { startingCash: 0 },
+      });
       const shiftId = shiftOpen.id;
 
       const [productId, customerId] = await Promise.all([

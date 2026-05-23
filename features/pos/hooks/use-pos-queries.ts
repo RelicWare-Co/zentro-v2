@@ -59,72 +59,6 @@ export function useCreditAccounts() {
   });
 }
 
-export function useShiftCloseSummary(
-  shiftId: string | undefined,
-  enabled: boolean
-) {
-  return useQuery({
-    ...orpcQuery.shifts.closeSummary.queryOptions(
-      shiftId ? { input: { shiftId } } : { input: { shiftId: "" } }
-    ),
-    enabled: enabled && Boolean(shiftId),
-  });
-}
-
-export function useOpenShiftMutation() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    ...orpcQuery.shifts.open.mutationOptions(),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: orpcQuery.pos.bootstrap.queryOptions().queryKey,
-      });
-      await queryClient.invalidateQueries({
-        queryKey: orpcQuery.shifts.active.queryOptions().queryKey,
-      });
-    },
-  });
-}
-
-export function useRegisterCashMovementMutation() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    ...orpcQuery.shifts.cashMovement.mutationOptions(),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: orpcQuery.shifts.closeSummary.queryOptions({
-          input: { shiftId: "" },
-        }).queryKey,
-      });
-    },
-  });
-}
-
-export function useCloseShiftMutation() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    ...orpcQuery.shifts.close.mutationOptions(),
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: orpcQuery.pos.bootstrap.queryOptions().queryKey,
-        }),
-        queryClient.invalidateQueries({
-          queryKey: orpcQuery.shifts.active.queryOptions().queryKey,
-        }),
-        queryClient.invalidateQueries({
-          queryKey: orpcQuery.shifts.closeSummary.queryOptions({
-            input: { shiftId: "" },
-          }).queryKey,
-        }),
-      ]);
-    },
-  });
-}
-
 export function useCreatePosSaleMutation() {
   const queryClient = useQueryClient();
 
@@ -142,11 +76,6 @@ export function useCreatePosSaleMutation() {
               limit: 100,
               cursor: 0,
             },
-          }).queryKey,
-        }),
-        queryClient.invalidateQueries({
-          queryKey: orpcQuery.shifts.closeSummary.queryOptions({
-            input: { shiftId: "" },
           }).queryKey,
         }),
         queryClient.invalidateQueries({

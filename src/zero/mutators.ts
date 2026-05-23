@@ -17,6 +17,15 @@ import {
   type Transaction,
 } from "@rocicorp/zero";
 import type { z } from "zod";
+import { z as zod } from "zod";
+import {
+  getEnabledPaymentMethods,
+  parseOrganizationSettingsMetadata,
+} from "@/features/settings/settings.shared";
+import {
+  buildExpectedAmountsByMethod,
+  normalizeNumber,
+} from "@/features/shifts/shifts.shared";
 import {
   CreateCustomerSchema,
   DeleteCustomerSchema,
@@ -73,6 +82,37 @@ export const createCategoryArgsSchema = CreateCategorySchema.extend({
 export const updateCategoryArgsSchema = UpdateCategorySchema;
 export const deleteCategoryArgsSchema = DeleteCategorySchema;
 
+export const openShiftArgsSchema = zod.object({
+  id: zod.string().trim().min(1),
+  startingCash: zod.number().min(0),
+  terminalId: zod.string().trim().optional().nullable(),
+  terminalName: zod.string().trim().optional().nullable(),
+  notes: zod.string().trim().optional().nullable(),
+  openedAt: zod.number().int().min(0).optional(),
+});
+export const closeShiftArgsSchema = zod.object({
+  shiftId: zod.string().trim().min(1),
+  closures: zod
+    .array(
+      zod.object({
+        paymentMethod: zod.string().trim().min(1),
+        actualAmount: zod.number().int().min(0),
+      })
+    )
+    .min(1),
+  notes: zod.string().trim().optional().nullable(),
+  closedAt: zod.number().int().min(0).optional(),
+});
+export const registerCashMovementArgsSchema = zod.object({
+  id: zod.string().trim().min(1),
+  shiftId: zod.string().trim().min(1),
+  type: zod.enum(["expense", "payout", "inflow"]),
+  paymentMethod: zod.string().trim().min(1),
+  amount: zod.number().int().positive(),
+  description: zod.string().trim().min(1),
+  createdAt: zod.number().int().min(0).optional(),
+});
+
 function normalizeOptionalString(value?: string | null) {
   if (value == null) {
     return null;
@@ -116,6 +156,37 @@ function resolveTimestamp(input?: number) {
   }
 
   return Math.round(input);
+}
+
+function toPositiveInteger(value: number, fieldName: string) {
+  const normalized = toNonNegativeInteger(value, fieldName);
+  if (normalized <= 0) {
+    throw new Error(
+      `El campo "${fieldName}" debe ser un número válido mayor a 0`
+    );
+  }
+  return normalized;
+}
+
+function normalizeRequiredString(value: string, fieldName: string) {
+  const normalized = value.trim();
+  if (normalized.length === 0) {
+    throw new Error(`El campo "${fieldName}" es obligatorio`);
+  }
+  return normalized;
+}
+
+async function getOrganizationSettingsFromTx({
+  organizationId,
+  tx,
+}: {
+  organizationId: string;
+  tx: ZeroMutatorTransaction;
+}) {
+  const organizationRows = await tx.run(
+    zql.organization.where("id", organizationId).limit(1)
+  );
+  return parseOrganizationSettingsMetadata(organizationRows[0]?.metadata);
 }
 
 async function assertCategoryFromOrganization({
@@ -590,6 +661,241 @@ export const mutators = defineMutators({
         await tx.mutate.category.delete({ id: args.id });
       }
     ),
+  },
+  shifts: {
+    open: defineMutator(openShiftArgsSchema, async ({ args, ctx, tx }) => {
+      const zeroContext = assertZeroContext(ctx);
+      const startingCash = toNonNegativeInteger(
+        args.startingCash,
+        "startingCash"
+      );
+      const terminalId = normalizeOptionalString(args.terminalId);
+      const notes = normalizeOptionalString(args.notes);
+      const openedAt = resolveTimestamp(args.openedAt);
+      const organizationSettings = await getOrganizationSettingsFromTx({
+        organizationId: zeroContext.orgID,
+        tx,
+      });
+      const terminalName =
+        normalizeOptionalString(args.terminalName) ??
+        organizationSettings.pos.defaultTerminalName;
+
+      const userOpenShifts = await tx.run(
+        zql.shift
+          .where("organizationId", zeroContext.orgID)
+          .where("userId", zeroContext.id)
+          .where("status", "open")
+          .limit(1)
+      );
+      if (userOpenShifts.length > 0) {
+        throw new Error("El usuario ya tiene un turno abierto");
+      }
+
+      if (terminalId) {
+        const terminalOpenShifts = await tx.run(
+          zql.shift
+            .where("organizationId", zeroContext.orgID)
+            .where("status", "open")
+            .where("terminalId", terminalId)
+            .limit(1)
+        );
+        if (terminalOpenShifts.length > 0) {
+          throw new Error("La terminal indicada ya tiene un turno abierto");
+        }
+      }
+
+      await tx.mutate.shift.insert({
+        id: args.id,
+        organizationId: zeroContext.orgID,
+        userId: zeroContext.id,
+        terminalId,
+        terminalName,
+        status: "open",
+        startingCash,
+        openedAt,
+        notes,
+      });
+    }),
+    cashMovement: defineMutator(
+      registerCashMovementArgsSchema,
+      async ({ args, ctx, tx }) => {
+        const zeroContext = assertZeroContext(ctx);
+        const validTypes = ["expense", "payout", "inflow"] as const;
+        if (!validTypes.includes(args.type)) {
+          throw new Error("Tipo de movimiento de caja inválido");
+        }
+
+        const amount = toPositiveInteger(args.amount, "amount");
+        const description = normalizeRequiredString(
+          args.description,
+          "description"
+        );
+        const paymentMethod = normalizeRequiredString(
+          args.paymentMethod,
+          "paymentMethod"
+        ).toLowerCase();
+        const createdAt = resolveTimestamp(args.createdAt);
+
+        const targetShifts = await tx.run(
+          zql.shift
+            .where("id", args.shiftId)
+            .where("organizationId", zeroContext.orgID)
+            .limit(1)
+        );
+        const targetShift = targetShifts[0];
+        if (!targetShift) {
+          throw new Error("Turno no encontrado para la organización activa");
+        }
+        if (targetShift.status !== "open") {
+          throw new Error(
+            "No se puede registrar movimiento en un turno cerrado"
+          );
+        }
+        if (targetShift.userId !== zeroContext.id) {
+          throw new Error(
+            "Solo el cajero del turno puede registrar movimientos"
+          );
+        }
+
+        const organizationSettings = await getOrganizationSettingsFromTx({
+          organizationId: zeroContext.orgID,
+          tx,
+        });
+        const enabledPaymentMethodIds = new Set(
+          getEnabledPaymentMethods(organizationSettings).map(
+            (paymentMethod) => paymentMethod.id
+          )
+        );
+        if (!enabledPaymentMethodIds.has(paymentMethod)) {
+          throw new Error(`Método de pago no habilitado: ${paymentMethod}`);
+        }
+
+        await tx.mutate.cashMovement.insert({
+          id: args.id,
+          organizationId: zeroContext.orgID,
+          shiftId: args.shiftId,
+          type: args.type,
+          paymentMethod,
+          amount,
+          description,
+          createdAt,
+        });
+      }
+    ),
+    close: defineMutator(closeShiftArgsSchema, async ({ args, ctx, tx }) => {
+      const zeroContext = assertZeroContext(ctx);
+      const closedAt = resolveTimestamp(args.closedAt);
+      const notes = normalizeOptionalString(args.notes);
+      const actualByMethod = new Map<string, number>();
+
+      for (const closure of args.closures) {
+        const paymentMethod = normalizeRequiredString(
+          closure.paymentMethod,
+          "paymentMethod"
+        ).toLowerCase();
+        if (actualByMethod.has(paymentMethod)) {
+          throw new Error(
+            `Método de pago duplicado en cierre: ${paymentMethod}`
+          );
+        }
+        actualByMethod.set(
+          paymentMethod,
+          toNonNegativeInteger(
+            closure.actualAmount,
+            `actualAmount (${paymentMethod})`
+          )
+        );
+      }
+
+      const targetShifts = await tx.run(
+        zql.shift
+          .where("id", args.shiftId)
+          .where("organizationId", zeroContext.orgID)
+          .limit(1)
+      );
+      const targetShift = targetShifts[0];
+      if (!targetShift) {
+        throw new Error("Turno no encontrado para la organización activa");
+      }
+      if (targetShift.status !== "open") {
+        throw new Error("El turno ya está cerrado");
+      }
+      if (targetShift.userId !== zeroContext.id) {
+        throw new Error("Solo el cajero del turno puede cerrar caja");
+      }
+
+      const existingClosures = await tx.run(
+        zql.shiftClosure.where("shiftId", args.shiftId).limit(1)
+      );
+      if (existingClosures.length > 0) {
+        throw new Error("El turno ya cuenta con un cierre registrado");
+      }
+
+      const shiftRows = await tx.run(
+        zql.shift
+          .where("id", args.shiftId)
+          .where("organizationId", zeroContext.orgID)
+          .related("payments", (query) => query.related("sale"))
+          .related("cashMovements")
+          .limit(1)
+      );
+      const shiftRow = shiftRows[0];
+      if (!shiftRow) {
+        throw new Error("Turno no encontrado para la organización activa");
+      }
+
+      const registeredPayments = (shiftRow.payments ?? [])
+        .filter(
+          (paymentRow) =>
+            !paymentRow.saleId || paymentRow.sale?.status !== "cancelled"
+        )
+        .map((paymentRow) => ({
+          method: paymentRow.method,
+          amount: paymentRow.amount,
+          saleId: paymentRow.saleId,
+          saleTotalAmount: paymentRow.sale?.totalAmount ?? null,
+        }));
+      const registeredMovements = (shiftRow.cashMovements ?? []).map(
+        (movementRow) => ({
+          type: movementRow.type,
+          paymentMethod: movementRow.paymentMethod ?? "cash",
+          amount: movementRow.amount,
+        })
+      );
+      const expectedByMethod = buildExpectedAmountsByMethod(
+        normalizeNumber(targetShift.startingCash),
+        registeredPayments,
+        registeredMovements
+      );
+
+      const allMethods = new Set<string>([
+        ...expectedByMethod.keys(),
+        ...actualByMethod.keys(),
+      ]);
+      if (allMethods.size === 0) {
+        allMethods.add("cash");
+      }
+
+      for (const paymentMethod of allMethods) {
+        const expectedAmount = expectedByMethod.get(paymentMethod) ?? 0;
+        const actualAmount = actualByMethod.get(paymentMethod) ?? 0;
+        await tx.mutate.shiftClosure.insert({
+          id: crypto.randomUUID(),
+          shiftId: args.shiftId,
+          paymentMethod,
+          expectedAmount,
+          actualAmount,
+          difference: actualAmount - expectedAmount,
+        });
+      }
+
+      await tx.mutate.shift.update({
+        id: args.shiftId,
+        status: "closed",
+        closedAt,
+        notes: notes ?? targetShift.notes,
+      });
+    }),
   },
 });
 

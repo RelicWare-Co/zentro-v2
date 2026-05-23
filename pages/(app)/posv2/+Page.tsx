@@ -27,6 +27,7 @@ import {
 import { CartPanelV2 } from "@/features/posv2/components/cart-panel-v2";
 import { PosV2Header } from "@/features/posv2/components/pos-v2-header";
 import { ProductCatalog } from "@/features/posv2/components/product-catalog";
+import { useActiveShift } from "@/features/shifts/hooks/use-shifts";
 import { useActiveOrganization } from "@/lib/auth-client";
 
 export default function PosV2Page() {
@@ -41,6 +42,8 @@ export default function PosV2Page() {
 
   // Data queries
   const { data: bootstrap, isLoading: isBootstrapLoading } = usePosBootstrap();
+  const { data: activeShiftData, isLoading: isActiveShiftLoading } =
+    useActiveShift();
   const {
     data: productsData,
     fetchNextPage,
@@ -52,7 +55,7 @@ export default function PosV2Page() {
   const { data: creditAccountsData } = useCreditAccounts();
 
   // Extract data
-  const activeShift = bootstrap?.activeShift ?? null;
+  const activeShift = activeShiftData?.shift ?? null;
   const categories = bootstrap?.categories ?? [];
   const modifierProducts = bootstrap?.modifierProducts ?? [];
   const settings = bootstrap?.settings;
@@ -244,7 +247,9 @@ export default function PosV2Page() {
           getProductQuantity={getProductQuantity}
           hasMore={!!hasNextPage}
           isActiveShift={!!activeShift}
-          isLoading={isBootstrapLoading || isProductsLoading}
+          isLoading={
+            isBootstrapLoading || isActiveShiftLoading || isProductsLoading
+          }
           isLoadingMore={isFetchingNextPage}
           isTogglingFavorite={toggleFavoriteMutation.isPending}
           onCategoryChange={setActiveCategoryId}
