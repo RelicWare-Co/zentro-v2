@@ -1,3 +1,4 @@
+import { relations } from "drizzle-orm";
 import {
   boolean,
   foreignKey,
@@ -230,4 +231,120 @@ export const restaurantOrderItemModifier = pgTable(
     ),
     index("restaurantOrderItemModifier_orderItemId_idx").on(table.orderItemId),
   ]
+);
+
+export const restaurantAreaRelations = relations(
+  restaurantArea,
+  ({ one, many }) => ({
+    organization: one(organization, {
+      fields: [restaurantArea.organizationId],
+      references: [organization.id],
+    }),
+    tables: many(restaurantTable),
+  })
+);
+
+export const restaurantTableRelations = relations(
+  restaurantTable,
+  ({ one, many }) => ({
+    organization: one(organization, {
+      fields: [restaurantTable.organizationId],
+      references: [organization.id],
+    }),
+    area: one(restaurantArea, {
+      fields: [restaurantTable.areaId],
+      references: [restaurantArea.id],
+    }),
+    orders: many(restaurantOrder),
+  })
+);
+
+export const restaurantOrderRelations = relations(
+  restaurantOrder,
+  ({ one, many }) => ({
+    organization: one(organization, {
+      fields: [restaurantOrder.organizationId],
+      references: [organization.id],
+    }),
+    table: one(restaurantTable, {
+      fields: [restaurantOrder.tableId],
+      references: [restaurantTable.id],
+    }),
+    openedByUser: one(user, {
+      fields: [restaurantOrder.openedByUserId],
+      references: [user.id],
+      relationName: "restaurantOrderOpenedBy",
+    }),
+    closedByUser: one(user, {
+      fields: [restaurantOrder.closedByUserId],
+      references: [user.id],
+      relationName: "restaurantOrderClosedBy",
+    }),
+    sale: one(sale, {
+      fields: [restaurantOrder.saleId],
+      references: [sale.id],
+    }),
+    items: many(restaurantOrderItem),
+    kitchenTickets: many(restaurantKitchenTicket),
+  })
+);
+
+export const restaurantKitchenTicketRelations = relations(
+  restaurantKitchenTicket,
+  ({ one, many }) => ({
+    organization: one(organization, {
+      fields: [restaurantKitchenTicket.organizationId],
+      references: [organization.id],
+    }),
+    order: one(restaurantOrder, {
+      fields: [restaurantKitchenTicket.orderId],
+      references: [restaurantOrder.id],
+    }),
+    createdByUser: one(user, {
+      fields: [restaurantKitchenTicket.createdByUserId],
+      references: [user.id],
+    }),
+    items: many(restaurantOrderItem),
+  })
+);
+
+export const restaurantOrderItemRelations = relations(
+  restaurantOrderItem,
+  ({ one, many }) => ({
+    organization: one(organization, {
+      fields: [restaurantOrderItem.organizationId],
+      references: [organization.id],
+    }),
+    order: one(restaurantOrder, {
+      fields: [restaurantOrderItem.orderId],
+      references: [restaurantOrder.id],
+    }),
+    kitchenTicket: one(restaurantKitchenTicket, {
+      fields: [restaurantOrderItem.kitchenTicketId],
+      references: [restaurantKitchenTicket.id],
+    }),
+    product: one(product, {
+      fields: [restaurantOrderItem.productId],
+      references: [product.id],
+    }),
+    modifiers: many(restaurantOrderItemModifier),
+  })
+);
+
+export const restaurantOrderItemModifierRelations = relations(
+  restaurantOrderItemModifier,
+  ({ one }) => ({
+    organization: one(organization, {
+      fields: [restaurantOrderItemModifier.organizationId],
+      references: [organization.id],
+    }),
+    orderItem: one(restaurantOrderItem, {
+      fields: [restaurantOrderItemModifier.orderItemId],
+      references: [restaurantOrderItem.id],
+    }),
+    modifierProduct: one(product, {
+      fields: [restaurantOrderItemModifier.modifierProductId],
+      references: [product.id],
+    }),
+  })
 );

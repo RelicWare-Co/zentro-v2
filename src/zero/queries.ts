@@ -48,6 +48,10 @@ const saleByIdArgsSchema = z.object({
   saleId: z.string().trim().optional().nullable(),
 });
 
+const restaurantTableIdArgsSchema = z.object({
+  tableId: z.string().trim().optional().nullable(),
+});
+
 function normalizeLimit(limit?: number) {
   return Math.min(Math.max(limit ?? 50, 1), 100);
 }
@@ -383,6 +387,82 @@ export const queries = defineQueries({
       }
 
       return zql.organization.where("id", ctx.orgID).limit(1);
+    }),
+  },
+  restaurants: {
+    layout: defineQuery(({ ctx }) => {
+      if (!ctx) {
+        return zql.restaurantArea.where(({ cmpLit }) =>
+          cmpLit(false, "=", true)
+        );
+      }
+
+      return zql.restaurantArea
+        .where("organizationId", ctx.orgID)
+        .related("tables", (query) =>
+          query.orderBy("sortOrder", "asc").orderBy("name", "asc")
+        )
+        .orderBy("sortOrder", "asc")
+        .orderBy("name", "asc");
+    }),
+    openOrders: defineQuery(({ ctx }) => {
+      if (!ctx) {
+        return zql.restaurantOrder.where(({ cmpLit }) =>
+          cmpLit(false, "=", true)
+        );
+      }
+
+      return zql.restaurantOrder
+        .where("organizationId", ctx.orgID)
+        .where("status", "open")
+        .related("items", (query) =>
+          query
+            .related("product")
+            .related("modifiers", (modifierQuery) =>
+              modifierQuery.related("modifierProduct")
+            )
+            .orderBy("createdAt", "asc")
+            .orderBy("id", "asc")
+        )
+        .related("kitchenTickets", (query) =>
+          query.orderBy("sequenceNumber", "desc")
+        );
+    }),
+    tableById: defineQuery(restaurantTableIdArgsSchema, ({ args, ctx }) => {
+      const normalizedTableId = args.tableId?.trim() ?? "";
+      if (!(ctx && normalizedTableId)) {
+        return zql.restaurantTable.where(({ cmpLit }) =>
+          cmpLit(false, "=", true)
+        );
+      }
+
+      return zql.restaurantTable
+        .where("id", normalizedTableId)
+        .where("organizationId", ctx.orgID)
+        .related("area")
+        .limit(1);
+    }),
+    kitchenBoard: defineQuery(({ ctx }) => {
+      if (!ctx) {
+        return zql.restaurantKitchenTicket.where(({ cmpLit }) =>
+          cmpLit(false, "=", true)
+        );
+      }
+
+      return zql.restaurantKitchenTicket
+        .where("organizationId", ctx.orgID)
+        .related("order", (query) =>
+          query
+            .where("status", "open")
+            .related("table", (tableQuery) => tableQuery.related("area"))
+        )
+        .related("items", (query) =>
+          query
+            .related("product")
+            .orderBy("createdAt", "desc")
+            .orderBy("id", "desc")
+        )
+        .orderBy("createdAt", "desc");
     }),
   },
 });

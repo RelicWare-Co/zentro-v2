@@ -122,6 +122,7 @@ Cada checklist se completa surface a surface. Marcar el ítem solo cuando esté 
 - [ ] **Restaurants areas/tables** → mutators correspondientes.
 - [x] **Settings (read/update)** → queries `organization.environment` / `organization.moduleEntitlements`, mutator server-only `organization.updateSettings` en `server/settings/update-settings.server.ts`, capa `features/settings/organization-environment.shared.ts`, hooks `use-settings.ts`. Eliminados `server/orpc/contracts/settings.ts` y `server/orpc/routers/settings.ts`.
 - [x] **Modules (capabilities/setEntitlement)** → query `modules.capabilities`, mutator server-only `modules.setEntitlement` en `server/modules/set-entitlement.server.ts`, hook `use-module-capabilities.ts`, `app-layout` vía Zero. Eliminados `server/orpc/contracts/modules.ts` y `server/orpc/routers/modules.ts`.
+- [x] **Restaurants (reads)** → Drizzle relations + `zero:schema:gen`; queries `restaurants.layout/openOrders/tableById/kitchenBoard`; capa `features/restaurants/restaurants.shared.ts`; hooks read-only Zero en `use-restaurants.ts`; tests VAL-REST-001/006 vía `tests/helpers/zero-restaurants.ts`. Mutaciones y router oRPC se eliminan en PR8.
 
 ### M3 · Flujo POS (alto riesgo, alta visibilidad)
 
