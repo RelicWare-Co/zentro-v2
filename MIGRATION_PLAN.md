@@ -111,14 +111,14 @@ Cada checklist se completa surface a surface. Marcar el ítem solo cuando esté 
 
 ### M1 · Lecturas de catálogo (low risk)
 
-- [ ] **Products**: query `productsByOrg`, hook `useProducts`. Reemplaza `orpcQuery.products.*.queryOptions()`.
-- [ ] **Categories**: query `categoriesByOrg`.
+- [x] **Products**: query `productsByOrg`, hook `useProducts`. Reemplaza `orpcQuery.products.*.queryOptions()`.
+- [x] **Categories**: query `categoriesByOrg`.
 - [x] **Customers (read-only)**: query `customers.search`.
 
 ### M2 · Mutaciones simples
 
 - [x] **Customers (CRUD)** → mutators `customers.create/update/delete`. Borrados `server/orpc/contracts/customers.ts` y `server/orpc/routers/customers.ts`.
-- [ ] **Products (CRUD)** → mutators `products.create/update/delete`. Borra `server/orpc/routers/products.ts`.
+- [x] **Products (CRUD)** → mutators `products.create/update/delete`. Borrados `server/orpc/contracts/products.ts` y `server/orpc/routers/products.ts`.
 - [ ] **Restaurants areas/tables** → mutators correspondientes.
 
 ### M3 · Flujo POS (alto riesgo, alta visibilidad)

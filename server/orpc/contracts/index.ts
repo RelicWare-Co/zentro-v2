@@ -3,7 +3,6 @@ import { dashboardContract } from "./dashboard";
 import { modulesContract } from "./modules";
 import { organizationContract } from "./organization";
 import { posContract } from "./pos";
-import { productsContract } from "./products";
 import { restaurantsContract } from "./restaurants";
 import { salesContract } from "./sales";
 import { settingsContract } from "./settings";
@@ -13,7 +12,6 @@ export const contract = {
   organization: organizationContract,
   modules: modulesContract,
   settings: settingsContract,
-  products: productsContract,
   credit: creditContract,
   dashboard: dashboardContract,
   sales: salesContract,

@@ -26,17 +26,6 @@ import {
   toggleFavorite as posToggleFavorite,
 } from "./pos";
 import {
-  categories,
-  create,
-  createCategory,
-  deleteCategory,
-  deleteProduct,
-  list,
-  registerInventoryMovement,
-  update,
-  updateCategory,
-} from "./products";
-import {
   addOrderItem,
   closeOrder,
   configuration,
@@ -95,17 +84,6 @@ export const router = {
   settings: {
     get: getSettings,
     update: updateSettings,
-  },
-  products: {
-    list,
-    categories,
-    create,
-    update,
-    delete: deleteProduct,
-    registerInventoryMovement,
-    createCategory,
-    updateCategory,
-    deleteCategory,
   },
   credit: {
     searchAccounts: searchCreditAccounts,

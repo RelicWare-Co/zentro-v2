@@ -25,8 +25,18 @@ const customersSearchArgsSchema = z.object({
   searchQuery: z.string().trim().optional().nullable(),
 });
 
+const productsSearchArgsSchema = z.object({
+  categoryId: z.string().trim().optional().nullable(),
+  limit: z.number().int().min(1).max(1000).optional(),
+  searchQuery: z.string().trim().optional().nullable(),
+});
+
 function normalizeLimit(limit?: number) {
   return Math.min(Math.max(limit ?? 50, 1), 100);
+}
+
+function normalizeProductLimit(limit?: number) {
+  return Math.min(Math.max(limit ?? 1000, 1), 1000);
 }
 
 export const queries = defineQueries({
@@ -73,6 +83,52 @@ export const queries = defineQueries({
         .orderBy("name", "asc")
         .orderBy("id", "asc")
         .limit(normalizeLimit(args.limit));
+    }),
+  },
+  products: {
+    categories: defineQuery(({ ctx }) => {
+      if (!ctx) {
+        return zql.category.where(({ cmpLit }) => cmpLit(false, "=", true));
+      }
+
+      return zql.category
+        .where("organizationId", ctx.orgID)
+        .orderBy("name", "asc")
+        .orderBy("id", "asc");
+    }),
+    search: defineQuery(productsSearchArgsSchema, ({ args, ctx }) => {
+      if (!ctx) {
+        return zql.product.where(({ cmpLit }) => cmpLit(false, "=", true));
+      }
+
+      const normalizedSearch = args.searchQuery?.trim() ?? "";
+      const normalizedCategoryId = args.categoryId?.trim() ?? "";
+      const searchPattern = `%${normalizedSearch}%`;
+      let query = zql.product
+        .where("organizationId", ctx.orgID)
+        .where("deletedAt", "IS", null)
+        .related("category");
+
+      if (normalizedCategoryId === "uncategorized") {
+        query = query.where("categoryId", "IS", null);
+      } else if (normalizedCategoryId) {
+        query = query.where("categoryId", normalizedCategoryId);
+      }
+
+      if (normalizedSearch) {
+        query = query.where(({ cmp, or }) =>
+          or(
+            cmp("name", "ILIKE", searchPattern),
+            cmp("sku", "ILIKE", searchPattern),
+            cmp("barcode", "ILIKE", searchPattern)
+          )
+        );
+      }
+
+      return query
+        .orderBy("name", "asc")
+        .orderBy("id", "asc")
+        .limit(normalizeProductLimit(args.limit));
     }),
   },
 });
