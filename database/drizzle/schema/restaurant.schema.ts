@@ -1,5 +1,6 @@
 import {
   boolean,
+  foreignKey,
   index,
   integer,
   pgTable,
@@ -157,12 +158,7 @@ export const restaurantOrderItem = pgTable(
     orderId: text("order_id")
       .notNull()
       .references(() => restaurantOrder.id, { onDelete: "cascade" }),
-    kitchenTicketId: text("kitchen_ticket_id").references(
-      () => restaurantKitchenTicket.id,
-      {
-        onDelete: "set null",
-      }
-    ),
+    kitchenTicketId: text("kitchen_ticket_id"),
     productId: text("product_id")
       .notNull()
       .references(() => product.id),
@@ -188,6 +184,11 @@ export const restaurantOrderItem = pgTable(
     }),
   },
   (table) => [
+    foreignKey({
+      name: "roi_kitchen_ticket_fk",
+      columns: [table.kitchenTicketId],
+      foreignColumns: [restaurantKitchenTicket.id],
+    }).onDelete("set null"),
     index("restaurantOrderItem_organizationId_idx").on(table.organizationId),
     index("restaurantOrderItem_orderId_idx").on(table.orderId),
     index("restaurantOrderItem_ticketId_idx").on(table.kitchenTicketId),
@@ -198,15 +199,9 @@ export const restaurantOrderItemModifier = pgTable(
   "restaurant_order_item_modifier",
   {
     id: text("id").primaryKey(),
-    organizationId: text("organization_id")
-      .notNull()
-      .references(() => organization.id, { onDelete: "cascade" }),
-    orderItemId: text("order_item_id")
-      .notNull()
-      .references(() => restaurantOrderItem.id, { onDelete: "cascade" }),
-    modifierProductId: text("modifier_product_id")
-      .notNull()
-      .references(() => product.id),
+    organizationId: text("organization_id").notNull(),
+    orderItemId: text("order_item_id").notNull(),
+    modifierProductId: text("modifier_product_id").notNull(),
     quantity: integer("quantity").notNull(),
     unitPrice: integer("unit_price").notNull(),
     createdAt: timestamp("created_at", {
@@ -215,6 +210,21 @@ export const restaurantOrderItemModifier = pgTable(
     }).notNull(),
   },
   (table) => [
+    foreignKey({
+      name: "roim_org_fk",
+      columns: [table.organizationId],
+      foreignColumns: [organization.id],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "roim_order_item_fk",
+      columns: [table.orderItemId],
+      foreignColumns: [restaurantOrderItem.id],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "roim_product_fk",
+      columns: [table.modifierProductId],
+      foreignColumns: [product.id],
+    }),
     index("restaurantOrderItemModifier_organizationId_idx").on(
       table.organizationId
     ),

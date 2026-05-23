@@ -1,5 +1,5 @@
 {
-  "id": "d1c03556-dec4-47e0-a910-f7996a91df8d",
+  "id": "fc9da2de-8128-4fdc-8eb9-41997577fae9",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -1278,8 +1278,8 @@
         }
       },
       "foreignKeys": {
-        "organization_module_entitlement_organization_id_organization_id_fk": {
-          "name": "organization_module_entitlement_organization_id_organization_id_fk",
+        "org_mod_ent_org_fk": {
+          "name": "org_mod_ent_org_fk",
           "tableFrom": "organization_module_entitlement",
           "tableTo": "organization",
           "columnsFrom": ["organization_id"],
@@ -1287,8 +1287,8 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "organization_module_entitlement_updated_by_user_id_user_id_fk": {
-          "name": "organization_module_entitlement_updated_by_user_id_user_id_fk",
+        "org_mod_ent_upd_by_fk": {
+          "name": "org_mod_ent_upd_by_fk",
           "tableFrom": "organization_module_entitlement",
           "tableTo": "user",
           "columnsFrom": ["updated_by_user_id"],
@@ -2589,15 +2589,6 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "restaurant_order_item_kitchen_ticket_id_restaurant_kitchen_ticket_id_fk": {
-          "name": "restaurant_order_item_kitchen_ticket_id_restaurant_kitchen_ticket_id_fk",
-          "tableFrom": "restaurant_order_item",
-          "tableTo": "restaurant_kitchen_ticket",
-          "columnsFrom": ["kitchen_ticket_id"],
-          "columnsTo": ["id"],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
         "restaurant_order_item_product_id_product_id_fk": {
           "name": "restaurant_order_item_product_id_product_id_fk",
           "tableFrom": "restaurant_order_item",
@@ -2605,6 +2596,15 @@
           "columnsFrom": ["product_id"],
           "columnsTo": ["id"],
           "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "roi_kitchen_ticket_fk": {
+          "name": "roi_kitchen_ticket_fk",
+          "tableFrom": "restaurant_order_item",
+          "tableTo": "restaurant_kitchen_ticket",
+          "columnsFrom": ["kitchen_ticket_id"],
+          "columnsTo": ["id"],
+          "onDelete": "set null",
           "onUpdate": "no action"
         }
       },
@@ -2694,8 +2694,8 @@
         }
       },
       "foreignKeys": {
-        "restaurant_order_item_modifier_organization_id_organization_id_fk": {
-          "name": "restaurant_order_item_modifier_organization_id_organization_id_fk",
+        "roim_org_fk": {
+          "name": "roim_org_fk",
           "tableFrom": "restaurant_order_item_modifier",
           "tableTo": "organization",
           "columnsFrom": ["organization_id"],
@@ -2703,8 +2703,8 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "restaurant_order_item_modifier_order_item_id_restaurant_order_item_id_fk": {
-          "name": "restaurant_order_item_modifier_order_item_id_restaurant_order_item_id_fk",
+        "roim_order_item_fk": {
+          "name": "roim_order_item_fk",
           "tableFrom": "restaurant_order_item_modifier",
           "tableTo": "restaurant_order_item",
           "columnsFrom": ["order_item_id"],
@@ -2712,8 +2712,8 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "restaurant_order_item_modifier_modifier_product_id_product_id_fk": {
-          "name": "restaurant_order_item_modifier_modifier_product_id_product_id_fk",
+        "roim_product_fk": {
+          "name": "roim_product_fk",
           "tableFrom": "restaurant_order_item_modifier",
           "tableTo": "product",
           "columnsFrom": ["modifier_product_id"],
