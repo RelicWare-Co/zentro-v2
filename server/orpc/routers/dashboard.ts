@@ -1,5 +1,17 @@
 import { implement } from "@orpc/server";
-import { and, asc, desc, eq, gt, isNull, ne, or, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  gt,
+  gte,
+  isNull,
+  lt,
+  ne,
+  or,
+  sql,
+} from "drizzle-orm";
 import { organization } from "@/database/drizzle/schema/auth.schema";
 import { creditAccount } from "@/database/drizzle/schema/credit.schema";
 import { customer } from "@/database/drizzle/schema/customer.schema";
@@ -203,8 +215,8 @@ export const overview = orgRequiredProcedure.overview.handler(
         .where(
           and(
             ...saleBaseClauses,
-            sql`${sale.createdAt} >= ${todayStart.toISOString()}`,
-            sql`${sale.createdAt} < ${tomorrowStart.toISOString()}`
+            gte(sale.createdAt, todayStart),
+            lt(sale.createdAt, tomorrowStart)
           )
         ),
       context.db
@@ -218,8 +230,8 @@ export const overview = orgRequiredProcedure.overview.handler(
         .where(
           and(
             ...saleBaseClauses,
-            sql`${sale.createdAt} >= ${yesterdayStart.toISOString()}`,
-            sql`${sale.createdAt} < ${todayStart.toISOString()}`
+            gte(sale.createdAt, yesterdayStart),
+            lt(sale.createdAt, todayStart)
           )
         ),
       context.db
@@ -231,8 +243,8 @@ export const overview = orgRequiredProcedure.overview.handler(
         .where(
           and(
             ...saleBaseClauses,
-            sql`${sale.createdAt} >= ${monthStart.toISOString()}`,
-            sql`${sale.createdAt} < ${nextMonthStart.toISOString()}`
+            gte(sale.createdAt, monthStart),
+            lt(sale.createdAt, nextMonthStart)
           )
         ),
       context.db
@@ -244,8 +256,8 @@ export const overview = orgRequiredProcedure.overview.handler(
         .where(
           and(
             ...saleBaseClauses,
-            sql`${sale.createdAt} >= ${previousMonthStart.toISOString()}`,
-            sql`${sale.createdAt} < ${monthStart.toISOString()}`
+            gte(sale.createdAt, previousMonthStart),
+            lt(sale.createdAt, monthStart)
           )
         ),
       context.db
@@ -315,8 +327,8 @@ export const overview = orgRequiredProcedure.overview.handler(
         .where(
           and(
             ...saleBaseClauses,
-            sql`${sale.createdAt} >= ${trendStart.toISOString()}`,
-            sql`${sale.createdAt} < ${tomorrowStart.toISOString()}`
+            gte(sale.createdAt, trendStart),
+            lt(sale.createdAt, tomorrowStart)
           )
         )
         .groupBy(saleDateKey)
@@ -337,8 +349,8 @@ export const overview = orgRequiredProcedure.overview.handler(
         .where(
           and(
             eq(payment.organizationId, context.organizationId),
-            sql`${payment.createdAt} >= ${todayStart.toISOString()}`,
-            sql`${payment.createdAt} < ${tomorrowStart.toISOString()}`,
+            gte(payment.createdAt, todayStart),
+            lt(payment.createdAt, tomorrowStart),
             or(isNull(payment.saleId), ne(sale.status, "cancelled"))
           )
         )
@@ -372,8 +384,8 @@ export const overview = orgRequiredProcedure.overview.handler(
         .where(
           and(
             eq(saleItem.organizationId, context.organizationId),
-            sql`${sale.createdAt} >= ${topProductsStart.toISOString()}`,
-            sql`${sale.createdAt} < ${tomorrowStart.toISOString()}`
+            gte(sale.createdAt, topProductsStart),
+            lt(sale.createdAt, tomorrowStart)
           )
         )
         .groupBy(saleItem.productId, product.name, product.stock)
