@@ -23,7 +23,7 @@ import { createTestDb } from "./helpers/test-db";
 describe("cross-area end-to-end flows", () => {
   describe("VAL-CROSS-001: full POS checkout flow works end-to-end and data is consistent across queries", () => {
     test("checkout flow: open shift, add product, create sale, close shift, verify consistency", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const u = makeUser({ id: userId });
       const ctx = buildMockContext(db, u, organizationId);
@@ -177,7 +177,7 @@ describe("cross-area end-to-end flows", () => {
     });
 
     test("checkout flow with cash movement, card sale, and mixed payments is consistent", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const u = makeUser({ id: userId });
       const ctx = buildMockContext(db, u, organizationId);
@@ -298,7 +298,7 @@ describe("cross-area end-to-end flows", () => {
 
   describe("VAL-CROSS-002: credit sale flow works end-to-end", () => {
     test("create credit sale, register payment, verify balance reaches zero", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const u = makeUser({ id: userId });
       const ctx = buildMockContext(db, u, organizationId);
@@ -461,7 +461,7 @@ describe("cross-area end-to-end flows", () => {
     });
 
     test("credit sale with no initial payment, full payment brings balance to zero", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const u = makeUser({ id: userId });
       const ctx = buildMockContext(db, u, organizationId);
@@ -540,7 +540,7 @@ describe("cross-area end-to-end flows", () => {
     });
 
     test("multiple credit sales for same customer, payments reduce total balance correctly", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const u = makeUser({ id: userId });
       const ctx = buildMockContext(db, u, organizationId);

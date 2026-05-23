@@ -1,9 +1,9 @@
 import { relations } from "drizzle-orm";
-import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { index, integer, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { organization, user } from "./auth.schema";
 import { payment, sale } from "./sales.schema";
 
-export const shift = sqliteTable(
+export const shift = pgTable(
   "shift",
   {
     id: text("id").primaryKey(),
@@ -17,14 +17,17 @@ export const shift = sqliteTable(
     terminalName: text("terminal_name"), // Nombre legible (ej: "Caja Principal", "Caja 2")
     status: text("status").notNull().default("open"), // 'open', 'closed'
     startingCash: integer("starting_cash").notNull().default(0), // Base en efectivo
-    openedAt: integer("opened_at", { mode: "timestamp_ms" }).notNull(),
-    closedAt: integer("closed_at", { mode: "timestamp_ms" }),
+    openedAt: timestamp("opened_at", {
+      withTimezone: true,
+      mode: "date",
+    }).notNull(),
+    closedAt: timestamp("closed_at", { withTimezone: true, mode: "date" }),
     notes: text("notes"),
   },
   (table) => [index("shift_organizationId_idx").on(table.organizationId)]
 );
 
-export const cashMovement = sqliteTable(
+export const cashMovement = pgTable(
   "cash_movement",
   {
     id: text("id").primaryKey(),
@@ -38,13 +41,16 @@ export const cashMovement = sqliteTable(
     paymentMethod: text("payment_method").notNull().default("cash"),
     amount: integer("amount").notNull(),
     description: text("description").notNull(),
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+    createdAt: timestamp("created_at", {
+      withTimezone: true,
+      mode: "date",
+    }).notNull(),
   },
   (table) => [index("cash_mov_shiftId_idx").on(table.shiftId)]
 );
 
 // Conteo al cerrar caja, detallado por método de pago
-export const shiftClosure = sqliteTable(
+export const shiftClosure = pgTable(
   "shift_closure",
   {
     id: text("id").primaryKey(),

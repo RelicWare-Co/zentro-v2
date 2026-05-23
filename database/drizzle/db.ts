@@ -1,5 +1,5 @@
-import { createClient } from "@libsql/client";
-import { drizzle } from "drizzle-orm/libsql";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { Pool } from "pg";
 // biome-ignore lint/performance/noNamespaceImport: drizzle requires all schemas as a namespace object
 import * as schema from "./schema";
 
@@ -9,13 +9,11 @@ function createDb() {
     throw new Error("DATABASE_URL environment variable is not set");
   }
 
-  // libSQL soporta URLs locales (file:) y remotas (libsql://, https://, wss://)
-  const client = createClient({
-    url: databaseUrl,
-    authToken: process.env.DATABASE_AUTH_TOKEN,
+  const pool = new Pool({
+    connectionString: databaseUrl,
   });
 
-  return drizzle(client, { schema });
+  return drizzle(pool, { schema });
 }
 
 export type Database = ReturnType<typeof createDb>;
@@ -44,3 +42,5 @@ const _db = new Proxy({} as Database, {
     return typeof value === "function" ? value.bind(target) : value;
   },
 });
+
+export { _db as db };

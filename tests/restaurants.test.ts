@@ -18,10 +18,10 @@ import {
   seedRestaurantTable,
   seedShift,
 } from "./helpers/seed";
-import { createTestDb } from "./helpers/test-db";
+import { createTestDb, type TestDb } from "./helpers/test-db";
 
 async function setRestaurantModuleEnabled(
-  db: ReturnType<typeof createTestDb>["db"],
+  db: TestDb,
   organizationId: string,
   enabled: boolean
 ) {
@@ -45,7 +45,7 @@ async function setRestaurantModuleEnabled(
 }
 
 async function setKitchenDisplayEnabled(
-  db: ReturnType<typeof createTestDb>["db"],
+  db: TestDb,
   organizationId: string,
   displayEnabled: boolean
 ) {
@@ -71,7 +71,7 @@ async function setKitchenDisplayEnabled(
 describe("restaurant module", () => {
   describe("VAL-REST-001: bootstrap rejects when restaurant module is disabled", () => {
     test("restaurant bootstrap rejects when module disabled", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db, {
         memberRole: "owner",
       });
@@ -91,7 +91,7 @@ describe("restaurant module", () => {
 
   describe("VAL-REST-002: add order item creates open order with correct totals", () => {
     test("add order item creates open order and returns correct totals", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db, {
         memberRole: "owner",
       });
@@ -154,7 +154,7 @@ describe("restaurant module", () => {
 
   describe("VAL-REST-003: send to kitchen creates ticket and updates item status", () => {
     test("send to kitchen creates kitchen ticket and marks items as sent", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db, {
         memberRole: "owner",
       });
@@ -221,7 +221,7 @@ describe("restaurant module", () => {
 
   describe("VAL-REST-004: close order creates a sale and marks order closed", () => {
     test("close order creates sale and marks order closed", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db, {
         memberRole: "owner",
       });
@@ -296,7 +296,7 @@ describe("restaurant module", () => {
 
   describe("VAL-REST-005: area/table CRUD requires manager access", () => {
     test("non-manager is rejected from createArea, updateArea, deleteArea", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const [{ organizationId, userId: managerId }, { userId: cashierId }] =
         await Promise.all([
           seedOrganizationWithMember(db, {
@@ -384,7 +384,7 @@ describe("restaurant module", () => {
     });
 
     test("manager can create, update, and delete area and table", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db, {
         memberRole: "owner",
       });
@@ -449,7 +449,7 @@ describe("restaurant module", () => {
 
   describe("VAL-REST-006: kitchen board rejects when display is disabled", () => {
     test("kitchen board rejects when kitchen display setting is disabled", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db, {
         memberRole: "owner",
       });
@@ -468,7 +468,7 @@ describe("restaurant module", () => {
     });
 
     test("kitchen board succeeds when kitchen display is enabled", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db, {
         memberRole: "owner",
       });

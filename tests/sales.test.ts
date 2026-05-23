@@ -26,7 +26,7 @@ import { createTestDb } from "./helpers/test-db";
 describe("sale creation transactions", () => {
   describe("VAL-SALE-001: createCoreSale decrements stock for tracked products", () => {
     test("stock is reduced by sold quantity after sale", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const [productId, shiftId] = await Promise.all([
         seedProduct(db, {
@@ -74,7 +74,7 @@ describe("sale creation transactions", () => {
     });
 
     test("modifier stock is reduced by total quantity sold", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const [baseProductId, modifierProductId, shiftId] = await Promise.all([
         seedProduct(db, {
@@ -139,7 +139,7 @@ describe("sale creation transactions", () => {
     });
 
     test("non-tracked product does not affect stock", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const [productId, shiftId] = await Promise.all([
         seedProduct(db, {
@@ -177,7 +177,7 @@ describe("sale creation transactions", () => {
 
   describe("VAL-SALE-002: sale creation validates payment totals", () => {
     test("payment records created and sum equals sale total", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const [productId, shiftId] = await Promise.all([
         seedProduct(db, {
@@ -222,7 +222,7 @@ describe("sale creation transactions", () => {
     });
 
     test("underpayment is rejected", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const [productId, shiftId] = await Promise.all([
         seedProduct(db, {
@@ -256,7 +256,7 @@ describe("sale creation transactions", () => {
     });
 
     test("zero-total sale accepts no payments", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const [productId, shiftId] = await Promise.all([
         seedProduct(db, {
@@ -291,7 +291,7 @@ describe("sale creation transactions", () => {
 
   describe("VAL-SALE-003: credit sale creates credit account and charge transaction", () => {
     test("credit sale for new customer creates account and charge transaction", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const [productId, customerId, shiftId] = await Promise.all([
         seedProduct(db, {
@@ -352,7 +352,7 @@ describe("sale creation transactions", () => {
     });
 
     test("credit sale for existing customer increments balance", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const [productId, customerId, shiftId] = await Promise.all([
         seedProduct(db, {
@@ -413,7 +413,7 @@ describe("sale creation transactions", () => {
     });
 
     test("credit sale without customer is rejected", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const [productId, shiftId] = await Promise.all([
         seedProduct(db, {
@@ -448,7 +448,7 @@ describe("sale creation transactions", () => {
     });
 
     test("credit sale with full payment is rejected", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const [productId, customerId, shiftId] = await Promise.all([
         seedProduct(db, {
@@ -490,7 +490,7 @@ describe("sale creation transactions", () => {
 
   describe("VAL-SALE-004: sale cancellation restores stock and creates adjustment movement", () => {
     test("cancelling sale restores stock and records adjustment movement", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const [productId, shiftId] = await Promise.all([
         seedProduct(db, {
@@ -550,7 +550,7 @@ describe("sale creation transactions", () => {
     });
 
     test("cancelling already cancelled sale is rejected", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const [productId, shiftId] = await Promise.all([
         seedProduct(db, {
@@ -590,7 +590,7 @@ describe("sale creation transactions", () => {
 
   describe("VAL-SALE-005: sale cancellation reverts credit balance", () => {
     test("credit sale cancellation reduces credit account balance", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const [productId, customerId, shiftId] = await Promise.all([
         seedProduct(db, {
@@ -656,7 +656,7 @@ describe("sale creation transactions", () => {
 
   describe("VAL-SALE-006: closed shift rejects new sales", () => {
     test("sale creation on closed shift is rejected", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const [productId, closedShiftId] = await Promise.all([
         seedProduct(db, {
@@ -691,7 +691,7 @@ describe("sale creation transactions", () => {
 
   describe("VAL-SALE-007: wrong-user shift rejects sale", () => {
     test("sale creation on another user's shift is rejected", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const [{ organizationId, userId: ownerId }, { userId: cashierId }] =
         await Promise.all([
           seedOrganizationWithMember(db, { userEmail: "owner@example.com" }),
@@ -750,7 +750,7 @@ describe("sale creation transactions", () => {
 
   describe("VAL-SALE-008: disabled payment methods are rejected", () => {
     test("sale with disabled payment method is rejected", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const [productId, shiftId] = await Promise.all([
         seedProduct(db, {
@@ -797,7 +797,7 @@ describe("sale creation transactions", () => {
 
   describe("VAL-SALE-009: cash overpayment rules", () => {
     test("valid cash overpayment is allowed", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const [productId, shiftId] = await Promise.all([
         seedProduct(db, {
@@ -830,7 +830,7 @@ describe("sale creation transactions", () => {
     });
 
     test("overpayment with non-cash exceeding total is rejected", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const [productId, shiftId] = await Promise.all([
         seedProduct(db, {
@@ -867,7 +867,7 @@ describe("sale creation transactions", () => {
     });
 
     test("overpayment without cash is rejected", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const [productId, shiftId] = await Promise.all([
         seedProduct(db, {
@@ -901,7 +901,7 @@ describe("sale creation transactions", () => {
     });
 
     test("split payment with non-cash exactly at total and cash covering change is allowed", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const [productId, shiftId] = await Promise.all([
         seedProduct(db, {

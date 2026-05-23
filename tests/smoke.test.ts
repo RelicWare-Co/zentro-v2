@@ -12,7 +12,7 @@ import { createTestDb } from "./helpers/test-db";
 
 describe("test infrastructure smoke", () => {
   test("createTestDb returns migrated DB that can query", async () => {
-    const { db, cleanup } = createTestDb();
+    const { db, cleanup } = await createTestDb();
     const { organizationId, userId } = await seedOrganizationWithMember(db);
     expect(organizationId).toBeString();
     expect(userId).toBeString();
@@ -20,7 +20,7 @@ describe("test infrastructure smoke", () => {
   });
 
   test("seed helpers insert rows", async () => {
-    const { db, cleanup } = createTestDb();
+    const { db, cleanup } = await createTestDb();
     const { organizationId, userId } = await seedOrganizationWithMember(db);
     const categoryId = await seedCategory(db, {
       organizationId,
@@ -51,7 +51,7 @@ describe("test infrastructure smoke", () => {
   });
 
   test("buildMockContext + createServerORPCClient can call a public procedure", async () => {
-    const { db, cleanup } = createTestDb();
+    const { db, cleanup } = await createTestDb();
     const { organizationId, userId } = await seedOrganizationWithMember(db, {
       userName: "Test User",
       userEmail: "test-user@example.com",

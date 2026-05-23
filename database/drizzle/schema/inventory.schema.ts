@@ -1,15 +1,17 @@
 import { relations, sql } from "drizzle-orm";
 import {
+  boolean,
   index,
   integer,
-  sqliteTable,
+  pgTable,
   text,
+  timestamp,
   uniqueIndex,
-} from "drizzle-orm/sqlite-core";
+} from "drizzle-orm/pg-core";
 import { organization, user } from "./auth.schema";
 import { saleItem, saleItemModifier } from "./sales.schema";
 
-export const category = sqliteTable(
+export const category = pgTable(
   "category",
   {
     id: text("id").primaryKey(),
@@ -18,12 +20,15 @@ export const category = sqliteTable(
       .references(() => organization.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
     description: text("description"),
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+    createdAt: timestamp("created_at", {
+      withTimezone: true,
+      mode: "date",
+    }).notNull(),
   },
   (table) => [index("category_organizationId_idx").on(table.organizationId)]
 );
 
-export const product = sqliteTable(
+export const product = pgTable(
   "product",
   {
     id: text("id").primaryKey(),
@@ -39,18 +44,15 @@ export const product = sqliteTable(
     price: integer("price").notNull(), // Precio en COP (entero)
     cost: integer("cost").default(0),
     taxRate: integer("tax_rate").default(0).notNull(), // % de impuesto (ej: 19 para IVA 19%, 0 para excluido)
-    isModifier: integer("is_modifier", { mode: "boolean" })
-      .default(false)
-      .notNull(), // True para adiciones (ej: extra queso)
-    trackInventory: integer("track_inventory", { mode: "boolean" })
-      .default(true)
-      .notNull(),
+    isModifier: boolean("is_modifier").default(false).notNull(), // True para adiciones (ej: extra queso)
+    trackInventory: boolean("track_inventory").default(true).notNull(),
     stock: integer("stock").default(0).notNull(), // Cache del stock actual
-    isFavorite: integer("is_favorite", { mode: "boolean" })
-      .default(false)
-      .notNull(),
-    deletedAt: integer("deleted_at", { mode: "timestamp_ms" }), // Soft delete: null = activo, fecha = eliminado
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+    isFavorite: boolean("is_favorite").default(false).notNull(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "date" }), // Soft delete: null = activo, fecha = eliminado
+    createdAt: timestamp("created_at", {
+      withTimezone: true,
+      mode: "date",
+    }).notNull(),
   },
   (table) => [
     index("product_organizationId_idx").on(table.organizationId),
@@ -64,7 +66,7 @@ export const product = sqliteTable(
   ]
 );
 
-export const inventoryMovement = sqliteTable(
+export const inventoryMovement = pgTable(
   "inventory_movement",
   {
     id: text("id").primaryKey(),
@@ -78,7 +80,10 @@ export const inventoryMovement = sqliteTable(
     type: text("type").notNull(), // 'sale', 'restock', 'waste' (descarte), 'adjustment'
     quantity: integer("quantity").notNull(), // Positivo (ingreso) o Negativo (salida)
     notes: text("notes"), // Ej: "Tomate dañado"
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+    createdAt: timestamp("created_at", {
+      withTimezone: true,
+      mode: "date",
+    }).notNull(),
   },
   (table) => [index("inv_mov_productId_idx").on(table.productId)]
 );

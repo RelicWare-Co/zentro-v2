@@ -1,13 +1,13 @@
 import {
   index,
-  integer,
-  sqliteTable,
+  pgTable,
   text,
+  timestamp,
   uniqueIndex,
-} from "drizzle-orm/sqlite-core";
+} from "drizzle-orm/pg-core";
 import { organization, user } from "./auth.schema";
 
-export const organizationModuleEntitlement = sqliteTable(
+export const organizationModuleEntitlement = pgTable(
   "organization_module_entitlement",
   {
     id: text("id").primaryKey(),
@@ -19,8 +19,11 @@ export const organizationModuleEntitlement = sqliteTable(
     updatedByUserId: text("updated_by_user_id").references(() => user.id, {
       onDelete: "set null",
     }),
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
-    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+    createdAt: timestamp("created_at", {
+      withTimezone: true,
+      mode: "date",
+    }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" })
       .$onUpdate(() => new Date())
       .notNull(),
   },

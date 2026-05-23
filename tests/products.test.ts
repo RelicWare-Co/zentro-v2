@@ -14,7 +14,7 @@ import { createTestDb } from "./helpers/test-db";
 describe("product CRUD", () => {
   describe("VAL-PROD-001: category creation normalizes name and description", () => {
     test("creates categories with normalized values", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
 
       const u = makeUser({ id: userId });
@@ -41,7 +41,7 @@ describe("product CRUD", () => {
 
   describe("VAL-PROD-002: product creation succeeds with valid data and is org-scoped", () => {
     test("creates a product scoped to active organization", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const categoryId = await seedCategory(db, {
         organizationId,
@@ -85,7 +85,7 @@ describe("product CRUD", () => {
 
   describe("VAL-PROD-009: product creation rejects external-org category", () => {
     test("rejects product creation with category from another organization", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const { organizationId: otherOrgId } = await seedOrganizationWithMember(
         db,
@@ -116,7 +116,7 @@ describe("product CRUD", () => {
 
   describe("VAL-PROD-003: soft-deleted products are excluded from list but can be recreated with same barcode/sku", () => {
     test("soft-deleted product excluded from list and barcode/sku can be reused", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const categoryId = await seedCategory(db, {
         organizationId,
@@ -167,7 +167,7 @@ describe("product CRUD", () => {
 
   describe("VAL-PROD-004: product update applies normalization and category validation", () => {
     test("update normalizes name and rejects external category", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const categoryId = await seedCategory(db, {
         organizationId,
@@ -219,7 +219,7 @@ describe("product CRUD", () => {
 
   describe("VAL-PROD-005: inventory movement registration updates stock correctly", () => {
     test("restock adds stock and waste subtracts stock", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const productId = await seedProduct(db, {
         organizationId,
@@ -265,7 +265,7 @@ describe("product CRUD", () => {
 
   describe("VAL-PROD-006: restock with set_as_total on negative stock uses final total", () => {
     test("set_as_total on negative stock sets final total correctly", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const productId = await seedProduct(db, {
         organizationId,
@@ -299,7 +299,7 @@ describe("product CRUD", () => {
 
   describe("VAL-PROD-007: isModifier flag persists on create and update", () => {
     test("isModifier persists through create and update", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const categoryId = await seedCategory(db, {
         organizationId,
@@ -341,7 +341,7 @@ describe("product CRUD", () => {
 
   describe("VAL-PROD-008: empty update mutations are rejected", () => {
     test("product update with no fields is rejected", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const categoryId = await seedCategory(db, {
         organizationId,

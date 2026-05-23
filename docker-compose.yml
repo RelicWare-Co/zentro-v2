@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: zentro-postgres
+    environment:
+      POSTGRES_USER: zentro
+      POSTGRES_PASSWORD: zentro
+      POSTGRES_DB: zentro
+    ports:
+      - "5432:5432"
+    volumes:
+      - zentro_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U zentro -d zentro"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  zentro_postgres_data:

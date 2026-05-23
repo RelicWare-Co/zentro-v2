@@ -5,10 +5,10 @@ import { serializeOrganizationSettingsMetadata } from "@/features/settings/setti
 import { createServerORPCClient } from "@/server/orpc/client/server";
 import { buildMockContext } from "./helpers/orpc-context";
 import { makeUser, seedOrganizationWithMember } from "./helpers/seed";
-import { createTestDb } from "./helpers/test-db";
+import { createTestDb, type TestDb } from "./helpers/test-db";
 
 async function setRestaurantModuleEnabled(
-  db: ReturnType<typeof createTestDb>["db"],
+  db: TestDb,
   organizationId: string,
   enabled: boolean
 ) {
@@ -27,7 +27,7 @@ async function setRestaurantModuleEnabled(
 describe("module access control", () => {
   describe("VAL-MOD-001: capabilities builds navigation for enabled modules", () => {
     test("capabilities includes restaurant navigation when module enabled", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db, {
         memberRole: "owner",
       });
@@ -53,7 +53,7 @@ describe("module access control", () => {
 
   describe("VAL-MOD-002: capabilities omits navigation for disabled modules", () => {
     test("capabilities excludes restaurant navigation when module disabled", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db, {
         memberRole: "owner",
       });
@@ -74,7 +74,7 @@ describe("module access control", () => {
 
   describe("VAL-MOD-003: setEntitlement requires platform admin", () => {
     test("non-platform-admin is rejected from setEntitlement", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db, {
         memberRole: "owner",
         userRole: "user",
@@ -99,7 +99,7 @@ describe("module access control", () => {
     });
 
     test("platform admin can setEntitlement successfully", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db, {
         memberRole: "owner",
         userRole: "admin",
@@ -126,7 +126,7 @@ describe("module access control", () => {
 
   describe("VAL-MOD-004: restaurant module access rejects when module disabled", () => {
     test("restaurant bootstrap rejects when restaurant module is disabled", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db, {
         memberRole: "owner",
       });

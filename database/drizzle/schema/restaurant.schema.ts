@@ -1,15 +1,17 @@
 import {
+  boolean,
   index,
   integer,
-  sqliteTable,
+  pgTable,
   text,
+  timestamp,
   uniqueIndex,
-} from "drizzle-orm/sqlite-core";
+} from "drizzle-orm/pg-core";
 import { organization, user } from "./auth.schema";
 import { product } from "./inventory.schema";
 import { sale } from "./sales.schema";
 
-export const restaurantArea = sqliteTable(
+export const restaurantArea = pgTable(
   "restaurant_area",
   {
     id: text("id").primaryKey(),
@@ -18,8 +20,11 @@ export const restaurantArea = sqliteTable(
       .references(() => organization.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
     sortOrder: integer("sort_order").default(0).notNull(),
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
-    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+    createdAt: timestamp("created_at", {
+      withTimezone: true,
+      mode: "date",
+    }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" })
       .$onUpdate(() => new Date())
       .notNull(),
   },
@@ -32,7 +37,7 @@ export const restaurantArea = sqliteTable(
   ]
 );
 
-export const restaurantTable = sqliteTable(
+export const restaurantTable = pgTable(
   "restaurant_table",
   {
     id: text("id").primaryKey(),
@@ -45,9 +50,12 @@ export const restaurantTable = sqliteTable(
     name: text("name").notNull(),
     seats: integer("seats").default(0).notNull(),
     sortOrder: integer("sort_order").default(0).notNull(),
-    isActive: integer("is_active", { mode: "boolean" }).default(true).notNull(),
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
-    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+    isActive: boolean("is_active").default(true).notNull(),
+    createdAt: timestamp("created_at", {
+      withTimezone: true,
+      mode: "date",
+    }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" })
       .$onUpdate(() => new Date())
       .notNull(),
   },
@@ -62,7 +70,7 @@ export const restaurantTable = sqliteTable(
   ]
 );
 
-export const restaurantOrder = sqliteTable(
+export const restaurantOrder = pgTable(
   "restaurant_order",
   {
     id: text("id").primaryKey(),
@@ -83,11 +91,14 @@ export const restaurantOrder = sqliteTable(
     status: text("status").notNull().default("open"),
     guestCount: integer("guest_count").default(0).notNull(),
     notes: text("notes"),
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
-    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+    createdAt: timestamp("created_at", {
+      withTimezone: true,
+      mode: "date",
+    }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" })
       .$onUpdate(() => new Date())
       .notNull(),
-    closedAt: integer("closed_at", { mode: "timestamp_ms" }),
+    closedAt: timestamp("closed_at", { withTimezone: true, mode: "date" }),
   },
   (table) => [
     index("restaurantOrder_organizationId_idx").on(table.organizationId),
@@ -100,7 +111,7 @@ export const restaurantOrder = sqliteTable(
   ]
 );
 
-export const restaurantKitchenTicket = sqliteTable(
+export const restaurantKitchenTicket = pgTable(
   "restaurant_kitchen_ticket",
   {
     id: text("id").primaryKey(),
@@ -115,11 +126,14 @@ export const restaurantKitchenTicket = sqliteTable(
       .references(() => user.id),
     sequenceNumber: integer("sequence_number").notNull(),
     status: text("status").notNull().default("sent"),
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
-    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+    createdAt: timestamp("created_at", {
+      withTimezone: true,
+      mode: "date",
+    }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" })
       .$onUpdate(() => new Date())
       .notNull(),
-    printedAt: integer("printed_at", { mode: "timestamp_ms" }),
+    printedAt: timestamp("printed_at", { withTimezone: true, mode: "date" }),
   },
   (table) => [
     index("restaurantKitchenTicket_organizationId_idx").on(
@@ -133,7 +147,7 @@ export const restaurantKitchenTicket = sqliteTable(
   ]
 );
 
-export const restaurantOrderItem = sqliteTable(
+export const restaurantOrderItem = pgTable(
   "restaurant_order_item",
   {
     id: text("id").primaryKey(),
@@ -158,14 +172,20 @@ export const restaurantOrderItem = sqliteTable(
     discountAmount: integer("discount_amount").default(0).notNull(),
     notes: text("notes"),
     status: text("status").notNull().default("draft"),
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
-    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+    createdAt: timestamp("created_at", {
+      withTimezone: true,
+      mode: "date",
+    }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" })
       .$onUpdate(() => new Date())
       .notNull(),
-    sentAt: integer("sent_at", { mode: "timestamp_ms" }),
-    readyAt: integer("ready_at", { mode: "timestamp_ms" }),
-    servedAt: integer("served_at", { mode: "timestamp_ms" }),
-    cancelledAt: integer("cancelled_at", { mode: "timestamp_ms" }),
+    sentAt: timestamp("sent_at", { withTimezone: true, mode: "date" }),
+    readyAt: timestamp("ready_at", { withTimezone: true, mode: "date" }),
+    servedAt: timestamp("served_at", { withTimezone: true, mode: "date" }),
+    cancelledAt: timestamp("cancelled_at", {
+      withTimezone: true,
+      mode: "date",
+    }),
   },
   (table) => [
     index("restaurantOrderItem_organizationId_idx").on(table.organizationId),
@@ -174,7 +194,7 @@ export const restaurantOrderItem = sqliteTable(
   ]
 );
 
-export const restaurantOrderItemModifier = sqliteTable(
+export const restaurantOrderItemModifier = pgTable(
   "restaurant_order_item_modifier",
   {
     id: text("id").primaryKey(),
@@ -189,7 +209,10 @@ export const restaurantOrderItemModifier = sqliteTable(
       .references(() => product.id),
     quantity: integer("quantity").notNull(),
     unitPrice: integer("unit_price").notNull(),
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+    createdAt: timestamp("created_at", {
+      withTimezone: true,
+      mode: "date",
+    }).notNull(),
   },
   (table) => [
     index("restaurantOrderItemModifier_organizationId_idx").on(

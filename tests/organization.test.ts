@@ -15,7 +15,7 @@ import { createTestDb } from "./helpers/test-db";
 describe("organization access control", () => {
   describe("VAL-ORG-001: join link creation authorization", () => {
     test("manager can create join links", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db, {
         memberRole: "admin",
       });
@@ -34,7 +34,7 @@ describe("organization access control", () => {
     });
 
     test("non-manager is rejected when creating join links", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db, {
         memberRole: "cashier",
       });
@@ -55,7 +55,7 @@ describe("organization access control", () => {
 
   describe("VAL-ORG-002: join link redemption adds user as member", () => {
     test("redeeming a join link adds the user as a member", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId: creatorId } =
         await seedOrganizationWithMember(db, {
           memberRole: "owner",
@@ -96,7 +96,7 @@ describe("organization access control", () => {
     });
 
     test("redeeming by an existing member returns already-member", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db, {
         memberRole: "member",
       });
@@ -121,7 +121,7 @@ describe("organization access control", () => {
 
   describe("VAL-ORG-003: join link preview returns correct status", () => {
     test("preview returns active for a valid token", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const token = "active-token";
       await seedJoinLink(db, {
@@ -142,7 +142,7 @@ describe("organization access control", () => {
     });
 
     test("preview returns expired for an expired token", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const token = "expired-token";
       await seedJoinLink(db, {
@@ -162,7 +162,7 @@ describe("organization access control", () => {
     });
 
     test("preview returns revoked for a revoked token", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const token = "revoked-token";
       await seedJoinLink(db, {
@@ -184,7 +184,7 @@ describe("organization access control", () => {
 
   describe("VAL-ORG-004: organization selection data includes invitations and contact fallback", () => {
     test("selection returns pending invitations for the user", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db, {
         userEmail: "alice@example.com",
       });
@@ -208,7 +208,7 @@ describe("organization access control", () => {
     });
 
     test("selection includes contact fallback fields", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db, {
         memberRole: "member",
       });
@@ -227,7 +227,7 @@ describe("organization access control", () => {
 
   describe("VAL-ORG-005: management data includes members, stats, and join links", () => {
     test("management returns members list, stats, and join links", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db, {
         memberRole: "owner",
         userName: "Manager",
@@ -261,7 +261,7 @@ describe("organization access control", () => {
 
   describe("VAL-ORG-006: operations without active organization are rejected", () => {
     test("organization-scoped procedure rejects when no active organization", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { userId } = await seedOrganizationWithMember(db);
 
       const u = makeUser({ id: userId, email: "noorg@example.com" });
@@ -279,7 +279,7 @@ describe("organization access control", () => {
 
   describe("VAL-ORG-007: invite member authorization", () => {
     test("manager can invite a member", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db, {
         memberRole: "admin",
       });
@@ -299,7 +299,7 @@ describe("organization access control", () => {
     });
 
     test("non-manager is rejected when inviting", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db, {
         memberRole: "cashier",
       });
@@ -318,7 +318,7 @@ describe("organization access control", () => {
     });
 
     test("inviting an existing member is rejected", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db, {
         memberRole: "admin",
         userEmail: "admin@example.com",
@@ -338,7 +338,7 @@ describe("organization access control", () => {
     });
 
     test("non-owner inviting with owner role is rejected", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db, {
         memberRole: "admin",
       });
@@ -357,7 +357,7 @@ describe("organization access control", () => {
     });
 
     test("invalid role is rejected", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db, {
         memberRole: "owner",
       });
@@ -378,7 +378,7 @@ describe("organization access control", () => {
 
   describe("VAL-ORG-008: cancel invitation authorization", () => {
     test("manager can cancel a pending invitation", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db, {
         memberRole: "admin",
       });
@@ -402,7 +402,7 @@ describe("organization access control", () => {
     });
 
     test("canceling already-canceled invitation is rejected", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db, {
         memberRole: "admin",
       });
@@ -425,7 +425,7 @@ describe("organization access control", () => {
     });
 
     test("canceling invitation from another organization is rejected", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const [{ organizationId, userId }, otherOrg] = await Promise.all([
         seedOrganizationWithMember(db, {
           memberRole: "admin",
@@ -456,7 +456,7 @@ describe("organization access control", () => {
 
   describe("VAL-ORG-009: update member role authorization", () => {
     test("manager can update a member role", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const [{ organizationId, userId }, targetUser] = await Promise.all([
         seedOrganizationWithMember(db, {
           memberRole: "owner",
@@ -497,7 +497,7 @@ describe("organization access control", () => {
     });
 
     test("non-owner cannot assign owner role", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const [{ organizationId, userId }, targetUser] = await Promise.all([
         seedOrganizationWithMember(db, {
           memberRole: "admin",
@@ -538,7 +538,7 @@ describe("organization access control", () => {
     });
 
     test("non-owner cannot demote an existing owner", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const [{ organizationId, userId }, targetUser] = await Promise.all([
         seedOrganizationWithMember(db, {
           memberRole: "admin",
@@ -580,7 +580,7 @@ describe("organization access control", () => {
     });
 
     test("demoting the last owner is rejected", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db, {
         memberRole: "owner",
       });
@@ -611,7 +611,7 @@ describe("organization access control", () => {
     });
 
     test("invalid role is rejected in updateMemberRole", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const [{ organizationId, userId }, targetUser] = await Promise.all([
         seedOrganizationWithMember(db, {
           memberRole: "owner",
@@ -654,7 +654,7 @@ describe("organization access control", () => {
 
   describe("VAL-ORG-010: remove member authorization", () => {
     test("manager can remove a member", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const [{ organizationId, userId }, targetUser] = await Promise.all([
         seedOrganizationWithMember(db, {
           memberRole: "owner",
@@ -699,7 +699,7 @@ describe("organization access control", () => {
     });
 
     test("removing the last owner is rejected", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db, {
         memberRole: "owner",
       });
@@ -727,7 +727,7 @@ describe("organization access control", () => {
     });
 
     test("non-owner cannot remove an owner even if multiple owners exist", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db, {
         memberRole: "admin",
       });
@@ -780,7 +780,7 @@ describe("organization access control", () => {
 
   describe("VAL-ORG-011: leave organization", () => {
     test("member can leave organization", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db, {
         memberRole: "admin",
       });
@@ -809,7 +809,7 @@ describe("organization access control", () => {
     });
 
     test("last owner cannot leave", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db, {
         memberRole: "owner",
       });
@@ -828,7 +828,7 @@ describe("organization access control", () => {
 
   describe("VAL-ORG-012: update organization", () => {
     test("manager can update organization name", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db, {
         memberRole: "admin",
       });
@@ -853,7 +853,7 @@ describe("organization access control", () => {
     });
 
     test("non-manager is rejected from updating organization", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db, {
         memberRole: "cashier",
       });
@@ -872,7 +872,7 @@ describe("organization access control", () => {
 
   describe("VAL-ORG-013: delete organization", () => {
     test("owner can delete organization", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db, {
         memberRole: "owner",
       });
@@ -897,7 +897,7 @@ describe("organization access control", () => {
     });
 
     test("non-owner is rejected from deleting organization", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db, {
         memberRole: "admin",
       });

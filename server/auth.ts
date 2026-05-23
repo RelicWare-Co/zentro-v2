@@ -13,7 +13,7 @@ function createAuth() {
       },
     },
     database: drizzleAdapter(dbSqlite(), {
-      provider: "sqlite",
+      provider: "pg",
     }),
     experimental: { joins: true },
     emailAndPassword: {

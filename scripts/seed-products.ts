@@ -1,8 +1,8 @@
 import readline from "node:readline/promises";
-import { createClient } from "@libsql/client";
 import { eq, sql } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/libsql";
+import { drizzle } from "drizzle-orm/node-postgres";
 import { seed } from "drizzle-seed";
+import { Pool } from "pg";
 import { organization } from "@/database/drizzle/schema/auth.schema";
 import { category, product } from "@/database/drizzle/schema/inventory.schema";
 
@@ -11,12 +11,11 @@ if (!databaseUrl) {
   throw new Error("DATABASE_URL environment variable is not set");
 }
 
-const client = createClient({
-  url: databaseUrl,
-  authToken: process.env.DATABASE_AUTH_TOKEN,
+const pool = new Pool({
+  connectionString: databaseUrl,
 });
 
-const db = drizzle(client);
+const db = drizzle(pool);
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -1124,11 +1123,12 @@ async function main() {
   let selectedOrg: { id: string; name: string; slug: string } | undefined;
 
   if (orgIdArg) {
-    const org = await db
+    const orgRows = await db
       .select()
       .from(organization)
       .where(eq(organization.id, orgIdArg))
-      .get();
+      .limit(1);
+    const org = orgRows[0];
     if (!org) {
       console.error(`[ERROR] Organization with id "${orgIdArg}" not found.`);
       process.exit(1);

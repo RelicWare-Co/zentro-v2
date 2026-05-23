@@ -186,13 +186,13 @@ export const searchProducts = orgRequiredProcedure.searchProducts.handler(
       : null;
     const productOrderBy = searchRank
       ? [
-          sql`case when ${product.isFavorite} = 1 then 0 else 1 end`,
+          sql`case when ${product.isFavorite} then 0 else 1 end`,
           asc(searchRank),
           asc(product.name),
           asc(product.id),
         ]
       : [
-          sql`case when ${product.isFavorite} = 1 then 0 else 1 end`,
+          sql`case when ${product.isFavorite} then 0 else 1 end`,
           asc(product.name),
           asc(product.id),
         ];

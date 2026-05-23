@@ -21,7 +21,7 @@ import { createTestDb } from "./helpers/test-db";
 describe("credit ledger", () => {
   describe("VAL-CRED-001: credit account search returns customer data and balances", () => {
     test("search returns customer info and current balance", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const [productId, customerId, shiftId] = await Promise.all([
         seedProduct(db, {
@@ -74,7 +74,7 @@ describe("credit ledger", () => {
     });
 
     test("search excludes accounts for soft-deleted customers", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const customerId = await seedCustomer(db, {
         organizationId,
@@ -109,7 +109,7 @@ describe("credit ledger", () => {
     });
 
     test("search filters by customer name", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const [customerA, customerB] = await Promise.all([
         seedCustomer(db, {
@@ -161,7 +161,7 @@ describe("credit ledger", () => {
 
   describe("VAL-CRED-002: transaction listing is in descending chronological order", () => {
     test("transactions ordered newest first", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const customerId = await seedCustomer(db, {
         organizationId,
@@ -232,7 +232,7 @@ describe("credit ledger", () => {
 
   describe("VAL-CRED-003: payment registration decreases balance and links to sale", () => {
     test("payment decreases balance and creates linked transaction", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const [productId, customerId, shiftId] = await Promise.all([
         seedProduct(db, {
@@ -340,7 +340,7 @@ describe("credit ledger", () => {
     });
 
     test("partial payment keeps sale in credit status", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const [productId, customerId, shiftId] = await Promise.all([
         seedProduct(db, {
@@ -406,7 +406,7 @@ describe("credit ledger", () => {
     });
 
     test("payment without saleId still decreases balance", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const customerId = await seedCustomer(db, {
         organizationId,
@@ -463,7 +463,7 @@ describe("credit ledger", () => {
 
   describe("VAL-CRED-004: overpayment rejection", () => {
     test("payment amount exceeding balance is rejected", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const customerId = await seedCustomer(db, {
         organizationId,
@@ -507,7 +507,7 @@ describe("credit ledger", () => {
 
   describe("VAL-CRED-005: closed shift rejects credit payments", () => {
     test("payment on closed shift is rejected", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const customerId = await seedCustomer(db, {
         organizationId,

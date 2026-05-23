@@ -15,7 +15,7 @@ import { createTestDb } from "./helpers/test-db";
 describe("POS checkout", () => {
   describe("VAL-POS-001: shift open prevents duplicate for same user", () => {
     test("opening a second shift for same user is rejected", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const u = makeUser({ id: userId });
       const ctx = buildMockContext(db, u, organizationId);
@@ -36,7 +36,7 @@ describe("POS checkout", () => {
 
   describe("VAL-POS-002: shift close computes expected amounts correctly including cash change", () => {
     test("close summary expected cash accounts for cash change given", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const u = makeUser({ id: userId });
       const ctx = buildMockContext(db, u, organizationId);
@@ -76,7 +76,7 @@ describe("POS checkout", () => {
 
   describe("VAL-POS-003: cash movements are included in shift close summary", () => {
     test("close summary reflects registered inflow, expense, and payout", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const u = makeUser({ id: userId });
       const ctx = buildMockContext(db, u, organizationId);
@@ -141,7 +141,7 @@ describe("POS checkout", () => {
 
   describe("VAL-POS-004: POS bootstrap returns active shift, categories, and modifier products only", () => {
     test("bootstrap payload contains active shift, categories, and modifier products", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const u = makeUser({ id: userId });
       const ctx = buildMockContext(db, u, organizationId);
@@ -198,7 +198,7 @@ describe("POS checkout", () => {
     });
 
     test("bootstrap returns null activeShift when no open shift", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const u = makeUser({ id: userId });
       const ctx = buildMockContext(db, u, organizationId);
@@ -213,7 +213,7 @@ describe("POS checkout", () => {
 
   describe("VAL-POS-005: product search paginates, filters by category, and prioritizes exact barcode match", () => {
     test("product search paginates with limit and cursor", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const u = makeUser({ id: userId });
       const ctx = buildMockContext(db, u, organizationId);
@@ -254,7 +254,7 @@ describe("POS checkout", () => {
     });
 
     test("product search filters by category", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const u = makeUser({ id: userId });
       const ctx = buildMockContext(db, u, organizationId);
@@ -295,7 +295,7 @@ describe("POS checkout", () => {
     });
 
     test("product search prioritizes exact barcode match", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const u = makeUser({ id: userId });
       const ctx = buildMockContext(db, u, organizationId);
@@ -332,7 +332,7 @@ describe("POS checkout", () => {
 
   describe("VAL-POS-006: customer search excludes soft-deleted customers", () => {
     test("soft-deleted customer does not appear in search results", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const u = makeUser({ id: userId });
       const ctx = buildMockContext(db, u, organizationId);
@@ -362,7 +362,7 @@ describe("POS checkout", () => {
 
   describe("VAL-POS-007: sale creation through sales.create with shift context works end-to-end", () => {
     test("POS end-to-end: open shift, search product, create sale, verify stock and shift link", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const u = makeUser({ id: userId });
       const ctx = buildMockContext(db, u, organizationId);
