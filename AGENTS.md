@@ -131,3 +131,17 @@
 
 - If you add a new architectural convention, API module pattern, dev command, integration, or non-obvious workflow, update this file in the same change.
 - If a convention becomes obsolete, remove or revise it instead of leaving conflicting guidance.
+
+## Agent skills
+
+### Issue tracker
+
+Issues and PRDs for this repo live as GitHub issues. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Five canonical roles mapped to the default label strings (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context repo — one `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
