@@ -41,6 +41,7 @@ import {
   UpdateCategorySchema,
   UpdateProductSchema,
 } from "@/schemas/products";
+import { CreateSaleInputSchema } from "@/schemas/sales";
 import "./context";
 import { type Schema, type ZeroContext, zql } from "./schema";
 
@@ -94,6 +95,10 @@ export const registerCreditPaymentArgsSchema = zod.object({
   createdAt: zod.number().int().min(0).optional(),
   paymentId: zod.string().trim().min(1),
   transactionId: zod.string().trim().min(1),
+});
+
+export const createSaleArgsSchema = CreateSaleInputSchema.extend({
+  saleId: zod.string().trim().min(1),
 });
 
 export const openShiftArgsSchema = zod.object({
@@ -694,10 +699,16 @@ export const mutators = defineMutators({
     ),
   },
   credit: {
-    registerPayment: defineMutator(registerCreditPaymentArgsSchema, () => {
-      throw new Error(
-        "El registro de abonos de crédito solo puede ejecutarse en el servidor"
-      );
+    registerPayment: defineMutator(
+      registerCreditPaymentArgsSchema,
+      async () => {
+        // Server-only transaction; client completes without optimistic writes.
+      }
+    ),
+  },
+  sales: {
+    create: defineMutator(createSaleArgsSchema, async () => {
+      // Server-only transaction; client completes without optimistic writes.
     }),
   },
   shifts: {

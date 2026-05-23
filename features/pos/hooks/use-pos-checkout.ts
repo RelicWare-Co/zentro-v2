@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCreateSaleMutation } from "@/features/sales/hooks/use-sales";
 import { parseMoneyInput } from "@/lib/utils";
 import type { CartItem, CartTotals, PaymentMethod } from "../types";
-import { useCreatePosSaleMutation } from "./use-pos-queries";
 
 function getDefaultPaymentMethodId(
   paymentMethodOptions: Array<{ id: string }>
@@ -81,7 +81,7 @@ export function usePosCheckout(
   ]);
   const [isCreditSale, setIsCreditSale] = useState(false);
 
-  const createPosSaleMutation = useCreatePosSaleMutation();
+  const createSaleMutation = useCreateSaleMutation();
 
   useEffect(() => {
     const defaultMethodId = getDefaultPaymentMethodId(paymentMethodOptions);
@@ -200,7 +200,7 @@ export function usePosCheckout(
       totals: { ...cartTotals },
     };
 
-    createPosSaleMutation.mutate(
+    createSaleMutation.mutate(
       {
         shiftId: activeShiftId,
         customerId: selectedCustomerId || null,
@@ -219,6 +219,12 @@ export function usePosCheckout(
         })),
         payments: salePayments,
         isCreditSale: shouldRegisterAsCreditSale,
+        receiptTotals: {
+          subtotal: cartTotals.subTotal,
+          taxAmount: cartTotals.tax,
+          discountAmount: cartTotals.discountAmount,
+          totalAmount: cartTotals.totalAmount,
+        },
       },
       {
         onSuccess: (result) => {
@@ -241,7 +247,7 @@ export function usePosCheckout(
   }, [
     activeShiftId,
     cart,
-    createPosSaleMutation,
+    createSaleMutation,
     isCreditSale,
     payments,
     cartTotals,
@@ -285,7 +291,7 @@ export function usePosCheckout(
     if (!activeShiftId || cart.length === 0) {
       return false;
     }
-    if (createPosSaleMutation.isPending) {
+    if (createSaleMutation.isPending) {
       return false;
     }
     if (paymentDifference < 0 && !canReturnCashChange) {
@@ -305,7 +311,7 @@ export function usePosCheckout(
   }, [
     activeShiftId,
     cart.length,
-    createPosSaleMutation.isPending,
+    createSaleMutation.isPending,
     paymentDifference,
     canReturnCashChange,
     shouldCreateCreditBalance,
@@ -336,7 +342,7 @@ export function usePosCheckout(
     canReturnCashChange,
     cashChangeDue,
     canFinalizeSale,
-    isProcessing: createPosSaleMutation.isPending,
-    error: createPosSaleMutation.error,
+    isProcessing: createSaleMutation.isPending,
+    error: createSaleMutation.error,
   };
 }

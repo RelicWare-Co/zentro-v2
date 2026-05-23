@@ -1,7 +1,7 @@
 import { ORPCError } from "@orpc/server";
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import type { z } from "zod";
-import type { dbSqlite } from "@/database/drizzle/db";
+import type { Database, dbSqlite } from "@/database/drizzle/db";
 import { organization } from "@/database/drizzle/schema/auth.schema";
 import {
   creditAccount,
@@ -23,7 +23,10 @@ import {
   getEnabledPaymentMethods,
   parseOrganizationSettingsMetadata,
 } from "@/features/settings/settings.shared";
-import type { CreateSaleInputSchema } from "@/schemas/sales";
+import type {
+  CreateSaleInputSchema,
+  CreateSaleResultSchema,
+} from "@/schemas/sales";
 
 function normalizeOptionalString(value?: string | null) {
   if (value == null) {
@@ -36,18 +39,16 @@ function normalizeOptionalString(value?: string | null) {
 function normalizeRequiredString(value: string, fieldName: string) {
   const normalized = value.trim();
   if (normalized.length === 0) {
-    throw new ORPCError("BAD_REQUEST", {
-      message: `El campo "${fieldName}" es obligatorio`,
-    });
+    throw new Error(`El campo "${fieldName}" es obligatorio`);
   }
   return normalized;
 }
 
 function toNonNegativeInteger(value: number, fieldName: string) {
   if (!Number.isFinite(value) || value < 0) {
-    throw new ORPCError("BAD_REQUEST", {
-      message: `El campo "${fieldName}" debe ser un número válido mayor o igual a 0`,
-    });
+    throw new Error(
+      `El campo "${fieldName}" debe ser un número válido mayor o igual a 0`
+    );
   }
   return Math.round(value);
 }
@@ -55,9 +56,9 @@ function toNonNegativeInteger(value: number, fieldName: string) {
 function toPositiveInteger(value: number, fieldName: string) {
   const normalized = toNonNegativeInteger(value, fieldName);
   if (normalized <= 0) {
-    throw new ORPCError("BAD_REQUEST", {
-      message: `El campo "${fieldName}" debe ser un número válido mayor a 0`,
-    });
+    throw new Error(
+      `El campo "${fieldName}" debe ser un número válido mayor a 0`
+    );
   }
   return normalized;
 }
@@ -91,9 +92,13 @@ function canSettleCompletedSaleWithCashChange(
 }
 
 export type CreateSaleInput = z.infer<typeof CreateSaleInputSchema>;
+export type CreateSaleResult = z.infer<typeof CreateSaleResultSchema>;
+export type CreateSaleInputWithId = CreateSaleInput & { saleId: string };
 
-type Db = ReturnType<typeof dbSqlite>;
-type Tx = Pick<Db, "select" | "insert" | "update">;
+export type CreateSaleDbExecutor = Pick<
+  Database,
+  "select" | "insert" | "update"
+>;
 
 interface ProductInfo {
   id: string;
@@ -129,7 +134,7 @@ interface PreparedItem {
 }
 
 async function validateShift(
-  tx: Tx,
+  tx: CreateSaleDbExecutor,
   shiftId: string,
   organizationId: string,
   userId: string
@@ -141,24 +146,21 @@ async function validateShift(
     .limit(1);
 
   if (!targetShift) {
-    throw new ORPCError("BAD_REQUEST", {
-      message: "Turno no encontrado para la organización activa",
-    });
+    throw new Error("Turno no encontrado para la organización activa");
   }
   if (targetShift.status !== "open") {
-    throw new ORPCError("BAD_REQUEST", {
-      message: "No se puede registrar una venta en un turno cerrado",
-    });
+    throw new Error("No se puede registrar una venta en un turno cerrado");
   }
   if (targetShift.userId !== userId) {
-    throw new ORPCError("FORBIDDEN", {
-      message: "Solo el cajero del turno puede registrar ventas",
-    });
+    throw new Error("Solo el cajero del turno puede registrar ventas");
   }
   return targetShift;
 }
 
-async function getEnabledPaymentMethodIds(tx: Tx, organizationId: string) {
+async function getEnabledPaymentMethodIds(
+  tx: CreateSaleDbExecutor,
+  organizationId: string
+) {
   const [organizationRow] = await tx
     .select({ metadata: organization.metadata })
     .from(organization)
@@ -172,7 +174,7 @@ async function getEnabledPaymentMethodIds(tx: Tx, organizationId: string) {
 }
 
 async function validateCustomer(
-  tx: Tx,
+  tx: CreateSaleDbExecutor,
   customerId: string | null,
   organizationId: string
 ) {
@@ -191,21 +193,17 @@ async function validateCustomer(
     )
     .limit(1);
   if (!existingCustomer) {
-    throw new ORPCError("BAD_REQUEST", {
-      message: "El cliente seleccionado no existe o está inactivo",
-    });
+    throw new Error("El cliente seleccionado no existe o está inactivo");
   }
 }
 
 async function loadProducts(
-  tx: Tx,
+  tx: CreateSaleDbExecutor,
   referencedIds: string[],
   organizationId: string
 ) {
   if (referencedIds.length === 0) {
-    throw new ORPCError("BAD_REQUEST", {
-      message: "No hay productos válidos para procesar",
-    });
+    throw new Error("No hay productos válidos para procesar");
   }
 
   const productRows = await tx
@@ -232,9 +230,9 @@ async function loadProducts(
   );
   for (const productId of referencedIds) {
     if (!productById.has(productId)) {
-      throw new ORPCError("BAD_REQUEST", {
-        message: `Producto no encontrado o inactivo en la organización actual: ${productId}`,
-      });
+      throw new Error(
+        `Producto no encontrado o inactivo en la organización actual: ${productId}`
+      );
     }
   }
 
@@ -264,14 +262,14 @@ function buildPreparedModifiers(
 
     const modifierProduct = productById.get(modifier.modifierProductId);
     if (!modifierProduct) {
-      throw new ORPCError("BAD_REQUEST", {
-        message: `Modificador inválido en items[${itemIndex}].modifiers[${modifierIndex}]`,
-      });
+      throw new Error(
+        `Modificador inválido en items[${itemIndex}].modifiers[${modifierIndex}]`
+      );
     }
     if (!modifierProduct.isModifier) {
-      throw new ORPCError("BAD_REQUEST", {
-        message: `El producto ${modifierProduct.name} no está configurado como modificador`,
-      });
+      throw new Error(
+        `El producto ${modifierProduct.name} no está configurado como modificador`
+      );
     }
 
     const modifierQuantity = toPositiveInteger(
@@ -320,14 +318,12 @@ function buildPreparedItems(
     const baseProduct = productById.get(item.productId);
 
     if (!baseProduct) {
-      throw new ORPCError("BAD_REQUEST", {
-        message: `Producto inválido en ítem ${itemIndex + 1}`,
-      });
+      throw new Error(`Producto inválido en ítem ${itemIndex + 1}`);
     }
     if (baseProduct.isModifier) {
-      throw new ORPCError("BAD_REQUEST", {
-        message: `El producto ${baseProduct.name} solo puede venderse como modificador`,
-      });
+      throw new Error(
+        `El producto ${baseProduct.name} solo puede venderse como modificador`
+      );
     }
 
     const quantity = toPositiveInteger(
@@ -363,9 +359,9 @@ function buildPreparedItems(
     const lineTotalAmount =
       lineSubtotal + modifiersSubtotal + lineTaxAmount - lineDiscountAmount;
     if (lineTotalAmount < 0) {
-      throw new ORPCError("BAD_REQUEST", {
-        message: `El total del ítem ${itemIndex + 1} no puede ser negativo`,
-      });
+      throw new Error(
+        `El total del ítem ${itemIndex + 1} no puede ser negativo`
+      );
     }
 
     preparedItems.push({
@@ -415,9 +411,9 @@ function normalizeAndValidatePayments(
   );
   for (const registeredPayment of normalizedPayments) {
     if (!enabledPaymentMethodIds.has(registeredPayment.method)) {
-      throw new ORPCError("BAD_REQUEST", {
-        message: `Método de pago no habilitado: ${registeredPayment.method}`,
-      });
+      throw new Error(
+        `Método de pago no habilitado: ${registeredPayment.method}`
+      );
     }
   }
   return normalizedPayments;
@@ -444,39 +440,36 @@ function validatePaymentRules(
 
   if (isCreditSale) {
     if (!customerId) {
-      throw new ORPCError("BAD_REQUEST", {
-        message:
-          "Una venta a crédito requiere seleccionar un cliente registrado",
-      });
+      throw new Error(
+        "Una venta a crédito requiere seleccionar un cliente registrado"
+      );
     }
     if (paidAmount > totalAmount) {
-      throw new ORPCError("BAD_REQUEST", {
-        message: "Los pagos no pueden superar el total en una venta a crédito",
-      });
+      throw new Error(
+        "Los pagos no pueden superar el total en una venta a crédito"
+      );
     }
     if (totalAmount - paidAmount <= 0) {
-      throw new ORPCError("BAD_REQUEST", {
-        message:
-          "La venta marcada como crédito debe dejar un saldo pendiente por cobrar",
-      });
+      throw new Error(
+        "La venta marcada como crédito debe dejar un saldo pendiente por cobrar"
+      );
     }
   } else if (totalAmount === 0) {
     if (normalizedPayments.length > 0) {
-      throw new ORPCError("BAD_REQUEST", {
-        message: "No debes registrar pagos cuando el total de la venta es 0",
-      });
+      throw new Error(
+        "No debes registrar pagos cuando el total de la venta es 0"
+      );
     }
   } else {
     if (normalizedPayments.length === 0) {
-      throw new ORPCError("BAD_REQUEST", {
-        message: "Debes registrar al menos un pago para finalizar la venta",
-      });
+      throw new Error(
+        "Debes registrar al menos un pago para finalizar la venta"
+      );
     }
     if (paidAmount !== totalAmount && !allowsCashChange) {
-      throw new ORPCError("BAD_REQUEST", {
-        message:
-          "La suma de los pagos debe ser igual al total de la venta, salvo excedente en efectivo para devolver cambio",
-      });
+      throw new Error(
+        "La suma de los pagos debe ser igual al total de la venta, salvo excedente en efectivo para devolver cambio"
+      );
     }
   }
 
@@ -484,7 +477,7 @@ function validatePaymentRules(
 }
 
 async function insertSaleRecords(
-  tx: Tx,
+  tx: CreateSaleDbExecutor,
   saleId: string,
   organizationId: string,
   shiftId: string,
@@ -567,7 +560,7 @@ async function insertSaleRecords(
 }
 
 async function updateInventory(
-  tx: Tx,
+  tx: CreateSaleDbExecutor,
   stockDeltas: Map<string, number>,
   productById: Map<string, ProductInfo>,
   organizationId: string,
@@ -587,9 +580,7 @@ async function updateInventory(
 
     const productRow = productById.get(productId);
     if (!productRow) {
-      throw new ORPCError("BAD_REQUEST", {
-        message: `Producto no encontrado para inventario: ${productId}`,
-      });
+      throw new Error(`Producto no encontrado para inventario: ${productId}`);
     }
     if (!productRow.trackInventory) {
       continue;
@@ -612,9 +603,9 @@ async function updateInventory(
         .returning({ id: product.id })
         .then((updatedProducts) => {
           if (updatedProducts.length === 0) {
-            throw new ORPCError("BAD_REQUEST", {
-              message: `No fue posible actualizar el stock de ${productRow.name}`,
-            });
+            throw new Error(
+              `No fue posible actualizar el stock de ${productRow.name}`
+            );
           }
           return { productId, deltaQuantity };
         })
@@ -640,7 +631,7 @@ async function updateInventory(
 }
 
 async function handleCreditAccount(
-  tx: Tx,
+  tx: CreateSaleDbExecutor,
   isCreditSale: boolean,
   customerId: string | null,
   balanceDue: number,
@@ -703,20 +694,15 @@ async function handleCreditAccount(
   });
 }
 
-export function createCoreSale(
-  input: CreateSaleInput,
-  ctx: {
-    db: ReturnType<typeof dbSqlite>;
-    organizationId: string;
-    userId: string;
-  }
-) {
-  const { db: txCtx, organizationId, userId } = ctx;
+export async function runCreateSale(
+  tx: CreateSaleDbExecutor,
+  input: CreateSaleInputWithId,
+  ctx: { organizationId: string; userId: string }
+): Promise<CreateSaleResult> {
+  const { organizationId, userId } = ctx;
 
   if (!Array.isArray(input.items) || input.items.length === 0) {
-    throw new ORPCError("BAD_REQUEST", {
-      message: "La venta debe incluir al menos un ítem",
-    });
+    throw new Error("La venta debe incluir al menos un ítem");
   }
 
   const createdAt = resolveDate(input.createdAt);
@@ -726,102 +712,123 @@ export function createCoreSale(
     "discountAmount"
   );
   const isCreditSale = input.isCreditSale ?? false;
+  const { saleId } = input;
 
-  return txCtx.transaction(async (tx) => {
-    const [, enabledPaymentMethodIds] = await Promise.all([
-      validateShift(tx, input.shiftId, organizationId, userId),
-      getEnabledPaymentMethodIds(tx, organizationId),
-      validateCustomer(tx, customerId, organizationId),
-    ]);
+  const [, enabledPaymentMethodIds] = await Promise.all([
+    validateShift(tx, input.shiftId, organizationId, userId),
+    getEnabledPaymentMethodIds(tx, organizationId),
+    validateCustomer(tx, customerId, organizationId),
+  ]);
 
-    const referencedProductIds = new Set<string>();
-    for (const item of input.items) {
-      referencedProductIds.add(item.productId);
-      for (const modifier of item.modifiers ?? []) {
-        referencedProductIds.add(modifier.modifierProductId);
-      }
+  const referencedProductIds = new Set<string>();
+  for (const item of input.items) {
+    referencedProductIds.add(item.productId);
+    for (const modifier of item.modifiers ?? []) {
+      referencedProductIds.add(modifier.modifierProductId);
     }
+  }
 
-    const productById = await loadProducts(
-      tx,
-      [...referencedProductIds],
-      organizationId
-    );
+  const productById = await loadProducts(
+    tx,
+    [...referencedProductIds],
+    organizationId
+  );
 
-    const {
-      preparedItems,
-      stockDeltas,
-      subtotal,
-      taxAmount,
-      itemDiscountAmount,
-    } = buildPreparedItems(input.items, productById);
+  const {
+    preparedItems,
+    stockDeltas,
+    subtotal,
+    taxAmount,
+    itemDiscountAmount,
+  } = buildPreparedItems(input.items, productById);
 
-    const discountAmount = itemDiscountAmount + saleLevelDiscount;
-    const totalAmount = subtotal + taxAmount - discountAmount;
-    if (totalAmount < 0) {
-      throw new ORPCError("BAD_REQUEST", {
-        message: "El total de la venta no puede ser negativo",
-      });
-    }
+  const discountAmount = itemDiscountAmount + saleLevelDiscount;
+  const totalAmount = subtotal + taxAmount - discountAmount;
+  if (totalAmount < 0) {
+    throw new Error("El total de la venta no puede ser negativo");
+  }
 
-    const normalizedPayments = normalizeAndValidatePayments(
-      input.payments,
-      enabledPaymentMethodIds
-    );
-    const { paidAmount } = validatePaymentRules(
-      normalizedPayments,
-      totalAmount,
-      isCreditSale,
-      customerId
-    );
+  const normalizedPayments = normalizeAndValidatePayments(
+    input.payments,
+    enabledPaymentMethodIds
+  );
+  const { paidAmount } = validatePaymentRules(
+    normalizedPayments,
+    totalAmount,
+    isCreditSale,
+    customerId
+  );
 
-    const saleId = crypto.randomUUID();
-    const saleStatus = isCreditSale ? "credit" : "completed";
+  const saleStatus = isCreditSale ? "credit" : "completed";
 
-    await insertSaleRecords(
-      tx,
-      saleId,
-      organizationId,
-      input.shiftId,
-      customerId,
-      userId,
-      { subtotal, taxAmount, discountAmount, totalAmount },
-      saleStatus,
-      createdAt,
-      preparedItems,
-      normalizedPayments
-    );
+  await insertSaleRecords(
+    tx,
+    saleId,
+    organizationId,
+    input.shiftId,
+    customerId,
+    userId,
+    { subtotal, taxAmount, discountAmount, totalAmount },
+    saleStatus,
+    createdAt,
+    preparedItems,
+    normalizedPayments
+  );
 
-    await updateInventory(
-      tx,
-      stockDeltas,
-      productById,
-      organizationId,
-      userId,
-      saleId,
-      createdAt
-    );
+  await updateInventory(
+    tx,
+    stockDeltas,
+    productById,
+    organizationId,
+    userId,
+    saleId,
+    createdAt
+  );
 
-    const balanceDue = Math.max(totalAmount - paidAmount, 0);
-    await handleCreditAccount(
-      tx,
-      isCreditSale,
-      customerId,
-      balanceDue,
-      organizationId,
-      saleId,
-      createdAt
-    );
+  const balanceDue = Math.max(totalAmount - paidAmount, 0);
+  await handleCreditAccount(
+    tx,
+    isCreditSale,
+    customerId,
+    balanceDue,
+    organizationId,
+    saleId,
+    createdAt
+  );
 
-    return {
-      saleId,
-      status: saleStatus,
-      subtotal,
-      taxAmount,
-      discountAmount,
-      totalAmount,
-      paidAmount,
-      balanceDue,
-    };
-  });
+  return {
+    saleId,
+    status: saleStatus,
+    subtotal,
+    taxAmount,
+    discountAmount,
+    totalAmount,
+    paidAmount,
+    balanceDue,
+  };
+}
+
+function mapCreateSaleError(error: unknown): never {
+  if (error instanceof Error) {
+    throw new ORPCError("BAD_REQUEST", { message: error.message });
+  }
+  throw error;
+}
+
+export function createCoreSale(
+  input: CreateSaleInput,
+  ctx: {
+    db: ReturnType<typeof dbSqlite>;
+    organizationId: string;
+    userId: string;
+  }
+) {
+  const { db: txCtx, organizationId, userId } = ctx;
+  const saleId = crypto.randomUUID();
+
+  return txCtx
+    .transaction((tx) =>
+      runCreateSale(tx, { ...input, saleId }, { organizationId, userId })
+    )
+    .catch(mapCreateSaleError);
 }

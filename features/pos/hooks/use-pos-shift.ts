@@ -188,8 +188,9 @@ export function usePosShift(
 
   const hasInvalidCloseAmounts =
     shiftCloseSummary?.summaryByMethod.some((summaryRow) => {
-      const rawAmount = closureAmounts[summaryRow.paymentMethod];
-      const amount = parseMoneyInput(rawAmount);
+      const amount = parseMoneyInput(
+        closureAmounts[summaryRow.paymentMethod] ?? ""
+      );
       return !Number.isFinite(amount) || amount < 0;
     }) ?? false;
 

@@ -21,6 +21,7 @@ import {
   listPosModifiersViaZero,
   searchPosProductsViaZero,
 } from "./helpers/zero-pos";
+import { createSaleViaZero } from "./helpers/zero-sales";
 import {
   createZeroContext,
   createZeroTestDb,
@@ -62,9 +63,6 @@ describe("POS checkout", () => {
     test("close summary expected cash accounts for cash change given", async () => {
       const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const u = makeUser({ id: userId });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
       const zeroDb = createZeroTestDb(db);
       const zeroCtx = createZeroContext(userId, organizationId);
 
@@ -85,10 +83,15 @@ describe("POS checkout", () => {
         trackInventory: true,
       });
 
-      await client.sales.create({
-        shiftId,
-        items: [{ productId, quantity: 1, unitPrice: 15_000 }],
-        payments: [{ method: "cash", amount: 20_000 }],
+      await createSaleViaZero({
+        db,
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          shiftId,
+          items: [{ productId, quantity: 1, unitPrice: 15_000 }],
+          payments: [{ method: "cash", amount: 20_000 }],
+        },
       });
 
       // Close summary: expected cash = startingCash + cashSales - change
@@ -112,9 +115,6 @@ describe("POS checkout", () => {
     test("close summary reflects registered inflow, expense, and payout", async () => {
       const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const u = makeUser({ id: userId });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
       const zeroDb = createZeroTestDb(db);
       const zeroCtx = createZeroContext(userId, organizationId);
 
@@ -168,10 +168,15 @@ describe("POS checkout", () => {
         stock: 10,
         trackInventory: true,
       });
-      await client.sales.create({
-        shiftId,
-        items: [{ productId, quantity: 1, unitPrice: 10_000 }],
-        payments: [{ method: "card", amount: 10_000 }],
+      await createSaleViaZero({
+        db,
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          shiftId,
+          items: [{ productId, quantity: 1, unitPrice: 10_000 }],
+          payments: [{ method: "card", amount: 10_000 }],
+        },
       });
 
       const summary = await getShiftCloseSummaryViaZero({
@@ -464,7 +469,7 @@ describe("POS checkout", () => {
     });
   });
 
-  describe("VAL-POS-007: sale creation through sales.create with shift context works end-to-end", () => {
+  describe("VAL-POS-007: sale creation through Zero sales.create with shift context works end-to-end", () => {
     test("POS end-to-end: open shift, search product, create sale, verify stock and shift link", async () => {
       const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
@@ -513,10 +518,15 @@ describe("POS checkout", () => {
       expect(beforeStock[0].stock).toBe(50);
 
       // Create sale
-      const saleResult = await client.sales.create({
-        shiftId,
-        items: [{ productId, quantity: 2, unitPrice: 8000 }],
-        payments: [{ method: "cash", amount: 16_000 }],
+      const saleResult = await createSaleViaZero({
+        db,
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          shiftId,
+          items: [{ productId, quantity: 2, unitPrice: 8000 }],
+          payments: [{ method: "cash", amount: 16_000 }],
+        },
       });
 
       expect(saleResult.status).toBe("completed");
