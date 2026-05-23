@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useCreditAccountsSearch } from "@/features/credit/hooks/use-credit";
 import { CashMovementModal } from "@/features/pos/components/modals/cash-movement-modal";
 import { CheckoutModal } from "@/features/pos/components/modals/checkout-modal";
 import { CloseShiftModal } from "@/features/pos/components/modals/close-shift-modal";
@@ -9,14 +10,15 @@ import { ShiftRequiredDialog } from "@/features/pos/components/modals/shift-requ
 import { useCreateCustomerModal } from "@/features/pos/hooks/use-create-customer-modal";
 import { useModifierModal } from "@/features/pos/hooks/use-modifier-modal";
 import { usePosCart } from "@/features/pos/hooks/use-pos-cart";
-import { usePosCheckout } from "@/features/pos/hooks/use-pos-checkout";
 import {
-  useCreditAccounts,
-  usePosBootstrap,
-  usePosCustomers,
+  usePosCategories,
+  usePosModifierProducts,
   usePosProducts,
+  usePosSettings,
   useToggleProductFavoriteMutation,
-} from "@/features/pos/hooks/use-pos-queries";
+} from "@/features/pos/hooks/use-pos-catalog";
+import { usePosCheckout } from "@/features/pos/hooks/use-pos-checkout";
+import { usePosCustomers } from "@/features/pos/hooks/use-pos-queries";
 import { usePosShift } from "@/features/pos/hooks/use-pos-shift";
 import { buildSaleReceiptDocument } from "@/features/pos/printing/receipt-documents";
 import type { Product } from "@/features/pos/types";
@@ -41,7 +43,13 @@ export default function PosV2Page() {
   const activeOrganizationId = activeOrganization?.id ?? null;
 
   // Data queries
-  const { data: bootstrap, isLoading: isBootstrapLoading } = usePosBootstrap();
+  const { data: settings, isLoading: isSettingsLoading } = usePosSettings();
+  const { data: categories, isLoading: isCategoriesLoading } =
+    usePosCategories();
+  const { data: modifierProducts, isLoading: isModifiersLoading } =
+    usePosModifierProducts();
+  const isBootstrapLoading =
+    isSettingsLoading || isCategoriesLoading || isModifiersLoading;
   const { data: activeShiftData, isLoading: isActiveShiftLoading } =
     useActiveShift();
   const {
@@ -52,13 +60,10 @@ export default function PosV2Page() {
     isLoading: isProductsLoading,
   } = usePosProducts(activeCategoryId, searchQuery);
   const { data: customersData } = usePosCustomers();
-  const { data: creditAccountsData } = useCreditAccounts();
+  const { data: creditAccountsData } = useCreditAccountsSearch("");
 
   // Extract data
   const activeShift = activeShiftData?.shift ?? null;
-  const categories = bootstrap?.categories ?? [];
-  const modifierProducts = bootstrap?.modifierProducts ?? [];
-  const settings = bootstrap?.settings;
   const paymentMethodOptions = useMemo(
     () =>
       settings?.paymentMethods.map((method) => ({

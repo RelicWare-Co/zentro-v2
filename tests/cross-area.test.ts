@@ -20,6 +20,11 @@ import {
 } from "./helpers/seed";
 import { createTestDb } from "./helpers/test-db";
 import {
+  listCreditTransactionsViaZero,
+  registerCreditPaymentViaZero,
+  searchCreditAccountsViaZero,
+} from "./helpers/zero-credit";
+import {
   closeShiftViaZero,
   createZeroContext,
   createZeroTestDb,
@@ -433,12 +438,16 @@ describe("cross-area end-to-end flows", () => {
       expect(afterStock[0].stock).toBe(9);
 
       // Step 7: Register first partial credit payment (10000)
-      const payment1 = await client.credit.registerPayment({
-        shiftId,
-        creditAccountId: accountId,
-        amount: 10_000,
-        method: "cash",
-        saleId: saleResult.saleId,
+      const payment1 = await registerCreditPaymentViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          shiftId,
+          creditAccountId: accountId,
+          amount: 10_000,
+          method: "cash",
+          saleId: saleResult.saleId,
+        },
       });
 
       expect(payment1.newBalance).toBe(15_000);
@@ -473,12 +482,16 @@ describe("cross-area end-to-end flows", () => {
       expect(saleAfterPartial[0].status).toBe("credit");
 
       // Step 11: Register second partial payment (remaining 15000)
-      const payment2 = await client.credit.registerPayment({
-        shiftId,
-        creditAccountId: accountId,
-        amount: 15_000,
-        method: "cash",
-        saleId: saleResult.saleId,
+      const payment2 = await registerCreditPaymentViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          shiftId,
+          creditAccountId: accountId,
+          amount: 15_000,
+          method: "cash",
+          saleId: saleResult.saleId,
+        },
       });
 
       expect(payment2.newBalance).toBe(0);
@@ -498,7 +511,10 @@ describe("cross-area end-to-end flows", () => {
       expect(saleAfterFull[0].status).toBe("completed");
 
       // Step 14: Verify credit account search shows zero balance
-      const accountSearch = await client.credit.searchAccounts({});
+      const accountSearch = await searchCreditAccountsViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+      });
       const foundAccount = accountSearch.data.find(
         (a: { customerId: string }) => a.customerId === customerId
       );
@@ -506,7 +522,9 @@ describe("cross-area end-to-end flows", () => {
       expect(foundAccount?.balance).toBe(0);
 
       // Step 15: Verify transaction listing shows both charge and payments in correct order
-      const txList = await client.credit.transactions({
+      const txList = await listCreditTransactionsViaZero({
+        zeroDb,
+        ctx: zeroCtx,
         creditAccountId: accountId,
       });
       expect(txList.data.length).toBe(3);
@@ -523,9 +541,6 @@ describe("cross-area end-to-end flows", () => {
     test("credit sale with no initial payment, full payment brings balance to zero", async () => {
       const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const u = makeUser({ id: userId });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
       const zeroDb = createZeroTestDb(db);
       const zeroCtx = createZeroContext(userId, organizationId);
 
@@ -579,12 +594,16 @@ describe("cross-area end-to-end flows", () => {
       expect(accountRows[0].balance).toBe(50_000);
 
       // Full payment in one go
-      const paymentResult = await client.credit.registerPayment({
-        shiftId,
-        creditAccountId: accountId,
-        amount: 50_000,
-        method: "cash",
-        saleId: saleResult.saleId,
+      const paymentResult = await registerCreditPaymentViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          shiftId,
+          creditAccountId: accountId,
+          amount: 50_000,
+          method: "cash",
+          saleId: saleResult.saleId,
+        },
       });
 
       expect(paymentResult.newBalance).toBe(0);
@@ -608,9 +627,6 @@ describe("cross-area end-to-end flows", () => {
     test("multiple credit sales for same customer, payments reduce total balance correctly", async () => {
       const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const u = makeUser({ id: userId });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
       const zeroDb = createZeroTestDb(db);
       const zeroCtx = createZeroContext(userId, organizationId);
 
@@ -671,12 +687,16 @@ describe("cross-area end-to-end flows", () => {
       expect(accountRows[0].balance).toBe(20_000);
 
       // Pay off first sale via saleId
-      await client.credit.registerPayment({
-        shiftId,
-        creditAccountId: accountId,
-        amount: 10_000,
-        method: "cash",
-        saleId: sale1.saleId,
+      await registerCreditPaymentViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          shiftId,
+          creditAccountId: accountId,
+          amount: 10_000,
+          method: "cash",
+          saleId: sale1.saleId,
+        },
       });
 
       const afterPay1 = await db
@@ -686,12 +706,16 @@ describe("cross-area end-to-end flows", () => {
       expect(afterPay1[0].balance).toBe(10_000);
 
       // Pay off remaining balance
-      await client.credit.registerPayment({
-        shiftId,
-        creditAccountId: accountId,
-        amount: 10_000,
-        method: "cash",
-        saleId: sale2.saleId,
+      await registerCreditPaymentViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          shiftId,
+          creditAccountId: accountId,
+          amount: 10_000,
+          method: "cash",
+          saleId: sale2.saleId,
+        },
       });
 
       const afterPay2 = await db
@@ -709,7 +733,10 @@ describe("cross-area end-to-end flows", () => {
       expect(saleRows.every((s) => s.status === "completed")).toBe(true);
 
       // Account search shows zero
-      const search = await client.credit.searchAccounts({});
+      const search = await searchCreditAccountsViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+      });
       const acc = search.data.find(
         (a: { customerId: string }) => a.customerId === customerId
       );

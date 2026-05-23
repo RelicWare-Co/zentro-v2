@@ -1,8 +1,3 @@
-import {
-  transactions as listCreditTransactions,
-  registerPayment as registerCreditPayment,
-  searchAccounts as searchCreditAccounts,
-} from "./credit";
 import { overview as dashboardOverview } from "./dashboard";
 import { capabilities, setEntitlement } from "./modules";
 import {
@@ -20,11 +15,6 @@ import {
   updateMemberRole,
   updateOrganization,
 } from "./organization";
-import {
-  bootstrap as posBootstrap,
-  searchProducts as posSearchProducts,
-  toggleFavorite as posToggleFavorite,
-} from "./pos";
 import {
   addOrderItem,
   closeOrder,
@@ -76,11 +66,6 @@ export const router = {
     get: getSettings,
     update: updateSettings,
   },
-  credit: {
-    searchAccounts: searchCreditAccounts,
-    transactions: listCreditTransactions,
-    registerPayment: registerCreditPayment,
-  },
   dashboard: {
     overview: dashboardOverview,
   },
@@ -89,11 +74,6 @@ export const router = {
     detail: saleDetail,
     create: createSale,
     cancel: cancelSale,
-  },
-  pos: {
-    bootstrap: posBootstrap,
-    searchProducts: posSearchProducts,
-    toggleFavorite: posToggleFavorite,
   },
   restaurants: {
     bootstrap: restaurantBootstrap,

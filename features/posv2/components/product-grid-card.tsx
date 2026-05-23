@@ -83,29 +83,33 @@ export function ProductGridCard({
           ) : (
             <span />
           )}
-
-          {onToggleFavorite && (
-            <button
-              className="rounded p-1 hover:bg-[rgba(255,255,255,0.06)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#dfff06] disabled:opacity-50"
-              disabled={isTogglingFavorite}
-              onClick={(e) => {
-                e.stopPropagation();
-                onToggleFavorite(product.id);
-              }}
-              type="button"
-            >
-              <Heart
-                className={cn(
-                  "size-3.5 transition-colors",
-                  product.isFavorite
-                    ? "fill-red-500 text-red-500"
-                    : "text-[#3d3d3d] hover:text-red-400"
-                )}
-              />
-            </button>
-          )}
         </div>
       </button>
+
+      {onToggleFavorite && (
+        <button
+          aria-label={
+            product.isFavorite ? "Quitar de favoritos" : "Agregar a favoritos"
+          }
+          aria-pressed={product.isFavorite}
+          className="absolute right-2 bottom-2 z-10 rounded p-1 hover:bg-[rgba(255,255,255,0.06)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#dfff06] disabled:opacity-50"
+          disabled={isTogglingFavorite}
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleFavorite(product.id);
+          }}
+          type="button"
+        >
+          <Heart
+            className={cn(
+              "size-3.5 transition-colors",
+              product.isFavorite
+                ? "fill-red-500 text-red-500"
+                : "text-[#3d3d3d] hover:text-red-400"
+            )}
+          />
+        </button>
+      )}
     </div>
   );
 }

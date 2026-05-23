@@ -194,7 +194,7 @@ function asShiftWithRelations(row: unknown) {
 
 export function useShiftDetail(shiftId: string | null) {
   const [rows, status] = useZeroQuery(
-    queries.shifts.byId({ shiftId: shiftId ?? "" })
+    queries.shifts.byId({ shiftId: shiftId ?? null })
   );
   const error = getQueryError(status);
   const shiftRow = rows[0];
@@ -221,7 +221,7 @@ export function useShiftCloseSummary(
   enabled: boolean
 ) {
   const [rows, status] = useZeroQuery(
-    queries.shifts.byId({ shiftId: shiftId ?? "" })
+    queries.shifts.byId({ shiftId: shiftId ?? null })
   );
   const [organizationRows, organizationStatus] = useZeroQuery(
     queries.shifts.organization()

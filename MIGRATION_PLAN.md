@@ -125,12 +125,13 @@ Cada checklist se completa surface a surface. Marcar el ítem solo cuando esté 
 
 - [x] **Shifts open/close** → mutators `shifts.open/close` con validación de caja y fold de `shiftClosure`. Eliminados `server/orpc/contracts/shifts.ts` y `server/orpc/routers/shifts.ts`.
 - [x] **Cash movements** → mutator `shifts.cashMovement` con shift activo y métodos de pago habilitados. Tests de validación en `tests/zero-shifts.test.ts` (turno cerrado, otro cajero, método inválido, tipo inválido, turno inexistente).
+- [x] **POS reads (catálogo, categorías, modificadores, favoritos, settings)** → queries `products.modifiers`, `products.posCatalog`, mutator `products.toggleFavorite`, hooks `use-pos-catalog.ts`. Eliminados `server/orpc/contracts/pos.ts` y `server/orpc/routers/pos.ts`. Tests VAL-POS-004/005 migrados a `tests/helpers/zero-pos.ts`.
 - [ ] **Sales (create-sale)**: convertir `server/sales/create-sale.server.ts` en un mutator server-only que escribe `sale` + `saleItem` + `payment` + `inventoryMovement` en una sola transacción.
 - [ ] Sustituir `useSalesPage` para que renderice desde Zero.
 
 ### M4 · Crédito y reportes
 
-- [ ] **Credit accounts** queries + mutators.
+- [x] **Credit accounts (reads + registerPayment)** → queries `credit.accounts`, `credit.transactions`, mutator server-only `credit.registerPayment` en `server/credit/register-payment.server.ts`, hooks `use-credit.ts` Zero. Eliminados `server/orpc/contracts/credit.ts` y `server/orpc/routers/credit.ts`. Tests migrados a `tests/helpers/zero-credit.ts`.
 - [ ] **Dashboard / reportes**: queries derivadas. Si los reportes son agregaciones pesadas, mantenerlos como REST en oRPC y solo leer datos primarios via Zero.
 
 ### M5 · Limpieza

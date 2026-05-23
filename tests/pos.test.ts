@@ -16,6 +16,12 @@ import {
 } from "./helpers/seed";
 import { createTestDb } from "./helpers/test-db";
 import {
+  getActiveShiftViaZero,
+  listPosCategoriesViaZero,
+  listPosModifiersViaZero,
+  searchPosProductsViaZero,
+} from "./helpers/zero-pos";
+import {
   createZeroContext,
   createZeroTestDb,
   getShiftCloseSummaryViaZero,
@@ -193,9 +199,6 @@ describe("POS checkout", () => {
     test("bootstrap payload contains active shift, categories, and modifier products", async () => {
       const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const u = makeUser({ id: userId });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
       const zeroDb = createZeroTestDb(db);
       const zeroCtx = createZeroContext(userId, organizationId);
 
@@ -234,19 +237,21 @@ describe("POS checkout", () => {
       });
       expect(shiftOpen.id).toBeDefined();
 
-      const bootstrap = await client.pos.bootstrap();
+      const [activeShift, categories, modifierProducts] = await Promise.all([
+        getActiveShiftViaZero({ zeroDb, ctx: zeroCtx }),
+        listPosCategoriesViaZero({ zeroDb, ctx: zeroCtx }),
+        listPosModifiersViaZero({ zeroDb, ctx: zeroCtx }),
+      ]);
 
-      expect(bootstrap.activeShift).toBeDefined();
-      expect(bootstrap.activeShift?.id).toBe(shiftOpen.id);
-      expect(bootstrap.activeShift?.status).toBe("open");
+      expect(activeShift).toBeDefined();
+      expect(activeShift?.id).toBe(shiftOpen.id);
+      expect(activeShift?.status).toBe("open");
 
-      const categoryIds = bootstrap.categories.map((c: { id: string }) => c.id);
+      const categoryIds = categories.map((category) => category.id);
       expect(categoryIds).toContain(catA);
       expect(categoryIds).toContain(catB);
 
-      const modifierIds = bootstrap.modifierProducts.map(
-        (p: { id: string }) => p.id
-      );
+      const modifierIds = modifierProducts.map((product) => product.id);
       expect(modifierIds).toContain(modifierId);
       expect(modifierIds.length).toBe(1);
 
@@ -256,12 +261,14 @@ describe("POS checkout", () => {
     test("bootstrap returns null activeShift when no open shift", async () => {
       const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const u = makeUser({ id: userId });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
 
-      const bootstrap = await client.pos.bootstrap();
-      expect(bootstrap.activeShift).toBeNull();
+      const activeShift = await getActiveShiftViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+      });
+      expect(activeShift).toBeNull();
 
       await cleanup();
     });
@@ -271,9 +278,8 @@ describe("POS checkout", () => {
     test("product search paginates with limit and cursor", async () => {
       const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const u = makeUser({ id: userId });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
 
       // Seed 5 products
       await Promise.all(
@@ -289,19 +295,31 @@ describe("POS checkout", () => {
       );
 
       // Page 1: limit 2
-      const page1 = await client.pos.searchProducts({ limit: 2, cursor: 0 });
+      const page1 = await searchPosProductsViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: { limit: 2, cursor: 0 },
+      });
       expect(page1.data.length).toBe(2);
       expect(page1.hasMore).toBe(true);
       expect(page1.nextCursor).toBe(2);
 
       // Page 2: cursor 2
-      const page2 = await client.pos.searchProducts({ limit: 2, cursor: 2 });
+      const page2 = await searchPosProductsViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: { limit: 2, cursor: 2 },
+      });
       expect(page2.data.length).toBe(2);
       expect(page2.hasMore).toBe(true);
       expect(page2.nextCursor).toBe(4);
 
       // Page 3: cursor 4
-      const page3 = await client.pos.searchProducts({ limit: 2, cursor: 4 });
+      const page3 = await searchPosProductsViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: { limit: 2, cursor: 4 },
+      });
       expect(page3.data.length).toBe(1);
       expect(page3.hasMore).toBe(false);
       expect(page3.nextCursor).toBeNull();
@@ -312,9 +330,8 @@ describe("POS checkout", () => {
     test("product search filters by category", async () => {
       const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const u = makeUser({ id: userId });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
 
       const [catA, catB] = await Promise.all([
         seedCategory(db, { organizationId, name: "CatA" }),
@@ -339,8 +356,16 @@ describe("POS checkout", () => {
       expect(prodB).toBeDefined();
 
       const [resultA, resultB] = await Promise.all([
-        client.pos.searchProducts({ categoryId: catA }),
-        client.pos.searchProducts({ categoryId: catB }),
+        searchPosProductsViaZero({
+          zeroDb,
+          ctx: zeroCtx,
+          input: { categoryId: catA },
+        }),
+        searchPosProductsViaZero({
+          zeroDb,
+          ctx: zeroCtx,
+          input: { categoryId: catB },
+        }),
       ]);
       expect(resultA.data.length).toBe(1);
       expect(resultA.data[0].id).toBe(prodA);
@@ -353,9 +378,8 @@ describe("POS checkout", () => {
     test("product search prioritizes exact barcode match", async () => {
       const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const u = makeUser({ id: userId });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
 
       await seedProduct(db, {
         organizationId,
@@ -377,7 +401,11 @@ describe("POS checkout", () => {
         price: 3000,
       });
 
-      const result = await client.pos.searchProducts({ searchQuery: "12345" });
+      const result = await searchPosProductsViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: { searchQuery: "12345" },
+      });
       expect(result.data.length).toBeGreaterThanOrEqual(2);
       // Exact barcode match should be first
       expect(result.data[0].barcode).toBe("12345");
@@ -470,7 +498,11 @@ describe("POS checkout", () => {
 
       // Verify product appears in search and check stock before
       const [searchResult, beforeStock] = await Promise.all([
-        client.pos.searchProducts({ searchQuery: "Coffee" }),
+        searchPosProductsViaZero({
+          zeroDb,
+          ctx: zeroCtx,
+          input: { searchQuery: "Coffee" },
+        }),
         db
           .select({ stock: product.stock })
           .from(product)

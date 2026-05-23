@@ -31,6 +31,7 @@ import {
   DeleteCustomerSchema,
   UpdateCustomerSchema,
 } from "@/schemas/customers";
+import { ToggleProductFavoriteInputSchema } from "@/schemas/pos";
 import {
   CreateCategorySchema,
   CreateProductSchema,
@@ -81,6 +82,19 @@ export const createCategoryArgsSchema = CreateCategorySchema.extend({
 });
 export const updateCategoryArgsSchema = UpdateCategorySchema;
 export const deleteCategoryArgsSchema = DeleteCategorySchema;
+export const toggleProductFavoriteArgsSchema = ToggleProductFavoriteInputSchema;
+export const registerCreditPaymentArgsSchema = zod.object({
+  shiftId: zod.string().trim().min(1),
+  creditAccountId: zod.string().trim().min(1),
+  saleId: zod.string().trim().optional().nullable(),
+  amount: zod.number().int().positive(),
+  method: zod.string().trim().min(1),
+  reference: zod.string().trim().optional().nullable(),
+  notes: zod.string().trim().optional().nullable(),
+  createdAt: zod.number().int().min(0).optional(),
+  paymentId: zod.string().trim().min(1),
+  transactionId: zod.string().trim().min(1),
+});
 
 export const openShiftArgsSchema = zod.object({
   id: zod.string().trim().min(1),
@@ -548,6 +562,23 @@ export const mutators = defineMutators({
         });
       }
     ),
+    toggleFavorite: defineMutator(
+      toggleProductFavoriteArgsSchema,
+      async ({ args, ctx, tx }) => {
+        const zeroContext = assertZeroContext(ctx);
+        const targetProduct = await assertActiveProduct({
+          id: args.productId,
+          organizationId: zeroContext.orgID,
+          tx,
+        });
+        const nextIsFavorite = !targetProduct.isFavorite;
+
+        await tx.mutate.product.update({
+          id: args.productId,
+          isFavorite: nextIsFavorite,
+        });
+      }
+    ),
     registerInventoryMovement: defineMutator(
       registerInventoryMovementArgsSchema,
       async ({ args, ctx, tx }) => {
@@ -661,6 +692,13 @@ export const mutators = defineMutators({
         await tx.mutate.category.delete({ id: args.id });
       }
     ),
+  },
+  credit: {
+    registerPayment: defineMutator(registerCreditPaymentArgsSchema, () => {
+      throw new Error(
+        "El registro de abonos de crédito solo puede ejecutarse en el servidor"
+      );
+    }),
   },
   shifts: {
     open: defineMutator(openShiftArgsSchema, async ({ args, ctx, tx }) => {

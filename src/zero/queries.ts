@@ -31,8 +31,14 @@ const productsSearchArgsSchema = z.object({
   searchQuery: z.string().trim().optional().nullable(),
 });
 
+const posCatalogArgsSchema = productsSearchArgsSchema;
+
 const shiftByIdArgsSchema = z.object({
-  shiftId: z.string().trim().min(1),
+  shiftId: z.string().trim().optional().nullable(),
+});
+
+const creditTransactionsArgsSchema = z.object({
+  creditAccountId: z.string().trim().optional().nullable(),
 });
 
 const SHIFTS_SYNC_LIMIT = 500;
@@ -43,6 +49,41 @@ function normalizeLimit(limit?: number) {
 
 function normalizeProductLimit(limit?: number) {
   return Math.min(Math.max(limit ?? 1000, 1), 1000);
+}
+
+function buildPosCatalogQuery(
+  organizationId: string,
+  args: z.infer<typeof posCatalogArgsSchema>
+) {
+  const normalizedSearch = args.searchQuery?.trim() ?? "";
+  const normalizedCategoryId = args.categoryId?.trim() ?? "";
+  const searchPattern = `%${normalizedSearch}%`;
+  let query = zql.product
+    .where("organizationId", organizationId)
+    .where("deletedAt", "IS", null)
+    .where("isModifier", false)
+    .related("category");
+
+  if (normalizedCategoryId === "uncategorized") {
+    query = query.where("categoryId", "IS", null);
+  } else if (normalizedCategoryId) {
+    query = query.where("categoryId", normalizedCategoryId);
+  }
+
+  if (normalizedSearch) {
+    query = query.where(({ cmp, or }) =>
+      or(
+        cmp("name", "ILIKE", searchPattern),
+        cmp("sku", "ILIKE", searchPattern),
+        cmp("barcode", "ILIKE", searchPattern)
+      )
+    );
+  }
+
+  return query
+    .orderBy("name", "asc")
+    .orderBy("id", "asc")
+    .limit(normalizeProductLimit(args.limit));
 }
 
 function buildShiftDetailQuery(shiftId: string, organizationId: string) {
@@ -169,6 +210,54 @@ export const queries = defineQueries({
         .orderBy("id", "asc")
         .limit(normalizeProductLimit(args.limit));
     }),
+    modifiers: defineQuery(({ ctx }) => {
+      if (!ctx) {
+        return zql.product.where(({ cmpLit }) => cmpLit(false, "=", true));
+      }
+
+      return zql.product
+        .where("organizationId", ctx.orgID)
+        .where("isModifier", true)
+        .where("deletedAt", "IS", null)
+        .related("category")
+        .orderBy("name", "asc")
+        .orderBy("id", "asc");
+    }),
+    posCatalog: defineQuery(posCatalogArgsSchema, ({ args, ctx }) => {
+      if (!ctx) {
+        return zql.product.where(({ cmpLit }) => cmpLit(false, "=", true));
+      }
+
+      return buildPosCatalogQuery(ctx.orgID, args);
+    }),
+  },
+  credit: {
+    accounts: defineQuery(({ ctx }) => {
+      if (!ctx) {
+        return zql.creditAccount.where(({ cmpLit }) =>
+          cmpLit(false, "=", true)
+        );
+      }
+
+      return zql.creditAccount
+        .where("organizationId", ctx.orgID)
+        .related("customer")
+        .orderBy("id", "asc");
+    }),
+    transactions: defineQuery(creditTransactionsArgsSchema, ({ args, ctx }) => {
+      const normalizedCreditAccountId = args.creditAccountId?.trim() ?? "";
+      if (!(ctx && normalizedCreditAccountId)) {
+        return zql.creditTransaction.where(({ cmpLit }) =>
+          cmpLit(false, "=", true)
+        );
+      }
+
+      return zql.creditTransaction
+        .where("organizationId", ctx.orgID)
+        .where("creditAccountId", normalizedCreditAccountId)
+        .orderBy("createdAt", "desc")
+        .orderBy("id", "desc");
+    }),
   },
   shifts: {
     active: defineQuery(({ ctx }) => {
@@ -192,11 +281,12 @@ export const queries = defineQueries({
       return buildShiftsByOrgQuery(ctx.orgID);
     }),
     byId: defineQuery(shiftByIdArgsSchema, ({ args, ctx }) => {
-      if (!ctx) {
+      const normalizedShiftId = args.shiftId?.trim() ?? "";
+      if (!(ctx && normalizedShiftId)) {
         return zql.shift.where(({ cmpLit }) => cmpLit(false, "=", true));
       }
 
-      return buildShiftDetailQuery(args.shiftId, ctx.orgID);
+      return buildShiftDetailQuery(normalizedShiftId, ctx.orgID);
     }),
     organization: defineQuery(({ ctx }) => {
       if (!ctx) {

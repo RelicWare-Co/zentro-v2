@@ -16,7 +16,7 @@ import {
   NativeSelectOption,
 } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
-import { usePosProducts } from "@/features/pos/hooks/use-pos-queries";
+import { usePosProducts } from "@/features/pos/hooks/use-pos-catalog";
 import { formatCurrency } from "@/features/pos/utils";
 import {
   useAddRestaurantOrderItemMutation,
