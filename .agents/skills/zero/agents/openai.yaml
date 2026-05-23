@@ -1,0 +1,4 @@
+interface:
+  display_name: "Zero"
+  short_description: "Build apps with Zero sync"
+  default_prompt: "Use $zero to design and implement a sync-powered TypeScript app with Zero."

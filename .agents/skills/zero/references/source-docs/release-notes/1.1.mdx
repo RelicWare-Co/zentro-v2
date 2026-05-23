@@ -1,0 +1,22 @@
+---
+title: Zero 1.1
+description: Replication Monitoring
+---
+
+## Installation
+
+```bash
+npm install @rocicorp/zero@1.1
+```
+
+## Features
+
+- [**Replication Lag Metrics:**](/docs/zero-cache-config#replication-lag-report-interval-ms) Added new [OpenTelemetry](/docs/otel) metric `zero.replication.total_lag` to monitor replication lag.
+
+## Fixes
+
+- [Fix reads disrupting replica initialization](https://github.com/rocicorp/mono/pull/5702)
+
+## Breaking Changes
+
+None.
