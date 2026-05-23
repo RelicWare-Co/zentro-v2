@@ -106,7 +106,7 @@ Cada checklist se completa surface a surface. Marcar el ítem solo cuando esté 
 - [x] `src/zero/schema.gen.ts` generado.
 - [x] `src/zero/{schema,context,queries,mutators,client,zero-provider.client}.ts` creados.
 - [x] `server/zero/{context,handler}.server.ts` montados en Hono antes que oRPC.
-- [x] `<ZeroProvider>` activo en `pages/(app)/+Layout.tsx` (solo rutas autenticadas, sin renderizar children fuera del provider).
+- [x] `<ZeroProvider>` activo en `pages/+Layout.tsx` cuando `pageContext.zeroContext` existe (rutas autenticadas con org activa, incl. `/organization` y fullscreen POS).
 - [x] `bunx tsc --noEmit` y `bun run check` verdes.
 
 ### M1 · Lecturas de catálogo (low risk)
@@ -120,6 +120,7 @@ Cada checklist se completa surface a surface. Marcar el ítem solo cuando esté 
 - [x] **Customers (CRUD)** → mutators `customers.create/update/delete`. Borrados `server/orpc/contracts/customers.ts` y `server/orpc/routers/customers.ts`.
 - [x] **Products (CRUD)** → mutators `products.create/update/delete`. Borrados `server/orpc/contracts/products.ts` y `server/orpc/routers/products.ts`.
 - [ ] **Restaurants areas/tables** → mutators correspondientes.
+- [x] **Settings (read/update)** → queries `organization.environment` / `organization.moduleEntitlements`, mutator server-only `organization.updateSettings` en `server/settings/update-settings.server.ts`, capa `features/settings/organization-environment.shared.ts`, hooks `use-settings.ts`. Eliminados `server/orpc/contracts/settings.ts` y `server/orpc/routers/settings.ts`.
 
 ### M3 · Flujo POS (alto riesgo, alta visibilidad)
 

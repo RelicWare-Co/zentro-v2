@@ -269,7 +269,7 @@ describe("organization access control", () => {
       const ctx = buildMockContext(db, u, null);
       const client = createServerORPCClient(ctx);
 
-      await expect(client.settings.get()).rejects.toThrow(
+      await expect(client.organization.management()).rejects.toThrow(
         "No hay una organización activa"
       );
 

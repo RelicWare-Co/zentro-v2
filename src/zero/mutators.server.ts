@@ -5,11 +5,14 @@ import type { CancelSaleDbExecutor } from "@/server/sales/cancel-sale.server";
 import { runCancelSale } from "@/server/sales/cancel-sale.server";
 import type { CreateSaleDbExecutor } from "@/server/sales/create-sale.server";
 import { runCreateSale } from "@/server/sales/create-sale.server";
+import type { UpdateSettingsDbExecutor } from "@/server/settings/update-settings.server";
+import { runUpdateOrganizationSettings } from "@/server/settings/update-settings.server";
 import {
   cancelSaleArgsSchema,
   createSaleArgsSchema,
   registerCreditPaymentArgsSchema,
   mutators as sharedMutators,
+  updateOrganizationSettingsArgsSchema,
 } from "./mutators";
 
 export const serverMutators = defineMutators(sharedMutators, {
@@ -74,6 +77,29 @@ export const serverMutators = defineMutators(sharedMutators, {
         userId: ctx.id,
       });
     }),
+  },
+  organization: {
+    updateSettings: defineMutator(
+      updateOrganizationSettingsArgsSchema,
+      async ({ tx, args, ctx }) => {
+        if (!ctx) {
+          throw new Error("No autorizado");
+        }
+
+        if (!("dbTransaction" in tx)) {
+          throw new Error(
+            "La actualización de configuración solo puede ejecutarse en el servidor"
+          );
+        }
+
+        const drizzleTx = tx.dbTransaction.wrappedTransaction;
+        await runUpdateOrganizationSettings(
+          drizzleTx as unknown as UpdateSettingsDbExecutor,
+          args,
+          ctx
+        );
+      }
+    ),
   },
 });
 

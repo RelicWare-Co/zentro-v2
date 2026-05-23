@@ -34,7 +34,6 @@ import {
   updateOrderMeta,
   updateTable,
 } from "./restaurants";
-import { get as getSettings, update as updateSettings } from "./settings";
 
 export const router = {
   organization: {
@@ -55,10 +54,6 @@ export const router = {
   modules: {
     capabilities,
     setEntitlement,
-  },
-  settings: {
-    get: getSettings,
-    update: updateSettings,
   },
   dashboard: {
     overview: dashboardOverview,

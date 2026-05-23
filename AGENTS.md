@@ -139,7 +139,7 @@ Zero is the target API for new and migrated surfaces (see `MIGRATION_PLAN.md`). 
 - `src/zero/mutators.server.ts` — server-only override registry passed to the `/api/zero/mutate` endpoint. Use this for hard validation, audit logs, and side-effects that should not run optimistically.
 - `src/zero/db-provider.server.ts` — `zeroDrizzle(schema, db)` adapter wired to the existing Drizzle client. Used by `handleMutateRequest`.
 - `src/zero/client.ts` — `createZeroOptions({ userID, context })` builder. Reads `VITE_ZERO_CACHE_URL` from `import.meta.env`.
-- `src/zero/zero-provider.client.tsx` — React `<ZeroProvider>` wrapper. Browser-only; mounted via the dynamic-import pattern from `pages/(app)/+Layout.tsx`.
+- `src/zero/zero-provider.client.tsx` — React `<ZeroProvider>` wrapper. Browser-only; mounted via the dynamic-import gate in `pages/+Layout.tsx`.
 - `server/zero/context.server.ts` — `resolveZeroAuth(headers)` derives `ZeroContext` from the better-auth session. **Always** use this; never trust client-supplied identity.
 - `server/zero/handler.server.ts` — Hono router that mounts `/api/zero/query` and `/api/zero/mutate`. Already registered in `server/hono.ts` before the oRPC `/api/*` catch-all.
 

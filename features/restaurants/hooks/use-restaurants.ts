@@ -34,9 +34,6 @@ async function invalidateRestaurantQueries(queryClient: QueryClient) {
     queryClient.invalidateQueries({
       queryKey: orpcQuery.restaurants.kitchenBoard.queryOptions().queryKey,
     }),
-    queryClient.invalidateQueries({
-      queryKey: orpcQuery.settings.get.queryOptions().queryKey,
-    }),
   ]);
 }
 

@@ -4,7 +4,7 @@
 // SSR/server bundle. The Zero client constructor opens an IndexedDB
 // connection and is browser-only, so it cannot be imported during SSR.
 //
-// Mount this through the dynamic-import wrapper in `pages/(app)/+Layout.tsx`
+// Mount this through the dynamic-import wrapper in `pages/+Layout.tsx`
 // rather than importing it directly from a non-client module.
 
 import { ZeroProvider } from "@rocicorp/zero/react";

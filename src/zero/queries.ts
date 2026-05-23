@@ -349,6 +349,33 @@ export const queries = defineQueries({
       return buildSaleDetailQuery(normalizedSaleId, ctx.orgID);
     }),
   },
+  organization: {
+    environment: defineQuery(({ ctx }) => {
+      if (!ctx) {
+        return zql.organization.where(({ cmpLit }) => cmpLit(false, "=", true));
+      }
+
+      return zql.organization
+        .where("id", ctx.orgID)
+        .related("members")
+        .related("invitations")
+        .related("products", (query) => query.where("deletedAt", "IS", null))
+        .related("customers", (query) => query.where("deletedAt", "IS", null))
+        .limit(1);
+    }),
+    moduleEntitlements: defineQuery(({ ctx }) => {
+      if (!ctx) {
+        return zql.organizationModuleEntitlement.where(({ cmpLit }) =>
+          cmpLit(false, "=", true)
+        );
+      }
+
+      return zql.organizationModuleEntitlement.where(
+        "organizationId",
+        ctx.orgID
+      );
+    }),
+  },
 });
 
 export type Queries = typeof queries;

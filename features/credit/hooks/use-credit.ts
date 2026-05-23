@@ -1,5 +1,5 @@
 import { useZero, useQuery as useZeroQuery } from "@rocicorp/zero/react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { useDeferredValue, useMemo, useRef } from "react";
 import type { z } from "zod";
 import {
@@ -11,8 +11,8 @@ import {
   paginateCreditAccounts,
   paginateCreditTransactions,
 } from "@/features/credit/credit.shared";
+import { useSettings } from "@/features/settings/hooks/use-settings";
 import type { RegisterCreditPaymentSchema } from "@/schemas/credit";
-import { orpcQuery } from "@/server/orpc/client/query";
 import { mutators } from "@/src/zero/mutators";
 import { queries } from "@/src/zero/queries";
 
@@ -58,12 +58,7 @@ function getQueryError(status: { type: string; error?: { message?: string } }) {
 }
 
 export function useOrganizationSettings() {
-  return useQuery({
-    ...orpcQuery.settings.get.queryOptions(),
-    staleTime: 60_000,
-    gcTime: 5 * 60_000,
-    refetchOnWindowFocus: false,
-  });
+  return useSettings();
 }
 
 export function useCreditAccountsSearch(searchQuery: string) {

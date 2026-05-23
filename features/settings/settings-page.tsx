@@ -30,10 +30,10 @@ import { Switch } from "@/components/ui/switch";
 import { RestaurantModuleSettingsCard } from "@/features/restaurants/components/restaurant-module-settings-card";
 import { useRestaurantConfiguration } from "@/features/restaurants/hooks/use-restaurants";
 import {
-  type SettingsPageData,
   useSettings,
   useUpdateSettingsMutation,
 } from "@/features/settings/hooks/use-settings";
+import type { SettingsPageData } from "@/features/settings/organization-environment.shared";
 import {
   normalizeOrganizationSettings,
   normalizePaymentMethodId,
