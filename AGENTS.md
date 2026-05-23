@@ -130,8 +130,9 @@ Zero is the primary API for app data (see `MIGRATION_PLAN.md`).
 1. Add an entry to `src/zero/mutators.ts` using `defineMutator(zodSchema, async ({ tx, args, ctx }) => { ... })`.
 2. Validate identity vs `args.organizationId` (or equivalent) inside the mutator. Throw on mismatch — Zero rolls back the optimistic write and surfaces the error to the client.
 3. If the mutation needs hard server-side checks or side-effects, override the mutator in `src/zero/mutators.server.ts` using `defineMutators(sharedMutators, { ... })`. The server-side override gets the Drizzle transaction at `tx.dbTransaction.wrappedTransaction`.
-4. Always `await` every `tx.mutate.*` call. An unawaited write breaks transactionality.
-5. Consume from React: `const zero = useZero(); zero.mutate(mutators.<group>.<name>(args))`.
+4. Mutators that need complete relationship graphs for accounting/settlement (e.g. `shifts.close`) must be server-only/no-op on the client; client mutator reads only see locally cached rows.
+5. Always `await` every `tx.mutate.*` call. An unawaited write breaks transactionality.
+6. Consume from React: `const zero = useZero(); zero.mutate(mutators.<group>.<name>(args))`.
 
 ### Auth and permissions
 
@@ -139,7 +140,7 @@ Zero is the primary API for app data (see `MIGRATION_PLAN.md`).
 - Org-scoped queries/mutators must gate on `ctx?.orgID`; auth-only flows (e.g. `organization.selection`, `organization.joinLinkRedeem`) use `ctx.id` / `ctx.email` instead.
 - Logged-out callers receive `userID: null` and an undefined context; queries and mutators must handle that case explicitly (deny by default).
 - Cookie auth requires `zero-cache` to forward browser cookies to `/api/zero/*`. Set `ZERO_QUERY_FORWARD_COOKIES=true` and `ZERO_MUTATE_FORWARD_COOKIES=true` locally and in production.
-- `/login` and `/join` mount `ZeroProviderGate` with `allowAnonymous` so public queries like `organization.joinLinkPreview` work before sign-in.
+- `/login` and `/join` mount `ZeroProviderGate` with `allowAnonymous` so authenticated join-link redemption can use Zero before an active org is selected. Public join-link preview must use the sanitized REST endpoint `GET /api/organization/join-link-preview?token=...`, not a Zero query, because ZQL returns full rows.
 
 ## UI
 

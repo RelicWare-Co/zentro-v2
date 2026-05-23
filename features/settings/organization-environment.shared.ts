@@ -9,11 +9,11 @@ import {
   MODULE_KEYS,
   type ModuleKey,
 } from "@/features/modules/module-registry";
-import type { SettingsDataSchema } from "@/schemas/settings";
 import {
   isOrganizationManagerRole,
   isPlatformAdminRole,
-} from "@/server/organization/access-control.shared";
+} from "@/features/organization/access-control.shared";
+import type { SettingsDataSchema } from "@/schemas/settings";
 import type { ZeroContext } from "@/src/zero/context";
 import {
   type OrganizationSettings,

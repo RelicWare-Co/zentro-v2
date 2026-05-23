@@ -1,5 +1,6 @@
 import { zeroDrizzle } from "@rocicorp/zero/server/adapters/drizzle";
 import type { z } from "zod";
+import { buildOrganizationAccessPolicy } from "@/features/organization/organization-policy.shared";
 import {
   buildShiftCloseSummary,
   buildShiftListItem,
@@ -35,6 +36,9 @@ export function createZeroContext(
     email: options?.email ?? "test@example.com",
     role: options?.role ?? "owner",
     systemRole: options?.systemRole ?? null,
+    organizationPolicy: buildOrganizationAccessPolicy({
+      role: options?.systemRole ?? null,
+    }),
   } satisfies ZeroContext;
 }
 

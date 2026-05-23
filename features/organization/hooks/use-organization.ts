@@ -1,10 +1,9 @@
 import { useZero, useQuery as useZeroQuery } from "@rocicorp/zero/react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { usePageContext } from "vike-react/usePageContext";
 import type { z } from "zod";
 import {
-  buildJoinLinkPreview,
   buildOrganizationJoinPath,
   buildOrganizationManagement,
   buildOrganizationSelection,
@@ -142,22 +141,6 @@ interface ManagementOrganizationRow {
   slug: string;
 }
 
-interface JoinLinkPreviewRow {
-  expiresAt: number | null;
-  id: string;
-  label: string | null;
-  maxUses: number;
-  organization?: {
-    id: string;
-    name: string;
-    slug: string;
-  } | null;
-  organizationId: string;
-  revokedAt: number | null;
-  role: string;
-  useCount: number;
-}
-
 export function useOrganizationSelection() {
   const pageContext = usePageContext();
   const zeroContext = pageContext.zeroContext;
@@ -193,6 +176,7 @@ export function useOrganizationSelection() {
 
     return buildOrganizationSelection({
       systemRole: zeroContext.systemRole,
+      policy: zeroContext.organizationPolicy,
       invitationRows: pendingInvitations,
     });
   }, [invitationRows, zeroContext]);
@@ -262,6 +246,7 @@ export function useOrganizationManagement() {
       currentUserId: zeroContext.id,
       currentMemberRole: currentMember.role,
       systemRole: zeroContext.systemRole,
+      policy: zeroContext.organizationPolicy,
       members: (organizationRow.members ?? []).map((memberRow) => ({
         memberId: memberRow.id,
         userId: memberRow.userId,
@@ -308,55 +293,33 @@ export function useOrganizationManagement() {
   };
 }
 
+async function fetchJoinLinkPreview(token: string): Promise<JoinLinkPreview> {
+  const response = await fetch(
+    `/api/organization/join-link-preview?token=${encodeURIComponent(token)}`
+  );
+
+  if (!response.ok) {
+    throw new Error("No se pudo validar el enlace de acceso.");
+  }
+
+  return response.json() as Promise<JoinLinkPreview>;
+}
+
 export function useJoinLinkPreview(token: string | null | undefined) {
   const normalizedToken = token?.trim() ?? "";
-  const [rows, status] = useZeroQuery(
-    queries.organization.joinLinkPreview({ token: normalizedToken || " " })
-  );
-  const error = getQueryError(status);
-  const isQueryLoading =
-    normalizedToken.length > 0 &&
-    status.type === "unknown" &&
-    rows.length === 0;
-
-  const data = useMemo((): JoinLinkPreview | undefined => {
-    if (!normalizedToken) {
-      return;
-    }
-
-    const row = rows[0] as JoinLinkPreviewRow | undefined;
-    if (!row) {
-      return buildJoinLinkPreview({ row: null });
-    }
-
-    return buildJoinLinkPreview({
-      row: {
-        id: row.id,
-        role: row.role,
-        label: row.label,
-        expiresAt: row.expiresAt,
-        revokedAt: row.revokedAt,
-        useCount: row.useCount,
-        maxUses: row.maxUses,
-        organizationId: row.organization?.id ?? row.organizationId,
-        organizationName: row.organization?.name ?? "",
-        organizationSlug: row.organization?.slug ?? "",
-      },
-    });
-  }, [normalizedToken, rows]);
+  const query = useQuery({
+    queryKey: ["organization", "join-link-preview", normalizedToken],
+    queryFn: () => fetchJoinLinkPreview(normalizedToken),
+    enabled: normalizedToken.length > 0,
+  });
 
   return {
-    data,
-    error,
-    isError: Boolean(error),
-    isPending: isQueryLoading,
-    isLoading: isQueryLoading,
-    refetch: () => {
-      if (status.type === "error") {
-        status.retry();
-      }
-      return Promise.resolve();
-    },
+    data: normalizedToken ? query.data : undefined,
+    error: query.error,
+    isError: query.isError,
+    isPending: normalizedToken.length > 0 && query.isPending,
+    isLoading: normalizedToken.length > 0 && query.isLoading,
+    refetch: query.refetch,
   };
 }
 

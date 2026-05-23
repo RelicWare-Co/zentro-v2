@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { product } from "@/database/drizzle/schema/inventory.schema";
 import { serverMutators } from "@/src/zero/mutators.server";
 import { queries } from "@/src/zero/queries";
-import { type ZeroContext, schema as zeroSchema } from "@/src/zero/schema";
+import { schema as zeroSchema } from "@/src/zero/schema";
 import {
   seedCategory,
   seedCustomer,
@@ -421,13 +421,7 @@ describe("POS checkout", () => {
       const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const zeroDb = zeroDrizzle(zeroSchema, db);
-      const zeroContext = {
-        id: userId,
-        orgID: organizationId,
-        email: "test@example.com",
-        role: "owner",
-        systemRole: null,
-      } satisfies ZeroContext;
+      const zeroContext = createZeroContext(userId, organizationId);
 
       const customerId = await seedCustomer(db, {
         organizationId,

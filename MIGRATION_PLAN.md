@@ -125,7 +125,7 @@ Cada checklist se completa surface a surface. Marcar el ítem solo cuando esté 
 
 ### M3 · Flujo POS (alto riesgo, alta visibilidad)
 
-- [x] **Shifts open/close** → mutators `shifts.open/close` con validación de caja y fold de `shiftClosure`. Eliminados `server/orpc/contracts/shifts.ts` y `server/orpc/routers/shifts.ts`.
+- [x] **Shifts open/close** → mutators `shifts.open/close`; `shifts.close` corre como override server-only para calcular el fold de `shiftClosure` contra datos autoritativos, evitando lecturas optimistas incompletas. Eliminados `server/orpc/contracts/shifts.ts` y `server/orpc/routers/shifts.ts`.
 - [x] **Cash movements** → mutator `shifts.cashMovement` con shift activo y métodos de pago habilitados. Tests de validación en `tests/zero-shifts.test.ts` (turno cerrado, otro cajero, método inválido, tipo inválido, turno inexistente).
 - [x] **POS reads (catálogo, categorías, modificadores, favoritos, settings)** → queries `products.modifiers`, `products.posCatalog`, mutator `products.toggleFavorite`, hooks `use-pos-catalog.ts`. Eliminados `server/orpc/contracts/pos.ts` y `server/orpc/routers/pos.ts`. Tests VAL-POS-004/005 migrados a `tests/helpers/zero-pos.ts`.
 - [x] **Sales (create-sale)** → mutator server-only `sales.create` en `server/sales/create-sale.server.ts` (`runCreateSale`), hook `useCreateSaleMutation`, checkout POS vía Zero. Tests VAL-POS-002/003/007 migrados a `tests/helpers/zero-sales.ts`.
@@ -138,7 +138,7 @@ Cada checklist se completa surface a surface. Marcar el ítem solo cuando esté 
 
 - [x] **Credit accounts (reads + registerPayment)** → queries `credit.accounts`, `credit.transactions`, mutator server-only `credit.registerPayment` en `server/credit/register-payment.server.ts`, hooks `use-credit.ts` Zero. Eliminados `server/orpc/contracts/credit.ts` y `server/orpc/routers/credit.ts`. Tests migrados a `tests/helpers/zero-credit.ts`.
 - [x] **Dashboard overview** → agregación SQL server-side en `server/dashboard/build-overview.server.ts`; endpoint autenticado `GET /api/dashboard/overview` (no Zero sync — reporte efímero); hook `useDashboardOverview` con TanStack Query. Eliminados `server/orpc/contracts/dashboard.ts` y `server/orpc/routers/dashboard.ts`.
-- [x] **Organization (14 endpoints)** → auth parcial (`ZeroContext.orgID` nullable + `email`); queries `organization.selection/management/joinLinkPreview`; mutators server-only en `server/organization/organization-mutations.server.ts`; hooks `use-organization.ts`; tests VAL-ORG-001–013 vía `tests/helpers/zero-organization.ts`. Eliminado `server/orpc/`.
+- [x] **Organization (14 endpoints)** → auth parcial (`ZeroContext.orgID` nullable + `email` + policy sanitizada); queries Zero privadas `organization.selection/management`; preview pública por REST sanitizado `GET /api/organization/join-link-preview` para no sincronizar filas completas; mutators server-only en `server/organization/organization-mutations.server.ts`; hooks `use-organization.ts`; tests VAL-ORG-001–013 vía `tests/helpers/zero-organization.ts`. Eliminado `server/orpc/`.
 
 ### M5 · Limpieza
 

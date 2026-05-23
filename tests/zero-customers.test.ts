@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { zeroDrizzle } from "@rocicorp/zero/server/adapters/drizzle";
+import { buildOrganizationAccessPolicy } from "@/features/organization/organization-policy.shared";
 import { serverMutators } from "@/src/zero/mutators.server";
 import { queries } from "@/src/zero/queries";
 import { type ZeroContext, schema as zeroSchema } from "@/src/zero/schema";
@@ -17,6 +18,7 @@ describe("Zero customers", () => {
       email: "test@example.com",
       role: "owner",
       systemRole: null,
+      organizationPolicy: buildOrganizationAccessPolicy(),
     } satisfies ZeroContext;
 
     const customerId = crypto.randomUUID();

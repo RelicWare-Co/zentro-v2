@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { zeroDrizzle } from "@rocicorp/zero/server/adapters/drizzle";
 import { eq } from "drizzle-orm";
 import { category, product } from "@/database/drizzle/schema/inventory.schema";
+import { buildOrganizationAccessPolicy } from "@/features/organization/organization-policy.shared";
 import { serverMutators } from "@/src/zero/mutators.server";
 import { queries } from "@/src/zero/queries";
 import { type ZeroContext, schema as zeroSchema } from "@/src/zero/schema";
@@ -19,6 +20,7 @@ function createZeroContext(userId: string, organizationId: string) {
     email: "test@example.com",
     role: "owner",
     systemRole: null,
+    organizationPolicy: buildOrganizationAccessPolicy(),
   } satisfies ZeroContext;
 }
 

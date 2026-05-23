@@ -44,6 +44,7 @@ import {
   cancelInvitationArgsSchema,
   cancelSaleArgsSchema,
   closeRestaurantOrderArgsSchema,
+  closeShiftArgsSchema,
   createJoinLinkArgsSchema,
   createRestaurantAreaArgsSchema,
   createRestaurantTableArgsSchema,
@@ -58,6 +59,7 @@ import {
   registerCreditPaymentArgsSchema,
   removeMemberArgsSchema,
   revokeJoinLinkArgsSchema,
+  runCloseShiftServerMutator,
   sendRestaurantOrderToKitchenArgsSchema,
   setModuleEntitlementArgsSchema,
   mutators as sharedMutators,
@@ -613,6 +615,9 @@ export const serverMutators = defineMutators(sharedMutators, {
         );
       }
     ),
+  },
+  shifts: {
+    close: defineMutator(closeShiftArgsSchema, runCloseShiftServerMutator),
   },
 });
 

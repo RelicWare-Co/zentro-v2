@@ -1,11 +1,14 @@
 import type { z } from "zod";
+import { isOrganizationManagerRole } from "@/features/organization/access-control.shared";
+import {
+  buildOrganizationAccessPolicy,
+  type OrganizationAccessPolicy,
+} from "@/features/organization/organization-policy.shared";
 import type {
   JoinLinkPreviewSchema,
   OrganizationManagementSchema,
   OrganizationSelectionSchema,
 } from "@/schemas/organization";
-import { isOrganizationManagerRole } from "@/server/organization/access-control.shared";
-import { getOrganizationAccessPolicy } from "@/server/organization/organization-policy";
 
 export type OrganizationSelection = z.infer<typeof OrganizationSelectionSchema>;
 export type OrganizationManagement = z.infer<
@@ -169,8 +172,10 @@ export function buildJoinLinkPreview(input: {
 export function buildOrganizationSelection(input: {
   systemRole: string | null | undefined;
   invitationRows: OrganizationSelectionInvitationRow[];
+  policy?: OrganizationAccessPolicy;
 }): OrganizationSelection {
-  const policy = getOrganizationAccessPolicy({ role: input.systemRole });
+  const policy =
+    input.policy ?? buildOrganizationAccessPolicy({ role: input.systemRole });
 
   return {
     allowOrganizationCreation: policy.allowSelfServiceCreation,
@@ -194,6 +199,7 @@ export function buildOrganizationManagement(input: {
   currentUserId: string;
   currentMemberRole: string;
   systemRole: string | null | undefined;
+  policy?: OrganizationAccessPolicy;
   members: OrganizationManagementMemberRow[];
   invitations: OrganizationManagementInvitationRow[];
   joinLinks: OrganizationManagementJoinLinkRow[];
@@ -215,7 +221,8 @@ export function buildOrganizationManagement(input: {
     };
   });
 
-  const policy = getOrganizationAccessPolicy({ role: input.systemRole });
+  const policy =
+    input.policy ?? buildOrganizationAccessPolicy({ role: input.systemRole });
 
   return {
     organization: {

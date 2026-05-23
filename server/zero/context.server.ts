@@ -12,6 +12,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/database/drizzle/db";
 import { member } from "@/database/drizzle/schema";
 import { auth as authInstance } from "@/server/auth";
+import { getOrganizationAccessPolicy } from "@/server/organization/organization-policy";
 import type { ZeroContext } from "@/src/zero/context";
 
 type AuthSession = (typeof authInstance)["$Infer"]["Session"];
@@ -63,6 +64,9 @@ export async function resolveZeroAuthFromSession(
   const orgID = fullSession.session.activeOrganizationId ?? null;
   const email = normalizeEmail(fullSession.user.email);
   const systemRole = asSystemRole(fullSession.user.role);
+  const organizationPolicy = getOrganizationAccessPolicy({
+    role: fullSession.user.role,
+  });
 
   if (!orgID) {
     const ctx: ZeroContext = {
@@ -71,6 +75,7 @@ export async function resolveZeroAuthFromSession(
       email,
       role: null,
       systemRole,
+      organizationPolicy,
     };
 
     return {
@@ -100,6 +105,7 @@ export async function resolveZeroAuthFromSession(
       email,
       role: null,
       systemRole,
+      organizationPolicy,
     };
 
     return {
@@ -116,6 +122,7 @@ export async function resolveZeroAuthFromSession(
     email,
     role: asOrgRole(memberRow.role),
     systemRole,
+    organizationPolicy,
   };
 
   return {

@@ -9,11 +9,15 @@
 //
 // Never read membership, role, or org from the client args; always use `ctx`.
 
+import type { OrganizationAccessPolicy } from "@/features/organization/organization-policy.shared";
+
 export interface ZeroContext {
   /** Normalized user email for invitation lookups and selection flows. */
   email: string;
   /** better-auth user id (`session.userId`). */
   id: string;
+  /** Server-derived, sanitized organization access policy for client UI. */
+  organizationPolicy: OrganizationAccessPolicy;
   /** Active organization id from `session.activeOrganizationId`, or null when unset. */
   orgID: string | null;
   /**

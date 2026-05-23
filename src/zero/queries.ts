@@ -53,10 +53,6 @@ const restaurantTableIdArgsSchema = z.object({
   tableId: z.string().trim().optional().nullable(),
 });
 
-const joinTokenArgsSchema = z.object({
-  token: z.string().trim().min(1).max(255),
-});
-
 function normalizeLimit(limit?: number) {
   return Math.min(Math.max(limit ?? 50, 1), 100);
 }
@@ -396,12 +392,6 @@ export const queries = defineQueries({
         .related("joinLinks", (query) => query.orderBy("createdAt", "desc"))
         .limit(1);
     }),
-    joinLinkPreview: defineQuery(joinTokenArgsSchema, ({ args }) =>
-      zql.organizationJoinLink
-        .where("token", args.token)
-        .related("organization")
-        .limit(1)
-    ),
     environment: defineQuery(({ ctx }) => {
       if (!hasOrgContext(ctx)) {
         return zql.organization.where(({ cmpLit }) => cmpLit(false, "=", true));

@@ -1,6 +1,5 @@
 import type { z } from "zod";
 import {
-  buildJoinLinkPreview,
   buildOrganizationManagement,
   buildOrganizationSelection,
 } from "@/features/organization/organization.shared";
@@ -16,6 +15,7 @@ import type {
   UpdateMemberRoleSchema,
   UpdateOrganizationSchema,
 } from "@/schemas/organization";
+import { getJoinLinkPreviewByToken } from "@/server/organization/join-link-preview.server";
 import { serverMutators } from "@/src/zero/mutators.server";
 import { queries } from "@/src/zero/queries";
 import type { ZeroContext } from "@/src/zero/schema";
@@ -191,53 +191,14 @@ export async function getOrganizationManagementViaZero({
   });
 }
 
-export async function getJoinLinkPreviewViaZero({
-  zeroDb,
+export function getJoinLinkPreviewViaZero({
+  db,
   token,
 }: {
-  zeroDb: ZeroTestDb;
+  db: Parameters<typeof getJoinLinkPreviewByToken>[0]["db"];
   token: string;
 }) {
-  const rows = await zeroDb.run(
-    queries.organization.joinLinkPreview.fn({
-      args: { token },
-      ctx: undefined,
-    })
-  );
-  const row = rows[0] as
-    | {
-        id: string;
-        role: string;
-        label: string | null;
-        expiresAt: number | Date | null;
-        revokedAt: number | Date | null;
-        useCount: number;
-        maxUses: number;
-        organizationId: string;
-        organization?: {
-          id: string;
-          name: string;
-          slug: string;
-        } | null;
-      }
-    | undefined;
-
-  return buildJoinLinkPreview({
-    row: row
-      ? {
-          id: row.id,
-          role: row.role,
-          label: row.label,
-          expiresAt: row.expiresAt,
-          revokedAt: row.revokedAt,
-          useCount: row.useCount,
-          maxUses: row.maxUses,
-          organizationId: row.organization?.id ?? row.organizationId,
-          organizationName: row.organization?.name ?? "",
-          organizationSlug: row.organization?.slug ?? "",
-        }
-      : null,
-  });
+  return getJoinLinkPreviewByToken({ db, token });
 }
 
 export async function joinLinkCreateViaZero({

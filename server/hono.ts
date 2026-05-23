@@ -6,6 +6,7 @@ import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { auth } from "./auth";
 import { createDashboardApp } from "./dashboard/handler.server";
 import { dbMiddleware } from "./db-middleware";
+import { createOrganizationApp } from "./organization/handler.server";
 import { createZeroApp } from "./zero/handler.server";
 
 function getApp() {
@@ -34,6 +35,7 @@ function getApp() {
 
   app.route("/api/zero", createZeroApp());
   app.route("/api/dashboard", createDashboardApp());
+  app.route("/api/organization", createOrganizationApp());
 
   vike(app, [
     // Make database available in Context as `context.db`

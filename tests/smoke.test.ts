@@ -8,7 +8,6 @@ import {
 } from "./helpers/seed";
 import { createTestDb } from "./helpers/test-db";
 import { getJoinLinkPreviewViaZero } from "./helpers/zero-organization";
-import { createZeroTestDb } from "./helpers/zero-shifts";
 
 describe("test infrastructure smoke", () => {
   test("createTestDb returns migrated DB that can query", async () => {
@@ -53,10 +52,8 @@ describe("test infrastructure smoke", () => {
   test("getJoinLinkPreviewViaZero returns not-found for missing token", async () => {
     const { db, cleanup } = await createTestDb();
     await seedOrganizationWithMember(db);
-    const zeroDb = createZeroTestDb(db);
-
     const result = await getJoinLinkPreviewViaZero({
-      zeroDb,
+      db,
       token: "nonexistent-token",
     });
     expect(result.status).toBe("not-found");

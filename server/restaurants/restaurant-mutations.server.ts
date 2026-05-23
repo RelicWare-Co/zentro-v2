@@ -11,6 +11,7 @@ import {
   restaurantOrderItemModifier,
   restaurantTable,
 } from "@/database/drizzle/schema/restaurant.schema";
+import { isOrganizationManagerRole } from "@/features/organization/access-control.shared";
 import { getRestaurantModuleSettings } from "@/features/restaurants/restaurants.module";
 import { parseOrganizationSettingsMetadata } from "@/features/settings/settings.shared";
 import type {
@@ -28,7 +29,6 @@ import type {
   UpdateRestaurantOrderMetaInputSchema,
   UpdateRestaurantTableInputSchema,
 } from "@/schemas/restaurants";
-import { isOrganizationManagerRole } from "@/server/organization/access-control.shared";
 import { createCoreSale } from "@/server/sales/create-sale.server";
 
 export type RestaurantDbExecutor = Pick<

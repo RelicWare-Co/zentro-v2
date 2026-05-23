@@ -8,6 +8,7 @@ import {
   organizationJoinLink,
   user as userTable,
 } from "@/database/drizzle/schema/auth.schema";
+import { isOrganizationManagerRole } from "@/features/organization/access-control.shared";
 import {
   getJoinLinkErrorMessage,
   getJoinLinkStatus,
@@ -26,7 +27,6 @@ import type {
   UpdateMemberRoleSchema,
   UpdateOrganizationSchema,
 } from "@/schemas/organization";
-import { isOrganizationManagerRole } from "@/server/organization/access-control.shared";
 
 export type OrganizationDbExecutor = Pick<
   Database,

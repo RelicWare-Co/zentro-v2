@@ -180,8 +180,7 @@ describe("organization access control", () => {
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       });
 
-      const zeroDb = createZeroTestDb(db);
-      const result = await getJoinLinkPreviewViaZero({ zeroDb, token });
+      const result = await getJoinLinkPreviewViaZero({ db, token });
       expect(result.status).toBe("active");
       expect(result.canJoin).toBe(true);
       expect(result.organization).not.toBeNull();
@@ -200,8 +199,7 @@ describe("organization access control", () => {
         expiresAt: new Date(Date.now() - 1000),
       });
 
-      const zeroDb = createZeroTestDb(db);
-      const result = await getJoinLinkPreviewViaZero({ zeroDb, token });
+      const result = await getJoinLinkPreviewViaZero({ db, token });
       expect(result.status).toBe("expired");
       expect(result.canJoin).toBe(false);
 
@@ -219,8 +217,7 @@ describe("organization access control", () => {
         revokedAt: new Date(),
       });
 
-      const zeroDb = createZeroTestDb(db);
-      const result = await getJoinLinkPreviewViaZero({ zeroDb, token });
+      const result = await getJoinLinkPreviewViaZero({ db, token });
       expect(result.status).toBe("revoked");
       expect(result.canJoin).toBe(false);
 
