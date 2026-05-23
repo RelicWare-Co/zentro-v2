@@ -11,9 +11,9 @@ import type {
 import {
   buildSaleDetail,
   buildSaleFilterOptions,
-  buildSaleListItem,
-  filterSales,
-  paginateSales,
+  buildSalesListPage,
+  filterSalesByBalanceStatus,
+  normalizeSalesListLimit,
 } from "@/features/sales/sales.shared";
 import type {
   CreateSaleInputSchema,
@@ -67,46 +67,94 @@ function getQueryError(status: { type: string; error?: { message?: string } }) {
     : null;
 }
 
+function buildSalesListQueryArgs(params: SalesListParams) {
+  return {
+    limit: normalizeSalesListLimit(params.limit),
+    cursor: params.cursor ?? null,
+    status: params.status ?? null,
+    searchQuery: params.searchQuery ?? null,
+    paymentMethod: params.paymentMethod ?? null,
+    cashierId: params.cashierId ?? null,
+    terminalName: params.terminalName ?? null,
+    amountMin: params.amountMin ?? null,
+    amountMax: params.amountMax ?? null,
+    startDate: params.startDate ?? null,
+    endDate: params.endDate ?? null,
+  };
+}
+
 export function useSalesList(params: SalesListParams = {}) {
   const deferredParams = useDeferredValue(params);
-  const [saleRows, saleStatus] = useZeroQuery(queries.sales.byOrg());
+  const listQueryArgs = useMemo(
+    () => buildSalesListQueryArgs(deferredParams),
+    [deferredParams]
+  );
+  const [saleRows, saleStatus] = useZeroQuery(
+    queries.sales.list(listQueryArgs)
+  );
   const [organizationRows, organizationStatus] = useZeroQuery(
     queries.shifts.organization()
   );
-  const error = getQueryError(saleStatus) ?? getQueryError(organizationStatus);
+  const [memberRows, memberStatus] = useZeroQuery(
+    queries.sales.filterOptions()
+  );
+  const [shiftRows, shiftStatus] = useZeroQuery(
+    queries.sales.terminalOptions()
+  );
+  const error =
+    getQueryError(saleStatus) ??
+    getQueryError(organizationStatus) ??
+    getQueryError(memberStatus) ??
+    getQueryError(shiftStatus);
+
   const filteredRows = useMemo(
-    () => filterSales(saleRows as SaleWithRelations[], deferredParams),
-    [deferredParams, saleRows]
+    () =>
+      filterSalesByBalanceStatus(
+        saleRows as SaleWithRelations[],
+        deferredParams.balanceStatus
+      ),
+    [deferredParams.balanceStatus, saleRows]
   );
-  const filteredSales = useMemo(
-    () => filteredRows.map((row) => buildSaleListItem(row)),
-    [filteredRows]
-  );
+
   const paginated = useMemo(
-    () => paginateSales(filteredSales, deferredParams),
-    [deferredParams, filteredSales]
+    () => buildSalesListPage(filteredRows, listQueryArgs.limit),
+    [filteredRows, listQueryArgs.limit]
   );
+
   const filterOptions = useMemo(
     () =>
-      buildSaleFilterOptions(
-        saleRows as SaleWithRelations[],
-        typeof organizationRows[0]?.metadata === "string"
-          ? organizationRows[0]?.metadata
-          : null
-      ),
-    [organizationRows, saleRows]
+      buildSaleFilterOptions({
+        members: memberRows.map((memberRow) => ({
+          userId: memberRow.userId,
+          user: (
+            memberRow as {
+              user?: { name?: string | null } | null;
+            }
+          ).user,
+        })),
+        organizationMetadata:
+          typeof organizationRows[0]?.metadata === "string"
+            ? organizationRows[0]?.metadata
+            : null,
+        terminalNames: shiftRows
+          .map((shiftRow) => shiftRow.terminalName)
+          .filter((terminalName): terminalName is string =>
+            Boolean(terminalName)
+          ),
+      }),
+    [memberRows, organizationRows, shiftRows]
   );
 
   const hasLoadedRef = useRef(false);
   const staleDataRef = useRef<{
     data: SaleListItem[];
-    total: number;
+    total: number | null;
     hasMore: boolean;
-    nextCursor: number | null;
+    nextCursor: (typeof paginated)["nextCursor"];
     filterOptions: ReturnType<typeof buildSaleFilterOptions>;
   }>({
     data: [],
-    total: 0,
+    total: null,
     hasMore: false,
     nextCursor: null,
     filterOptions: {
@@ -117,7 +165,10 @@ export function useSalesList(params: SalesListParams = {}) {
   });
 
   const isQueryLoading =
-    (saleStatus.type === "unknown" || organizationStatus.type === "unknown") &&
+    (saleStatus.type === "unknown" ||
+      organizationStatus.type === "unknown" ||
+      memberStatus.type === "unknown" ||
+      shiftStatus.type === "unknown") &&
     saleRows.length === 0;
 
   const nextData = {
@@ -147,6 +198,12 @@ export function useSalesList(params: SalesListParams = {}) {
       }
       if (organizationStatus.type === "error") {
         organizationStatus.retry();
+      }
+      if (memberStatus.type === "error") {
+        memberStatus.retry();
+      }
+      if (shiftStatus.type === "error") {
+        shiftStatus.retry();
       }
       return Promise.resolve();
     },

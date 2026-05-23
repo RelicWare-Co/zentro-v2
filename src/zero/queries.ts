@@ -18,6 +18,11 @@ import { z } from "zod";
 // Importing `./context` registers `ZeroContext` into Zero's DefaultTypes so
 // `ctx` here is typed as `ZeroContext | undefined`.
 import "./context";
+import {
+  parseDateBoundary,
+  resolveAmountRange,
+} from "@/features/sales/sales.shared";
+import { SalesListQueryArgsSchema } from "@/schemas/sales";
 import type { ZeroContext } from "./context";
 import { zql } from "./schema";
 
@@ -43,7 +48,7 @@ const creditTransactionsArgsSchema = z.object({
 });
 
 const SHIFTS_SYNC_LIMIT = 500;
-export const SALES_SYNC_LIMIT = 1000;
+const SALES_TERMINAL_OPTIONS_LIMIT = 300;
 
 const saleByIdArgsSchema = z.object({
   saleId: z.string().trim().optional().nullable(),
@@ -129,17 +134,100 @@ function buildShiftsByOrgQuery(organizationId: string) {
     .limit(SHIFTS_SYNC_LIMIT);
 }
 
-function buildSalesByOrgQuery(organizationId: string) {
-  return zql.sale
+function normalizeSalesPageLimit(limit?: number) {
+  return Math.min(Math.max(limit ?? 50, 1), 100);
+}
+
+function buildSalesListQuery(
+  organizationId: string,
+  args: z.infer<typeof SalesListQueryArgsSchema>
+) {
+  const pageSize = normalizeSalesPageLimit(args.limit);
+  const fetchLimit = pageSize + 1;
+  const startDateMs = parseDateBoundary(args.startDate);
+  const endDateMs = parseDateBoundary(args.endDate);
+  const endDateExclusiveMs =
+    endDateMs === null ? null : endDateMs + 24 * 60 * 60 * 1000;
+  const amountRange = resolveAmountRange(args.amountMin, args.amountMax);
+  const normalizedSearch = args.searchQuery?.trim() ?? "";
+  const searchPattern = normalizedSearch ? `%${normalizedSearch}%` : "";
+  const normalizedStatus = args.status?.trim() ?? "";
+  const normalizedCashierId = args.cashierId?.trim() ?? "";
+  const normalizedTerminalName = args.terminalName?.trim() ?? "";
+  const normalizedPaymentMethod = args.paymentMethod?.trim() ?? "";
+
+  let query = zql.sale
     .where("organizationId", organizationId)
     .related("user")
     .related("customer")
     .related("shift")
     .related("payments")
-    .related("items")
-    .orderBy("createdAt", "desc")
-    .orderBy("id", "desc")
-    .limit(SALES_SYNC_LIMIT);
+    .related("items");
+
+  if (normalizedStatus) {
+    query = query.where("status", normalizedStatus);
+  }
+  if (normalizedCashierId) {
+    query = query.where("userId", normalizedCashierId);
+  }
+  if (startDateMs !== null) {
+    query = query.where("createdAt", ">=", startDateMs);
+  }
+  if (endDateExclusiveMs !== null) {
+    query = query.where("createdAt", "<", endDateExclusiveMs);
+  }
+  if (amountRange.minimum !== null) {
+    query = query.where("totalAmount", ">=", amountRange.minimum);
+  }
+  if (amountRange.maximum !== null) {
+    query = query.where("totalAmount", "<=", amountRange.maximum);
+  }
+  if (normalizedTerminalName) {
+    query = query.whereExists("shift", (shiftQuery) =>
+      shiftQuery.where("terminalName", normalizedTerminalName)
+    );
+  }
+  if (normalizedPaymentMethod) {
+    query = query.whereExists("payments", (paymentQuery) =>
+      paymentQuery.where("method", normalizedPaymentMethod)
+    );
+  }
+  if (searchPattern) {
+    query = query.where(({ cmp, or, exists }) =>
+      or(
+        cmp("id", "ILIKE", searchPattern),
+        cmp("status", "ILIKE", searchPattern),
+        exists("customer", (customerQuery) =>
+          customerQuery.where(({ cmp: customerCmp, or: customerOr }) =>
+            customerOr(
+              customerCmp("name", "ILIKE", searchPattern),
+              customerCmp("documentNumber", "ILIKE", searchPattern),
+              customerCmp("phone", "ILIKE", searchPattern)
+            )
+          )
+        ),
+        exists("user", (userQuery) =>
+          userQuery.where("name", "ILIKE", searchPattern)
+        ),
+        exists("shift", (shiftQuery) =>
+          shiftQuery.where("terminalName", "ILIKE", searchPattern)
+        )
+      )
+    );
+  }
+
+  query = query.orderBy("createdAt", "desc").orderBy("id", "desc");
+
+  const normalizedCursorId = args.cursor?.id.trim() ?? "";
+  if (args.cursor && normalizedCursorId) {
+    query = query.start({
+      createdAt: args.cursor.createdAt,
+      id: normalizedCursorId,
+      organizationId,
+    });
+  }
+
+  return query.limit(fetchLimit);
 }
 
 function buildSaleDetailQuery(saleId: string, organizationId: string) {
@@ -348,12 +436,34 @@ export const queries = defineQueries({
     }),
   },
   sales: {
-    byOrg: defineQuery(({ ctx }) => {
+    list: defineQuery(SalesListQueryArgsSchema, ({ args, ctx }) => {
       if (!hasOrgContext(ctx)) {
         return zql.sale.where(({ cmpLit }) => cmpLit(false, "=", true));
       }
 
-      return buildSalesByOrgQuery(ctx.orgID);
+      return buildSalesListQuery(ctx.orgID, args);
+    }),
+    filterOptions: defineQuery(({ ctx }) => {
+      if (!hasOrgContext(ctx)) {
+        return zql.member.where(({ cmpLit }) => cmpLit(false, "=", true));
+      }
+
+      return zql.member
+        .where("organizationId", ctx.orgID)
+        .related("user")
+        .orderBy("createdAt", "asc")
+        .orderBy("id", "asc");
+    }),
+    terminalOptions: defineQuery(({ ctx }) => {
+      if (!hasOrgContext(ctx)) {
+        return zql.shift.where(({ cmpLit }) => cmpLit(false, "=", true));
+      }
+
+      return zql.shift
+        .where("organizationId", ctx.orgID)
+        .orderBy("openedAt", "desc")
+        .orderBy("id", "desc")
+        .limit(SALES_TERMINAL_OPTIONS_LIMIT);
     }),
     byId: defineQuery(saleByIdArgsSchema, ({ args, ctx }) => {
       const normalizedSaleId = args.saleId?.trim() ?? "";

@@ -9,6 +9,7 @@ import {
   Wallet,
 } from "lucide-react";
 import {
+  useCallback,
   useDeferredValue,
   useEffect,
   useId,
@@ -52,6 +53,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { SaleListCursor } from "@/features/sales/sales.shared";
 import { useActiveShift } from "@/features/shifts/hooks/use-shifts";
 import {
   useCancelSaleMutation,
@@ -61,7 +63,7 @@ import {
 
 const DEFAULT_LIST_PARAMS = {
   limit: 10,
-  cursor: 0,
+  cursor: null,
 };
 
 const ALL_FILTER_VALUE = "all";
@@ -243,7 +245,7 @@ function useSalesListParams({
   amountMin: string;
   balanceStatus: string;
   cashierId: string;
-  cursor: number;
+  cursor: SaleListCursor | null;
   deferredSearchQuery: string;
   endDate: string;
   pageSize: number;
@@ -615,6 +617,72 @@ function SaleDetailPane({
   );
 }
 
+function buildSalesRangeLabel({
+  hasMoreResults,
+  pageIndex,
+  pageSize,
+  salesCount,
+  totalResults,
+}: {
+  hasMoreResults: boolean;
+  pageIndex: number;
+  pageSize: number;
+  salesCount: number;
+  totalResults: number | null | undefined;
+}) {
+  if (salesCount === 0) {
+    return "0-0";
+  }
+
+  const rangeStart = pageIndex * pageSize + 1;
+  const rangeEnd = pageIndex * pageSize + salesCount;
+
+  if (totalResults == null) {
+    return `${rangeStart}-${rangeEnd}${hasMoreResults ? "+" : ""}`;
+  }
+
+  return `${rangeStart}-${rangeEnd} de ${totalResults}`;
+}
+
+function useSalesListPagination(filterKey: string) {
+  const [pageIndex, setPageIndex] = useState(0);
+  const [pageCursors, setPageCursors] = useState<(SaleListCursor | null)[]>([
+    null,
+  ]);
+  const listCursor = pageCursors[pageIndex] ?? null;
+
+  const resetPagination = useCallback(() => {
+    setPageIndex(0);
+    setPageCursors([null]);
+  }, []);
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: filterKey drives pagination reset
+  useEffect(() => {
+    resetPagination();
+  }, [filterKey, resetPagination]);
+
+  const goToPreviousPage = () => {
+    setPageIndex((currentPage) => Math.max(currentPage - 1, 0));
+  };
+
+  const goToNextPage = (nextCursor: SaleListCursor) => {
+    setPageCursors((currentCursors) => {
+      const nextCursors = currentCursors.slice(0, pageIndex + 1);
+      nextCursors.push(nextCursor);
+      return nextCursors;
+    });
+    setPageIndex((currentPage) => currentPage + 1);
+  };
+
+  return {
+    goToNextPage,
+    goToPreviousPage,
+    listCursor,
+    pageIndex,
+    resetPagination,
+  };
+}
+
 export function SalesPage() {
   const salesSearchId = useId();
   const salesStatusId = useId();
@@ -641,19 +709,49 @@ export function SalesPage() {
   const [amountMax, setAmountMax] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [cursor, setCursor] = useState(0);
   const [pageSize, setPageSize] = useState(DEFAULT_LIST_PARAMS.limit);
-
-  const [isViewPending, startViewTransition] = useTransition();
   const deferredSearchQuery = useDeferredValue(searchQuery);
+  const salesFilterKey = useMemo(
+    () =>
+      JSON.stringify({
+        activeView,
+        amountMax,
+        amountMin,
+        balanceStatus,
+        cashierId,
+        deferredSearchQuery,
+        endDate,
+        pageSize,
+        paymentMethod,
+        startDate,
+        status,
+        terminalName,
+        todayDate,
+      }),
+    [
+      activeView,
+      amountMax,
+      amountMin,
+      balanceStatus,
+      cashierId,
+      deferredSearchQuery,
+      endDate,
+      pageSize,
+      paymentMethod,
+      startDate,
+      status,
+      terminalName,
+      todayDate,
+    ]
+  );
 
-  const [saleDetailState, dispatchSaleDetail] = useReducer(saleDetailReducer, {
-    isOpen: false,
-    selectedSaleId: null,
-  });
-  const { isOpen: isDetailOpen, selectedSaleId } = saleDetailState;
-  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
-  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
+  const {
+    goToNextPage,
+    goToPreviousPage,
+    listCursor,
+    pageIndex,
+    resetPagination,
+  } = useSalesListPagination(salesFilterKey);
 
   const listParams = useSalesListParams({
     activeView,
@@ -661,7 +759,7 @@ export function SalesPage() {
     amountMin,
     balanceStatus,
     cashierId,
-    cursor,
+    cursor: listCursor,
     deferredSearchQuery,
     endDate,
     pageSize,
@@ -672,6 +770,16 @@ export function SalesPage() {
     todayDate,
   });
 
+  const [isViewPending, startViewTransition] = useTransition();
+
+  const [saleDetailState, dispatchSaleDetail] = useReducer(saleDetailReducer, {
+    isOpen: false,
+    selectedSaleId: null,
+  });
+  const { isOpen: isDetailOpen, selectedSaleId } = saleDetailState;
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
+
   const salesQuery = useSalesList(listParams);
   const sales = salesQuery.data?.data ?? [];
   const salesFilterOptions = salesQuery.data?.filterOptions ?? {
@@ -679,7 +787,8 @@ export function SalesPage() {
     terminals: [],
     paymentMethods: [],
   };
-  const totalResults = salesQuery.data?.total ?? sales.length;
+  const totalResults = salesQuery.data?.total;
+  const hasMoreResults = salesQuery.data?.hasMore ?? false;
   const nextCursor = salesQuery.data?.nextCursor ?? null;
 
   const saleDetailQuery = useSaleDetail(isDetailOpen ? selectedSaleId : null);
@@ -709,8 +818,13 @@ export function SalesPage() {
     0
   );
 
-  const rangeStart = totalResults === 0 ? 0 : cursor + 1;
-  const rangeEnd = totalResults === 0 ? 0 : cursor + sales.length;
+  const rangeLabel = buildSalesRangeLabel({
+    hasMoreResults,
+    pageIndex,
+    pageSize,
+    salesCount: sales.length,
+    totalResults,
+  });
 
   const activeFilterCount = [
     searchQuery,
@@ -755,7 +869,7 @@ export function SalesPage() {
     setAmountMax("");
     setStartDate("");
     setEndDate("");
-    setCursor(0);
+    resetPagination();
   };
 
   const handleViewChange = (value: string) => {
@@ -767,7 +881,7 @@ export function SalesPage() {
     }
     startViewTransition(() => {
       setActiveView(nextView);
-      setCursor(0);
+      resetPagination();
     });
   };
 
@@ -1147,7 +1261,7 @@ export function SalesPage() {
                           <Select
                             onValueChange={(value) => {
                               setPageSize(Number(value));
-                              setCursor(0);
+                              resetPagination();
                             }}
                             value={`${pageSize}`}
                           >
@@ -1165,17 +1279,15 @@ export function SalesPage() {
                           <span>filas</span>
                         </div>
                         <div className="hidden tabular-nums sm:block">
-                          {rangeStart}-{rangeEnd} de {totalResults}
+                          {rangeLabel}
                         </div>
                       </div>
 
                       <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
                         <Button
                           className="h-8 rounded-md border-zinc-700 bg-[var(--color-carbon)] px-3 text-zinc-300 hover:bg-white/5 hover:text-white"
-                          disabled={cursor === 0}
-                          onClick={() =>
-                            setCursor(Math.max(cursor - pageSize, 0))
-                          }
+                          disabled={pageIndex === 0}
+                          onClick={goToPreviousPage}
                           size="sm"
                           variant="outline"
                         >
@@ -1186,7 +1298,7 @@ export function SalesPage() {
                           disabled={nextCursor === null}
                           onClick={() => {
                             if (nextCursor !== null) {
-                              setCursor(nextCursor);
+                              goToNextPage(nextCursor);
                             }
                           }}
                           size="sm"

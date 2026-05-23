@@ -1,0 +1,1 @@
+CREATE INDEX "sale_organizationId_createdAt_idx" ON "sale" USING btree ("organization_id","created_at");

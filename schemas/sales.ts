@@ -6,9 +6,31 @@ const SaleStatusSchema = z.enum(["completed", "credit", "cancelled"]);
 
 const SaleBalanceStatusSchema = z.enum(["with_balance", "settled"]);
 
+export const SaleListCursorSchema = z.object({
+  createdAt: z.number().int(),
+  id: z.string().trim().min(1),
+});
+
+export type SaleListCursor = z.infer<typeof SaleListCursorSchema>;
+
+export const SalesListQueryArgsSchema = z.object({
+  limit: z.number().int().min(1).max(100).optional(),
+  cursor: SaleListCursorSchema.optional().nullable(),
+  status: SaleStatusSchema.optional().nullable(),
+  searchQuery: z.string().optional().nullable(),
+  paymentMethod: z.string().optional().nullable(),
+  cashierId: z.string().optional().nullable(),
+  terminalName: z.string().optional().nullable(),
+  balanceStatus: SaleBalanceStatusSchema.optional().nullable(),
+  amountMin: z.number().int().min(0).optional().nullable(),
+  amountMax: z.number().int().min(0).optional().nullable(),
+  startDate: z.string().optional().nullable(),
+  endDate: z.string().optional().nullable(),
+});
+
 export const ListSalesInputSchema = z.object({
   limit: z.number().int().min(1).max(100).optional(),
-  cursor: z.number().int().min(0).optional(),
+  cursor: SaleListCursorSchema.optional().nullable(),
   status: SaleStatusSchema.optional().nullable(),
   searchQuery: z.string().optional().nullable(),
   paymentMethod: z.string().optional().nullable(),
@@ -53,9 +75,9 @@ const FilterOptionsSchema = z.object({
 
 export const SaleListResultSchema = z.object({
   data: SaleListItemSchema.array(),
-  total: z.number(),
+  total: z.number().nullable(),
   hasMore: z.boolean(),
-  nextCursor: z.number().nullable(),
+  nextCursor: SaleListCursorSchema.nullable(),
   filterOptions: FilterOptionsSchema,
 });
 

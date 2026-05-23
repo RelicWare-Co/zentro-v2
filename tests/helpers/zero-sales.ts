@@ -5,9 +5,9 @@ import { sale } from "@/database/drizzle/schema/sales.schema";
 import {
   buildSaleDetail,
   buildSaleFilterOptions,
-  buildSaleListItem,
-  filterSales,
-  paginateSales,
+  buildSalesListPage,
+  filterSalesByBalanceStatus,
+  normalizeSalesListLimit,
   type SalesListParams,
   type SaleWithRelations,
 } from "@/features/sales/sales.shared";
@@ -23,6 +23,22 @@ import type { createZeroTestDb } from "./zero-shifts";
 type ZeroTestDb = ReturnType<typeof createZeroTestDb>;
 type CreateSaleInput = z.infer<typeof CreateSaleInputSchema>;
 type CancelSaleInput = z.infer<typeof CancelSaleInputSchema>;
+
+function buildSalesListQueryArgs(input: SalesListParams) {
+  return {
+    limit: normalizeSalesListLimit(input.limit),
+    cursor: input.cursor ?? null,
+    status: input.status ?? null,
+    searchQuery: input.searchQuery ?? null,
+    paymentMethod: input.paymentMethod ?? null,
+    cashierId: input.cashierId ?? null,
+    terminalName: input.terminalName ?? null,
+    amountMin: input.amountMin ?? null,
+    amountMax: input.amountMax ?? null,
+    startDate: input.startDate ?? null,
+    endDate: input.endDate ?? null,
+  };
+}
 
 export async function createSaleViaZero({
   db,
@@ -88,20 +104,37 @@ export async function listSalesViaZero({
   ctx: ZeroContext;
   input?: SalesListParams;
 }) {
-  const [saleRows, organizationRows] = await Promise.all([
-    zeroDb.run(queries.sales.byOrg.fn({ args: undefined, ctx })),
-    zeroDb.run(queries.shifts.organization.fn({ args: undefined, ctx })),
-  ]);
-  const normalizedRows = saleRows as SaleWithRelations[];
-  const filteredRows = filterSales(normalizedRows, input);
-  const filteredSales = filteredRows.map((row) => buildSaleListItem(row));
-  const paginated = paginateSales(filteredSales, input);
-  const filterOptions = buildSaleFilterOptions(
-    normalizedRows,
-    typeof organizationRows[0]?.metadata === "string"
-      ? organizationRows[0]?.metadata
-      : null
+  const listQueryArgs = buildSalesListQueryArgs(input);
+  const [saleRows, organizationRows, memberRows, shiftRows] = await Promise.all(
+    [
+      zeroDb.run(queries.sales.list.fn({ args: listQueryArgs, ctx })),
+      zeroDb.run(queries.shifts.organization.fn({ args: undefined, ctx })),
+      zeroDb.run(queries.sales.filterOptions.fn({ args: undefined, ctx })),
+      zeroDb.run(queries.sales.terminalOptions.fn({ args: undefined, ctx })),
+    ]
   );
+  const filteredRows = filterSalesByBalanceStatus(
+    saleRows as SaleWithRelations[],
+    input.balanceStatus
+  );
+  const paginated = buildSalesListPage(filteredRows, listQueryArgs.limit);
+  const filterOptions = buildSaleFilterOptions({
+    members: memberRows.map((memberRow) => ({
+      userId: memberRow.userId,
+      user: (
+        memberRow as {
+          user?: { name?: string | null } | null;
+        }
+      ).user,
+    })),
+    organizationMetadata:
+      typeof organizationRows[0]?.metadata === "string"
+        ? organizationRows[0]?.metadata
+        : null,
+    terminalNames: shiftRows
+      .map((shiftRow) => shiftRow.terminalName)
+      .filter((terminalName): terminalName is string => Boolean(terminalName)),
+  });
 
   return {
     ...paginated,

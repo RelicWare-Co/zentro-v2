@@ -1,6 +1,5 @@
 import type { z } from "zod";
 import {
-  buildPaymentMethodOptions,
   comparePaymentMethodIds,
   getAllPaymentMethods,
   parseOrganizationSettingsMetadata,
@@ -8,12 +7,14 @@ import {
 import type {
   ListSalesInputSchema,
   SaleDetailSchema,
+  SaleListCursorSchema,
   SaleListResultSchema,
 } from "@/schemas/sales";
 
 export type SaleListItem = z.infer<typeof SaleListResultSchema>["data"][number];
 export type SaleDetail = z.infer<typeof SaleDetailSchema>;
 export type SalesListParams = z.infer<typeof ListSalesInputSchema>;
+export type SaleListCursor = z.infer<typeof SaleListCursorSchema>;
 
 export interface SaleWithRelations {
   createdAt: number;
@@ -379,58 +380,89 @@ export function matchesSaleFilters(
   return matchesSaleDateRange(row, startDateMs, endDateExclusiveMs);
 }
 
-export function filterSales(rows: SaleWithRelations[], input: SalesListParams) {
-  return rows.filter((row) => matchesSaleFilters(row, input));
+export function filterSalesByBalanceStatus(
+  rows: SaleWithRelations[],
+  balanceStatus: SalesListParams["balanceStatus"]
+) {
+  if (!balanceStatus) {
+    return rows;
+  }
+
+  return rows.filter((row) => matchesSaleBalanceStatus(row, balanceStatus));
 }
 
-export function paginateSales(
-  listItems: SaleListItem[],
-  input: SalesListParams
-) {
-  const limit = Math.min(Math.max(input.limit ?? 50, 1), 100);
-  const cursor = Math.max(input.cursor ?? 0, 0);
-  const pageRows = listItems.slice(cursor, cursor + limit);
-  const hasMore = cursor + limit < listItems.length;
-  const nextCursor = hasMore ? cursor + limit : null;
+export function normalizeSalesListLimit(limit?: number) {
+  return Math.min(Math.max(limit ?? 50, 1), 100);
+}
+
+export function buildSalesListPage(
+  rows: SaleWithRelations[],
+  limit: number
+): {
+  data: SaleListItem[];
+  hasMore: boolean;
+  nextCursor: SaleListCursor | null;
+  total: number | null;
+} {
+  const pageSize = normalizeSalesListLimit(limit);
+  const hasMore = rows.length > pageSize;
+  const pageRows = hasMore ? rows.slice(0, pageSize) : rows;
+  const data = pageRows.map((row) => buildSaleListItem(row));
+  const lastRow = pageRows.at(-1);
+  const nextCursor =
+    hasMore && lastRow
+      ? {
+          createdAt: toTimestamp(lastRow.createdAt) ?? 0,
+          id: lastRow.id,
+        }
+      : null;
 
   return {
-    data: pageRows,
-    total: listItems.length,
+    data,
     hasMore,
     nextCursor,
+    total: hasMore ? null : data.length,
   };
 }
 
-export function buildSaleFilterOptions(
-  rows: SaleWithRelations[],
-  organizationMetadata: string | null | undefined
-) {
+export function buildSaleFilterOptions({
+  members,
+  organizationMetadata,
+  terminalNames,
+}: {
+  members: Array<{
+    userId: string;
+    user?: { name?: string | null } | null;
+  }>;
+  organizationMetadata: string | null | undefined;
+  terminalNames: Iterable<string>;
+}) {
   const organizationSettings =
     parseOrganizationSettingsMetadata(organizationMetadata);
-  const cashierMap = new Map<string, string>();
-  const terminalNames = new Set<string>();
-  const paymentMethodIds = new Set<string>();
-
-  for (const row of rows) {
-    cashierMap.set(row.userId, row.user?.name ?? "Cajero");
-    if (row.shift?.terminalName) {
-      terminalNames.add(row.shift.terminalName);
-    }
-    for (const paymentRow of row.payments ?? []) {
-      paymentMethodIds.add(paymentRow.method);
-    }
-  }
+  const normalizedTerminalNames = [
+    ...new Set(
+      [...terminalNames].filter(
+        (terminalName): terminalName is string =>
+          typeof terminalName === "string" && terminalName.trim().length > 0
+      )
+    ),
+  ];
 
   return {
-    cashiers: [...cashierMap.entries()]
-      .map(([id, name]) => ({ id, name }))
+    cashiers: members
+      .map((memberRow) => ({
+        id: memberRow.userId,
+        name: memberRow.user?.name ?? "Cajero",
+      }))
       .toSorted((left, right) => left.name.localeCompare(right.name, "es-CO")),
-    terminals: [...terminalNames].toSorted((left, right) =>
+    terminals: normalizedTerminalNames.toSorted((left, right) =>
       left.localeCompare(right, "es-CO")
     ),
-    paymentMethods: buildPaymentMethodOptions(
-      getAllPaymentMethods(organizationSettings),
-      paymentMethodIds
-    ).toSorted((left, right) => comparePaymentMethodIds(left.id, right.id)),
+    paymentMethods: getAllPaymentMethods(organizationSettings)
+      .map((method) => ({
+        id: method.id,
+        label: method.label,
+      }))
+      .toSorted((left, right) => comparePaymentMethodIds(left.id, right.id)),
   };
 }
