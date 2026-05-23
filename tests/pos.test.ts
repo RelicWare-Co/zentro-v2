@@ -2,13 +2,10 @@ import { describe, expect, test } from "bun:test";
 import { zeroDrizzle } from "@rocicorp/zero/server/adapters/drizzle";
 import { eq } from "drizzle-orm";
 import { product } from "@/database/drizzle/schema/inventory.schema";
-import { createServerORPCClient } from "@/server/orpc/client/server";
 import { serverMutators } from "@/src/zero/mutators.server";
 import { queries } from "@/src/zero/queries";
 import { type ZeroContext, schema as zeroSchema } from "@/src/zero/schema";
-import { buildMockContext } from "./helpers/orpc-context";
 import {
-  makeUser,
   seedCategory,
   seedCustomer,
   seedOrganizationWithMember,
@@ -21,7 +18,7 @@ import {
   listPosModifiersViaZero,
   searchPosProductsViaZero,
 } from "./helpers/zero-pos";
-import { createSaleViaZero } from "./helpers/zero-sales";
+import { createSaleViaZero, getSaleDetailViaZero } from "./helpers/zero-sales";
 import {
   createZeroContext,
   createZeroTestDb,
@@ -473,9 +470,6 @@ describe("POS checkout", () => {
     test("POS end-to-end: open shift, search product, create sale, verify stock and shift link", async () => {
       const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const u = makeUser({ id: userId });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
       const zeroDb = createZeroTestDb(db);
       const zeroCtx = createZeroContext(userId, organizationId);
 
@@ -542,7 +536,11 @@ describe("POS checkout", () => {
       expect(afterStock[0].stock).toBe(48);
 
       // Verify sale detail links to shift
-      const detail = await client.sales.detail({ saleId: saleResult.saleId });
+      const detail = await getSaleDetailViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        saleId: saleResult.saleId,
+      });
       expect(detail).not.toBeNull();
       expect(detail?.shift?.id).toBe(shiftId);
       expect(detail?.items.length).toBe(1);

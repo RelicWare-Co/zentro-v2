@@ -139,12 +139,7 @@ export function useCloseRestaurantOrderMutation() {
   return useMutation({
     ...orpcQuery.restaurants.closeOrder.mutationOptions(),
     onSuccess: async () => {
-      await Promise.all([
-        invalidateRestaurantQueries(queryClient),
-        queryClient.invalidateQueries({
-          queryKey: orpcQuery.sales.list.queryOptions({ input: {} }).queryKey,
-        }),
-      ]);
+      await invalidateRestaurantQueries(queryClient);
     },
   });
 }

@@ -9,11 +9,7 @@ import {
   product,
 } from "@/database/drizzle/schema/inventory.schema";
 import { payment, sale } from "@/database/drizzle/schema/sales.schema";
-import { createServerORPCClient } from "@/server/orpc/client/server";
-import { createCoreSale } from "@/server/sales/create-sale.server";
-import { buildMockContext } from "./helpers/orpc-context";
 import {
-  makeUser,
   seedCustomer,
   seedOrganizationWithMember,
   seedProduct,
@@ -24,6 +20,11 @@ import {
   registerCreditPaymentViaZero,
   searchCreditAccountsViaZero,
 } from "./helpers/zero-credit";
+import {
+  createSaleViaZero,
+  getSaleDetailViaZero,
+  listSalesViaZero,
+} from "./helpers/zero-sales";
 import {
   closeShiftViaZero,
   createZeroContext,
@@ -40,9 +41,6 @@ describe("cross-area end-to-end flows", () => {
     test("checkout flow: open shift, add product, create sale, close shift, verify consistency", async () => {
       const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const u = makeUser({ id: userId });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
       const zeroDb = createZeroTestDb(db);
       const zeroCtx = createZeroContext(userId, organizationId);
 
@@ -72,10 +70,15 @@ describe("cross-area end-to-end flows", () => {
       expect(beforeStock[0].stock).toBe(30);
 
       // Step 3: Create sale through oRPC (with cash overpayment covering change)
-      const saleResult = await client.sales.create({
-        shiftId,
-        items: [{ productId, quantity: 2, unitPrice: 12_000 }],
-        payments: [{ method: "cash", amount: 25_000 }],
+      const saleResult = await createSaleViaZero({
+        db,
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          shiftId,
+          items: [{ productId, quantity: 2, unitPrice: 12_000 }],
+          payments: [{ method: "cash", amount: 25_000 }],
+        },
       });
 
       expect(saleResult.status).toBe("completed");
@@ -114,9 +117,13 @@ describe("cross-area end-to-end flows", () => {
       expect(paymentRows[0].shiftId).toBe(shiftId);
 
       // Step 7: Verify sale appears in sales list
-      const salesList = await client.sales.list({
-        cashierId: userId,
-        limit: 10,
+      const salesList = await listSalesViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          cashierId: userId,
+          limit: 10,
+        },
       });
       expect(salesList.data.length).toBe(1);
       expect(salesList.data[0].id).toBe(saleResult.saleId);
@@ -194,7 +201,9 @@ describe("cross-area end-to-end flows", () => {
       expect(closedShiftDetail.operations.paidSalesAmount).toBe(24_000);
 
       // Step 12: Verify sale detail still consistent
-      const saleDetail = await client.sales.detail({
+      const saleDetail = await getSaleDetailViaZero({
+        zeroDb,
+        ctx: zeroCtx,
         saleId: saleResult.saleId,
       });
       expect(saleDetail).not.toBeNull();
@@ -216,9 +225,6 @@ describe("cross-area end-to-end flows", () => {
     test("checkout flow with cash movement, card sale, and mixed payments is consistent", async () => {
       const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const u = makeUser({ id: userId });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
       const zeroDb = createZeroTestDb(db);
       const zeroCtx = createZeroContext(userId, organizationId);
 
@@ -261,18 +267,27 @@ describe("cross-area end-to-end flows", () => {
         },
       });
 
-      // Sale 1: cash payment
-      await client.sales.create({
-        shiftId,
-        items: [{ productId: productA, quantity: 1, unitPrice: 5000 }],
-        payments: [{ method: "cash", amount: 5000 }],
+      await createSaleViaZero({
+        db,
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          shiftId,
+          items: [{ productId: productA, quantity: 1, unitPrice: 5000 }],
+          payments: [{ method: "cash", amount: 5000 }],
+        },
       });
 
       // Sale 2: card payment
-      await client.sales.create({
-        shiftId,
-        items: [{ productId: productB, quantity: 2, unitPrice: 3000 }],
-        payments: [{ method: "card", amount: 6000 }],
+      await createSaleViaZero({
+        db,
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          shiftId,
+          items: [{ productId: productB, quantity: 2, unitPrice: 3000 }],
+          payments: [{ method: "card", amount: 6000 }],
+        },
       });
 
       // Verify stock
@@ -347,7 +362,11 @@ describe("cross-area end-to-end flows", () => {
       ).toBe(true);
 
       // Verify sales list shows both sales
-      const salesList = await client.sales.list({ limit: 10 });
+      const salesList = await listSalesViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: { limit: 10 },
+      });
       expect(salesList.data.length).toBe(2);
       expect(salesList.total).toBe(2);
 
@@ -359,9 +378,6 @@ describe("cross-area end-to-end flows", () => {
     test("create credit sale, register payment, verify balance reaches zero", async () => {
       const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const u = makeUser({ id: userId });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
       const zeroDb = createZeroTestDb(db);
       const zeroCtx = createZeroContext(userId, organizationId);
 
@@ -389,12 +405,17 @@ describe("cross-area end-to-end flows", () => {
       ]);
 
       // Step 3: Create credit sale (pay 5000 cash, 25000 on credit)
-      const saleResult = await client.sales.create({
-        shiftId,
-        customerId,
-        items: [{ productId, quantity: 1, unitPrice: 30_000 }],
-        payments: [{ method: "cash", amount: 5000 }],
-        isCreditSale: true,
+      const saleResult = await createSaleViaZero({
+        db,
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          shiftId,
+          customerId,
+          items: [{ productId, quantity: 1, unitPrice: 30_000 }],
+          payments: [{ method: "cash", amount: 5000 }],
+          isCreditSale: true,
+        },
       });
 
       expect(saleResult.status).toBe("credit");
@@ -566,16 +587,18 @@ describe("cross-area end-to-end flows", () => {
       ]);
 
       // Credit sale with no initial payment
-      const saleResult = await createCoreSale(
-        {
+      const saleResult = await createSaleViaZero({
+        db,
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
           shiftId,
           customerId,
           items: [{ productId, quantity: 1, unitPrice: 50_000 }],
           payments: [],
           isCreditSale: true,
         },
-        { db, organizationId, userId }
-      );
+      });
 
       expect(saleResult.status).toBe("credit");
       expect(saleResult.totalAmount).toBe(50_000);
@@ -652,27 +675,31 @@ describe("cross-area end-to-end flows", () => {
       ]);
 
       // Two credit sales (sequential to avoid SQLite BUSY on a single test DB connection)
-      const sale1 = await createCoreSale(
-        {
+      const sale1 = await createSaleViaZero({
+        db,
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
           shiftId,
           customerId,
           items: [{ productId, quantity: 1, unitPrice: 10_000 }],
           payments: [],
           isCreditSale: true,
         },
-        { db, organizationId, userId }
-      );
+      });
       expect(sale1.saleId).toBeDefined();
-      const sale2 = await createCoreSale(
-        {
+      const sale2 = await createSaleViaZero({
+        db,
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
           shiftId,
           customerId,
           items: [{ productId, quantity: 1, unitPrice: 10_000 }],
           payments: [],
           isCreditSale: true,
         },
-        { db, organizationId, userId }
-      );
+      });
 
       const accountRows = await db
         .select()

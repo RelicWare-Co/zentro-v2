@@ -11,17 +11,16 @@ import {
 } from "@/database/drizzle/schema/inventory.schema";
 import { payment } from "@/database/drizzle/schema/sales.schema";
 import { serializeOrganizationSettingsMetadata } from "@/features/settings/settings.shared";
-import { createServerORPCClient } from "@/server/orpc/client/server";
 import { createCoreSale } from "@/server/sales/create-sale.server";
-import { buildMockContext } from "./helpers/orpc-context";
 import {
-  makeUser,
   seedCustomer,
   seedOrganizationWithMember,
   seedProduct,
   seedShift,
 } from "./helpers/seed";
 import { createTestDb } from "./helpers/test-db";
+import { cancelSaleViaZero } from "./helpers/zero-sales";
+import { createZeroContext, createZeroTestDb } from "./helpers/zero-shifts";
 
 describe("sale creation transactions", () => {
   describe("VAL-SALE-001: createCoreSale decrements stock for tracked products", () => {
@@ -506,9 +505,8 @@ describe("sale creation transactions", () => {
           status: "open",
         }),
       ]);
-      const u = makeUser({ id: userId });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
 
       const saleResult = await createCoreSale(
         {
@@ -526,7 +524,11 @@ describe("sale creation transactions", () => {
         .where(eq(product.id, productId));
       expect(afterSale[0].stock).toBe(15);
 
-      await client.sales.cancel({ saleId: saleResult.saleId });
+      await cancelSaleViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: { saleId: saleResult.saleId },
+      });
 
       const afterCancel = await db
         .select({ stock: product.stock })
@@ -566,9 +568,8 @@ describe("sale creation transactions", () => {
           status: "open",
         }),
       ]);
-      const u = makeUser({ id: userId });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
 
       const saleResult = await createCoreSale(
         {
@@ -579,9 +580,17 @@ describe("sale creation transactions", () => {
         { db, organizationId, userId }
       );
 
-      await client.sales.cancel({ saleId: saleResult.saleId });
+      await cancelSaleViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: { saleId: saleResult.saleId },
+      });
       await expect(
-        client.sales.cancel({ saleId: saleResult.saleId })
+        cancelSaleViaZero({
+          zeroDb,
+          ctx: zeroCtx,
+          input: { saleId: saleResult.saleId },
+        })
       ).rejects.toThrow("La venta ya está anulada");
 
       await cleanup();
@@ -610,9 +619,8 @@ describe("sale creation transactions", () => {
           status: "open",
         }),
       ]);
-      const u = makeUser({ id: userId });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
 
       const saleResult = await createCoreSale(
         {
@@ -637,7 +645,11 @@ describe("sale creation transactions", () => {
         );
       expect(accountBefore[0].balance).toBe(25_000);
 
-      await client.sales.cancel({ saleId: saleResult.saleId });
+      await cancelSaleViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: { saleId: saleResult.saleId },
+      });
 
       const accountAfter = await db
         .select()

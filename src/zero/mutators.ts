@@ -41,7 +41,7 @@ import {
   UpdateCategorySchema,
   UpdateProductSchema,
 } from "@/schemas/products";
-import { CreateSaleInputSchema } from "@/schemas/sales";
+import { CancelSaleInputSchema, CreateSaleInputSchema } from "@/schemas/sales";
 import "./context";
 import { type Schema, type ZeroContext, zql } from "./schema";
 
@@ -100,6 +100,8 @@ export const registerCreditPaymentArgsSchema = zod.object({
 export const createSaleArgsSchema = CreateSaleInputSchema.extend({
   saleId: zod.string().trim().min(1),
 });
+
+export const cancelSaleArgsSchema = CancelSaleInputSchema;
 
 export const openShiftArgsSchema = zod.object({
   id: zod.string().trim().min(1),
@@ -708,6 +710,9 @@ export const mutators = defineMutators({
   },
   sales: {
     create: defineMutator(createSaleArgsSchema, async () => {
+      // Server-only transaction; client completes without optimistic writes.
+    }),
+    cancel: defineMutator(cancelSaleArgsSchema, async () => {
       // Server-only transaction; client completes without optimistic writes.
     }),
   },

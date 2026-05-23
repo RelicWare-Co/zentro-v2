@@ -34,12 +34,6 @@ import {
   updateOrderMeta,
   updateTable,
 } from "./restaurants";
-import {
-  cancel as cancelSale,
-  create as createSale,
-  list as listSales,
-  detail as saleDetail,
-} from "./sales";
 import { get as getSettings, update as updateSettings } from "./settings";
 
 export const router = {
@@ -68,12 +62,6 @@ export const router = {
   },
   dashboard: {
     overview: dashboardOverview,
-  },
-  sales: {
-    list: listSales,
-    detail: saleDetail,
-    create: createSale,
-    cancel: cancelSale,
   },
   restaurants: {
     bootstrap: restaurantBootstrap,

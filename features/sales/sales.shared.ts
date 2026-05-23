@@ -1,0 +1,436 @@
+import type { z } from "zod";
+import {
+  buildPaymentMethodOptions,
+  comparePaymentMethodIds,
+  getAllPaymentMethods,
+  parseOrganizationSettingsMetadata,
+} from "@/features/settings/settings.shared";
+import type {
+  ListSalesInputSchema,
+  SaleDetailSchema,
+  SaleListResultSchema,
+} from "@/schemas/sales";
+
+export type SaleListItem = z.infer<typeof SaleListResultSchema>["data"][number];
+export type SaleDetail = z.infer<typeof SaleDetailSchema>;
+export type SalesListParams = z.infer<typeof ListSalesInputSchema>;
+
+export interface SaleWithRelations {
+  createdAt: number;
+  customer?: {
+    documentNumber?: string | null;
+    documentType?: string | null;
+    id?: string;
+    name?: string | null;
+    phone?: string | null;
+  } | null;
+  customerId?: string | null;
+  discountAmount?: number | null;
+  id: string;
+  items?: Array<{
+    discountAmount?: number | null;
+    id: string;
+    modifiers?: Array<{
+      id: string;
+      modifierProduct?: { name?: string | null } | null;
+      modifierProductId: string;
+      quantity: number;
+      subtotal: number;
+      unitPrice: number;
+    }>;
+    product?: { name?: string | null } | null;
+    productId: string;
+    quantity: number;
+    subtotal: number;
+    taxAmount?: number | null;
+    taxRate?: number | null;
+    totalAmount: number;
+    unitPrice: number;
+  }>;
+  organizationId: string;
+  payments?: Array<{
+    amount: number;
+    createdAt: number;
+    creditTransactions?: Array<{
+      notes?: string | null;
+      type?: string | null;
+    }>;
+    id: string;
+    method: string;
+    reference?: string | null;
+  }>;
+  shift?: {
+    id?: string;
+    terminalName?: string | null;
+  } | null;
+  shiftId?: string | null;
+  status?: string | null;
+  subtotal?: number | null;
+  taxAmount?: number | null;
+  totalAmount: number;
+  user?: {
+    email?: string | null;
+    id?: string;
+    name?: string | null;
+  } | null;
+  userId: string;
+}
+
+export function normalizeNumber(value: number | string | null | undefined) {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : 0;
+  }
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
+}
+
+export function toTimestamp(value: Date | number | string | null | undefined) {
+  if (value == null) {
+    return null;
+  }
+  if (value instanceof Date) {
+    return value.getTime();
+  }
+  if (typeof value === "number") {
+    return value;
+  }
+  const dateValue = new Date(value);
+  return Number.isNaN(dateValue.getTime()) ? null : dateValue.getTime();
+}
+
+export function parseDateBoundary(value: string | null | undefined) {
+  if (!value) {
+    return null;
+  }
+  const parsedDate = new Date(`${value}T00:00:00`);
+  return Number.isNaN(parsedDate.getTime()) ? null : parsedDate.getTime();
+}
+
+export function resolveAmountRange(
+  minimum: number | null | undefined,
+  maximum: number | null | undefined
+) {
+  const normalizedMinimum =
+    typeof minimum === "number" && Number.isFinite(minimum) && minimum >= 0
+      ? Math.trunc(minimum)
+      : null;
+  const normalizedMaximum =
+    typeof maximum === "number" && Number.isFinite(maximum) && maximum >= 0
+      ? Math.trunc(maximum)
+      : null;
+
+  if (
+    normalizedMinimum !== null &&
+    normalizedMaximum !== null &&
+    normalizedMinimum > normalizedMaximum
+  ) {
+    return {
+      minimum: normalizedMaximum,
+      maximum: normalizedMinimum,
+    };
+  }
+
+  return {
+    minimum: normalizedMinimum,
+    maximum: normalizedMaximum,
+  };
+}
+
+function sumPaidAmount(row: SaleWithRelations) {
+  if (row.status === "cancelled") {
+    return 0;
+  }
+  return (row.payments ?? []).reduce(
+    (total, paymentRow) => total + normalizeNumber(paymentRow.amount),
+    0
+  );
+}
+
+function sumItemCount(row: SaleWithRelations) {
+  return (row.items ?? []).reduce(
+    (total, itemRow) => total + normalizeNumber(itemRow.quantity),
+    0
+  );
+}
+
+function collectPaymentMethods(row: SaleWithRelations) {
+  const methods = new Set<string>();
+  for (const paymentRow of row.payments ?? []) {
+    methods.add(paymentRow.method);
+  }
+  return [...methods];
+}
+
+export function buildSaleListItem(row: SaleWithRelations): SaleListItem {
+  const totalAmount = normalizeNumber(row.totalAmount);
+  const paidAmount = sumPaidAmount(row);
+
+  return {
+    id: row.id,
+    totalAmount,
+    status: row.status ?? "completed",
+    customerName: row.customer?.name ?? null,
+    cashierName: row.user?.name ?? null,
+    terminalName: row.shift?.terminalName ?? null,
+    createdAt: toTimestamp(row.createdAt) ?? 0,
+    itemCount: sumItemCount(row),
+    paidAmount,
+    balanceDue:
+      row.status === "cancelled" ? 0 : Math.max(totalAmount - paidAmount, 0),
+    paymentMethods: collectPaymentMethods(row),
+  };
+}
+
+function resolvePaymentKind(
+  paymentRow: NonNullable<SaleWithRelations["payments"]>[number]
+): SaleDetail["payments"][number]["kind"] {
+  const linkedCreditTransaction = (paymentRow.creditTransactions ?? []).find(
+    (transactionRow) => transactionRow.type === "payment"
+  );
+  return linkedCreditTransaction ? "debt_payment" : "sale_payment";
+}
+
+export function buildSaleDetail(row: SaleWithRelations): SaleDetail {
+  const payments = (row.payments ?? [])
+    .map((paymentRow) => ({
+      id: paymentRow.id,
+      method: paymentRow.method,
+      reference: paymentRow.reference ?? null,
+      amount: normalizeNumber(paymentRow.amount),
+      createdAt: toTimestamp(paymentRow.createdAt) ?? 0,
+      kind: resolvePaymentKind(paymentRow),
+      notes:
+        (paymentRow.creditTransactions ?? []).find(
+          (transactionRow) => transactionRow.type === "payment"
+        )?.notes ?? null,
+    }))
+    .toSorted((left, right) => {
+      if (right.createdAt !== left.createdAt) {
+        return right.createdAt - left.createdAt;
+      }
+      return right.id.localeCompare(left.id);
+    });
+
+  const paidAmount = payments.reduce(
+    (total, currentPayment) => total + currentPayment.amount,
+    0
+  );
+  const effectivePaidAmount = row.status === "cancelled" ? 0 : paidAmount;
+  const totalAmount = normalizeNumber(row.totalAmount);
+
+  return {
+    id: row.id,
+    status: row.status ?? "completed",
+    createdAt: toTimestamp(row.createdAt) ?? 0,
+    subtotal: normalizeNumber(row.subtotal),
+    taxAmount: normalizeNumber(row.taxAmount),
+    discountAmount: normalizeNumber(row.discountAmount),
+    totalAmount,
+    paidAmount: effectivePaidAmount,
+    balanceDue:
+      row.status === "cancelled"
+        ? 0
+        : Math.max(totalAmount - effectivePaidAmount, 0),
+    customer: row.customerId
+      ? {
+          id: row.customerId,
+          name: row.customer?.name ?? "Cliente",
+          phone: row.customer?.phone ?? null,
+          documentType: row.customer?.documentType ?? null,
+          documentNumber: row.customer?.documentNumber ?? null,
+        }
+      : null,
+    cashier: row.user?.id
+      ? {
+          id: row.user.id,
+          name: row.user.name ?? "Cajero",
+          email: row.user.email ?? null,
+        }
+      : null,
+    shift: row.shiftId
+      ? {
+          id: row.shiftId,
+          terminalName: row.shift?.terminalName ?? null,
+        }
+      : null,
+    payments,
+    items: (row.items ?? [])
+      .map((itemRow) => ({
+        id: itemRow.id,
+        productId: itemRow.productId,
+        name: itemRow.product?.name ?? "Producto",
+        quantity: normalizeNumber(itemRow.quantity),
+        unitPrice: normalizeNumber(itemRow.unitPrice),
+        subtotal: normalizeNumber(itemRow.subtotal),
+        taxRate: normalizeNumber(itemRow.taxRate),
+        taxAmount: normalizeNumber(itemRow.taxAmount),
+        discountAmount: normalizeNumber(itemRow.discountAmount),
+        totalAmount: normalizeNumber(itemRow.totalAmount),
+        modifiers: (itemRow.modifiers ?? []).map((modifierRow) => ({
+          id: modifierRow.id,
+          modifierProductId: modifierRow.modifierProductId,
+          name: modifierRow.modifierProduct?.name ?? "Modificador",
+          quantity: normalizeNumber(modifierRow.quantity),
+          unitPrice: normalizeNumber(modifierRow.unitPrice),
+          subtotal: normalizeNumber(modifierRow.subtotal),
+        })),
+      }))
+      .toSorted((left, right) => right.id.localeCompare(left.id)),
+  };
+}
+
+function matchesSaleSearch(row: SaleWithRelations, searchQuery: string) {
+  if (!searchQuery) {
+    return true;
+  }
+
+  const haystack = [
+    row.id,
+    row.customer?.name ?? "",
+    row.user?.name ?? "",
+    row.shift?.terminalName ?? "",
+  ]
+    .join(" ")
+    .toLowerCase();
+
+  return haystack.includes(searchQuery);
+}
+
+function matchesSaleDateRange(
+  row: SaleWithRelations,
+  startDateMs: number | null,
+  endDateExclusiveMs: number | null
+) {
+  const createdAt = toTimestamp(row.createdAt) ?? 0;
+  if (startDateMs !== null && createdAt < startDateMs) {
+    return false;
+  }
+  if (endDateExclusiveMs !== null && createdAt >= endDateExclusiveMs) {
+    return false;
+  }
+  return true;
+}
+
+function matchesSaleBalanceStatus(
+  row: SaleWithRelations,
+  balanceStatus: NonNullable<SalesListParams["balanceStatus"]>
+) {
+  const totalAmount = normalizeNumber(row.totalAmount);
+  const paidAmount = sumPaidAmount(row);
+
+  switch (balanceStatus) {
+    case "with_balance":
+      return row.status !== "cancelled" && paidAmount < totalAmount;
+    case "settled":
+      return row.status === "cancelled" || paidAmount >= totalAmount;
+    default:
+      return true;
+  }
+}
+
+export function matchesSaleFilters(
+  row: SaleWithRelations,
+  input: SalesListParams
+) {
+  const trimmedSearchQuery = input.searchQuery?.trim().toLowerCase() ?? "";
+  const startDateMs = parseDateBoundary(input.startDate);
+  const endDateMs = parseDateBoundary(input.endDate);
+  const endDateExclusiveMs =
+    endDateMs === null ? null : endDateMs + 24 * 60 * 60 * 1000;
+  const amountRange = resolveAmountRange(input.amountMin, input.amountMax);
+  const totalAmount = normalizeNumber(row.totalAmount);
+
+  if (input.status && row.status !== input.status) {
+    return false;
+  }
+  if (input.cashierId && row.userId !== input.cashierId) {
+    return false;
+  }
+  if (input.terminalName && row.shift?.terminalName !== input.terminalName) {
+    return false;
+  }
+  if (!matchesSaleSearch(row, trimmedSearchQuery)) {
+    return false;
+  }
+  if (
+    input.paymentMethod &&
+    !(row.payments ?? []).some(
+      (paymentRow) => paymentRow.method === input.paymentMethod
+    )
+  ) {
+    return false;
+  }
+  if (
+    input.balanceStatus &&
+    !matchesSaleBalanceStatus(row, input.balanceStatus)
+  ) {
+    return false;
+  }
+  if (amountRange.minimum !== null && totalAmount < amountRange.minimum) {
+    return false;
+  }
+  if (amountRange.maximum !== null && totalAmount > amountRange.maximum) {
+    return false;
+  }
+
+  return matchesSaleDateRange(row, startDateMs, endDateExclusiveMs);
+}
+
+export function filterSales(rows: SaleWithRelations[], input: SalesListParams) {
+  return rows.filter((row) => matchesSaleFilters(row, input));
+}
+
+export function paginateSales(
+  listItems: SaleListItem[],
+  input: SalesListParams
+) {
+  const limit = Math.min(Math.max(input.limit ?? 50, 1), 100);
+  const cursor = Math.max(input.cursor ?? 0, 0);
+  const pageRows = listItems.slice(cursor, cursor + limit);
+  const hasMore = cursor + limit < listItems.length;
+  const nextCursor = hasMore ? cursor + limit : null;
+
+  return {
+    data: pageRows,
+    total: listItems.length,
+    hasMore,
+    nextCursor,
+  };
+}
+
+export function buildSaleFilterOptions(
+  rows: SaleWithRelations[],
+  organizationMetadata: string | null | undefined
+) {
+  const organizationSettings =
+    parseOrganizationSettingsMetadata(organizationMetadata);
+  const cashierMap = new Map<string, string>();
+  const terminalNames = new Set<string>();
+  const paymentMethodIds = new Set<string>();
+
+  for (const row of rows) {
+    cashierMap.set(row.userId, row.user?.name ?? "Cajero");
+    if (row.shift?.terminalName) {
+      terminalNames.add(row.shift.terminalName);
+    }
+    for (const paymentRow of row.payments ?? []) {
+      paymentMethodIds.add(paymentRow.method);
+    }
+  }
+
+  return {
+    cashiers: [...cashierMap.entries()]
+      .map(([id, name]) => ({ id, name }))
+      .toSorted((left, right) => left.name.localeCompare(right.name, "es-CO")),
+    terminals: [...terminalNames].toSorted((left, right) =>
+      left.localeCompare(right, "es-CO")
+    ),
+    paymentMethods: buildPaymentMethodOptions(
+      getAllPaymentMethods(organizationSettings),
+      paymentMethodIds
+    ).toSorted((left, right) => comparePaymentMethodIds(left.id, right.id)),
+  };
+}

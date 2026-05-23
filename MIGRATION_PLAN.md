@@ -126,8 +126,11 @@ Cada checklist se completa surface a surface. Marcar el ítem solo cuando esté 
 - [x] **Shifts open/close** → mutators `shifts.open/close` con validación de caja y fold de `shiftClosure`. Eliminados `server/orpc/contracts/shifts.ts` y `server/orpc/routers/shifts.ts`.
 - [x] **Cash movements** → mutator `shifts.cashMovement` con shift activo y métodos de pago habilitados. Tests de validación en `tests/zero-shifts.test.ts` (turno cerrado, otro cajero, método inválido, tipo inválido, turno inexistente).
 - [x] **POS reads (catálogo, categorías, modificadores, favoritos, settings)** → queries `products.modifiers`, `products.posCatalog`, mutator `products.toggleFavorite`, hooks `use-pos-catalog.ts`. Eliminados `server/orpc/contracts/pos.ts` y `server/orpc/routers/pos.ts`. Tests VAL-POS-004/005 migrados a `tests/helpers/zero-pos.ts`.
-- [x] **Sales (create-sale)** → mutator server-only `sales.create` en `server/sales/create-sale.server.ts` (`runCreateSale`), hook `useCreateSaleMutation`, checkout POS vía Zero. Tests VAL-POS-002/003/007 migrados a `tests/helpers/zero-sales.ts`. List/detail/cancel pendientes en PR4.
-- [ ] Sustituir `useSalesPage` para que renderice desde Zero.
+- [x] **Sales (create-sale)** → mutator server-only `sales.create` en `server/sales/create-sale.server.ts` (`runCreateSale`), hook `useCreateSaleMutation`, checkout POS vía Zero. Tests VAL-POS-002/003/007 migrados a `tests/helpers/zero-sales.ts`.
+- [x] **Sales (list/detail/cancel)** → queries `sales.byOrg` / `sales.byId`, capa `features/sales/sales.shared.ts` (filtro/paginación en memoria sobre `SALES_SYNC_LIMIT = 1000`), mutator server-only `sales.cancel` en `server/sales/cancel-sale.server.ts`, hooks `useSalesList` / `useSaleDetail` / `useCancelSaleMutation`. Eliminados `server/orpc/contracts/sales.ts` y `server/orpc/routers/sales.ts`. Tests cross-area, `sales.test` cancel y POS detail migrados a `tests/helpers/zero-sales.ts`.
+- [x] Sustituir `useSalesPage` para que renderice desde Zero.
+
+> **Ventana de sync (sales list):** `sales.byOrg` trae como máximo `SALES_SYNC_LIMIT` (1000) ventas recientes por org; filtros, totales y paginación corren en memoria sobre ese subset (mismo trade-off que `SHIFTS_SYNC_LIMIT`). Subir el límite o mover filtros pesados al servidor si orgs grandes lo requieren. Docs Zero de referencia: clonar `https://github.com/rocicorp/zero-docs.git` en `/tmp/zero-docs`.
 
 ### M4 · Crédito y reportes
 

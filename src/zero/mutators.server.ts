@@ -1,9 +1,12 @@
 import { defineMutator, defineMutators } from "@rocicorp/zero";
 import type { CreditPaymentDbExecutor } from "@/server/credit/register-payment.server";
 import { runRegisterCreditPayment } from "@/server/credit/register-payment.server";
+import type { CancelSaleDbExecutor } from "@/server/sales/cancel-sale.server";
+import { runCancelSale } from "@/server/sales/cancel-sale.server";
 import type { CreateSaleDbExecutor } from "@/server/sales/create-sale.server";
 import { runCreateSale } from "@/server/sales/create-sale.server";
 import {
+  cancelSaleArgsSchema,
   createSaleArgsSchema,
   registerCreditPaymentArgsSchema,
   mutators as sharedMutators,
@@ -50,6 +53,23 @@ export const serverMutators = defineMutators(sharedMutators, {
 
       const drizzleTx = tx.dbTransaction.wrappedTransaction;
       await runCreateSale(drizzleTx as unknown as CreateSaleDbExecutor, args, {
+        organizationId: ctx.orgID,
+        userId: ctx.id,
+      });
+    }),
+    cancel: defineMutator(cancelSaleArgsSchema, async ({ tx, args, ctx }) => {
+      if (!ctx) {
+        throw new Error("No autorizado");
+      }
+
+      if (!("dbTransaction" in tx)) {
+        throw new Error(
+          "La anulación de ventas solo puede ejecutarse en el servidor"
+        );
+      }
+
+      const drizzleTx = tx.dbTransaction.wrappedTransaction;
+      await runCancelSale(drizzleTx as unknown as CancelSaleDbExecutor, args, {
         organizationId: ctx.orgID,
         userId: ctx.id,
       });

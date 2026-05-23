@@ -42,6 +42,11 @@ const creditTransactionsArgsSchema = z.object({
 });
 
 const SHIFTS_SYNC_LIMIT = 500;
+export const SALES_SYNC_LIMIT = 1000;
+
+const saleByIdArgsSchema = z.object({
+  saleId: z.string().trim().optional().nullable(),
+});
 
 function normalizeLimit(limit?: number) {
   return Math.min(Math.max(limit ?? 50, 1), 100);
@@ -117,6 +122,37 @@ function buildShiftsByOrgQuery(organizationId: string) {
     .orderBy("openedAt", "desc")
     .orderBy("id", "desc")
     .limit(SHIFTS_SYNC_LIMIT);
+}
+
+function buildSalesByOrgQuery(organizationId: string) {
+  return zql.sale
+    .where("organizationId", organizationId)
+    .related("user")
+    .related("customer")
+    .related("shift")
+    .related("payments")
+    .related("items")
+    .orderBy("createdAt", "desc")
+    .orderBy("id", "desc")
+    .limit(SALES_SYNC_LIMIT);
+}
+
+function buildSaleDetailQuery(saleId: string, organizationId: string) {
+  return zql.sale
+    .where("id", saleId)
+    .where("organizationId", organizationId)
+    .related("user")
+    .related("customer")
+    .related("shift")
+    .related("payments", (query) => query.related("creditTransactions"))
+    .related("items", (query) =>
+      query
+        .related("product")
+        .related("modifiers", (modifierQuery) =>
+          modifierQuery.related("modifierProduct")
+        )
+    )
+    .limit(1);
 }
 
 export const queries = defineQueries({
@@ -294,6 +330,23 @@ export const queries = defineQueries({
       }
 
       return zql.organization.where("id", ctx.orgID).limit(1);
+    }),
+  },
+  sales: {
+    byOrg: defineQuery(({ ctx }) => {
+      if (!ctx) {
+        return zql.sale.where(({ cmpLit }) => cmpLit(false, "=", true));
+      }
+
+      return buildSalesByOrgQuery(ctx.orgID);
+    }),
+    byId: defineQuery(saleByIdArgsSchema, ({ args, ctx }) => {
+      const normalizedSaleId = args.saleId?.trim() ?? "";
+      if (!(ctx && normalizedSaleId)) {
+        return zql.sale.where(({ cmpLit }) => cmpLit(false, "=", true));
+      }
+
+      return buildSaleDetailQuery(normalizedSaleId, ctx.orgID);
     }),
   },
 });
