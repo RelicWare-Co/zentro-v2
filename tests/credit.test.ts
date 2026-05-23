@@ -3,11 +3,11 @@ import { and, eq } from "drizzle-orm";
 import {
   creditAccount,
   creditTransaction,
-} from "../database/drizzle/schema/credit.schema";
-import { customer } from "../database/drizzle/schema/customer.schema";
-import { sale } from "../database/drizzle/schema/sales.schema";
-import { createServerORPCClient } from "../server/orpc/client/server";
-import { createCoreSale } from "../server/sales/create-sale.server";
+} from "@/database/drizzle/schema/credit.schema";
+import { customer } from "@/database/drizzle/schema/customer.schema";
+import { sale } from "@/database/drizzle/schema/sales.schema";
+import { createServerORPCClient } from "@/server/orpc/client/server";
+import { createCoreSale } from "@/server/sales/create-sale.server";
 import { buildMockContext } from "./helpers/orpc-context";
 import {
   makeUser,

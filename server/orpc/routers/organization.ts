@@ -1,14 +1,14 @@
 import { implement, ORPCError } from "@orpc/server";
 import { and, asc, desc, eq, gt, like, or } from "drizzle-orm";
-import type { Database } from "../../../database/drizzle/db";
+import type { Database } from "@/database/drizzle/db";
 import {
   invitation,
   member,
   organization,
   organizationJoinLink,
   user as userTable,
-} from "../../../database/drizzle/schema/auth.schema";
-import { getOrganizationAccessPolicy } from "../../organization/organization-policy";
+} from "@/database/drizzle/schema/auth.schema";
+import { getOrganizationAccessPolicy } from "@/server/organization/organization-policy";
 import type { AppContext } from "../context";
 import { organizationContract } from "../contracts/organization";
 import { authMiddleware } from "../middlewares/auth";

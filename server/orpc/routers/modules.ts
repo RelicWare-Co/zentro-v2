@@ -1,27 +1,27 @@
 import { implement, ORPCError } from "@orpc/server";
 import { and, eq, inArray } from "drizzle-orm";
-import type { dbSqlite } from "../../../database/drizzle/db";
+import type { dbSqlite } from "@/database/drizzle/db";
 import {
   member,
   organization,
   user as userTable,
-} from "../../../database/drizzle/schema/auth.schema";
-import { organizationModuleEntitlement } from "../../../database/drizzle/schema/feature.schema";
+} from "@/database/drizzle/schema/auth.schema";
+import { organizationModuleEntitlement } from "@/database/drizzle/schema/feature.schema";
 import {
   isModuleEntitled,
   type ModuleAccessState,
-} from "../../../features/modules/module-access.shared";
-import type { ModuleEntitlementStatus } from "../../../features/modules/module-definition";
+} from "@/features/modules/module-access.shared";
+import type { ModuleEntitlementStatus } from "@/features/modules/module-definition";
 import {
   getModuleDefinition,
   MODULE_KEYS,
   type ModuleKey,
-} from "../../../features/modules/module-registry";
-import { parseOrganizationSettingsMetadata } from "../../../features/settings/settings.shared";
+} from "@/features/modules/module-registry";
+import { parseOrganizationSettingsMetadata } from "@/features/settings/settings.shared";
 import {
   isOrganizationManagerRole,
   isPlatformAdminRole,
-} from "../../organization/access-control.shared";
+} from "@/server/organization/access-control.shared";
 import type { AppContext } from "../context";
 import { modulesContract } from "../contracts/modules";
 import { authMiddleware } from "../middlewares/auth";

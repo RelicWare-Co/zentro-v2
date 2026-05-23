@@ -1,7 +1,7 @@
 import { implement, ORPCError } from "@orpc/server";
 import { and, asc, eq, isNull, ne, sql } from "drizzle-orm";
-import type { dbSqlite } from "../../../database/drizzle/db";
-import { customer } from "../../../database/drizzle/schema/customer.schema";
+import type { dbSqlite } from "@/database/drizzle/db";
+import { customer } from "@/database/drizzle/schema/customer.schema";
 import type { AppContext } from "../context";
 import { customersContract } from "../contracts/customers";
 import { authMiddleware } from "../middlewares/auth";

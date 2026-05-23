@@ -13,24 +13,21 @@ import {
   sql,
 } from "drizzle-orm";
 import type { z } from "zod";
-import {
-  organization,
-  user,
-} from "../../../database/drizzle/schema/auth.schema";
+import { organization, user } from "@/database/drizzle/schema/auth.schema";
 import {
   cashMovement as cashMovementTable,
   shift,
   shiftClosure,
-} from "../../../database/drizzle/schema/pos.schema";
-import { payment, sale } from "../../../database/drizzle/schema/sales.schema";
+} from "@/database/drizzle/schema/pos.schema";
+import { payment, sale } from "@/database/drizzle/schema/sales.schema";
 import {
   buildPaymentMethodOptions,
   comparePaymentMethodIds,
   getAllPaymentMethods,
   getEnabledPaymentMethods,
   parseOrganizationSettingsMetadata,
-} from "../../../features/settings/settings.shared";
-import type { ListShiftsInputSchema } from "../../../schemas/shifts";
+} from "@/features/settings/settings.shared";
+import type { ListShiftsInputSchema } from "@/schemas/shifts";
 import type { AppContext } from "../context";
 import { shiftsContract } from "../contracts/shifts";
 import { authMiddleware } from "../middlewares/auth";

@@ -3,8 +3,8 @@ import { createClient } from "@libsql/client";
 import { eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
 import { seed } from "drizzle-seed";
-import { organization } from "../database/drizzle/schema/auth.schema";
-import { category, product } from "../database/drizzle/schema/inventory.schema";
+import { organization } from "@/database/drizzle/schema/auth.schema";
+import { category, product } from "@/database/drizzle/schema/inventory.schema";
 
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {

@@ -11,18 +11,18 @@ import {
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import type { ActiveShift } from "@/features/pos/types";
+import {
+  createPaymentMethodLabelMap,
+  formatCurrency,
+  formatPaymentMethodLabel,
+} from "@/features/pos/utils";
 import {
   formatMoneyInput,
   parseMoneyInput,
   sanitizeMoneyInput,
 } from "@/lib/utils";
-import type { ShiftCloseSummaryResultSchema } from "../../../../schemas/pos";
-import type { ActiveShift } from "../../types";
-import {
-  createPaymentMethodLabelMap,
-  formatCurrency,
-  formatPaymentMethodLabel,
-} from "../../utils";
+import type { ShiftCloseSummaryResultSchema } from "@/schemas/pos";
 
 interface CloseShiftModalProps {
   activeShift: ActiveShift | null;

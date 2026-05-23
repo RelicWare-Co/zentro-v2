@@ -1,15 +1,9 @@
 import { implement, ORPCError } from "@orpc/server";
 import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
-import type { dbSqlite } from "../../../database/drizzle/db";
-import {
-  member,
-  organization,
-} from "../../../database/drizzle/schema/auth.schema";
-import {
-  category,
-  product,
-} from "../../../database/drizzle/schema/inventory.schema";
-import { shift } from "../../../database/drizzle/schema/pos.schema";
+import type { dbSqlite } from "@/database/drizzle/db";
+import { member, organization } from "@/database/drizzle/schema/auth.schema";
+import { category, product } from "@/database/drizzle/schema/inventory.schema";
+import { shift } from "@/database/drizzle/schema/pos.schema";
 import {
   restaurantArea,
   restaurantKitchenTicket,
@@ -17,14 +11,14 @@ import {
   restaurantOrderItem,
   restaurantOrderItemModifier,
   restaurantTable,
-} from "../../../database/drizzle/schema/restaurant.schema";
-import { getRestaurantModuleSettings } from "../../../features/restaurants/restaurants.module";
+} from "@/database/drizzle/schema/restaurant.schema";
+import { getRestaurantModuleSettings } from "@/features/restaurants/restaurants.module";
 import {
   getEnabledPaymentMethods,
   parseOrganizationSettingsMetadata,
-} from "../../../features/settings/settings.shared";
-import { isOrganizationManagerRole } from "../../organization/access-control.shared";
-import { createCoreSale } from "../../sales/create-sale.server";
+} from "@/features/settings/settings.shared";
+import { isOrganizationManagerRole } from "@/server/organization/access-control.shared";
+import { createCoreSale } from "@/server/sales/create-sale.server";
 import type { AppContext } from "../context";
 import { restaurantsContract } from "../contracts/restaurants";
 import { authMiddleware } from "../middlewares/auth";

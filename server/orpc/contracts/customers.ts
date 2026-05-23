@@ -7,7 +7,7 @@ import {
   SearchCustomersResultSchema,
   SearchCustomersSchema,
   UpdateCustomerSchema,
-} from "../../../schemas/customers";
+} from "@/schemas/customers";
 
 export const customersContract = {
   search: oc

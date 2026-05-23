@@ -21,7 +21,7 @@ import {
   UpdateRestaurantOrderItemStatusInputSchema,
   UpdateRestaurantOrderMetaInputSchema,
   UpdateRestaurantTableInputSchema,
-} from "../../../schemas/restaurants";
+} from "@/schemas/restaurants";
 
 export const restaurantsContract = {
   bootstrap: oc

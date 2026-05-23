@@ -1,5 +1,5 @@
 import { createRequestLogger } from "evlog";
-import type { user } from "../../database/drizzle/schema/auth.schema";
+import type { user } from "@/database/drizzle/schema/auth.schema";
 import type { TestDb } from "./test-db";
 
 type UserRow = typeof user.$inferSelect;

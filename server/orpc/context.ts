@@ -1,6 +1,6 @@
 import { os } from "@orpc/server";
 import type { RequestLogger } from "evlog";
-import type { dbSqlite } from "../../database/drizzle/db";
+import type { dbSqlite } from "@/database/drizzle/db";
 
 export interface AppContext {
   db: ReturnType<typeof dbSqlite>;

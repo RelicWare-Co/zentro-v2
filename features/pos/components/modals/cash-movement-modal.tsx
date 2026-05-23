@@ -15,8 +15,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import type { CashMovementType } from "@/features/pos/types";
 import { formatMoneyInput, sanitizeMoneyInput } from "@/lib/utils";
-import type { CashMovementType } from "../../types";
 
 interface CashMovementModalProps {
   canRegister: boolean;

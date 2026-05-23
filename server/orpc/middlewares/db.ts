@@ -1,4 +1,4 @@
-import { dbSqlite } from "../../../database/drizzle/db";
+import { dbSqlite } from "@/database/drizzle/db";
 import { base } from "../context";
 
 export const dbMiddleware = base.middleware(({ context, next }) => {

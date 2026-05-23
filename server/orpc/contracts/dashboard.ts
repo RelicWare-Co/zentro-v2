@@ -1,5 +1,5 @@
 import { oc } from "@orpc/contract";
-import { DashboardOverviewSchema } from "../../../schemas/dashboard";
+import { DashboardOverviewSchema } from "@/schemas/dashboard";
 
 export const dashboardContract = {
   overview: oc

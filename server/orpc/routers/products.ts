@@ -1,11 +1,11 @@
 import { implement, ORPCError } from "@orpc/server";
 import { and, asc, eq, gte, isNull, sql } from "drizzle-orm";
-import type { dbSqlite } from "../../../database/drizzle/db";
+import type { dbSqlite } from "@/database/drizzle/db";
 import {
   category,
   inventoryMovement,
   product,
-} from "../../../database/drizzle/schema/inventory.schema";
+} from "@/database/drizzle/schema/inventory.schema";
 import type { AppContext } from "../context";
 import { productsContract } from "../contracts/products";
 import { authMiddleware } from "../middlewares/auth";

@@ -5,8 +5,8 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import type { z } from "zod";
+import type { RestaurantConfigurationSchema } from "@/schemas/restaurants";
 import { orpcQuery } from "@/server/orpc/client/query";
-import type { RestaurantConfigurationSchema } from "../../../schemas/restaurants";
 
 export type RestaurantConfiguration = z.infer<
   typeof RestaurantConfigurationSchema

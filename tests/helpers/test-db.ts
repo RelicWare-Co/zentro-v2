@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import { type Client, createClient } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
 // biome-ignore lint/performance/noNamespaceImport: drizzle requires all schemas as a namespace object
-import * as schema from "../../database/drizzle/schema";
+import * as schema from "@/database/drizzle/schema";
 
 export type TestDb = ReturnType<typeof drizzle<typeof schema>>;
 

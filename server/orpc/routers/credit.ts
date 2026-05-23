@@ -1,17 +1,17 @@
 import { implement, ORPCError } from "@orpc/server";
 import { and, asc, desc, eq, isNull, sql } from "drizzle-orm";
-import { organization } from "../../../database/drizzle/schema/auth.schema";
+import { organization } from "@/database/drizzle/schema/auth.schema";
 import {
   creditAccount,
   creditTransaction,
-} from "../../../database/drizzle/schema/credit.schema";
-import { customer } from "../../../database/drizzle/schema/customer.schema";
-import { shift } from "../../../database/drizzle/schema/pos.schema";
-import { payment, sale } from "../../../database/drizzle/schema/sales.schema";
+} from "@/database/drizzle/schema/credit.schema";
+import { customer } from "@/database/drizzle/schema/customer.schema";
+import { shift } from "@/database/drizzle/schema/pos.schema";
+import { payment, sale } from "@/database/drizzle/schema/sales.schema";
 import {
   getEnabledPaymentMethods,
   parseOrganizationSettingsMetadata,
-} from "../../../features/settings/settings.shared";
+} from "@/features/settings/settings.shared";
 import type { AppContext } from "../context";
 import { creditContract } from "../contracts/credit";
 import { authMiddleware } from "../middlewares/auth";

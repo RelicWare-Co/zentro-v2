@@ -1,9 +1,6 @@
 import type { z } from "zod";
-import type { SearchCustomersResultSchema } from "../../schemas/customers";
-import type {
-  PosBootstrapResultSchema,
-  PosProductSchema,
-} from "../../schemas/pos";
+import type { SearchCustomersResultSchema } from "@/schemas/customers";
+import type { PosBootstrapResultSchema, PosProductSchema } from "@/schemas/pos";
 
 // Producto retornado por la búsqueda POS
 export type Product = z.infer<typeof PosProductSchema>;

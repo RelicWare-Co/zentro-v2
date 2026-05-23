@@ -8,7 +8,7 @@ import {
   ListSalesInputSchema,
   SaleDetailSchema,
   SaleListResultSchema,
-} from "../../../schemas/sales";
+} from "@/schemas/sales";
 
 export const salesContract = {
   list: oc

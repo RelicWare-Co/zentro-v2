@@ -1,5 +1,5 @@
 import { enhance, type UniversalMiddleware } from "@universal-middleware/core";
-import { dbSqlite } from "../database/drizzle/db";
+import { dbSqlite } from "@/database/drizzle/db";
 
 declare global {
   // biome-ignore lint/style/noNamespace: third-party global namespace required by @universal-middleware/core

@@ -10,32 +10,29 @@ import {
   type SQL,
   sql,
 } from "drizzle-orm";
-import {
-  organization,
-  user,
-} from "../../../database/drizzle/schema/auth.schema";
+import { organization, user } from "@/database/drizzle/schema/auth.schema";
 import {
   creditAccount,
   creditTransaction,
-} from "../../../database/drizzle/schema/credit.schema";
-import { customer } from "../../../database/drizzle/schema/customer.schema";
+} from "@/database/drizzle/schema/credit.schema";
+import { customer } from "@/database/drizzle/schema/customer.schema";
 import {
   inventoryMovement,
   product,
-} from "../../../database/drizzle/schema/inventory.schema";
-import { shift } from "../../../database/drizzle/schema/pos.schema";
+} from "@/database/drizzle/schema/inventory.schema";
+import { shift } from "@/database/drizzle/schema/pos.schema";
 import {
   payment,
   sale,
   saleItem,
   saleItemModifier,
-} from "../../../database/drizzle/schema/sales.schema";
+} from "@/database/drizzle/schema/sales.schema";
 import {
   buildPaymentMethodOptions,
   getAllPaymentMethods,
   parseOrganizationSettingsMetadata,
-} from "../../../features/settings/settings.shared";
-import { createCoreSale } from "../../sales/create-sale.server";
+} from "@/features/settings/settings.shared";
+import { createCoreSale } from "@/server/sales/create-sale.server";
 import type { AppContext } from "../context";
 import { salesContract } from "../contracts/sales";
 import { authMiddleware } from "../middlewares/auth";

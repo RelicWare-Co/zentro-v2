@@ -6,7 +6,7 @@ import {
   RegisterCreditPaymentSchema,
   SearchCreditAccountsResultSchema,
   SearchCreditAccountsSchema,
-} from "../../../schemas/credit";
+} from "@/schemas/credit";
 
 export const creditContract = {
   searchAccounts: oc

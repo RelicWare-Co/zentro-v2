@@ -17,11 +17,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { CustomerPicker } from "@/features/pos/components/customer-picker";
+import type { PaymentMethod, PosCustomer } from "@/features/pos/types";
+import { formatCurrency } from "@/features/pos/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { formatMoneyInput, sanitizeMoneyInput } from "@/lib/utils";
-import type { PaymentMethod, PosCustomer } from "../../types";
-import { formatCurrency } from "../../utils";
-import { CustomerPicker } from "../customer-picker";
 
 interface CheckoutModalProps {
   allowCreditSales: boolean;

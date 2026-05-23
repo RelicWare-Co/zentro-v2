@@ -2,10 +2,10 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { Building2, Eye, EyeOff, Lock, Mail, User } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { usePageContext } from "vike-react/usePageContext";
-import { authClient } from "../../lib/auth-client";
-import { formatOrganizationRoleLabel } from "../../lib/organization-shared";
-import { queryClient } from "../../lib/query-client";
-import { orpcQuery } from "../../server/orpc/client/query";
+import { authClient } from "@/lib/auth-client";
+import { formatOrganizationRoleLabel } from "@/lib/organization-shared";
+import { queryClient } from "@/lib/query-client";
+import { orpcQuery } from "@/server/orpc/client/query";
 
 function useJoinToken() {
   if (typeof window !== "undefined") {

@@ -4,17 +4,14 @@ import {
   organization,
   organizationJoinLink,
   user,
-} from "../../database/drizzle/schema/auth.schema";
-import { customer } from "../../database/drizzle/schema/customer.schema";
-import {
-  category,
-  product,
-} from "../../database/drizzle/schema/inventory.schema";
-import { shift } from "../../database/drizzle/schema/pos.schema";
+} from "@/database/drizzle/schema/auth.schema";
+import { customer } from "@/database/drizzle/schema/customer.schema";
+import { category, product } from "@/database/drizzle/schema/inventory.schema";
+import { shift } from "@/database/drizzle/schema/pos.schema";
 import {
   restaurantArea,
   restaurantTable,
-} from "../../database/drizzle/schema/restaurant.schema";
+} from "@/database/drizzle/schema/restaurant.schema";
 import type { TestDb } from "./test-db";
 
 export function makeUser(overrides?: Partial<typeof user.$inferInsert>) {

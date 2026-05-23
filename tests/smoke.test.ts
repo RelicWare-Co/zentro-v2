@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { createServerORPCClient } from "../server/orpc/client/server";
+import { createServerORPCClient } from "@/server/orpc/client/server";
 import { buildMockContext } from "./helpers/orpc-context";
 import {
   seedCategory,

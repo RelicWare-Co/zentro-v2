@@ -2,7 +2,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { admin } from "better-auth/plugins/admin";
 import { organization } from "better-auth/plugins/organization";
-import { dbSqlite } from "../database/drizzle/db";
+import { dbSqlite } from "@/database/drizzle/db";
 
 function createAuth() {
   return betterAuth({

@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { and, eq } from "drizzle-orm";
-import { member, organization } from "../database/drizzle/schema/auth.schema";
-import { createServerORPCClient } from "../server/orpc/client/server";
+import { member, organization } from "@/database/drizzle/schema/auth.schema";
+import { createServerORPCClient } from "@/server/orpc/client/server";
 import { buildMockContext } from "./helpers/orpc-context";
 import {
   makeUser,

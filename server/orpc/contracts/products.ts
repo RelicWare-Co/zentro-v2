@@ -13,7 +13,7 @@ import {
   SuccessResultSchema,
   UpdateCategorySchema,
   UpdateProductSchema,
-} from "../../../schemas/products";
+} from "@/schemas/products";
 
 export const productsContract = {
   list: oc

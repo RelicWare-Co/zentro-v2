@@ -1,35 +1,35 @@
 import { implement, ORPCError } from "@orpc/server";
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
-import type { dbSqlite } from "../../../database/drizzle/db";
+import type { dbSqlite } from "@/database/drizzle/db";
 import {
   invitation,
   member,
   organization,
   user as userTable,
-} from "../../../database/drizzle/schema/auth.schema";
-import { customer } from "../../../database/drizzle/schema/customer.schema";
-import { organizationModuleEntitlement } from "../../../database/drizzle/schema/feature.schema";
-import { product } from "../../../database/drizzle/schema/inventory.schema";
+} from "@/database/drizzle/schema/auth.schema";
+import { customer } from "@/database/drizzle/schema/customer.schema";
+import { organizationModuleEntitlement } from "@/database/drizzle/schema/feature.schema";
+import { product } from "@/database/drizzle/schema/inventory.schema";
 import {
   isModuleEntitled,
   type ModuleAccessState,
-} from "../../../features/modules/module-access.shared";
-import type { ModuleEntitlementStatus } from "../../../features/modules/module-definition";
+} from "@/features/modules/module-access.shared";
+import type { ModuleEntitlementStatus } from "@/features/modules/module-definition";
 import {
   getModuleDefinition,
   MODULE_KEYS,
   type ModuleKey,
-} from "../../../features/modules/module-registry";
-import { getRestaurantModuleToggleSettings } from "../../../features/restaurants/restaurants.module";
+} from "@/features/modules/module-registry";
+import { getRestaurantModuleToggleSettings } from "@/features/restaurants/restaurants.module";
 import {
   normalizeOrganizationSettings,
   parseOrganizationSettingsMetadata,
   serializeOrganizationSettingsMetadata,
-} from "../../../features/settings/settings.shared";
+} from "@/features/settings/settings.shared";
 import {
   isOrganizationManagerRole,
   isPlatformAdminRole,
-} from "../../organization/access-control.shared";
+} from "@/server/organization/access-control.shared";
 import type { AppContext } from "../context";
 import { settingsContract } from "../contracts/settings";
 import { authMiddleware } from "../middlewares/auth";

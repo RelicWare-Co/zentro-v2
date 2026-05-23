@@ -3,7 +3,7 @@ import {
   SettingsDataSchema,
   UpdateSettingsResultSchema,
   UpdateSettingsSchema,
-} from "../../../schemas/settings";
+} from "@/schemas/settings";
 
 export const settingsContract = {
   get: oc

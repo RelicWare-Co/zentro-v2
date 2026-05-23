@@ -1,29 +1,29 @@
 import { ORPCError } from "@orpc/server";
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import type { z } from "zod";
-import type { dbSqlite } from "../../database/drizzle/db";
-import { organization } from "../../database/drizzle/schema/auth.schema";
+import type { dbSqlite } from "@/database/drizzle/db";
+import { organization } from "@/database/drizzle/schema/auth.schema";
 import {
   creditAccount,
   creditTransaction,
-} from "../../database/drizzle/schema/credit.schema";
-import { customer } from "../../database/drizzle/schema/customer.schema";
+} from "@/database/drizzle/schema/credit.schema";
+import { customer } from "@/database/drizzle/schema/customer.schema";
 import {
   inventoryMovement,
   product,
-} from "../../database/drizzle/schema/inventory.schema";
-import { shift } from "../../database/drizzle/schema/pos.schema";
+} from "@/database/drizzle/schema/inventory.schema";
+import { shift } from "@/database/drizzle/schema/pos.schema";
 import {
   payment,
   sale,
   saleItem,
   saleItemModifier,
-} from "../../database/drizzle/schema/sales.schema";
+} from "@/database/drizzle/schema/sales.schema";
 import {
   getEnabledPaymentMethods,
   parseOrganizationSettingsMetadata,
-} from "../../features/settings/settings.shared";
-import type { CreateSaleInputSchema } from "../../schemas/sales";
+} from "@/features/settings/settings.shared";
+import type { CreateSaleInputSchema } from "@/schemas/sales";
 
 function normalizeOptionalString(value?: string | null) {
   if (value == null) {

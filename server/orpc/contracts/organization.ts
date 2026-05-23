@@ -20,7 +20,7 @@ import {
   UpdateMemberRoleSchema,
   UpdateOrganizationResultSchema,
   UpdateOrganizationSchema,
-} from "../../../schemas/organization";
+} from "@/schemas/organization";
 
 export const organizationContract = {
   joinLinkPreview: oc

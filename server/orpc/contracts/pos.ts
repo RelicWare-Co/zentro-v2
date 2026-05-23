@@ -5,7 +5,7 @@ import {
   SearchPosProductsResultSchema,
   ToggleProductFavoriteInputSchema,
   ToggleProductFavoriteResultSchema,
-} from "../../../schemas/pos";
+} from "@/schemas/pos";
 
 export const posContract = {
   bootstrap: oc

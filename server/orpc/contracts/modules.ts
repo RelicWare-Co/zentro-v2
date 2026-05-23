@@ -3,7 +3,7 @@ import {
   ModuleAccessStateSchema,
   OrganizationCapabilitiesSchema,
   SetModuleEntitlementSchema,
-} from "../../../schemas/modules";
+} from "@/schemas/modules";
 
 export const modulesContract = {
   capabilities: oc

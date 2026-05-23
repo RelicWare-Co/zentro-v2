@@ -1,14 +1,14 @@
 import { describe, expect, test } from "bun:test";
 import { eq } from "drizzle-orm";
-import { organization } from "../database/drizzle/schema/auth.schema";
+import { organization } from "@/database/drizzle/schema/auth.schema";
 import {
   restaurantKitchenTicket,
   restaurantOrder,
   restaurantOrderItem,
-} from "../database/drizzle/schema/restaurant.schema";
-import { sale } from "../database/drizzle/schema/sales.schema";
-import { serializeOrganizationSettingsMetadata } from "../features/settings/settings.shared";
-import { createServerORPCClient } from "../server/orpc/client/server";
+} from "@/database/drizzle/schema/restaurant.schema";
+import { sale } from "@/database/drizzle/schema/sales.schema";
+import { serializeOrganizationSettingsMetadata } from "@/features/settings/settings.shared";
+import { createServerORPCClient } from "@/server/orpc/client/server";
 import { buildMockContext } from "./helpers/orpc-context";
 import {
   makeUser,

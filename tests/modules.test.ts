@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import { eq } from "drizzle-orm";
-import { organization } from "../database/drizzle/schema/auth.schema";
-import { serializeOrganizationSettingsMetadata } from "../features/settings/settings.shared";
-import { createServerORPCClient } from "../server/orpc/client/server";
+import { organization } from "@/database/drizzle/schema/auth.schema";
+import { serializeOrganizationSettingsMetadata } from "@/features/settings/settings.shared";
+import { createServerORPCClient } from "@/server/orpc/client/server";
 import { buildMockContext } from "./helpers/orpc-context";
 import { makeUser, seedOrganizationWithMember } from "./helpers/seed";
 import { createTestDb } from "./helpers/test-db";

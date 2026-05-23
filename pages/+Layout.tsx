@@ -2,7 +2,7 @@ import "./tailwind.css";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { usePageContext } from "vike-react/usePageContext";
 import { AppLayout } from "@/components/app-layout";
-import { queryClient } from "../lib/query-client";
+import { queryClient } from "@/lib/query-client";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const pageContext = usePageContext();

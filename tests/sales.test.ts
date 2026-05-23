@@ -1,18 +1,18 @@
 import { describe, expect, test } from "bun:test";
 import { and, eq } from "drizzle-orm";
-import { organization } from "../database/drizzle/schema/auth.schema";
+import { organization } from "@/database/drizzle/schema/auth.schema";
 import {
   creditAccount,
   creditTransaction,
-} from "../database/drizzle/schema/credit.schema";
+} from "@/database/drizzle/schema/credit.schema";
 import {
   inventoryMovement,
   product,
-} from "../database/drizzle/schema/inventory.schema";
-import { payment } from "../database/drizzle/schema/sales.schema";
-import { serializeOrganizationSettingsMetadata } from "../features/settings/settings.shared";
-import { createServerORPCClient } from "../server/orpc/client/server";
-import { createCoreSale } from "../server/sales/create-sale.server";
+} from "@/database/drizzle/schema/inventory.schema";
+import { payment } from "@/database/drizzle/schema/sales.schema";
+import { serializeOrganizationSettingsMetadata } from "@/features/settings/settings.shared";
+import { createServerORPCClient } from "@/server/orpc/client/server";
+import { createCoreSale } from "@/server/sales/create-sale.server";
 import { buildMockContext } from "./helpers/orpc-context";
 import {
   makeUser,

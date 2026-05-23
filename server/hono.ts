@@ -3,7 +3,7 @@ import { parseError } from "evlog";
 import { type EvlogVariables, evlog } from "evlog/hono";
 import { Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
-import { dbSqlite } from "../database/drizzle/db";
+import { dbSqlite } from "@/database/drizzle/db";
 import { auth } from "./auth";
 import { dbMiddleware } from "./db-middleware";
 import { orpcHandler } from "./orpc/handler";

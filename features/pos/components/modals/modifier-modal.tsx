@@ -7,8 +7,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import type { Product } from "../../types";
-import { formatCurrency } from "../../utils";
+import type { Product } from "@/features/pos/types";
+import { formatCurrency } from "@/features/pos/utils";
 
 interface ModifierModalProps {
   isOpen: boolean;

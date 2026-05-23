@@ -1,24 +1,21 @@
 import { implement } from "@orpc/server";
 import { and, asc, desc, eq, gt, isNull, ne, or, sql } from "drizzle-orm";
-import { organization } from "../../../database/drizzle/schema/auth.schema";
-import { creditAccount } from "../../../database/drizzle/schema/credit.schema";
-import { customer } from "../../../database/drizzle/schema/customer.schema";
-import {
-  category,
-  product,
-} from "../../../database/drizzle/schema/inventory.schema";
-import { shift } from "../../../database/drizzle/schema/pos.schema";
+import { organization } from "@/database/drizzle/schema/auth.schema";
+import { creditAccount } from "@/database/drizzle/schema/credit.schema";
+import { customer } from "@/database/drizzle/schema/customer.schema";
+import { category, product } from "@/database/drizzle/schema/inventory.schema";
+import { shift } from "@/database/drizzle/schema/pos.schema";
 import {
   payment,
   sale,
   saleItem,
-} from "../../../database/drizzle/schema/sales.schema";
+} from "@/database/drizzle/schema/sales.schema";
 import {
   buildPaymentMethodLabelMap,
   buildPaymentMethodOptions,
   getAllPaymentMethods,
   parseOrganizationSettingsMetadata,
-} from "../../../features/settings/settings.shared";
+} from "@/features/settings/settings.shared";
 import type { AppContext } from "../context";
 import { dashboardContract } from "../contracts/dashboard";
 import { authMiddleware } from "../middlewares/auth";

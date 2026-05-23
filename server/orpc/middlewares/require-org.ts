@@ -1,5 +1,5 @@
 import { ORPCError, os } from "@orpc/server";
-import type { auth } from "../../auth";
+import type { auth } from "@/server/auth";
 
 type AuthInstance = typeof auth;
 type AuthSession = AuthInstance["$Infer"]["Session"];

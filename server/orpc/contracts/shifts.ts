@@ -8,14 +8,14 @@ import {
   RegisterCashMovementResultSchema,
   ShiftCloseSummaryInputSchema,
   ShiftCloseSummaryResultSchema,
-} from "../../../schemas/pos";
+} from "@/schemas/pos";
 import {
   ActiveShiftResultSchema,
   GetShiftByIdInputSchema,
   ListShiftsInputSchema,
   ListShiftsResultSchema,
   ShiftDetailSchema,
-} from "../../../schemas/shifts";
+} from "@/schemas/shifts";
 
 export const shiftsContract = {
   list: oc

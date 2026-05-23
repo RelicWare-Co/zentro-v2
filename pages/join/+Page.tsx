@@ -1,10 +1,10 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { ArrowRight, Building2, Loader2, LogOut } from "lucide-react";
 import { useState } from "react";
-import { authClient } from "../../lib/auth-client";
-import { formatOrganizationRoleLabel } from "../../lib/organization-shared";
-import { queryClient } from "../../lib/query-client";
-import { orpcQuery } from "../../server/orpc/client/query";
+import { authClient } from "@/lib/auth-client";
+import { formatOrganizationRoleLabel } from "@/lib/organization-shared";
+import { queryClient } from "@/lib/query-client";
+import { orpcQuery } from "@/server/orpc/client/query";
 
 function useJoinToken() {
   if (typeof window !== "undefined") {
