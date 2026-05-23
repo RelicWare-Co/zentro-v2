@@ -1,8 +1,8 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { drizzle } from "drizzle-orm/node-postgres";
-import { migrate } from "drizzle-orm/node-postgres/migrator";
-import { Pool } from "pg";
+import { drizzle } from "drizzle-orm/postgres-js";
+import { migrate } from "drizzle-orm/postgres-js/migrator";
+import postgres from "postgres";
 
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
@@ -21,13 +21,10 @@ console.log("[INFO] Running database migrations...");
 console.log(`[INFO] Database URL: ${databaseUrl}`);
 console.log(`[INFO] Migrations folder: ${migrationsFolder}`);
 
-const pool = new Pool({
-  connectionString: databaseUrl,
-});
-
-const db = drizzle(pool);
+const client = postgres(databaseUrl, { max: 1 });
+const db = drizzle(client);
 await migrate(db, { migrationsFolder });
 
 console.log("[SUCCESS] Database migrations completed.");
 
-await pool.end();
+await client.end();

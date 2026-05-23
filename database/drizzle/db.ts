@@ -1,5 +1,5 @@
-import { drizzle } from "drizzle-orm/node-postgres";
-import { Pool } from "pg";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
 // biome-ignore lint/performance/noNamespaceImport: drizzle requires all schemas as a namespace object
 import * as schema from "./schema";
 
@@ -9,11 +9,9 @@ function createDb() {
     throw new Error("DATABASE_URL environment variable is not set");
   }
 
-  const pool = new Pool({
-    connectionString: databaseUrl,
-  });
+  const client = postgres(databaseUrl);
 
-  return drizzle(pool, { schema });
+  return drizzle(client, { schema });
 }
 
 export type Database = ReturnType<typeof createDb>;
