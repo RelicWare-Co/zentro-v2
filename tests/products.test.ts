@@ -16,6 +16,7 @@ function createZeroContext(userId: string, organizationId: string) {
   return {
     id: userId,
     orgID: organizationId,
+    email: "test@example.com",
     role: "owner",
     systemRole: null,
   } satisfies ZeroContext;

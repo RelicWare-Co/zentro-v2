@@ -1,4 +1,3 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   AlertTriangle,
   Building2,
@@ -57,6 +56,18 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  useCancelInvitationMutation,
+  useCreateJoinLinkMutation,
+  useDeleteOrganizationMutation,
+  useInviteMemberMutation,
+  useLeaveOrganizationMutation,
+  useOrganizationManagement,
+  useRemoveMemberMutation,
+  useRevokeJoinLinkMutation,
+  useUpdateMemberRoleMutation,
+  useUpdateOrganizationMutation,
+} from "@/features/organization/hooks/use-organization";
 import { authClient } from "@/lib/auth-client";
 import {
   formatJoinLinkStatusLabel,
@@ -66,7 +77,6 @@ import {
   type OrganizationJoinLinkStatus,
 } from "@/lib/organization-shared";
 import type { OrganizationManagementSchema } from "@/schemas/organization";
-import { orpcQuery } from "@/server/orpc/client/query";
 
 type OrganizationManagementData = z.infer<typeof OrganizationManagementSchema>;
 
@@ -99,10 +109,7 @@ const ROLE_OPTIONS = [
 export function OrganizationManagement() {
   const { data: activeOrganization, isPending: isActiveOrgPending } =
     authClient.useActiveOrganization();
-  const managementQuery = useQuery({
-    ...orpcQuery.organization.management.queryOptions(),
-    enabled: Boolean(activeOrganization),
-  });
+  const managementQuery = useOrganizationManagement();
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
   const [feedbackType, setFeedbackType] = useState<"success" | "error">(
     "success"
@@ -329,12 +336,8 @@ function GeneralTab({
   const [editSlug, setEditSlug] = useState(data.organization.slug);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-  const updateMutation = useMutation(
-    orpcQuery.organization.updateOrganization.mutationOptions()
-  );
-  const deleteMutation = useMutation(
-    orpcQuery.organization.deleteOrganization.mutationOptions()
-  );
+  const updateMutation = useUpdateOrganizationMutation();
+  const deleteMutation = useDeleteOrganizationMutation();
 
   const isOwner = parseRoleList(data.viewer.role).includes("owner");
 
@@ -595,12 +598,8 @@ function MembersTab({
     name: string;
   } | null>(null);
 
-  const updateRoleMutation = useMutation(
-    orpcQuery.organization.updateMemberRole.mutationOptions()
-  );
-  const removeMutation = useMutation(
-    orpcQuery.organization.removeMember.mutationOptions()
-  );
+  const updateRoleMutation = useUpdateMemberRoleMutation();
+  const removeMutation = useRemoveMemberMutation();
 
   const startEditRole = (memberId: string, currentRole: string) => {
     setEditingMemberId(memberId);
@@ -845,12 +844,8 @@ function InvitationsTab({
   const [inviteRole, setInviteRole] = useState("member");
   const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
 
-  const inviteMutation = useMutation(
-    orpcQuery.organization.inviteMember.mutationOptions()
-  );
-  const cancelMutation = useMutation(
-    orpcQuery.organization.cancelInvitation.mutationOptions()
-  );
+  const inviteMutation = useInviteMemberMutation();
+  const cancelMutation = useCancelInvitationMutation();
 
   const handleInvite = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -1080,15 +1075,9 @@ function AccessTab({
   const [expiresInDays, setExpiresInDays] = useState("7");
   const [latestJoinUrl, setLatestJoinUrl] = useState<string | null>(null);
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
-  const createJoinLinkMutation = useMutation(
-    orpcQuery.organization.joinLinkCreate.mutationOptions()
-  );
-  const revokeJoinLinkMutation = useMutation(
-    orpcQuery.organization.joinLinkRevoke.mutationOptions()
-  );
-  const leaveMutation = useMutation(
-    orpcQuery.organization.leaveOrganization.mutationOptions()
-  );
+  const createJoinLinkMutation = useCreateJoinLinkMutation();
+  const revokeJoinLinkMutation = useRevokeJoinLinkMutation();
+  const leaveMutation = useLeaveOrganizationMutation();
 
   const createJoinUrl = (joinPath: string) =>
     new URL(joinPath, window.location.origin).toString();

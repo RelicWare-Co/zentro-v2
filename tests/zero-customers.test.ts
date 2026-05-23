@@ -14,6 +14,7 @@ describe("Zero customers", () => {
     const ctx = {
       id: userId,
       orgID: organizationId,
+      email: "test@example.com",
       role: "owner",
       systemRole: null,
     } satisfies ZeroContext;

@@ -4,9 +4,9 @@
 // pass the resulting context to `handleQueryRequest`/`handleMutateRequest`
 // — never accept identity from the client payload.
 //
-// Returns `null` when the request has no valid better-auth session, no active
-// organization, or no current membership row for that organization (the (app)
-// routes are guarded elsewhere; Zero clients are only mounted there).
+// Returns `null` when the request has no valid better-auth session.
+// Authenticated users without an active organization receive partial context
+// (`orgID: null`) so org-selection and join-link flows can use Zero.
 
 import { and, eq } from "drizzle-orm";
 import { db } from "@/database/drizzle/db";
@@ -42,14 +42,16 @@ function asSystemRole(
   return role === "admin" ? "admin" : null;
 }
 
+function normalizeEmail(email: string) {
+  return email.trim().toLowerCase();
+}
+
 /**
  * Resolve the better-auth session for an incoming request and project it
- * into a Zero auth bundle. Returns `null` if the user is not authenticated,
- * has no active organization, or is no longer a member of that organization.
+ * into a Zero auth bundle. Returns `null` if the user is not authenticated.
  *
- * The active member's role is read directly from Drizzle (not via the
- * better-auth REST surface) because we already have a connection and it's
- * one indexed lookup vs an extra round-trip through the auth router.
+ * When the user has no active organization, returns partial context with
+ * `orgID: null` so selection and join-link redeem flows can still use Zero.
  */
 export async function resolveZeroAuthFromSession(
   fullSession: ResolvedAuthSession
@@ -58,11 +60,25 @@ export async function resolveZeroAuthFromSession(
     return null;
   }
 
-  const orgID = fullSession.session.activeOrganizationId;
+  const orgID = fullSession.session.activeOrganizationId ?? null;
+  const email = normalizeEmail(fullSession.user.email);
+  const systemRole = asSystemRole(fullSession.user.role);
+
   if (!orgID) {
-    // No active org → no Zero context. Surface this to the client as a
-    // logged-out request so it sees an empty result set instead of an error.
-    return null;
+    const ctx: ZeroContext = {
+      id: fullSession.user.id,
+      orgID: null,
+      email,
+      role: null,
+      systemRole,
+    };
+
+    return {
+      userID: fullSession.user.id,
+      ctx,
+      session: fullSession.session,
+      user: fullSession.user,
+    };
   }
 
   const [memberRow] = await db
@@ -77,16 +93,29 @@ export async function resolveZeroAuthFromSession(
     .limit(1);
 
   if (!memberRow) {
-    // A stale activeOrganizationId is not authorization. If the user has been
-    // removed from the org, Zero must behave as logged out for that org.
-    return null;
+    // Stale activeOrganizationId — treat as partial auth without org.
+    const ctx: ZeroContext = {
+      id: fullSession.user.id,
+      orgID: null,
+      email,
+      role: null,
+      systemRole,
+    };
+
+    return {
+      userID: fullSession.user.id,
+      ctx,
+      session: fullSession.session,
+      user: fullSession.user,
+    };
   }
 
   const ctx: ZeroContext = {
     id: fullSession.user.id,
     orgID,
+    email,
     role: asOrgRole(memberRow.role),
-    systemRole: asSystemRole(fullSession.user.role),
+    systemRole,
   };
 
   return {

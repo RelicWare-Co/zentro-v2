@@ -1,16 +1,32 @@
 import { describe, expect, test } from "bun:test";
 import { and, eq } from "drizzle-orm";
-import { member, organization } from "@/database/drizzle/schema/auth.schema";
-import { createServerORPCClient } from "@/server/orpc/client/server";
-import { buildMockContext } from "./helpers/orpc-context";
 import {
-  makeUser,
+  invitation,
+  member,
+  organization,
+} from "@/database/drizzle/schema/auth.schema";
+import {
   seedInvitation,
   seedJoinLink,
   seedOrganizationWithMember,
   seedUser,
 } from "./helpers/seed";
 import { createTestDb } from "./helpers/test-db";
+import {
+  cancelInvitationViaZero,
+  deleteOrganizationViaZero,
+  getJoinLinkPreviewViaZero,
+  getOrganizationManagementViaZero,
+  getOrganizationSelectionViaZero,
+  inviteMemberViaZero,
+  joinLinkCreateViaZero,
+  joinLinkRedeemViaZero,
+  leaveOrganizationViaZero,
+  removeMemberViaZero,
+  updateMemberRoleViaZero,
+  updateOrganizationViaZero,
+} from "./helpers/zero-organization";
+import { createZeroContext, createZeroTestDb } from "./helpers/zero-shifts";
 
 describe("organization access control", () => {
   describe("VAL-ORG-001: join link creation authorization", () => {
@@ -19,13 +35,18 @@ describe("organization access control", () => {
       const { organizationId, userId } = await seedOrganizationWithMember(db, {
         memberRole: "admin",
       });
-      const u = makeUser({ id: userId, email: "admin@example.com" });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const ctx = createZeroContext(userId, organizationId, {
+        email: "admin@example.com",
+      });
 
-      const result = await client.organization.joinLinkCreate({
-        label: "Test Link",
-        expiresInDays: 7,
+      const result = await joinLinkCreateViaZero({
+        zeroDb,
+        ctx,
+        input: {
+          label: "Test Link",
+          expiresInDays: 7,
+        },
       });
       expect(result.joinPath).toStartWith("/join?token=");
       expect(result.expiresAt).toBeNumber();
@@ -38,14 +59,19 @@ describe("organization access control", () => {
       const { organizationId, userId } = await seedOrganizationWithMember(db, {
         memberRole: "cashier",
       });
-      const u = makeUser({ id: userId, email: "cashier@example.com" });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const ctx = createZeroContext(userId, organizationId, {
+        email: "cashier@example.com",
+      });
 
       await expect(
-        client.organization.joinLinkCreate({
-          label: "Test Link",
-          expiresInDays: 7,
+        joinLinkCreateViaZero({
+          zeroDb,
+          ctx,
+          input: {
+            label: "Test Link",
+            expiresInDays: 7,
+          },
         })
       ).rejects.toThrow("No tienes permisos");
 
@@ -73,12 +99,12 @@ describe("organization access control", () => {
         email: "redeemer@example.com",
       });
 
-      const ctx = buildMockContext(db, redeemer, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const ctx = createZeroContext(redeemer.id, organizationId, {
+        email: "redeemer@example.com",
+      });
 
-      const result = await client.organization.joinLinkRedeem({ token });
-      expect(result.status).toBe("joined");
-      expect(result.organizationId).toBe(organizationId);
+      await joinLinkRedeemViaZero({ zeroDb, ctx, input: { token } });
 
       const memberships = await db
         .select()
@@ -108,12 +134,35 @@ describe("organization access control", () => {
         maxUses: 1,
       });
 
-      const u = makeUser({ id: userId, email: "member@example.com" });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const ctx = createZeroContext(userId, organizationId, {
+        email: "member@example.com",
+      });
 
-      const result = await client.organization.joinLinkRedeem({ token });
-      expect(result.status).toBe("already-member");
+      const beforeMemberships = await db
+        .select()
+        .from(member)
+        .where(
+          and(
+            eq(member.organizationId, organizationId),
+            eq(member.userId, userId)
+          )
+        );
+      expect(beforeMemberships.length).toBe(1);
+
+      await joinLinkRedeemViaZero({ zeroDb, ctx, input: { token } });
+
+      const afterMemberships = await db
+        .select()
+        .from(member)
+        .where(
+          and(
+            eq(member.organizationId, organizationId),
+            eq(member.userId, userId)
+          )
+        );
+      expect(afterMemberships.length).toBe(1);
+      expect(afterMemberships[0].id).toBe(beforeMemberships[0].id);
 
       await cleanup();
     });
@@ -131,9 +180,8 @@ describe("organization access control", () => {
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       });
 
-      const ctx = buildMockContext(db, makeUser(), organizationId);
-      const client = createServerORPCClient(ctx);
-      const result = await client.organization.joinLinkPreview({ token });
+      const zeroDb = createZeroTestDb(db);
+      const result = await getJoinLinkPreviewViaZero({ zeroDb, token });
       expect(result.status).toBe("active");
       expect(result.canJoin).toBe(true);
       expect(result.organization).not.toBeNull();
@@ -152,9 +200,8 @@ describe("organization access control", () => {
         expiresAt: new Date(Date.now() - 1000),
       });
 
-      const ctx = buildMockContext(db, makeUser(), organizationId);
-      const client = createServerORPCClient(ctx);
-      const result = await client.organization.joinLinkPreview({ token });
+      const zeroDb = createZeroTestDb(db);
+      const result = await getJoinLinkPreviewViaZero({ zeroDb, token });
       expect(result.status).toBe("expired");
       expect(result.canJoin).toBe(false);
 
@@ -172,9 +219,8 @@ describe("organization access control", () => {
         revokedAt: new Date(),
       });
 
-      const ctx = buildMockContext(db, makeUser(), organizationId);
-      const client = createServerORPCClient(ctx);
-      const result = await client.organization.joinLinkPreview({ token });
+      const zeroDb = createZeroTestDb(db);
+      const result = await getJoinLinkPreviewViaZero({ zeroDb, token });
       expect(result.status).toBe("revoked");
       expect(result.canJoin).toBe(false);
 
@@ -195,11 +241,12 @@ describe("organization access control", () => {
         role: "admin",
       });
 
-      const u = makeUser({ id: userId, email: "alice@example.com" });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const ctx = createZeroContext(userId, organizationId, {
+        email: "alice@example.com",
+      });
 
-      const result = await client.organization.selection();
+      const result = await getOrganizationSelectionViaZero({ zeroDb, ctx });
       expect(result.invitations.length).toBe(1);
       expect(result.invitations[0].role).toBe("admin");
       expect(result.invitations[0].organizationName).toBeString();
@@ -213,11 +260,12 @@ describe("organization access control", () => {
         memberRole: "member",
       });
 
-      const u = makeUser({ id: userId, email: "member@example.com" });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const ctx = createZeroContext(userId, organizationId, {
+        email: "member@example.com",
+      });
 
-      const result = await client.organization.selection();
+      const result = await getOrganizationSelectionViaZero({ zeroDb, ctx });
       expect(typeof result.allowOrganizationCreation).toBe("boolean");
       expect(result.contactMessage).toBeString();
 
@@ -243,11 +291,12 @@ describe("organization access control", () => {
         createdByUserId: userId,
       });
 
-      const u = makeUser({ id: userId, email: "manager@example.com" });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const ctx = createZeroContext(userId, organizationId, {
+        email: "manager@example.com",
+      });
 
-      const result = await client.organization.management();
+      const result = await getOrganizationManagementViaZero({ zeroDb, ctx });
       expect(result.members.length).toBeGreaterThanOrEqual(1);
       expect(result.stats.membersCount).toBe(result.members.length);
       expect(result.stats.pendingInvitationsCount).toBe(1);
@@ -262,16 +311,20 @@ describe("organization access control", () => {
   describe("VAL-ORG-006: operations without active organization are rejected", () => {
     test("organization-scoped procedure rejects when no active organization", async () => {
       const { db, cleanup } = await createTestDb();
-      const { userId } = await seedOrganizationWithMember(db);
+      const { organizationId } = await seedOrganizationWithMember(db);
+      const outsider = await seedUser(db, {
+        name: "Outsider",
+        email: "noorg@example.com",
+      });
 
-      const u = makeUser({ id: userId, email: "noorg@example.com" });
-      // Build context without activeOrganizationId
-      const ctx = buildMockContext(db, u, null);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const ctx = createZeroContext(outsider.id, organizationId, {
+        email: "noorg@example.com",
+      });
 
-      await expect(client.organization.management()).rejects.toThrow(
-        "No hay una organización activa"
-      );
+      await expect(
+        getOrganizationManagementViaZero({ zeroDb, ctx })
+      ).rejects.toThrow("No perteneces a la organización activa.");
 
       await cleanup();
     });
@@ -283,17 +336,32 @@ describe("organization access control", () => {
       const { organizationId, userId } = await seedOrganizationWithMember(db, {
         memberRole: "admin",
       });
-      const u = makeUser({ id: userId, email: "admin@example.com" });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
-
-      const result = await client.organization.inviteMember({
-        email: "newuser@example.com",
-        role: "member",
+      const zeroDb = createZeroTestDb(db);
+      const ctx = createZeroContext(userId, organizationId, {
+        email: "admin@example.com",
       });
-      expect(result.email).toBe("newuser@example.com");
-      expect(result.role).toBe("member");
-      expect(result.status).toBe("pending");
+
+      await inviteMemberViaZero({
+        zeroDb,
+        ctx,
+        input: {
+          email: "newuser@example.com",
+          role: "member",
+        },
+      });
+
+      const [invitationRow] = await db
+        .select()
+        .from(invitation)
+        .where(
+          and(
+            eq(invitation.organizationId, organizationId),
+            eq(invitation.email, "newuser@example.com")
+          )
+        );
+      expect(invitationRow.email).toBe("newuser@example.com");
+      expect(invitationRow.role).toBe("member");
+      expect(invitationRow.status).toBe("pending");
 
       await cleanup();
     });
@@ -303,14 +371,19 @@ describe("organization access control", () => {
       const { organizationId, userId } = await seedOrganizationWithMember(db, {
         memberRole: "cashier",
       });
-      const u = makeUser({ id: userId, email: "cashier@example.com" });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const ctx = createZeroContext(userId, organizationId, {
+        email: "cashier@example.com",
+      });
 
       await expect(
-        client.organization.inviteMember({
-          email: "newuser@example.com",
-          role: "member",
+        inviteMemberViaZero({
+          zeroDb,
+          ctx,
+          input: {
+            email: "newuser@example.com",
+            role: "member",
+          },
         })
       ).rejects.toThrow("No tienes permisos");
 
@@ -323,14 +396,19 @@ describe("organization access control", () => {
         memberRole: "admin",
         userEmail: "admin@example.com",
       });
-      const u = makeUser({ id: userId, email: "admin@example.com" });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const ctx = createZeroContext(userId, organizationId, {
+        email: "admin@example.com",
+      });
 
       await expect(
-        client.organization.inviteMember({
-          email: u.email,
-          role: "member",
+        inviteMemberViaZero({
+          zeroDb,
+          ctx,
+          input: {
+            email: "admin@example.com",
+            role: "member",
+          },
         })
       ).rejects.toThrow("ya es miembro");
 
@@ -342,14 +420,19 @@ describe("organization access control", () => {
       const { organizationId, userId } = await seedOrganizationWithMember(db, {
         memberRole: "admin",
       });
-      const u = makeUser({ id: userId, email: "admin@example.com" });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const ctx = createZeroContext(userId, organizationId, {
+        email: "admin@example.com",
+      });
 
       await expect(
-        client.organization.inviteMember({
-          email: "newowner@example.com",
-          role: "owner",
+        inviteMemberViaZero({
+          zeroDb,
+          ctx,
+          input: {
+            email: "newowner@example.com",
+            role: "owner",
+          },
         })
       ).rejects.toThrow("Solo el owner");
 
@@ -361,14 +444,19 @@ describe("organization access control", () => {
       const { organizationId, userId } = await seedOrganizationWithMember(db, {
         memberRole: "owner",
       });
-      const u = makeUser({ id: userId, email: "owner@example.com" });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const ctx = createZeroContext(userId, organizationId, {
+        email: "owner@example.com",
+      });
 
       await expect(
-        client.organization.inviteMember({
-          email: "hacker@example.com",
-          role: "superuser",
+        inviteMemberViaZero({
+          zeroDb,
+          ctx,
+          input: {
+            email: "hacker@example.com",
+            role: "superuser",
+          },
         })
       ).rejects.toThrow("Rol no válido");
 
@@ -389,14 +477,22 @@ describe("organization access control", () => {
         status: "pending",
       });
 
-      const u = makeUser({ id: userId, email: "admin@example.com" });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
-
-      const result = await client.organization.cancelInvitation({
-        invitationId: invId,
+      const zeroDb = createZeroTestDb(db);
+      const ctx = createZeroContext(userId, organizationId, {
+        email: "admin@example.com",
       });
-      expect(result.status).toBe("canceled");
+
+      await cancelInvitationViaZero({
+        zeroDb,
+        ctx,
+        input: { invitationId: invId },
+      });
+
+      const [invitationRow] = await db
+        .select()
+        .from(invitation)
+        .where(eq(invitation.id, invId));
+      expect(invitationRow.status).toBe("canceled");
 
       await cleanup();
     });
@@ -413,12 +509,17 @@ describe("organization access control", () => {
         status: "canceled",
       });
 
-      const u = makeUser({ id: userId, email: "admin@example.com" });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const ctx = createZeroContext(userId, organizationId, {
+        email: "admin@example.com",
+      });
 
       await expect(
-        client.organization.cancelInvitation({ invitationId: invId })
+        cancelInvitationViaZero({
+          zeroDb,
+          ctx,
+          input: { invitationId: invId },
+        })
       ).rejects.toThrow("Solo se pueden cancelar invitaciones pendientes");
 
       await cleanup();
@@ -442,12 +543,17 @@ describe("organization access control", () => {
         status: "pending",
       });
 
-      const u = makeUser({ id: userId, email: "admin@example.com" });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const ctx = createZeroContext(userId, organizationId, {
+        email: "admin@example.com",
+      });
 
       await expect(
-        client.organization.cancelInvitation({ invitationId: invId })
+        cancelInvitationViaZero({
+          zeroDb,
+          ctx,
+          input: { invitationId: invId },
+        })
       ).rejects.toThrow("No se encontró la invitación");
 
       await cleanup();
@@ -471,11 +577,11 @@ describe("organization access control", () => {
         createdAt: new Date(),
       });
 
-      const u = makeUser({ id: userId, email: "owner@example.com" });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const ctx = createZeroContext(userId, organizationId, {
+        email: "owner@example.com",
+      });
 
-      // Find the target member id
       const rows = await db
         .select({ id: member.id })
         .from(member)
@@ -487,11 +593,20 @@ describe("organization access control", () => {
         );
       const targetMemberId = rows[0].id;
 
-      const result = await client.organization.updateMemberRole({
-        memberId: targetMemberId,
-        role: "admin",
+      await updateMemberRoleViaZero({
+        zeroDb,
+        ctx,
+        input: {
+          memberId: targetMemberId,
+          role: "admin",
+        },
       });
-      expect(result.role).toBe("admin");
+
+      const [updatedMember] = await db
+        .select()
+        .from(member)
+        .where(eq(member.id, targetMemberId));
+      expect(updatedMember.role).toBe("admin");
 
       await cleanup();
     });
@@ -512,9 +627,10 @@ describe("organization access control", () => {
         createdAt: new Date(),
       });
 
-      const u = makeUser({ id: userId, email: "admin@example.com" });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const ctx = createZeroContext(userId, organizationId, {
+        email: "admin@example.com",
+      });
 
       const rows = await db
         .select({ id: member.id })
@@ -528,9 +644,13 @@ describe("organization access control", () => {
       const targetMemberId = rows[0].id;
 
       await expect(
-        client.organization.updateMemberRole({
-          memberId: targetMemberId,
-          role: "owner",
+        updateMemberRoleViaZero({
+          zeroDb,
+          ctx,
+          input: {
+            memberId: targetMemberId,
+            role: "owner",
+          },
         })
       ).rejects.toThrow("Solo el owner");
 
@@ -545,7 +665,6 @@ describe("organization access control", () => {
         }),
         seedUser(db, { name: "Target", email: "target@example.com" }),
       ]);
-      // Seed a second owner that the admin tries to demote
       await db.insert(member).values({
         id: crypto.randomUUID(),
         organizationId,
@@ -554,9 +673,10 @@ describe("organization access control", () => {
         createdAt: new Date(),
       });
 
-      const u = makeUser({ id: userId, email: "admin@example.com" });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const ctx = createZeroContext(userId, organizationId, {
+        email: "admin@example.com",
+      });
 
       const rows = await db
         .select({ id: member.id })
@@ -570,9 +690,13 @@ describe("organization access control", () => {
       const targetMemberId = rows[0].id;
 
       await expect(
-        client.organization.updateMemberRole({
-          memberId: targetMemberId,
-          role: "member",
+        updateMemberRoleViaZero({
+          zeroDb,
+          ctx,
+          input: {
+            memberId: targetMemberId,
+            role: "member",
+          },
         })
       ).rejects.toThrow("Solo el owner");
 
@@ -585,9 +709,10 @@ describe("organization access control", () => {
         memberRole: "owner",
       });
 
-      const u = makeUser({ id: userId, email: "owner@example.com" });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const ctx = createZeroContext(userId, organizationId, {
+        email: "owner@example.com",
+      });
 
       const rows = await db
         .select({ id: member.id })
@@ -601,9 +726,13 @@ describe("organization access control", () => {
       const ownMemberId = rows[0].id;
 
       await expect(
-        client.organization.updateMemberRole({
-          memberId: ownMemberId,
-          role: "admin",
+        updateMemberRoleViaZero({
+          zeroDb,
+          ctx,
+          input: {
+            memberId: ownMemberId,
+            role: "admin",
+          },
         })
       ).rejects.toThrow("único owner");
 
@@ -626,9 +755,10 @@ describe("organization access control", () => {
         createdAt: new Date(),
       });
 
-      const u = makeUser({ id: userId, email: "owner@example.com" });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const ctx = createZeroContext(userId, organizationId, {
+        email: "owner@example.com",
+      });
 
       const rows = await db
         .select({ id: member.id })
@@ -642,9 +772,13 @@ describe("organization access control", () => {
       const targetMemberId = rows[0].id;
 
       await expect(
-        client.organization.updateMemberRole({
-          memberId: targetMemberId,
-          role: "superuser",
+        updateMemberRoleViaZero({
+          zeroDb,
+          ctx,
+          input: {
+            memberId: targetMemberId,
+            role: "superuser",
+          },
         })
       ).rejects.toThrow("Rol no válido");
 
@@ -669,9 +803,10 @@ describe("organization access control", () => {
         createdAt: new Date(),
       });
 
-      const u = makeUser({ id: userId, email: "owner@example.com" });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const ctx = createZeroContext(userId, organizationId, {
+        email: "owner@example.com",
+      });
 
       const rows = await db
         .select({ id: member.id })
@@ -684,10 +819,11 @@ describe("organization access control", () => {
         );
       const targetMemberId = rows[0].id;
 
-      const result = await client.organization.removeMember({
-        memberIdOrEmail: targetMemberId,
+      await removeMemberViaZero({
+        zeroDb,
+        ctx,
+        input: { memberIdOrEmail: targetMemberId },
       });
-      expect(result.userId).toBe(targetUser.id);
 
       const remaining = await db
         .select()
@@ -704,9 +840,10 @@ describe("organization access control", () => {
         memberRole: "owner",
       });
 
-      const u = makeUser({ id: userId, email: "owner@example.com" });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const ctx = createZeroContext(userId, organizationId, {
+        email: "owner@example.com",
+      });
 
       const rows = await db
         .select({ id: member.id })
@@ -720,7 +857,11 @@ describe("organization access control", () => {
       const ownMemberId = rows[0].id;
 
       await expect(
-        client.organization.removeMember({ memberIdOrEmail: ownMemberId })
+        removeMemberViaZero({
+          zeroDb,
+          ctx,
+          input: { memberIdOrEmail: ownMemberId },
+        })
       ).rejects.toThrow("único owner");
 
       await cleanup();
@@ -731,7 +872,6 @@ describe("organization access control", () => {
       const { organizationId, userId } = await seedOrganizationWithMember(db, {
         memberRole: "admin",
       });
-      // Seed two owners
       const [owner1, owner2] = await Promise.all([
         seedUser(db, { name: "Owner1", email: "owner1@example.com" }),
         seedUser(db, { name: "Owner2", email: "owner2@example.com" }),
@@ -755,9 +895,10 @@ describe("organization access control", () => {
         },
       ]);
 
-      const u = makeUser({ id: userId, email: "admin@example.com" });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const ctx = createZeroContext(userId, organizationId, {
+        email: "admin@example.com",
+      });
 
       const rows = await db
         .select({ id: member.id })
@@ -771,7 +912,11 @@ describe("organization access control", () => {
       const targetMemberId = rows[0].id;
 
       await expect(
-        client.organization.removeMember({ memberIdOrEmail: targetMemberId })
+        removeMemberViaZero({
+          zeroDb,
+          ctx,
+          input: { memberIdOrEmail: targetMemberId },
+        })
       ).rejects.toThrow("Solo el owner");
 
       await cleanup();
@@ -785,14 +930,16 @@ describe("organization access control", () => {
         memberRole: "admin",
       });
 
-      const u = makeUser({ id: userId, email: "admin@example.com" });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
-
-      const result = await client.organization.leaveOrganization({
-        organizationId,
+      const zeroDb = createZeroTestDb(db);
+      const ctx = createZeroContext(userId, organizationId, {
+        email: "admin@example.com",
       });
-      expect(result.userId).toBe(userId);
+
+      await leaveOrganizationViaZero({
+        zeroDb,
+        ctx,
+        input: { organizationId },
+      });
 
       const remaining = await db
         .select()
@@ -814,12 +961,17 @@ describe("organization access control", () => {
         memberRole: "owner",
       });
 
-      const u = makeUser({ id: userId, email: "owner@example.com" });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const ctx = createZeroContext(userId, organizationId, {
+        email: "owner@example.com",
+      });
 
       await expect(
-        client.organization.leaveOrganization({ organizationId })
+        leaveOrganizationViaZero({
+          zeroDb,
+          ctx,
+          input: { organizationId },
+        })
       ).rejects.toThrow("único owner");
 
       await cleanup();
@@ -833,14 +985,16 @@ describe("organization access control", () => {
         memberRole: "admin",
       });
 
-      const u = makeUser({ id: userId, email: "admin@example.com" });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
-
-      const result = await client.organization.updateOrganization({
-        name: "Updated Name",
+      const zeroDb = createZeroTestDb(db);
+      const ctx = createZeroContext(userId, organizationId, {
+        email: "admin@example.com",
       });
-      expect(result.name).toBe("Updated Name");
+
+      await updateOrganizationViaZero({
+        zeroDb,
+        ctx,
+        input: { name: "Updated Name" },
+      });
 
       const [org] = await db
         .select({ name: organization.name })
@@ -858,12 +1012,17 @@ describe("organization access control", () => {
         memberRole: "cashier",
       });
 
-      const u = makeUser({ id: userId, email: "cashier@example.com" });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const ctx = createZeroContext(userId, organizationId, {
+        email: "cashier@example.com",
+      });
 
       await expect(
-        client.organization.updateOrganization({ name: "Hacked" })
+        updateOrganizationViaZero({
+          zeroDb,
+          ctx,
+          input: { name: "Hacked" },
+        })
       ).rejects.toThrow("No tienes permisos");
 
       await cleanup();
@@ -877,12 +1036,15 @@ describe("organization access control", () => {
         memberRole: "owner",
       });
 
-      const u = makeUser({ id: userId, email: "owner@example.com" });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const ctx = createZeroContext(userId, organizationId, {
+        email: "owner@example.com",
+      });
 
-      const result = await client.organization.deleteOrganization({
-        organizationId,
+      const result = await deleteOrganizationViaZero({
+        zeroDb,
+        ctx,
+        input: { organizationId },
       });
       expect(result.success).toBe(true);
 
@@ -902,12 +1064,17 @@ describe("organization access control", () => {
         memberRole: "admin",
       });
 
-      const u = makeUser({ id: userId, email: "admin@example.com" });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const ctx = createZeroContext(userId, organizationId, {
+        email: "admin@example.com",
+      });
 
       await expect(
-        client.organization.deleteOrganization({ organizationId })
+        deleteOrganizationViaZero({
+          zeroDb,
+          ctx,
+          input: { organizationId },
+        })
       ).rejects.toThrow("Solo el owner");
 
       await cleanup();

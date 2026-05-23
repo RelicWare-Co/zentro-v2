@@ -27,18 +27,26 @@ export async function runUpdateOrganizationSettings(
   args: UpdateOrganizationSettingsInput,
   auth: Pick<ZeroContext, "id" | "orgID" | "role" | "systemRole">
 ) {
+  if (!auth.orgID) {
+    throw new Error("No autorizado");
+  }
+
+  const organizationId = auth.orgID;
   const [organizationRow, memberRow, entitlementRows] = await Promise.all([
     tx
       .select({ metadata: organization.metadata })
       .from(organization)
-      .where(eq(organization.id, auth.orgID))
+      .where(eq(organization.id, organizationId))
       .limit(1)
       .then((rows) => rows[0] ?? null),
     tx
       .select({ role: member.role })
       .from(member)
       .where(
-        and(eq(member.organizationId, auth.orgID), eq(member.userId, auth.id))
+        and(
+          eq(member.organizationId, organizationId),
+          eq(member.userId, auth.id)
+        )
       )
       .limit(1)
       .then((rows) => rows[0] ?? null),
@@ -50,7 +58,7 @@ export async function runUpdateOrganizationSettings(
       .from(organizationModuleEntitlement)
       .where(
         and(
-          eq(organizationModuleEntitlement.organizationId, auth.orgID),
+          eq(organizationModuleEntitlement.organizationId, organizationId),
           inArray(organizationModuleEntitlement.moduleKey, MODULE_KEYS)
         )
       ),
@@ -101,7 +109,7 @@ export async function runUpdateOrganizationSettings(
     .set({
       metadata: serializeOrganizationSettingsMetadata(normalizedSettings),
     })
-    .where(eq(organization.id, auth.orgID));
+    .where(eq(organization.id, organizationId));
 
   return {
     success: true as const,

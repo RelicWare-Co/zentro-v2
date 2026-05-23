@@ -8,7 +8,13 @@ import { queryClient } from "@/lib/query-client";
 type ZeroProviderModule = typeof import("@/src/zero/zero-provider.client");
 type ZentroZeroProviderComponent = ZeroProviderModule["ZentroZeroProvider"];
 
-function ZeroProviderGate({ children }: { children: ReactNode }) {
+function ZeroProviderGate({
+  allowAnonymous = false,
+  children,
+}: {
+  allowAnonymous?: boolean;
+  children: ReactNode;
+}) {
   const pageContext = usePageContext();
   const [ZentroZeroProvider, setProvider] =
     useState<ZentroZeroProviderComponent | null>(null);
@@ -39,6 +45,10 @@ function ZeroProviderGate({ children }: { children: ReactNode }) {
     );
   }
 
+  if (allowAnonymous && ZentroZeroProvider) {
+    return <ZentroZeroProvider userID={null}>{children}</ZentroZeroProvider>;
+  }
+
   return <>{children}</>;
 }
 
@@ -51,7 +61,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   if (isAuthPage) {
     return (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      <QueryClientProvider client={queryClient}>
+        <ZeroProviderGate allowAnonymous>{children}</ZeroProviderGate>
+      </QueryClientProvider>
     );
   }
 

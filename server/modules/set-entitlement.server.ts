@@ -26,9 +26,14 @@ export async function runSetModuleEntitlement(
   args: SetModuleEntitlementInput,
   auth: Pick<ZeroContext, "id" | "orgID" | "role" | "systemRole">
 ): Promise<ModuleAccessState> {
+  if (!auth.orgID) {
+    throw new Error("No autorizado");
+  }
+
+  const organizationId = auth.orgID;
   const viewerAccess = buildViewerAccess({
     id: auth.id,
-    orgID: auth.orgID,
+    orgID: organizationId,
     role: auth.role,
     systemRole: auth.systemRole,
   });
@@ -45,7 +50,7 @@ export async function runSetModuleEntitlement(
     .from(organizationModuleEntitlement)
     .where(
       and(
-        eq(organizationModuleEntitlement.organizationId, auth.orgID),
+        eq(organizationModuleEntitlement.organizationId, organizationId),
         eq(organizationModuleEntitlement.moduleKey, args.moduleKey)
       )
     )
@@ -63,7 +68,7 @@ export async function runSetModuleEntitlement(
   } else {
     await tx.insert(organizationModuleEntitlement).values({
       id: crypto.randomUUID(),
-      organizationId: auth.orgID,
+      organizationId,
       moduleKey: args.moduleKey,
       status: args.status,
       updatedByUserId: auth.id,
@@ -76,7 +81,7 @@ export async function runSetModuleEntitlement(
     tx
       .select({ metadata: organization.metadata })
       .from(organization)
-      .where(eq(organization.id, auth.orgID))
+      .where(eq(organization.id, organizationId))
       .limit(1)
       .then((rows) => rows[0] ?? null),
     tx
@@ -85,7 +90,7 @@ export async function runSetModuleEntitlement(
         status: organizationModuleEntitlement.status,
       })
       .from(organizationModuleEntitlement)
-      .where(eq(organizationModuleEntitlement.organizationId, auth.orgID)),
+      .where(eq(organizationModuleEntitlement.organizationId, organizationId)),
   ]);
 
   if (!organizationRow) {

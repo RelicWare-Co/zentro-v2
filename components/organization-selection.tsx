@@ -1,4 +1,3 @@
-import { useQuery } from "@tanstack/react-query";
 import {
   ArrowRight,
   Building2,
@@ -22,10 +21,10 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useOrganizationSelection } from "@/features/organization/hooks/use-organization";
 import { authClient } from "@/lib/auth-client";
 import { formatOrganizationRoleLabel } from "@/lib/organization-shared";
 import { queryClient } from "@/lib/query-client";
-import { orpcQuery } from "@/server/orpc/client/query";
 
 const dateTimeFormatter = new Intl.DateTimeFormat("es-CO", {
   day: "numeric",
@@ -56,9 +55,7 @@ export function OrganizationSelection() {
     isPending: isOrganizationsPending,
     refetch: refetchOrganizations,
   } = organizationsQuery;
-  const selectionQuery = useQuery({
-    ...orpcQuery.organization.selection.queryOptions(),
-  });
+  const selectionQuery = useOrganizationSelection();
   const {
     data: selectionData,
     isPending: isSelectionPending,

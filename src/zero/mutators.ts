@@ -32,6 +32,17 @@ import {
   UpdateCustomerSchema,
 } from "@/schemas/customers";
 import { SetModuleEntitlementSchema } from "@/schemas/modules";
+import {
+  CancelInvitationSchema,
+  DeleteOrganizationSchema,
+  InviteMemberSchema,
+  JoinTokenSchema,
+  LeaveOrganizationSchema,
+  RemoveMemberSchema,
+  RevokeJoinLinkSchema,
+  UpdateMemberRoleSchema,
+  UpdateOrganizationSchema,
+} from "@/schemas/organization";
 import { ToggleProductFavoriteInputSchema } from "@/schemas/pos";
 import {
   CreateCategorySchema,
@@ -106,6 +117,22 @@ export const createSaleArgsSchema = CreateSaleInputSchema.extend({
 export const cancelSaleArgsSchema = CancelSaleInputSchema;
 
 export const updateOrganizationSettingsArgsSchema = UpdateSettingsSchema;
+
+export const createJoinLinkArgsSchema = zod.object({
+  id: zod.string().trim().min(1),
+  token: zod.string().trim().min(1).max(255),
+  label: zod.string().trim().max(80).optional(),
+  expiresInDays: zod.number().int().min(1).max(90),
+});
+export const revokeJoinLinkArgsSchema = RevokeJoinLinkSchema;
+export const inviteMemberArgsSchema = InviteMemberSchema;
+export const cancelInvitationArgsSchema = CancelInvitationSchema;
+export const updateMemberRoleArgsSchema = UpdateMemberRoleSchema;
+export const removeMemberArgsSchema = RemoveMemberSchema;
+export const leaveOrganizationArgsSchema = LeaveOrganizationSchema;
+export const updateOrganizationArgsSchema = UpdateOrganizationSchema;
+export const deleteOrganizationArgsSchema = DeleteOrganizationSchema;
+export const joinLinkRedeemArgsSchema = JoinTokenSchema;
 
 export const setModuleEntitlementArgsSchema = SetModuleEntitlementSchema;
 
@@ -224,6 +251,17 @@ function assertZeroContext(ctx: ZeroContext | undefined) {
   }
 
   return ctx;
+}
+
+function assertOrgZeroContext(
+  ctx: ZeroContext | undefined
+): ZeroContext & { orgID: string } {
+  const zeroContext = assertZeroContext(ctx);
+  if (!zeroContext.orgID) {
+    throw new Error(FORBIDDEN_MESSAGE);
+  }
+
+  return zeroContext as ZeroContext & { orgID: string };
 }
 
 function toNonNegativeInteger(value: number, fieldName: string) {
@@ -462,7 +500,7 @@ export const mutators = defineMutators({
     create: defineMutator(
       createCustomerArgsSchema,
       async ({ args, ctx, tx }) => {
-        const zeroContext = assertZeroContext(ctx);
+        const zeroContext = assertOrgZeroContext(ctx);
         const documentNumber = normalizeOptionalString(args.documentNumber);
         await assertUniqueDocumentNumber({
           documentNumber,
@@ -492,7 +530,7 @@ export const mutators = defineMutators({
     update: defineMutator(
       updateCustomerArgsSchema,
       async ({ args, ctx, tx }) => {
-        const zeroContext = assertZeroContext(ctx);
+        const zeroContext = assertOrgZeroContext(ctx);
         const documentNumber =
           args.documentNumber === undefined
             ? undefined
@@ -552,7 +590,7 @@ export const mutators = defineMutators({
     delete: defineMutator(
       deleteCustomerArgsSchema,
       async ({ args, ctx, tx }) => {
-        const zeroContext = assertZeroContext(ctx);
+        const zeroContext = assertOrgZeroContext(ctx);
         await assertActiveCustomer({
           id: args.id,
           organizationId: zeroContext.orgID,
@@ -572,7 +610,7 @@ export const mutators = defineMutators({
     create: defineMutator(
       createProductArgsSchema,
       async ({ args, ctx, tx }) => {
-        const zeroContext = assertZeroContext(ctx);
+        const zeroContext = assertOrgZeroContext(ctx);
         const normalizedName = args.name.trim();
         if (!normalizedName) {
           throw new Error("El nombre del producto es obligatorio");
@@ -606,7 +644,7 @@ export const mutators = defineMutators({
     update: defineMutator(
       updateProductArgsSchema,
       async ({ args, ctx, tx }) => {
-        const zeroContext = assertZeroContext(ctx);
+        const zeroContext = assertOrgZeroContext(ctx);
         await assertActiveProduct({
           id: args.id,
           organizationId: zeroContext.orgID,
@@ -631,7 +669,7 @@ export const mutators = defineMutators({
     delete: defineMutator(
       deleteProductArgsSchema,
       async ({ args, ctx, tx }) => {
-        const zeroContext = assertZeroContext(ctx);
+        const zeroContext = assertOrgZeroContext(ctx);
         await assertActiveProduct({
           id: args.id,
           organizationId: zeroContext.orgID,
@@ -647,7 +685,7 @@ export const mutators = defineMutators({
     toggleFavorite: defineMutator(
       toggleProductFavoriteArgsSchema,
       async ({ args, ctx, tx }) => {
-        const zeroContext = assertZeroContext(ctx);
+        const zeroContext = assertOrgZeroContext(ctx);
         const targetProduct = await assertActiveProduct({
           id: args.productId,
           organizationId: zeroContext.orgID,
@@ -664,7 +702,7 @@ export const mutators = defineMutators({
     registerInventoryMovement: defineMutator(
       registerInventoryMovementArgsSchema,
       async ({ args, ctx, tx }) => {
-        const zeroContext = assertZeroContext(ctx);
+        const zeroContext = assertOrgZeroContext(ctx);
         const baseQuantity = toInteger(args.quantity, "quantity");
         if (baseQuantity === 0) {
           throw new Error("La cantidad debe ser diferente de 0");
@@ -726,7 +764,7 @@ export const mutators = defineMutators({
     createCategory: defineMutator(
       createCategoryArgsSchema,
       async ({ args, ctx, tx }) => {
-        const zeroContext = assertZeroContext(ctx);
+        const zeroContext = assertOrgZeroContext(ctx);
         const normalizedName = args.name.trim();
         if (!normalizedName) {
           throw new Error("El nombre de la categoría es obligatorio");
@@ -744,7 +782,7 @@ export const mutators = defineMutators({
     updateCategory: defineMutator(
       updateCategoryArgsSchema,
       async ({ args, ctx, tx }) => {
-        const zeroContext = assertZeroContext(ctx);
+        const zeroContext = assertOrgZeroContext(ctx);
         await assertActiveCategory({
           id: args.id,
           organizationId: zeroContext.orgID,
@@ -764,7 +802,7 @@ export const mutators = defineMutators({
     deleteCategory: defineMutator(
       deleteCategoryArgsSchema,
       async ({ args, ctx, tx }) => {
-        const zeroContext = assertZeroContext(ctx);
+        const zeroContext = assertOrgZeroContext(ctx);
         await assertActiveCategory({
           id: args.id,
           organizationId: zeroContext.orgID,
@@ -798,6 +836,42 @@ export const mutators = defineMutators({
         // Server-only validation; client completes without optimistic writes.
       }
     ),
+    joinLinkCreate: defineMutator(createJoinLinkArgsSchema, async () => {
+      // Server-only organization writes; client completes without optimistic writes.
+    }),
+    joinLinkRevoke: defineMutator(revokeJoinLinkArgsSchema, async () => {
+      // Server-only organization writes; client completes without optimistic writes.
+    }),
+    inviteMember: defineMutator(inviteMemberArgsSchema, async () => {
+      // Server-only organization writes; client completes without optimistic writes.
+    }),
+    cancelInvitation: defineMutator(cancelInvitationArgsSchema, async () => {
+      // Server-only organization writes; client completes without optimistic writes.
+    }),
+    updateMemberRole: defineMutator(updateMemberRoleArgsSchema, async () => {
+      // Server-only organization writes; client completes without optimistic writes.
+    }),
+    removeMember: defineMutator(removeMemberArgsSchema, async () => {
+      // Server-only organization writes; client completes without optimistic writes.
+    }),
+    leaveOrganization: defineMutator(leaveOrganizationArgsSchema, async () => {
+      // Server-only organization writes; client completes without optimistic writes.
+    }),
+    updateOrganization: defineMutator(
+      updateOrganizationArgsSchema,
+      async () => {
+        // Server-only organization writes; client completes without optimistic writes.
+      }
+    ),
+    deleteOrganization: defineMutator(
+      deleteOrganizationArgsSchema,
+      async () => {
+        // Server-only organization writes; client completes without optimistic writes.
+      }
+    ),
+    joinLinkRedeem: defineMutator(joinLinkRedeemArgsSchema, async () => {
+      // Server-only organization writes; client completes without optimistic writes.
+    }),
   },
   modules: {
     setEntitlement: defineMutator(setModuleEntitlementArgsSchema, async () => {
@@ -862,7 +936,7 @@ export const mutators = defineMutators({
   },
   shifts: {
     open: defineMutator(openShiftArgsSchema, async ({ args, ctx, tx }) => {
-      const zeroContext = assertZeroContext(ctx);
+      const zeroContext = assertOrgZeroContext(ctx);
       const startingCash = toNonNegativeInteger(
         args.startingCash,
         "startingCash"
@@ -917,7 +991,7 @@ export const mutators = defineMutators({
     cashMovement: defineMutator(
       registerCashMovementArgsSchema,
       async ({ args, ctx, tx }) => {
-        const zeroContext = assertZeroContext(ctx);
+        const zeroContext = assertOrgZeroContext(ctx);
         const validTypes = ["expense", "payout", "inflow"] as const;
         if (!validTypes.includes(args.type)) {
           throw new Error("Tipo de movimiento de caja inválido");
@@ -981,7 +1055,7 @@ export const mutators = defineMutators({
       }
     ),
     close: defineMutator(closeShiftArgsSchema, async ({ args, ctx, tx }) => {
-      const zeroContext = assertZeroContext(ctx);
+      const zeroContext = assertOrgZeroContext(ctx);
       const closedAt = resolveTimestamp(args.closedAt);
       const notes = normalizeOptionalString(args.notes);
       const actualByMethod = new Map<string, number>();

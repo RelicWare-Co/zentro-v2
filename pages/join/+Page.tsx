@@ -1,10 +1,12 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
 import { ArrowRight, Building2, Loader2, LogOut } from "lucide-react";
 import { useState } from "react";
+import {
+  useJoinLinkPreview,
+  useJoinLinkRedeemMutation,
+} from "@/features/organization/hooks/use-organization";
 import { authClient } from "@/lib/auth-client";
 import { formatOrganizationRoleLabel } from "@/lib/organization-shared";
 import { queryClient } from "@/lib/query-client";
-import { orpcQuery } from "@/server/orpc/client/query";
 
 function useJoinToken() {
   if (typeof window !== "undefined") {
@@ -24,16 +26,8 @@ export default function Page() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isJoining, setIsJoining] = useState(false);
 
-  const previewQuery = useQuery({
-    ...orpcQuery.organization.joinLinkPreview.queryOptions({
-      input: { token: token ?? "" },
-    }),
-    enabled: !!token,
-  });
-
-  const redeemMutation = useMutation({
-    ...orpcQuery.organization.joinLinkRedeem.mutationOptions(),
-  });
+  const previewQuery = useJoinLinkPreview(token);
+  const redeemMutation = useJoinLinkRedeemMutation();
 
   const preview = previewQuery.data ?? null;
 
@@ -42,13 +36,19 @@ export default function Page() {
       return;
     }
 
+    const organizationId = preview?.organization?.id;
+    if (!organizationId) {
+      setErrorMessage("No se pudo identificar la organización del enlace.");
+      return;
+    }
+
     setErrorMessage(null);
     setIsJoining(true);
 
     try {
-      const result = await redeemMutation.mutateAsync({ token });
+      await redeemMutation.mutateAsync({ token });
       await authClient.organization.setActive({
-        organizationId: result.organizationId,
+        organizationId,
       });
       queryClient.clear();
       window.location.href = "/dashboard";

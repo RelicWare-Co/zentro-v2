@@ -27,11 +27,12 @@ type RegisterCashMovementInput = z.infer<
 export function createZeroContext(
   userId: string,
   organizationId: string,
-  options?: Partial<Pick<ZeroContext, "role" | "systemRole">>
+  options?: Partial<Pick<ZeroContext, "role" | "systemRole" | "email">>
 ) {
   return {
     id: userId,
     orgID: organizationId,
+    email: options?.email ?? "test@example.com",
     role: options?.role ?? "owner",
     systemRole: options?.systemRole ?? null,
   } satisfies ZeroContext;

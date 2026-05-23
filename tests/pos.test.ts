@@ -424,6 +424,7 @@ describe("POS checkout", () => {
       const zeroContext = {
         id: userId,
         orgID: organizationId,
+        email: "test@example.com",
         role: "owner",
         systemRole: null,
       } satisfies ZeroContext;

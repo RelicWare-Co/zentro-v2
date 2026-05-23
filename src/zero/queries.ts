@@ -18,6 +18,7 @@ import { z } from "zod";
 // Importing `./context` registers `ZeroContext` into Zero's DefaultTypes so
 // `ctx` here is typed as `ZeroContext | undefined`.
 import "./context";
+import type { ZeroContext } from "./context";
 import { zql } from "./schema";
 
 const customersSearchArgsSchema = z.object({
@@ -50,6 +51,10 @@ const saleByIdArgsSchema = z.object({
 
 const restaurantTableIdArgsSchema = z.object({
   tableId: z.string().trim().optional().nullable(),
+});
+
+const joinTokenArgsSchema = z.object({
+  token: z.string().trim().min(1).max(255),
 });
 
 function normalizeLimit(limit?: number) {
@@ -159,6 +164,16 @@ function buildSaleDetailQuery(saleId: string, organizationId: string) {
     .limit(1);
 }
 
+function denyAllMembers() {
+  return zql.member.where(({ cmpLit }) => cmpLit(false, "=", true));
+}
+
+function hasOrgContext(
+  ctx: ZeroContext | undefined
+): ctx is ZeroContext & { orgID: string } {
+  return Boolean(ctx?.orgID);
+}
+
 export const queries = defineQueries({
   /**
    * Returns the active membership rows of the authenticated user for their
@@ -169,8 +184,8 @@ export const queries = defineQueries({
    * permission gate (Zero's idiomatic "deny everything" predicate).
    */
   myMembership: defineQuery(({ ctx }) => {
-    if (!ctx) {
-      return zql.member.where(({ cmpLit }) => cmpLit(false, "=", true));
+    if (!hasOrgContext(ctx)) {
+      return denyAllMembers();
     }
     return zql.member
       .where("userId", ctx.id)
@@ -178,7 +193,7 @@ export const queries = defineQueries({
   }),
   customers: {
     search: defineQuery(customersSearchArgsSchema, ({ args, ctx }) => {
-      if (!ctx) {
+      if (!hasOrgContext(ctx)) {
         return zql.customer.where(({ cmpLit }) => cmpLit(false, "=", true));
       }
 
@@ -207,7 +222,7 @@ export const queries = defineQueries({
   },
   products: {
     categories: defineQuery(({ ctx }) => {
-      if (!ctx) {
+      if (!hasOrgContext(ctx)) {
         return zql.category.where(({ cmpLit }) => cmpLit(false, "=", true));
       }
 
@@ -217,7 +232,7 @@ export const queries = defineQueries({
         .orderBy("id", "asc");
     }),
     search: defineQuery(productsSearchArgsSchema, ({ args, ctx }) => {
-      if (!ctx) {
+      if (!hasOrgContext(ctx)) {
         return zql.product.where(({ cmpLit }) => cmpLit(false, "=", true));
       }
 
@@ -251,7 +266,7 @@ export const queries = defineQueries({
         .limit(normalizeProductLimit(args.limit));
     }),
     modifiers: defineQuery(({ ctx }) => {
-      if (!ctx) {
+      if (!hasOrgContext(ctx)) {
         return zql.product.where(({ cmpLit }) => cmpLit(false, "=", true));
       }
 
@@ -264,7 +279,7 @@ export const queries = defineQueries({
         .orderBy("id", "asc");
     }),
     posCatalog: defineQuery(posCatalogArgsSchema, ({ args, ctx }) => {
-      if (!ctx) {
+      if (!hasOrgContext(ctx)) {
         return zql.product.where(({ cmpLit }) => cmpLit(false, "=", true));
       }
 
@@ -273,7 +288,7 @@ export const queries = defineQueries({
   },
   credit: {
     accounts: defineQuery(({ ctx }) => {
-      if (!ctx) {
+      if (!hasOrgContext(ctx)) {
         return zql.creditAccount.where(({ cmpLit }) =>
           cmpLit(false, "=", true)
         );
@@ -286,7 +301,7 @@ export const queries = defineQueries({
     }),
     transactions: defineQuery(creditTransactionsArgsSchema, ({ args, ctx }) => {
       const normalizedCreditAccountId = args.creditAccountId?.trim() ?? "";
-      if (!(ctx && normalizedCreditAccountId)) {
+      if (!(hasOrgContext(ctx) && normalizedCreditAccountId)) {
         return zql.creditTransaction.where(({ cmpLit }) =>
           cmpLit(false, "=", true)
         );
@@ -301,7 +316,7 @@ export const queries = defineQueries({
   },
   shifts: {
     active: defineQuery(({ ctx }) => {
-      if (!ctx) {
+      if (!hasOrgContext(ctx)) {
         return zql.shift.where(({ cmpLit }) => cmpLit(false, "=", true));
       }
 
@@ -314,7 +329,7 @@ export const queries = defineQueries({
         .limit(1);
     }),
     byOrg: defineQuery(({ ctx }) => {
-      if (!ctx) {
+      if (!hasOrgContext(ctx)) {
         return zql.shift.where(({ cmpLit }) => cmpLit(false, "=", true));
       }
 
@@ -322,14 +337,14 @@ export const queries = defineQueries({
     }),
     byId: defineQuery(shiftByIdArgsSchema, ({ args, ctx }) => {
       const normalizedShiftId = args.shiftId?.trim() ?? "";
-      if (!(ctx && normalizedShiftId)) {
+      if (!(hasOrgContext(ctx) && normalizedShiftId)) {
         return zql.shift.where(({ cmpLit }) => cmpLit(false, "=", true));
       }
 
       return buildShiftDetailQuery(normalizedShiftId, ctx.orgID);
     }),
     organization: defineQuery(({ ctx }) => {
-      if (!ctx) {
+      if (!hasOrgContext(ctx)) {
         return zql.organization.where(({ cmpLit }) => cmpLit(false, "=", true));
       }
 
@@ -338,7 +353,7 @@ export const queries = defineQueries({
   },
   sales: {
     byOrg: defineQuery(({ ctx }) => {
-      if (!ctx) {
+      if (!hasOrgContext(ctx)) {
         return zql.sale.where(({ cmpLit }) => cmpLit(false, "=", true));
       }
 
@@ -346,7 +361,7 @@ export const queries = defineQueries({
     }),
     byId: defineQuery(saleByIdArgsSchema, ({ args, ctx }) => {
       const normalizedSaleId = args.saleId?.trim() ?? "";
-      if (!(ctx && normalizedSaleId)) {
+      if (!(hasOrgContext(ctx) && normalizedSaleId)) {
         return zql.sale.where(({ cmpLit }) => cmpLit(false, "=", true));
       }
 
@@ -354,8 +369,41 @@ export const queries = defineQueries({
     }),
   },
   organization: {
-    environment: defineQuery(({ ctx }) => {
+    selection: defineQuery(({ ctx }) => {
       if (!ctx) {
+        return zql.invitation.where(({ cmpLit }) => cmpLit(false, "=", true));
+      }
+
+      return zql.invitation
+        .where("email", ctx.email)
+        .where("status", "pending")
+        .related("organization")
+        .orderBy("createdAt", "desc");
+    }),
+    management: defineQuery(({ ctx }) => {
+      if (!hasOrgContext(ctx)) {
+        return zql.organization.where(({ cmpLit }) => cmpLit(false, "=", true));
+      }
+
+      return zql.organization
+        .where("id", ctx.orgID)
+        .related("members", (query) =>
+          query.related("user").orderBy("createdAt", "asc")
+        )
+        .related("invitations", (query) =>
+          query.where("status", "pending").orderBy("createdAt", "desc")
+        )
+        .related("joinLinks", (query) => query.orderBy("createdAt", "desc"))
+        .limit(1);
+    }),
+    joinLinkPreview: defineQuery(joinTokenArgsSchema, ({ args }) =>
+      zql.organizationJoinLink
+        .where("token", args.token)
+        .related("organization")
+        .limit(1)
+    ),
+    environment: defineQuery(({ ctx }) => {
+      if (!hasOrgContext(ctx)) {
         return zql.organization.where(({ cmpLit }) => cmpLit(false, "=", true));
       }
 
@@ -368,7 +416,7 @@ export const queries = defineQueries({
         .limit(1);
     }),
     moduleEntitlements: defineQuery(({ ctx }) => {
-      if (!ctx) {
+      if (!hasOrgContext(ctx)) {
         return zql.organizationModuleEntitlement.where(({ cmpLit }) =>
           cmpLit(false, "=", true)
         );
@@ -382,7 +430,7 @@ export const queries = defineQueries({
   },
   modules: {
     capabilities: defineQuery(({ ctx }) => {
-      if (!ctx) {
+      if (!hasOrgContext(ctx)) {
         return zql.organization.where(({ cmpLit }) => cmpLit(false, "=", true));
       }
 
@@ -391,7 +439,7 @@ export const queries = defineQueries({
   },
   restaurants: {
     layout: defineQuery(({ ctx }) => {
-      if (!ctx) {
+      if (!hasOrgContext(ctx)) {
         return zql.restaurantArea.where(({ cmpLit }) =>
           cmpLit(false, "=", true)
         );
@@ -406,7 +454,7 @@ export const queries = defineQueries({
         .orderBy("name", "asc");
     }),
     openOrders: defineQuery(({ ctx }) => {
-      if (!ctx) {
+      if (!hasOrgContext(ctx)) {
         return zql.restaurantOrder.where(({ cmpLit }) =>
           cmpLit(false, "=", true)
         );
@@ -430,7 +478,7 @@ export const queries = defineQueries({
     }),
     tableById: defineQuery(restaurantTableIdArgsSchema, ({ args, ctx }) => {
       const normalizedTableId = args.tableId?.trim() ?? "";
-      if (!(ctx && normalizedTableId)) {
+      if (!(hasOrgContext(ctx) && normalizedTableId)) {
         return zql.restaurantTable.where(({ cmpLit }) =>
           cmpLit(false, "=", true)
         );
@@ -443,7 +491,7 @@ export const queries = defineQueries({
         .limit(1);
     }),
     kitchenBoard: defineQuery(({ ctx }) => {
-      if (!ctx) {
+      if (!hasOrgContext(ctx)) {
         return zql.restaurantKitchenTicket.where(({ cmpLit }) =>
           cmpLit(false, "=", true)
         );

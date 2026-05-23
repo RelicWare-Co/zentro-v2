@@ -3,6 +3,19 @@ import type { CreditPaymentDbExecutor } from "@/server/credit/register-payment.s
 import { runRegisterCreditPayment } from "@/server/credit/register-payment.server";
 import type { SetModuleEntitlementDbExecutor } from "@/server/modules/set-entitlement.server";
 import { runSetModuleEntitlement } from "@/server/modules/set-entitlement.server";
+import type { OrganizationDbExecutor } from "@/server/organization/organization-mutations.server";
+import {
+  runCancelInvitation,
+  runDeleteOrganization,
+  runInviteMember,
+  runJoinLinkCreate,
+  runJoinLinkRedeem,
+  runJoinLinkRevoke,
+  runLeaveOrganization,
+  runRemoveMember,
+  runUpdateMemberRole,
+  runUpdateOrganization,
+} from "@/server/organization/organization-mutations.server";
 import type { RestaurantDbExecutor } from "@/server/restaurants/restaurant-mutations.server";
 import {
   runAddRestaurantOrderItem,
@@ -25,20 +38,31 @@ import type { CreateSaleDbExecutor } from "@/server/sales/create-sale.server";
 import { runCreateSale } from "@/server/sales/create-sale.server";
 import type { UpdateSettingsDbExecutor } from "@/server/settings/update-settings.server";
 import { runUpdateOrganizationSettings } from "@/server/settings/update-settings.server";
+import type { ZeroContext } from "./context";
 import {
   addRestaurantOrderItemArgsSchema,
+  cancelInvitationArgsSchema,
   cancelSaleArgsSchema,
   closeRestaurantOrderArgsSchema,
+  createJoinLinkArgsSchema,
   createRestaurantAreaArgsSchema,
   createRestaurantTableArgsSchema,
   createSaleArgsSchema,
+  deleteOrganizationArgsSchema,
   deleteRestaurantAreaArgsSchema,
   deleteRestaurantDraftItemArgsSchema,
   deleteRestaurantTableArgsSchema,
+  inviteMemberArgsSchema,
+  joinLinkRedeemArgsSchema,
+  leaveOrganizationArgsSchema,
   registerCreditPaymentArgsSchema,
+  removeMemberArgsSchema,
+  revokeJoinLinkArgsSchema,
   sendRestaurantOrderToKitchenArgsSchema,
   setModuleEntitlementArgsSchema,
   mutators as sharedMutators,
+  updateMemberRoleArgsSchema,
+  updateOrganizationArgsSchema,
   updateOrganizationSettingsArgsSchema,
   updateRestaurantAreaArgsSchema,
   updateRestaurantDraftItemArgsSchema,
@@ -46,6 +70,16 @@ import {
   updateRestaurantOrderMetaArgsSchema,
   updateRestaurantTableArgsSchema,
 } from "./mutators";
+
+function requireOrgContext(
+  ctx: ZeroContext | undefined
+): ZeroContext & { orgID: string } {
+  if (!ctx?.orgID) {
+    throw new Error("No autorizado");
+  }
+
+  return ctx as ZeroContext & { orgID: string };
+}
 
 export const serverMutators = defineMutators(sharedMutators, {
   credit: {
@@ -67,7 +101,7 @@ export const serverMutators = defineMutators(sharedMutators, {
           drizzleTx as unknown as CreditPaymentDbExecutor,
           args,
           {
-            organizationId: ctx.orgID,
+            organizationId: requireOrgContext(ctx).orgID,
             userId: ctx.id,
           }
         );
@@ -88,7 +122,7 @@ export const serverMutators = defineMutators(sharedMutators, {
 
       const drizzleTx = tx.dbTransaction.wrappedTransaction;
       await runCreateSale(drizzleTx as unknown as CreateSaleDbExecutor, args, {
-        organizationId: ctx.orgID,
+        organizationId: requireOrgContext(ctx).orgID,
         userId: ctx.id,
       });
     }),
@@ -105,7 +139,7 @@ export const serverMutators = defineMutators(sharedMutators, {
 
       const drizzleTx = tx.dbTransaction.wrappedTransaction;
       await runCancelSale(drizzleTx as unknown as CancelSaleDbExecutor, args, {
-        organizationId: ctx.orgID,
+        organizationId: requireOrgContext(ctx).orgID,
         userId: ctx.id,
       });
     }),
@@ -124,11 +158,186 @@ export const serverMutators = defineMutators(sharedMutators, {
           );
         }
 
+        const orgCtx = requireOrgContext(ctx);
         const drizzleTx = tx.dbTransaction.wrappedTransaction;
         await runUpdateOrganizationSettings(
           drizzleTx as unknown as UpdateSettingsDbExecutor,
           args,
-          ctx
+          orgCtx
+        );
+      }
+    ),
+    joinLinkCreate: defineMutator(
+      createJoinLinkArgsSchema,
+      async ({ tx, args, ctx }) => {
+        const orgCtx = requireOrgContext(ctx);
+        if (!("dbTransaction" in tx)) {
+          throw new Error(
+            "Las mutaciones de organización solo pueden ejecutarse en el servidor"
+          );
+        }
+        const drizzleTx = tx.dbTransaction.wrappedTransaction;
+        await runJoinLinkCreate(
+          drizzleTx as unknown as OrganizationDbExecutor,
+          args,
+          { organizationId: orgCtx.orgID, userId: orgCtx.id }
+        );
+      }
+    ),
+    joinLinkRevoke: defineMutator(
+      revokeJoinLinkArgsSchema,
+      async ({ tx, args, ctx }) => {
+        const orgCtx = requireOrgContext(ctx);
+        if (!("dbTransaction" in tx)) {
+          throw new Error(
+            "Las mutaciones de organización solo pueden ejecutarse en el servidor"
+          );
+        }
+        const drizzleTx = tx.dbTransaction.wrappedTransaction;
+        await runJoinLinkRevoke(
+          drizzleTx as unknown as OrganizationDbExecutor,
+          args,
+          { organizationId: orgCtx.orgID, userId: orgCtx.id }
+        );
+      }
+    ),
+    inviteMember: defineMutator(
+      inviteMemberArgsSchema,
+      async ({ tx, args, ctx }) => {
+        const orgCtx = requireOrgContext(ctx);
+        if (!("dbTransaction" in tx)) {
+          throw new Error(
+            "Las mutaciones de organización solo pueden ejecutarse en el servidor"
+          );
+        }
+        const drizzleTx = tx.dbTransaction.wrappedTransaction;
+        await runInviteMember(
+          drizzleTx as unknown as OrganizationDbExecutor,
+          args,
+          { organizationId: orgCtx.orgID, userId: orgCtx.id }
+        );
+      }
+    ),
+    cancelInvitation: defineMutator(
+      cancelInvitationArgsSchema,
+      async ({ tx, args, ctx }) => {
+        const orgCtx = requireOrgContext(ctx);
+        if (!("dbTransaction" in tx)) {
+          throw new Error(
+            "Las mutaciones de organización solo pueden ejecutarse en el servidor"
+          );
+        }
+        const drizzleTx = tx.dbTransaction.wrappedTransaction;
+        await runCancelInvitation(
+          drizzleTx as unknown as OrganizationDbExecutor,
+          args,
+          { organizationId: orgCtx.orgID, userId: orgCtx.id }
+        );
+      }
+    ),
+    updateMemberRole: defineMutator(
+      updateMemberRoleArgsSchema,
+      async ({ tx, args, ctx }) => {
+        const orgCtx = requireOrgContext(ctx);
+        if (!("dbTransaction" in tx)) {
+          throw new Error(
+            "Las mutaciones de organización solo pueden ejecutarse en el servidor"
+          );
+        }
+        const drizzleTx = tx.dbTransaction.wrappedTransaction;
+        await runUpdateMemberRole(
+          drizzleTx as unknown as OrganizationDbExecutor,
+          args,
+          { organizationId: orgCtx.orgID, userId: orgCtx.id }
+        );
+      }
+    ),
+    removeMember: defineMutator(
+      removeMemberArgsSchema,
+      async ({ tx, args, ctx }) => {
+        const orgCtx = requireOrgContext(ctx);
+        if (!("dbTransaction" in tx)) {
+          throw new Error(
+            "Las mutaciones de organización solo pueden ejecutarse en el servidor"
+          );
+        }
+        const drizzleTx = tx.dbTransaction.wrappedTransaction;
+        await runRemoveMember(
+          drizzleTx as unknown as OrganizationDbExecutor,
+          args,
+          { organizationId: orgCtx.orgID, userId: orgCtx.id }
+        );
+      }
+    ),
+    leaveOrganization: defineMutator(
+      leaveOrganizationArgsSchema,
+      async ({ tx, args, ctx }) => {
+        if (!ctx) {
+          throw new Error("No autorizado");
+        }
+        if (!("dbTransaction" in tx)) {
+          throw new Error(
+            "Las mutaciones de organización solo pueden ejecutarse en el servidor"
+          );
+        }
+        const drizzleTx = tx.dbTransaction.wrappedTransaction;
+        await runLeaveOrganization(
+          drizzleTx as unknown as OrganizationDbExecutor,
+          args,
+          { userId: ctx.id }
+        );
+      }
+    ),
+    updateOrganization: defineMutator(
+      updateOrganizationArgsSchema,
+      async ({ tx, args, ctx }) => {
+        const orgCtx = requireOrgContext(ctx);
+        if (!("dbTransaction" in tx)) {
+          throw new Error(
+            "Las mutaciones de organización solo pueden ejecutarse en el servidor"
+          );
+        }
+        const drizzleTx = tx.dbTransaction.wrappedTransaction;
+        await runUpdateOrganization(
+          drizzleTx as unknown as OrganizationDbExecutor,
+          args,
+          { organizationId: orgCtx.orgID, userId: orgCtx.id }
+        );
+      }
+    ),
+    deleteOrganization: defineMutator(
+      deleteOrganizationArgsSchema,
+      async ({ tx, args, ctx }) => {
+        const orgCtx = requireOrgContext(ctx);
+        if (!("dbTransaction" in tx)) {
+          throw new Error(
+            "Las mutaciones de organización solo pueden ejecutarse en el servidor"
+          );
+        }
+        const drizzleTx = tx.dbTransaction.wrappedTransaction;
+        await runDeleteOrganization(
+          drizzleTx as unknown as OrganizationDbExecutor,
+          args,
+          { organizationId: orgCtx.orgID, userId: orgCtx.id }
+        );
+      }
+    ),
+    joinLinkRedeem: defineMutator(
+      joinLinkRedeemArgsSchema,
+      async ({ tx, args, ctx }) => {
+        if (!ctx) {
+          throw new Error("No autorizado");
+        }
+        if (!("dbTransaction" in tx)) {
+          throw new Error(
+            "Las mutaciones de organización solo pueden ejecutarse en el servidor"
+          );
+        }
+        const drizzleTx = tx.dbTransaction.wrappedTransaction;
+        await runJoinLinkRedeem(
+          drizzleTx as unknown as OrganizationDbExecutor,
+          args,
+          { userId: ctx.id }
         );
       }
     ),
@@ -172,7 +381,7 @@ export const serverMutators = defineMutators(sharedMutators, {
         await runAddRestaurantOrderItem(
           drizzleTx as unknown as RestaurantDbExecutor,
           args,
-          { organizationId: ctx.orgID, userId: ctx.id }
+          { organizationId: requireOrgContext(ctx).orgID, userId: ctx.id }
         );
       }
     ),
@@ -191,7 +400,7 @@ export const serverMutators = defineMutators(sharedMutators, {
         await runUpdateRestaurantOrderMeta(
           drizzleTx as unknown as RestaurantDbExecutor,
           args,
-          { organizationId: ctx.orgID, userId: ctx.id }
+          { organizationId: requireOrgContext(ctx).orgID, userId: ctx.id }
         );
       }
     ),
@@ -210,7 +419,7 @@ export const serverMutators = defineMutators(sharedMutators, {
         await runUpdateRestaurantDraftItem(
           drizzleTx as unknown as RestaurantDbExecutor,
           args,
-          { organizationId: ctx.orgID, userId: ctx.id }
+          { organizationId: requireOrgContext(ctx).orgID, userId: ctx.id }
         );
       }
     ),
@@ -229,7 +438,7 @@ export const serverMutators = defineMutators(sharedMutators, {
         await runDeleteRestaurantDraftItem(
           drizzleTx as unknown as RestaurantDbExecutor,
           args,
-          { organizationId: ctx.orgID, userId: ctx.id }
+          { organizationId: requireOrgContext(ctx).orgID, userId: ctx.id }
         );
       }
     ),
@@ -248,7 +457,7 @@ export const serverMutators = defineMutators(sharedMutators, {
         await runSendRestaurantOrderToKitchen(
           drizzleTx as unknown as RestaurantDbExecutor,
           args,
-          { organizationId: ctx.orgID, userId: ctx.id }
+          { organizationId: requireOrgContext(ctx).orgID, userId: ctx.id }
         );
       }
     ),
@@ -267,7 +476,7 @@ export const serverMutators = defineMutators(sharedMutators, {
         await runUpdateRestaurantOrderItemStatus(
           drizzleTx as unknown as RestaurantDbExecutor,
           args,
-          { organizationId: ctx.orgID, userId: ctx.id }
+          { organizationId: requireOrgContext(ctx).orgID, userId: ctx.id }
         );
       }
     ),
@@ -286,7 +495,7 @@ export const serverMutators = defineMutators(sharedMutators, {
         await runCloseRestaurantOrder(
           drizzleTx as unknown as RestaurantDbExecutor,
           args,
-          { organizationId: ctx.orgID, userId: ctx.id }
+          { organizationId: requireOrgContext(ctx).orgID, userId: ctx.id }
         );
       }
     ),
@@ -305,7 +514,7 @@ export const serverMutators = defineMutators(sharedMutators, {
         await runCreateRestaurantArea(
           drizzleTx as unknown as RestaurantDbExecutor,
           args,
-          { organizationId: ctx.orgID, userId: ctx.id }
+          { organizationId: requireOrgContext(ctx).orgID, userId: ctx.id }
         );
       }
     ),
@@ -324,7 +533,7 @@ export const serverMutators = defineMutators(sharedMutators, {
         await runUpdateRestaurantArea(
           drizzleTx as unknown as RestaurantDbExecutor,
           args,
-          { organizationId: ctx.orgID, userId: ctx.id }
+          { organizationId: requireOrgContext(ctx).orgID, userId: ctx.id }
         );
       }
     ),
@@ -343,7 +552,7 @@ export const serverMutators = defineMutators(sharedMutators, {
         await runDeleteRestaurantArea(
           drizzleTx as unknown as RestaurantDbExecutor,
           args,
-          { organizationId: ctx.orgID, userId: ctx.id }
+          { organizationId: requireOrgContext(ctx).orgID, userId: ctx.id }
         );
       }
     ),
@@ -362,7 +571,7 @@ export const serverMutators = defineMutators(sharedMutators, {
         await runCreateRestaurantTable(
           drizzleTx as unknown as RestaurantDbExecutor,
           args,
-          { organizationId: ctx.orgID, userId: ctx.id }
+          { organizationId: requireOrgContext(ctx).orgID, userId: ctx.id }
         );
       }
     ),
@@ -381,7 +590,7 @@ export const serverMutators = defineMutators(sharedMutators, {
         await runUpdateRestaurantTable(
           drizzleTx as unknown as RestaurantDbExecutor,
           args,
-          { organizationId: ctx.orgID, userId: ctx.id }
+          { organizationId: requireOrgContext(ctx).orgID, userId: ctx.id }
         );
       }
     ),
@@ -400,7 +609,7 @@ export const serverMutators = defineMutators(sharedMutators, {
         await runDeleteRestaurantTable(
           drizzleTx as unknown as RestaurantDbExecutor,
           args,
-          { organizationId: ctx.orgID, userId: ctx.id }
+          { organizationId: requireOrgContext(ctx).orgID, userId: ctx.id }
         );
       }
     ),

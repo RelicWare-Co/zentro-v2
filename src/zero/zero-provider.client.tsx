@@ -14,8 +14,8 @@ import type { ZeroContext } from "./context";
 
 export interface ZentroZeroProviderProps {
   children: ReactNode;
-  context: ZeroContext;
-  userID: string;
+  context?: ZeroContext;
+  userID: string | null;
 }
 
 export function ZentroZeroProvider({
@@ -23,14 +23,13 @@ export function ZentroZeroProvider({
   context,
   children,
 }: ZentroZeroProviderProps) {
-  const { id, orgID, role, systemRole } = context;
   const opts = useMemo(
     () =>
       createZeroOptions({
         userID,
-        context: { id, orgID, role, systemRole },
+        context,
       }),
-    [id, orgID, role, systemRole, userID]
+    [context, userID]
   );
 
   return <ZeroProvider {...opts}>{children}</ZeroProvider>;

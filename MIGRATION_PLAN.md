@@ -137,14 +137,14 @@ Cada checklist se completa surface a surface. Marcar el ítem solo cuando esté 
 ### M4 · Crédito y reportes
 
 - [x] **Credit accounts (reads + registerPayment)** → queries `credit.accounts`, `credit.transactions`, mutator server-only `credit.registerPayment` en `server/credit/register-payment.server.ts`, hooks `use-credit.ts` Zero. Eliminados `server/orpc/contracts/credit.ts` y `server/orpc/routers/credit.ts`. Tests migrados a `tests/helpers/zero-credit.ts`.
-- [ ] **Dashboard / reportes**: queries derivadas. Si los reportes son agregaciones pesadas, mantenerlos como REST en oRPC y solo leer datos primarios via Zero.
+- [x] **Dashboard overview** → agregación SQL server-side en `server/dashboard/build-overview.server.ts`; endpoint autenticado `GET /api/dashboard/overview` (no Zero sync — reporte efímero); hook `useDashboardOverview` con TanStack Query. Eliminados `server/orpc/contracts/dashboard.ts` y `server/orpc/routers/dashboard.ts`.
+- [x] **Organization (14 endpoints)** → auth parcial (`ZeroContext.orgID` nullable + `email`); queries `organization.selection/management/joinLinkPreview`; mutators server-only en `server/organization/organization-mutations.server.ts`; hooks `use-organization.ts`; tests VAL-ORG-001–013 vía `tests/helpers/zero-organization.ts`. Eliminado `server/orpc/`.
 
 ### M5 · Limpieza
 
-- [ ] Borrar `server/orpc/routers/*` que ya estén migrados.
-- [ ] Quitar `dbMiddleware` y `requireOrgMiddleware` muertos.
-- [ ] Quitar dependencias `@orpc/*` del `package.json` cuando no queden consumidores.
-- [ ] Eliminar `pages/+Layout.tsx → QueryClientProvider` si TanStack Query ya no se usa para datos de servidor (puede quedarse para estado client-only).
+- [x] Borrar `server/orpc/**` (migración oRPC completa).
+- [x] Quitar dependencias `@orpc/*` del `package.json`.
+- [ ] Evaluar si `QueryClientProvider` puede simplificarse (sigue usándose para `GET /api/dashboard/overview` y better-auth client helpers).
 
 ## 8. Patrones obligatorios
 

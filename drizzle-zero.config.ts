@@ -19,6 +19,7 @@ import {
   memberRelations,
   organization,
   organizationJoinLink,
+  organizationJoinLinkRelations,
   organizationModuleEntitlement,
   organizationRelations,
   payment,
@@ -72,6 +73,7 @@ const drizzleSchema = {
   memberRelations,
   organization,
   organizationJoinLink,
+  organizationJoinLinkRelations,
   organizationModuleEntitlement,
   organizationRelations,
   payment,
@@ -151,6 +153,7 @@ export default drizzleZeroConfig(drizzleSchema, {
     organizationJoinLink: {
       id: true,
       organizationId: true,
+      token: true,
       role: true,
       label: true,
       createdByUserId: true,

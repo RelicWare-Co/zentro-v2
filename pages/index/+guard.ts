@@ -6,7 +6,7 @@ export const guard = (pageContext: PageContextServer) => {
     throw redirect("/login");
   }
 
-  if (!pageContext.zeroContext) {
+  if (!pageContext.zeroContext?.orgID) {
     throw redirect("/organization");
   }
 

@@ -10,14 +10,16 @@
 // Never read membership, role, or org from the client args; always use `ctx`.
 
 export interface ZeroContext {
+  /** Normalized user email for invitation lookups and selection flows. */
+  email: string;
   /** better-auth user id (`session.userId`). */
   id: string;
-  /** Active organization id from `session.activeOrganizationId`. */
-  orgID: string;
+  /** Active organization id from `session.activeOrganizationId`, or null when unset. */
+  orgID: string | null;
   /**
    * Better-auth member role within `orgID`. May be `null` when the user is in
-   * a transient state (just joined, role not yet provisioned). Permission
-   * helpers should treat `null` as the lowest-trust role.
+   * a transient state (just joined, role not yet provisioned, or no active org).
+   * Permission helpers should treat `null` as the lowest-trust role.
    */
   role: "owner" | "admin" | "member" | null;
   /**

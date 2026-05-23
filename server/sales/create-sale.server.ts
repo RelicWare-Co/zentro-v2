@@ -1,5 +1,5 @@
-import { ORPCError } from "@orpc/server";
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
+import { createError } from "evlog";
 import type { z } from "zod";
 import type { Database, dbSqlite } from "@/database/drizzle/db";
 import { organization } from "@/database/drizzle/schema/auth.schema";
@@ -810,7 +810,7 @@ export async function runCreateSale(
 
 function mapCreateSaleError(error: unknown): never {
   if (error instanceof Error) {
-    throw new ORPCError("BAD_REQUEST", { message: error.message });
+    throw createError({ message: error.message, status: 400 });
   }
   throw error;
 }

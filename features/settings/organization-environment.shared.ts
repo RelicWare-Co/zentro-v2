@@ -57,7 +57,9 @@ function toTimestamp(value: Date | number | string | null | undefined) {
   return Number.isNaN(dateValue.getTime()) ? Date.now() : dateValue.getTime();
 }
 
-export function buildViewerAccess(ctx: ZeroContext): OrganizationViewerAccess {
+export function buildViewerAccess(
+  ctx: Pick<ZeroContext, "id" | "orgID" | "role" | "systemRole">
+): OrganizationViewerAccess {
   const organizationRole = ctx.role ?? null;
   return {
     organizationRole,

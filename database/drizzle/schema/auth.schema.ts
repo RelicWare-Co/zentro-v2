@@ -243,9 +243,20 @@ export const accountRelations = relations(account, ({ one }) => ({
   }),
 }));
 
+export const organizationJoinLinkRelations = relations(
+  organizationJoinLink,
+  ({ one }) => ({
+    organization: one(organization, {
+      fields: [organizationJoinLink.organizationId],
+      references: [organization.id],
+    }),
+  })
+);
+
 export const organizationRelations = relations(organization, ({ many }) => ({
   members: many(member),
   invitations: many(invitation),
+  joinLinks: many(organizationJoinLink),
   // Nuevas relaciones POS
   customers: many(customer),
   categories: many(category),

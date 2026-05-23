@@ -1,4 +1,3 @@
-import { useQuery } from "@tanstack/react-query";
 import {
   AlertTriangle,
   ArrowRight,
@@ -9,17 +8,14 @@ import {
   TrendingUp,
   Wallet,
 } from "lucide-react";
-import type { z } from "zod";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import type { DashboardOverview } from "@/features/dashboard/hooks/use-dashboard-overview";
+import { useDashboardOverview } from "@/features/dashboard/hooks/use-dashboard-overview";
 import {
   formatPaymentMethodIdLabel,
   normalizePaymentMethodId,
 } from "@/features/settings/settings.shared";
-import type { DashboardOverviewSchema } from "@/schemas/dashboard";
-import { orpcQuery } from "@/server/orpc/client/query";
-
-type DashboardData = z.infer<typeof DashboardOverviewSchema>;
 
 const currencyFormatter = new Intl.NumberFormat("es-CO", {
   style: "currency",
@@ -47,8 +43,8 @@ const dateTimeFormatter = new Intl.DateTimeFormat("es-CO", {
 });
 
 export function DashboardPage() {
-  const overviewQuery = useQuery(orpcQuery.dashboard.overview.queryOptions());
-  const data = overviewQuery.data;
+  const overviewQuery = useDashboardOverview();
+  const data: DashboardOverview | undefined = overviewQuery.data;
 
   if (overviewQuery.isPending) {
     return (
@@ -150,7 +146,7 @@ function DashboardStats({
   stats,
   lowStockThreshold,
 }: {
-  stats: DashboardData["stats"];
+  stats: DashboardOverview["stats"];
   lowStockThreshold: number;
 }) {
   const todayRevenueChange = getPercentChange(
@@ -214,7 +210,7 @@ function DashboardStats({
 function SalesTrendPanel({
   salesTrend,
 }: {
-  salesTrend: DashboardData["salesTrend"];
+  salesTrend: DashboardOverview["salesTrend"];
 }) {
   const maxTrendRevenue = Math.max(
     1,
@@ -331,10 +327,10 @@ function OperationPanel({
   paymentMethodLabels,
   stats,
 }: {
-  activeShift: DashboardData["activeShift"];
-  paymentMix: DashboardData["paymentMix"];
-  paymentMethodLabels: DashboardData["paymentMethodLabels"];
-  stats: DashboardData["stats"];
+  activeShift: DashboardOverview["activeShift"];
+  paymentMix: DashboardOverview["paymentMix"];
+  paymentMethodLabels: DashboardOverview["paymentMethodLabels"];
+  stats: DashboardOverview["stats"];
 }) {
   const paymentTotal = paymentMix.reduce(
     (total, payment) => total + payment.amount,
@@ -487,7 +483,7 @@ function OperationPanel({
 function TopProductsPanel({
   topProducts,
 }: {
-  topProducts: DashboardData["topProducts"];
+  topProducts: DashboardOverview["topProducts"];
 }) {
   return (
     <div className="flex flex-col gap-5 rounded-xl border border-zinc-800 bg-[var(--color-carbon)] p-5">
@@ -543,8 +539,8 @@ function AlertsPanel({
   stats,
   lowStockProducts,
 }: {
-  stats: DashboardData["stats"];
-  lowStockProducts: DashboardData["lowStockProducts"];
+  stats: DashboardOverview["stats"];
+  lowStockProducts: DashboardOverview["lowStockProducts"];
 }) {
   return (
     <div className="flex flex-col gap-5 rounded-xl border border-zinc-800 bg-[var(--color-carbon)] p-5">
@@ -619,7 +615,7 @@ function AlertsPanel({
 function RecentSalesPanel({
   recentSales,
 }: {
-  recentSales: DashboardData["recentSales"];
+  recentSales: DashboardOverview["recentSales"];
 }) {
   return (
     <div className="flex flex-col gap-5 rounded-xl border border-zinc-800 bg-[var(--color-carbon)] p-5">
