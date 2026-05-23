@@ -177,7 +177,11 @@ export function buildModuleCapabilities(params: {
   });
 
   return {
-    viewer: access,
+    viewer: {
+      organizationRole: access.organizationRole ?? "member",
+      isOrganizationManager: access.isOrganizationManager,
+      isPlatformAdmin: access.isPlatformAdmin,
+    },
     modules,
   };
 }

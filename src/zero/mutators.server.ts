@@ -1,6 +1,8 @@
 import { defineMutator, defineMutators } from "@rocicorp/zero";
 import type { CreditPaymentDbExecutor } from "@/server/credit/register-payment.server";
 import { runRegisterCreditPayment } from "@/server/credit/register-payment.server";
+import type { SetModuleEntitlementDbExecutor } from "@/server/modules/set-entitlement.server";
+import { runSetModuleEntitlement } from "@/server/modules/set-entitlement.server";
 import type { CancelSaleDbExecutor } from "@/server/sales/cancel-sale.server";
 import { runCancelSale } from "@/server/sales/cancel-sale.server";
 import type { CreateSaleDbExecutor } from "@/server/sales/create-sale.server";
@@ -11,6 +13,7 @@ import {
   cancelSaleArgsSchema,
   createSaleArgsSchema,
   registerCreditPaymentArgsSchema,
+  setModuleEntitlementArgsSchema,
   mutators as sharedMutators,
   updateOrganizationSettingsArgsSchema,
 } from "./mutators";
@@ -95,6 +98,29 @@ export const serverMutators = defineMutators(sharedMutators, {
         const drizzleTx = tx.dbTransaction.wrappedTransaction;
         await runUpdateOrganizationSettings(
           drizzleTx as unknown as UpdateSettingsDbExecutor,
+          args,
+          ctx
+        );
+      }
+    ),
+  },
+  modules: {
+    setEntitlement: defineMutator(
+      setModuleEntitlementArgsSchema,
+      async ({ tx, args, ctx }) => {
+        if (!ctx) {
+          throw new Error("No autorizado");
+        }
+
+        if (!("dbTransaction" in tx)) {
+          throw new Error(
+            "La actualización de entitlements solo puede ejecutarse en el servidor"
+          );
+        }
+
+        const drizzleTx = tx.dbTransaction.wrappedTransaction;
+        await runSetModuleEntitlement(
+          drizzleTx as unknown as SetModuleEntitlementDbExecutor,
           args,
           ctx
         );

@@ -31,6 +31,7 @@ import {
   DeleteCustomerSchema,
   UpdateCustomerSchema,
 } from "@/schemas/customers";
+import { SetModuleEntitlementSchema } from "@/schemas/modules";
 import { ToggleProductFavoriteInputSchema } from "@/schemas/pos";
 import {
   CreateCategorySchema,
@@ -105,6 +106,8 @@ export const createSaleArgsSchema = CreateSaleInputSchema.extend({
 export const cancelSaleArgsSchema = CancelSaleInputSchema;
 
 export const updateOrganizationSettingsArgsSchema = UpdateSettingsSchema;
+
+export const setModuleEntitlementArgsSchema = SetModuleEntitlementSchema;
 
 export const openShiftArgsSchema = zod.object({
   id: zod.string().trim().min(1),
@@ -726,6 +729,11 @@ export const mutators = defineMutators({
         // Server-only validation; client completes without optimistic writes.
       }
     ),
+  },
+  modules: {
+    setEntitlement: defineMutator(setModuleEntitlementArgsSchema, async () => {
+      // Server-only entitlement writes; client completes without optimistic writes.
+    }),
   },
   shifts: {
     open: defineMutator(openShiftArgsSchema, async ({ args, ctx, tx }) => {

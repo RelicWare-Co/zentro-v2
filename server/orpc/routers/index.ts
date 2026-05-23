@@ -1,5 +1,4 @@
 import { overview as dashboardOverview } from "./dashboard";
-import { capabilities, setEntitlement } from "./modules";
 import {
   cancelInvitation,
   deleteOrganization,
@@ -50,10 +49,6 @@ export const router = {
     leaveOrganization,
     updateOrganization,
     deleteOrganization,
-  },
-  modules: {
-    capabilities,
-    setEntitlement,
   },
   dashboard: {
     overview: dashboardOverview,

@@ -6,6 +6,11 @@ import { createServerORPCClient } from "@/server/orpc/client/server";
 import { buildMockContext } from "./helpers/orpc-context";
 import { makeUser, seedOrganizationWithMember } from "./helpers/seed";
 import { createTestDb, type TestDb } from "./helpers/test-db";
+import {
+  getModuleCapabilitiesViaZero,
+  setModuleEntitlementViaZero,
+} from "./helpers/zero-modules";
+import { createZeroContext, createZeroTestDb } from "./helpers/zero-shifts";
 
 async function setRestaurantModuleEnabled(
   db: TestDb,
@@ -33,11 +38,9 @@ describe("module access control", () => {
       });
       await setRestaurantModuleEnabled(db, organizationId, true);
 
-      const u = makeUser({ id: userId, email: "owner@example.com" });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
-
-      const result = await client.modules.capabilities();
+      const zeroDb = createZeroTestDb(db);
+      const ctx = createZeroContext(userId, organizationId);
+      const result = await getModuleCapabilitiesViaZero({ zeroDb, ctx });
       expect(result.modules.restaurants.enabled).toBe(true);
       expect(result.modules.restaurants.accessible).toBe(true);
       expect(result.modules.restaurants.navigation.length).toBeGreaterThan(0);
@@ -57,13 +60,10 @@ describe("module access control", () => {
       const { organizationId, userId } = await seedOrganizationWithMember(db, {
         memberRole: "owner",
       });
-      // Default organization metadata has restaurants disabled
 
-      const u = makeUser({ id: userId, email: "owner@example.com" });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
-
-      const result = await client.modules.capabilities();
+      const zeroDb = createZeroTestDb(db);
+      const ctx = createZeroContext(userId, organizationId);
+      const result = await getModuleCapabilitiesViaZero({ zeroDb, ctx });
       expect(result.modules.restaurants.enabled).toBe(false);
       expect(result.modules.restaurants.accessible).toBe(false);
       expect(result.modules.restaurants.navigation.length).toBe(0);
@@ -80,18 +80,20 @@ describe("module access control", () => {
         userRole: "user",
       });
 
-      const u = makeUser({
-        id: userId,
-        email: "owner@example.com",
-        role: "user",
+      const zeroDb = createZeroTestDb(db);
+      const ctx = createZeroContext(userId, organizationId, {
+        role: "owner",
+        systemRole: null,
       });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
 
       await expect(
-        client.modules.setEntitlement({
-          moduleKey: "restaurants",
-          status: "blocked",
+        setModuleEntitlementViaZero({
+          zeroDb,
+          ctx,
+          input: {
+            moduleKey: "restaurants",
+            status: "blocked",
+          },
         })
       ).rejects.toThrow("administrador de la app");
 
@@ -105,17 +107,19 @@ describe("module access control", () => {
         userRole: "admin",
       });
 
-      const u = makeUser({
-        id: userId,
-        email: "admin@example.com",
-        role: "admin",
+      const zeroDb = createZeroTestDb(db);
+      const ctx = createZeroContext(userId, organizationId, {
+        role: "owner",
+        systemRole: "admin",
       });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
 
-      const result = await client.modules.setEntitlement({
-        moduleKey: "restaurants",
-        status: "blocked",
+      const result = await setModuleEntitlementViaZero({
+        zeroDb,
+        ctx,
+        input: {
+          moduleKey: "restaurants",
+          status: "blocked",
+        },
       });
       expect(result.key).toBe("restaurants");
       expect(result.entitlementStatus).toBe("blocked");
@@ -130,7 +134,6 @@ describe("module access control", () => {
       const { organizationId, userId } = await seedOrganizationWithMember(db, {
         memberRole: "owner",
       });
-      // Default metadata has restaurants disabled
 
       const u = makeUser({ id: userId, email: "owner@example.com" });
       const ctx = buildMockContext(db, u, organizationId);

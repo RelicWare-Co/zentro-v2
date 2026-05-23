@@ -376,6 +376,15 @@ export const queries = defineQueries({
       );
     }),
   },
+  modules: {
+    capabilities: defineQuery(({ ctx }) => {
+      if (!ctx) {
+        return zql.organization.where(({ cmpLit }) => cmpLit(false, "=", true));
+      }
+
+      return zql.organization.where("id", ctx.orgID).limit(1);
+    }),
+  },
 });
 
 export type Queries = typeof queries;

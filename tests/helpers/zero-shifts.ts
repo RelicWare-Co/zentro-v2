@@ -24,12 +24,16 @@ type RegisterCashMovementInput = z.infer<
   typeof RegisterCashMovementInputSchema
 >;
 
-export function createZeroContext(userId: string, organizationId: string) {
+export function createZeroContext(
+  userId: string,
+  organizationId: string,
+  options?: Partial<Pick<ZeroContext, "role" | "systemRole">>
+) {
   return {
     id: userId,
     orgID: organizationId,
-    role: "owner",
-    systemRole: null,
+    role: options?.role ?? "owner",
+    systemRole: options?.systemRole ?? null,
   } satisfies ZeroContext;
 }
 

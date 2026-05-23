@@ -121,6 +121,7 @@ Cada checklist se completa surface a surface. Marcar el ítem solo cuando esté 
 - [x] **Products (CRUD)** → mutators `products.create/update/delete`. Borrados `server/orpc/contracts/products.ts` y `server/orpc/routers/products.ts`.
 - [ ] **Restaurants areas/tables** → mutators correspondientes.
 - [x] **Settings (read/update)** → queries `organization.environment` / `organization.moduleEntitlements`, mutator server-only `organization.updateSettings` en `server/settings/update-settings.server.ts`, capa `features/settings/organization-environment.shared.ts`, hooks `use-settings.ts`. Eliminados `server/orpc/contracts/settings.ts` y `server/orpc/routers/settings.ts`.
+- [x] **Modules (capabilities/setEntitlement)** → query `modules.capabilities`, mutator server-only `modules.setEntitlement` en `server/modules/set-entitlement.server.ts`, hook `use-module-capabilities.ts`, `app-layout` vía Zero. Eliminados `server/orpc/contracts/modules.ts` y `server/orpc/routers/modules.ts`.
 
 ### M3 · Flujo POS (alto riesgo, alta visibilidad)
 

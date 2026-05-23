@@ -1,4 +1,3 @@
-import { useQuery } from "@tanstack/react-query";
 import {
   Building2,
   ChefHat,
@@ -20,10 +19,10 @@ import {
 import { useState } from "react";
 import { usePageContext } from "vike-react/usePageContext";
 import { OrganizationSelection } from "@/components/organization-selection";
+import { useModuleCapabilities } from "@/features/modules/hooks/use-module-capabilities";
 import { authClient } from "@/lib/auth-client";
 import { queryClient } from "@/lib/query-client";
 import { cn } from "@/lib/utils";
-import { orpcQuery } from "@/server/orpc/client/query";
 
 const moduleIconMap = {
   "chef-hat": ChefHat,
@@ -58,10 +57,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const pageContext = usePageContext();
   const { data: activeOrganization, isPending: isActiveOrgPending } =
     authClient.useActiveOrganization();
-  const { data: capabilities } = useQuery({
-    ...orpcQuery.modules.capabilities.queryOptions(),
-    enabled: Boolean(activeOrganization),
-  });
+  const { data: capabilities } = useModuleCapabilities();
 
   if (isActiveOrgPending) {
     return (
