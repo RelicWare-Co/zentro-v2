@@ -4,6 +4,7 @@ import { useDeferredValue, useMemo, useRef } from "react";
 import type { z } from "zod";
 import type {
   ShiftCloseSummary,
+  ShiftListItem,
   ShiftsListParams,
   ShiftWithRelations,
 } from "@/features/shifts/shifts.shared";

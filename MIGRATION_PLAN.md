@@ -124,7 +124,7 @@ Cada checklist se completa surface a surface. Marcar el ítem solo cuando esté 
 ### M3 · Flujo POS (alto riesgo, alta visibilidad)
 
 - [x] **Shifts open/close** → mutators `shifts.open/close` con validación de caja y fold de `shiftClosure`. Eliminados `server/orpc/contracts/shifts.ts` y `server/orpc/routers/shifts.ts`.
-- [x] **Cash movements** → mutator `shifts.cashMovement` con shift activo y métodos de pago habilitados.
+- [x] **Cash movements** → mutator `shifts.cashMovement` con shift activo y métodos de pago habilitados. Tests de validación en `tests/zero-shifts.test.ts` (turno cerrado, otro cajero, método inválido, tipo inválido, turno inexistente).
 - [ ] **Sales (create-sale)**: convertir `server/sales/create-sale.server.ts` en un mutator server-only que escribe `sale` + `saleItem` + `payment` + `inventoryMovement` en una sola transacción.
 - [ ] Sustituir `useSalesPage` para que renderice desde Zero.
 
