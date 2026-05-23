@@ -56,7 +56,7 @@ export async function getPosSettingsViaZero({
   ctx: ZeroContext;
 }) {
   const organizationRows = await zeroDb.run(
-    queries.shifts.organization.fn({ args: undefined, ctx })
+    queries.organization.current.fn({ args: undefined, ctx })
   );
   const organizationSettings = parseOrganizationSettingsMetadata(
     typeof organizationRows[0]?.metadata === "string"

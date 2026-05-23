@@ -54,7 +54,7 @@ export async function getRestaurantBootstrapViaZero({
   ] = await Promise.all([
     zeroDb.run(queries.shifts.active.fn({ args: undefined, ctx })),
     zeroDb.run(queries.products.categories.fn({ args: undefined, ctx })),
-    zeroDb.run(queries.shifts.organization.fn({ args: undefined, ctx })),
+    zeroDb.run(queries.organization.current.fn({ args: undefined, ctx })),
     zeroDb.run(queries.restaurants.layout.fn({ args: undefined, ctx })),
     zeroDb.run(queries.restaurants.openOrders.fn({ args: undefined, ctx })),
   ]);
@@ -78,7 +78,7 @@ export async function getRestaurantConfigurationViaZero({
   ctx: ZeroContext;
 }) {
   const [organizationRows, layoutRows] = await Promise.all([
-    zeroDb.run(queries.shifts.organization.fn({ args: undefined, ctx })),
+    zeroDb.run(queries.organization.current.fn({ args: undefined, ctx })),
     zeroDb.run(queries.restaurants.layout.fn({ args: undefined, ctx })),
   ]);
   return buildRestaurantConfiguration(
@@ -97,7 +97,7 @@ export async function getRestaurantTableDetailViaZero({
   tableId: string;
 }) {
   const [organizationRows, tableRows, openOrderRows] = await Promise.all([
-    zeroDb.run(queries.shifts.organization.fn({ args: undefined, ctx })),
+    zeroDb.run(queries.organization.current.fn({ args: undefined, ctx })),
     zeroDb.run(
       queries.restaurants.tableById.fn({
         args: { tableId },
@@ -136,7 +136,7 @@ export async function getKitchenBoardViaZero({
   ctx: ZeroContext;
 }) {
   const [organizationRows, ticketRows] = await Promise.all([
-    zeroDb.run(queries.shifts.organization.fn({ args: undefined, ctx })),
+    zeroDb.run(queries.organization.current.fn({ args: undefined, ctx })),
     zeroDb.run(queries.restaurants.kitchenBoard.fn({ args: undefined, ctx })),
   ]);
 

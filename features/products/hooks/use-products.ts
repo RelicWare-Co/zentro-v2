@@ -1,7 +1,11 @@
-import { useZero, useQuery as useZeroQuery } from "@rocicorp/zero/react";
-import { useMutation } from "@tanstack/react-query";
+import { useQuery as useZeroQuery } from "@rocicorp/zero/react";
 import { useDeferredValue, useMemo, useRef } from "react";
 import type { z } from "zod";
+import {
+  getZeroQueryError,
+  useZeroMutation,
+  waitForZeroMutation,
+} from "@/lib/use-zero-mutation";
 import type {
   CategorySchema,
   CreateCategorySchema,
@@ -24,18 +28,6 @@ type ZeroProductWithCategory = ZeroProduct & {
   readonly category?: ZeroCategory | null;
 };
 
-type ZeroMutationDetails =
-  | { readonly type: "success" }
-  | {
-      readonly error: { readonly message: string };
-      readonly type: "error";
-    };
-
-interface ZeroMutationResult {
-  readonly client: Promise<ZeroMutationDetails>;
-  readonly server: Promise<ZeroMutationDetails>;
-}
-
 export type Product = z.infer<typeof ProductSchema>;
 export type Category = z.infer<typeof CategorySchema>;
 type CreateProductInput = z.infer<typeof CreateProductSchema>;
@@ -47,28 +39,6 @@ type RegisterInventoryMovementInput = z.infer<
 type CreateCategoryInput = z.infer<typeof CreateCategorySchema>;
 type UpdateCategoryInput = z.infer<typeof UpdateCategorySchema>;
 type DeleteCategoryInput = z.infer<typeof DeleteCategorySchema>;
-
-function toError(details: Extract<ZeroMutationDetails, { type: "error" }>) {
-  return new Error(details.error.message || "La mutación de Zero falló");
-}
-
-async function waitForZeroMutation(result: ZeroMutationResult) {
-  const clientResult = await result.client;
-  if (clientResult.type === "error") {
-    throw toError(clientResult);
-  }
-
-  const serverResult = await result.server;
-  if (serverResult.type === "error") {
-    throw toError(serverResult);
-  }
-}
-
-function getQueryError(status: { type: string; error?: { message?: string } }) {
-  return status.type === "error"
-    ? new Error(status.error?.message ?? "No se pudo cargar la consulta Zero")
-    : null;
-}
 
 function normalizeProduct(product: ZeroProductWithCategory): Product {
   return {
@@ -115,8 +85,8 @@ export function useProductsQueries(options: {
     queries.products.categories()
   );
 
-  const productsError = getQueryError(productsStatus);
-  const categoriesError = getQueryError(categoriesStatus);
+  const productsError = getZeroQueryError(productsStatus);
+  const categoriesError = getZeroQueryError(categoriesStatus);
   const products = useMemo(
     () => productRows.map((product) => normalizeProduct(product)),
     [productRows]
@@ -172,10 +142,8 @@ export function useProductsMutations(options?: {
   onDeleteCategorySuccess?: () => void;
   onRegisterInventoryMovementSuccess?: () => void;
 }) {
-  const zero = useZero();
-
-  const createProductMutation = useMutation({
-    mutationFn: async (input: CreateProductInput) => {
+  const createProductMutation = useZeroMutation(
+    async (input: CreateProductInput, zero) => {
       const id = crypto.randomUUID();
       await waitForZeroMutation(
         zero.mutate(
@@ -187,24 +155,24 @@ export function useProductsMutations(options?: {
       );
       return { id };
     },
-    onSuccess: () => options?.onCreateProductSuccess?.(),
-  });
-  const updateProductMutation = useMutation({
-    mutationFn: async (input: UpdateProductInput) => {
+    { onSuccess: () => options?.onCreateProductSuccess?.() }
+  );
+  const updateProductMutation = useZeroMutation(
+    async (input: UpdateProductInput, zero) => {
       await waitForZeroMutation(zero.mutate(mutators.products.update(input)));
       return { success: true };
     },
-    onSuccess: () => options?.onUpdateProductSuccess?.(),
-  });
-  const deleteProductMutation = useMutation({
-    mutationFn: async (input: DeleteProductInput) => {
+    { onSuccess: () => options?.onUpdateProductSuccess?.() }
+  );
+  const deleteProductMutation = useZeroMutation(
+    async (input: DeleteProductInput, zero) => {
       await waitForZeroMutation(zero.mutate(mutators.products.delete(input)));
       return { success: true };
     },
-    onSuccess: () => options?.onDeleteProductSuccess?.(),
-  });
-  const registerInventoryMovementMutation = useMutation({
-    mutationFn: async (input: RegisterInventoryMovementInput) => {
+    { onSuccess: () => options?.onDeleteProductSuccess?.() }
+  );
+  const registerInventoryMovementMutation = useZeroMutation(
+    async (input: RegisterInventoryMovementInput, zero) => {
       const id = crypto.randomUUID();
       await waitForZeroMutation(
         zero.mutate(
@@ -216,10 +184,10 @@ export function useProductsMutations(options?: {
       );
       return { id, productId: input.productId, quantity: input.quantity };
     },
-    onSuccess: () => options?.onRegisterInventoryMovementSuccess?.(),
-  });
-  const createCategoryMutation = useMutation({
-    mutationFn: async (input: CreateCategoryInput) => {
+    { onSuccess: () => options?.onRegisterInventoryMovementSuccess?.() }
+  );
+  const createCategoryMutation = useZeroMutation(
+    async (input: CreateCategoryInput, zero) => {
       const id = crypto.randomUUID();
       await waitForZeroMutation(
         zero.mutate(
@@ -231,26 +199,26 @@ export function useProductsMutations(options?: {
       );
       return { id };
     },
-    onSuccess: () => options?.onCreateCategorySuccess?.(),
-  });
-  const updateCategoryMutation = useMutation({
-    mutationFn: async (input: UpdateCategoryInput) => {
+    { onSuccess: () => options?.onCreateCategorySuccess?.() }
+  );
+  const updateCategoryMutation = useZeroMutation(
+    async (input: UpdateCategoryInput, zero) => {
       await waitForZeroMutation(
         zero.mutate(mutators.products.updateCategory(input))
       );
       return { success: true };
     },
-    onSuccess: () => options?.onUpdateCategorySuccess?.(),
-  });
-  const deleteCategoryMutation = useMutation({
-    mutationFn: async (input: DeleteCategoryInput) => {
+    { onSuccess: () => options?.onUpdateCategorySuccess?.() }
+  );
+  const deleteCategoryMutation = useZeroMutation(
+    async (input: DeleteCategoryInput, zero) => {
       await waitForZeroMutation(
         zero.mutate(mutators.products.deleteCategory(input))
       );
       return { success: true };
     },
-    onSuccess: () => options?.onDeleteCategorySuccess?.(),
-  });
+    { onSuccess: () => options?.onDeleteCategorySuccess?.() }
+  );
 
   return {
     createProductMutation,

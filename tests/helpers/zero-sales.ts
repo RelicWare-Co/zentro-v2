@@ -108,7 +108,7 @@ export async function listSalesViaZero({
   const [saleRows, organizationRows, memberRows, shiftRows] = await Promise.all(
     [
       zeroDb.run(queries.sales.list.fn({ args: listQueryArgs, ctx })),
-      zeroDb.run(queries.shifts.organization.fn({ args: undefined, ctx })),
+      zeroDb.run(queries.organization.current.fn({ args: undefined, ctx })),
       zeroDb.run(queries.sales.filterOptions.fn({ args: undefined, ctx })),
       zeroDb.run(queries.sales.terminalOptions.fn({ args: undefined, ctx })),
     ]

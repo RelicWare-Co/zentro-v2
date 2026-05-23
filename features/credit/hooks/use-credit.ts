@@ -1,5 +1,4 @@
-import { useZero, useQuery as useZeroQuery } from "@rocicorp/zero/react";
-import { useMutation } from "@tanstack/react-query";
+import { useQuery as useZeroQuery } from "@rocicorp/zero/react";
 import { useDeferredValue, useMemo, useRef } from "react";
 import type { z } from "zod";
 import {
@@ -11,7 +10,11 @@ import {
   paginateCreditAccounts,
   paginateCreditTransactions,
 } from "@/features/credit/credit.shared";
-import { useSettings } from "@/features/settings/hooks/use-settings";
+import {
+  getZeroQueryError,
+  useZeroMutation,
+  waitForZeroMutation,
+} from "@/lib/use-zero-mutation";
 import type { RegisterCreditPaymentSchema } from "@/schemas/credit";
 import { mutators } from "@/src/zero/mutators";
 import { queries } from "@/src/zero/queries";
@@ -23,48 +26,10 @@ export type {
 
 type RegisterCreditPaymentInput = z.infer<typeof RegisterCreditPaymentSchema>;
 
-type ZeroMutationDetails =
-  | { readonly type: "success" }
-  | {
-      readonly error: { readonly message: string };
-      readonly type: "error";
-    };
-
-interface ZeroMutationResult {
-  readonly client: Promise<ZeroMutationDetails>;
-  readonly server: Promise<ZeroMutationDetails>;
-}
-
-function toError(details: Extract<ZeroMutationDetails, { type: "error" }>) {
-  return new Error(details.error.message || "La mutación de Zero falló");
-}
-
-async function waitForZeroMutation(result: ZeroMutationResult) {
-  const clientResult = await result.client;
-  if (clientResult.type === "error") {
-    throw toError(clientResult);
-  }
-
-  const serverResult = await result.server;
-  if (serverResult.type === "error") {
-    throw toError(serverResult);
-  }
-}
-
-function getQueryError(status: { type: string; error?: { message?: string } }) {
-  return status.type === "error"
-    ? new Error(status.error?.message ?? "No se pudo cargar la consulta Zero")
-    : null;
-}
-
-export function useOrganizationSettings() {
-  return useSettings();
-}
-
 export function useCreditAccountsSearch(searchQuery: string) {
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const [accountRows, status] = useZeroQuery(queries.credit.accounts());
-  const error = getQueryError(status);
+  const error = getZeroQueryError(status);
 
   const paginatedAccounts = useMemo(() => {
     const filteredRows = filterCreditAccountRows(
@@ -116,7 +81,7 @@ export function useCreditTransactions(creditAccountId: string | null) {
       creditAccountId: creditAccountId ?? null,
     })
   );
-  const error = getQueryError(status);
+  const error = getZeroQueryError(status);
   const enabled = Boolean(creditAccountId);
 
   const paginatedTransactions = useMemo(() => {
@@ -160,30 +125,26 @@ export function useCreditTransactions(creditAccountId: string | null) {
 }
 
 export function useRegisterCreditPaymentMutation() {
-  const zero = useZero();
+  return useZeroMutation(async (input: RegisterCreditPaymentInput, zero) => {
+    const paymentId = crypto.randomUUID();
+    const transactionId = crypto.randomUUID();
+    await waitForZeroMutation(
+      zero.mutate(
+        mutators.credit.registerPayment({
+          ...input,
+          paymentId,
+          transactionId,
+        })
+      )
+    );
 
-  return useMutation({
-    mutationFn: async (input: RegisterCreditPaymentInput) => {
-      const paymentId = crypto.randomUUID();
-      const transactionId = crypto.randomUUID();
-      await waitForZeroMutation(
-        zero.mutate(
-          mutators.credit.registerPayment({
-            ...input,
-            paymentId,
-            transactionId,
-          })
-        )
-      );
-
-      return {
-        creditAccountId: input.creditAccountId,
-        saleId: input.saleId ?? null,
-        paymentId,
-        transactionId,
-        amount: input.amount,
-        newBalance: 0,
-      };
-    },
+    return {
+      creditAccountId: input.creditAccountId,
+      saleId: input.saleId ?? null,
+      paymentId,
+      transactionId,
+      amount: input.amount,
+      newBalance: 0,
+    };
   });
 }

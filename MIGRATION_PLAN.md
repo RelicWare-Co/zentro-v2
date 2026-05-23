@@ -1,7 +1,7 @@
 # Migración oRPC → Zero
 
-> **Estado actual:** Fundación instalada. Clientes ya migrado a Zero; `oRPC` y `Zero` coexisten para el resto de surfaces.
-> **Última actualización:** generada por el agente al sentar la base inicial de Zero.
+> **Estado actual:** Migración oRPC → Zero **completa**. Todas las surfaces de la app leen/escriben vía Zero. TanStack Query queda solo para lecturas REST efímeras (dashboard, preview de join link), estado de mutaciones Zero (`useMutation`), y `queryClient.clear()` al cambiar sesión.
+> **Última actualización:** 2026-05-23 — limpieza M5 y consolidación de `TanstackQueryProvider`.
 
 Este documento reemplaza al plan anterior. Su única autoridad es el código del repositorio: si algún paso aquí queda desactualizado, ajusta el documento en el mismo cambio que lo desactualice.
 
@@ -145,7 +145,7 @@ Cada checklist se completa surface a surface. Marcar el ítem solo cuando esté 
 
 - [x] Borrar `server/orpc/**` (migración oRPC completa).
 - [x] Quitar dependencias `@orpc/*` del `package.json`.
-- [ ] Evaluar si `QueryClientProvider` puede simplificarse (sigue usándose para `GET /api/dashboard/overview` y better-auth client helpers).
+- [x] Evaluar si `QueryClientProvider` puede simplificarse → **no eliminar** `@tanstack/react-query`: sigue necesario para `useDashboardOverview`, `useJoinLinkPreview`, wrappers `useMutation` sobre mutators Zero, y `queryClient.clear()` en login/logout/join. Consolidado en un único `TanstackQueryProvider` (`lib/query-provider.tsx`) montado una vez en `pages/+Layout.tsx`.
 
 ## 8. Patrones obligatorios
 

@@ -35,9 +35,9 @@ import {
   type CreditTransaction,
   useCreditAccountsSearch,
   useCreditTransactions,
-  useOrganizationSettings,
   useRegisterCreditPaymentMutation,
 } from "@/features/credit/hooks/use-credit";
+import { useSettings } from "@/features/settings/hooks/use-settings";
 import { useActiveShift } from "@/features/shifts/hooks/use-shifts";
 import { getErrorMessage } from "@/lib/utils";
 
@@ -112,7 +112,7 @@ export function CreditPage() {
   const activeShiftQuery = useActiveShift();
   const activeShift = activeShiftQuery.data?.shift ?? null;
 
-  const settingsQuery = useOrganizationSettings();
+  const settingsQuery = useSettings();
   const paymentMethods =
     settingsQuery.data?.settings.pos.paymentMethods.filter((m) => m.enabled) ??
     [];

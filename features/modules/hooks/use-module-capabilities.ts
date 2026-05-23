@@ -6,13 +6,8 @@ import {
   type ModuleEntitlementRow,
 } from "@/features/settings/organization-environment.shared";
 import { parseOrganizationSettingsMetadata } from "@/features/settings/settings.shared";
+import { getZeroQueryError } from "@/lib/use-zero-mutation";
 import { queries } from "@/src/zero/queries";
-
-function getQueryError(status: { type: string; error?: { message?: string } }) {
-  return status.type === "error"
-    ? new Error(status.error?.message ?? "No se pudo cargar la consulta Zero")
-    : null;
-}
 
 export function useModuleCapabilities() {
   const pageContext = usePageContext();
@@ -24,7 +19,8 @@ export function useModuleCapabilities() {
     queries.organization.moduleEntitlements()
   );
   const error =
-    getQueryError(organizationStatus) ?? getQueryError(entitlementStatus);
+    getZeroQueryError(organizationStatus) ??
+    getZeroQueryError(entitlementStatus);
 
   const data = useMemo(() => {
     if (!zeroContext) {

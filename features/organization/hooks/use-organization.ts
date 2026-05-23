@@ -1,5 +1,5 @@
-import { useZero, useQuery as useZeroQuery } from "@rocicorp/zero/react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useQuery as useZeroQuery } from "@rocicorp/zero/react";
+import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { usePageContext } from "vike-react/usePageContext";
 import type { z } from "zod";
@@ -11,6 +11,11 @@ import {
   type OrganizationManagement,
   toTimestamp,
 } from "@/features/organization/organization.shared";
+import {
+  getZeroQueryError,
+  useZeroMutation,
+  waitForZeroMutation,
+} from "@/lib/use-zero-mutation";
 import type {
   CancelInvitationSchema,
   CreateJoinLinkSchema,
@@ -42,40 +47,6 @@ type LeaveOrganizationInput = z.infer<typeof LeaveOrganizationSchema>;
 type UpdateOrganizationInput = z.infer<typeof UpdateOrganizationSchema>;
 type DeleteOrganizationInput = z.infer<typeof DeleteOrganizationSchema>;
 type JoinLinkRedeemInput = z.infer<typeof JoinTokenSchema>;
-
-type ZeroMutationDetails =
-  | { readonly type: "success" }
-  | {
-      readonly error: { readonly message: string };
-      readonly type: "error";
-    };
-
-interface ZeroMutationResult {
-  readonly client: Promise<ZeroMutationDetails>;
-  readonly server: Promise<ZeroMutationDetails>;
-}
-
-function toError(details: Extract<ZeroMutationDetails, { type: "error" }>) {
-  return new Error(details.error.message || "La mutación de Zero falló");
-}
-
-async function waitForZeroMutation(result: ZeroMutationResult) {
-  const clientResult = await result.client;
-  if (clientResult.type === "error") {
-    throw toError(clientResult);
-  }
-
-  const serverResult = await result.server;
-  if (serverResult.type === "error") {
-    throw toError(serverResult);
-  }
-}
-
-function getQueryError(status: { type: string; error?: { message?: string } }) {
-  return status.type === "error"
-    ? new Error(status.error?.message ?? "No se pudo cargar la consulta Zero")
-    : null;
-}
 
 function createJoinLinkToken() {
   return `${crypto.randomUUID().replaceAll("-", "")}${crypto.randomUUID().replaceAll("-", "")}`;
@@ -147,7 +118,7 @@ export function useOrganizationSelection() {
   const [invitationRows, status] = useZeroQuery(
     queries.organization.selection()
   );
-  const error = getQueryError(status);
+  const error = getZeroQueryError(status);
   const isQueryLoading =
     Boolean(zeroContext) &&
     status.type === "unknown" &&
@@ -202,7 +173,7 @@ export function useOrganizationManagement() {
   const [organizationRows, status] = useZeroQuery(
     queries.organization.management()
   );
-  const error = getQueryError(status);
+  const error = getZeroQueryError(status);
   const isQueryLoading =
     Boolean(zeroContext?.orgID) &&
     status.type === "unknown" &&
@@ -324,135 +295,95 @@ export function useJoinLinkPreview(token: string | null | undefined) {
 }
 
 export function useCreateJoinLinkMutation() {
-  const zero = useZero();
-
-  return useMutation({
-    mutationFn: async (input: CreateJoinLinkInput) => {
-      const id = crypto.randomUUID();
-      const token = createJoinLinkToken();
-      await waitForZeroMutation(
-        zero.mutate(
-          mutators.organization.joinLinkCreate({
-            ...input,
-            id,
-            token,
-          })
-        )
-      );
-      return {
-        joinPath: buildOrganizationJoinPath(token),
-        expiresAt: Date.now() + input.expiresInDays * 24 * 60 * 60 * 1000,
-      };
-    },
+  return useZeroMutation(async (input: CreateJoinLinkInput, zero) => {
+    const id = crypto.randomUUID();
+    const token = createJoinLinkToken();
+    await waitForZeroMutation(
+      zero.mutate(
+        mutators.organization.joinLinkCreate({
+          ...input,
+          id,
+          token,
+        })
+      )
+    );
+    return {
+      joinPath: buildOrganizationJoinPath(token),
+      expiresAt: Date.now() + input.expiresInDays * 24 * 60 * 60 * 1000,
+    };
   });
 }
 
 export function useRevokeJoinLinkMutation() {
-  const zero = useZero();
-
-  return useMutation({
-    mutationFn: async (input: RevokeJoinLinkInput) => {
-      await waitForZeroMutation(
-        zero.mutate(mutators.organization.joinLinkRevoke(input))
-      );
-      return { success: true as const };
-    },
+  return useZeroMutation(async (input: RevokeJoinLinkInput, zero) => {
+    await waitForZeroMutation(
+      zero.mutate(mutators.organization.joinLinkRevoke(input))
+    );
+    return { success: true as const };
   });
 }
 
 export function useInviteMemberMutation() {
-  const zero = useZero();
-
-  return useMutation({
-    mutationFn: async (input: InviteMemberInput) => {
-      await waitForZeroMutation(
-        zero.mutate(mutators.organization.inviteMember(input))
-      );
-    },
+  return useZeroMutation(async (input: InviteMemberInput, zero) => {
+    await waitForZeroMutation(
+      zero.mutate(mutators.organization.inviteMember(input))
+    );
   });
 }
 
 export function useCancelInvitationMutation() {
-  const zero = useZero();
-
-  return useMutation({
-    mutationFn: async (input: CancelInvitationInput) => {
-      await waitForZeroMutation(
-        zero.mutate(mutators.organization.cancelInvitation(input))
-      );
-    },
+  return useZeroMutation(async (input: CancelInvitationInput, zero) => {
+    await waitForZeroMutation(
+      zero.mutate(mutators.organization.cancelInvitation(input))
+    );
   });
 }
 
 export function useUpdateMemberRoleMutation() {
-  const zero = useZero();
-
-  return useMutation({
-    mutationFn: async (input: UpdateMemberRoleInput) => {
-      await waitForZeroMutation(
-        zero.mutate(mutators.organization.updateMemberRole(input))
-      );
-    },
+  return useZeroMutation(async (input: UpdateMemberRoleInput, zero) => {
+    await waitForZeroMutation(
+      zero.mutate(mutators.organization.updateMemberRole(input))
+    );
   });
 }
 
 export function useRemoveMemberMutation() {
-  const zero = useZero();
-
-  return useMutation({
-    mutationFn: async (input: RemoveMemberInput) => {
-      await waitForZeroMutation(
-        zero.mutate(mutators.organization.removeMember(input))
-      );
-    },
+  return useZeroMutation(async (input: RemoveMemberInput, zero) => {
+    await waitForZeroMutation(
+      zero.mutate(mutators.organization.removeMember(input))
+    );
   });
 }
 
 export function useLeaveOrganizationMutation() {
-  const zero = useZero();
-
-  return useMutation({
-    mutationFn: async (input: LeaveOrganizationInput) => {
-      await waitForZeroMutation(
-        zero.mutate(mutators.organization.leaveOrganization(input))
-      );
-    },
+  return useZeroMutation(async (input: LeaveOrganizationInput, zero) => {
+    await waitForZeroMutation(
+      zero.mutate(mutators.organization.leaveOrganization(input))
+    );
   });
 }
 
 export function useUpdateOrganizationMutation() {
-  const zero = useZero();
-
-  return useMutation({
-    mutationFn: async (input: UpdateOrganizationInput) => {
-      await waitForZeroMutation(
-        zero.mutate(mutators.organization.updateOrganization(input))
-      );
-    },
+  return useZeroMutation(async (input: UpdateOrganizationInput, zero) => {
+    await waitForZeroMutation(
+      zero.mutate(mutators.organization.updateOrganization(input))
+    );
   });
 }
 
 export function useDeleteOrganizationMutation() {
-  const zero = useZero();
-
-  return useMutation({
-    mutationFn: async (input: DeleteOrganizationInput) => {
-      await waitForZeroMutation(
-        zero.mutate(mutators.organization.deleteOrganization(input))
-      );
-      return { success: true as const };
-    },
+  return useZeroMutation(async (input: DeleteOrganizationInput, zero) => {
+    await waitForZeroMutation(
+      zero.mutate(mutators.organization.deleteOrganization(input))
+    );
+    return { success: true as const };
   });
 }
 
 export function useJoinLinkRedeemMutation() {
-  const zero = useZero();
-
-  return useMutation({
-    mutationFn: async (input: JoinLinkRedeemInput) => {
-      await waitForZeroMutation(
-        zero.mutate(mutators.organization.joinLinkRedeem(input))
-      );
-    },
+  return useZeroMutation(async (input: JoinLinkRedeemInput, zero) => {
+    await waitForZeroMutation(
+      zero.mutate(mutators.organization.joinLinkRedeem(input))
+    );
   });
 }

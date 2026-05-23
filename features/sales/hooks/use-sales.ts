@@ -1,5 +1,4 @@
-import { useZero, useQuery as useZeroQuery } from "@rocicorp/zero/react";
-import { useMutation } from "@tanstack/react-query";
+import { useQuery as useZeroQuery } from "@rocicorp/zero/react";
 import { useDeferredValue, useMemo, useRef } from "react";
 import type { z } from "zod";
 import type {
@@ -15,6 +14,11 @@ import {
   filterSalesByBalanceStatus,
   normalizeSalesListLimit,
 } from "@/features/sales/sales.shared";
+import {
+  getZeroQueryError,
+  useZeroMutation,
+  waitForZeroMutation,
+} from "@/lib/use-zero-mutation";
 import type {
   CreateSaleInputSchema,
   CreateSaleResultSchema,
@@ -32,40 +36,6 @@ export type CreateSaleMutationInput = CreateSaleInput & {
     "subtotal" | "taxAmount" | "discountAmount" | "totalAmount"
   >;
 };
-
-type ZeroMutationDetails =
-  | { readonly type: "success" }
-  | {
-      readonly error: { readonly message: string };
-      readonly type: "error";
-    };
-
-interface ZeroMutationResult {
-  readonly client: Promise<ZeroMutationDetails>;
-  readonly server: Promise<ZeroMutationDetails>;
-}
-
-function toError(details: Extract<ZeroMutationDetails, { type: "error" }>) {
-  return new Error(details.error.message || "La mutación de Zero falló");
-}
-
-async function waitForZeroMutation(result: ZeroMutationResult) {
-  const clientResult = await result.client;
-  if (clientResult.type === "error") {
-    throw toError(clientResult);
-  }
-
-  const serverResult = await result.server;
-  if (serverResult.type === "error") {
-    throw toError(serverResult);
-  }
-}
-
-function getQueryError(status: { type: string; error?: { message?: string } }) {
-  return status.type === "error"
-    ? new Error(status.error?.message ?? "No se pudo cargar la consulta Zero")
-    : null;
-}
 
 function buildSalesListQueryArgs(params: SalesListParams) {
   return {
@@ -93,7 +63,7 @@ export function useSalesList(params: SalesListParams = {}) {
     queries.sales.list(listQueryArgs)
   );
   const [organizationRows, organizationStatus] = useZeroQuery(
-    queries.shifts.organization()
+    queries.organization.current()
   );
   const [memberRows, memberStatus] = useZeroQuery(
     queries.sales.filterOptions()
@@ -102,10 +72,10 @@ export function useSalesList(params: SalesListParams = {}) {
     queries.sales.terminalOptions()
   );
   const error =
-    getQueryError(saleStatus) ??
-    getQueryError(organizationStatus) ??
-    getQueryError(memberStatus) ??
-    getQueryError(shiftStatus);
+    getZeroQueryError(saleStatus) ??
+    getZeroQueryError(organizationStatus) ??
+    getZeroQueryError(memberStatus) ??
+    getZeroQueryError(shiftStatus);
 
   const filteredRows = useMemo(
     () =>
@@ -218,7 +188,7 @@ export function useSaleDetail(saleId: string | null) {
   const [rows, status] = useZeroQuery(
     queries.sales.byId({ saleId: saleId ?? null })
   );
-  const error = getQueryError(status);
+  const error = getZeroQueryError(status);
   const saleRow = rows[0];
   const data = useMemo((): SaleDetail | null => {
     if (!saleRow) {
@@ -243,46 +213,40 @@ export function useSaleDetail(saleId: string | null) {
 }
 
 export function useCancelSaleMutation() {
-  const zero = useZero();
-
-  return useMutation({
-    mutationFn: async (input: { saleId: string; cancelledAt?: number }) => {
+  return useZeroMutation(
+    async (input: { saleId: string; cancelledAt?: number }, zero) => {
       await waitForZeroMutation(zero.mutate(mutators.sales.cancel(input)));
-    },
-  });
+    }
+  );
 }
 
 export function useCreateSaleMutation() {
-  const zero = useZero();
+  return useZeroMutation(async (input: CreateSaleMutationInput, zero) => {
+    const { receiptTotals, ...saleInput } = input;
+    const saleId = crypto.randomUUID();
 
-  return useMutation({
-    mutationFn: async (input: CreateSaleMutationInput) => {
-      const { receiptTotals, ...saleInput } = input;
-      const saleId = crypto.randomUUID();
+    await waitForZeroMutation(
+      zero.mutate(
+        mutators.sales.create({
+          ...saleInput,
+          saleId,
+        })
+      )
+    );
 
-      await waitForZeroMutation(
-        zero.mutate(
-          mutators.sales.create({
-            ...saleInput,
-            saleId,
-          })
-        )
-      );
+    const paidAmount = (saleInput.payments ?? []).reduce(
+      (sum, payment) => sum + payment.amount,
+      0
+    );
+    const isCreditSale = saleInput.isCreditSale ?? false;
+    const status = isCreditSale ? "credit" : "completed";
 
-      const paidAmount = (saleInput.payments ?? []).reduce(
-        (sum, payment) => sum + payment.amount,
-        0
-      );
-      const isCreditSale = saleInput.isCreditSale ?? false;
-      const status = isCreditSale ? "credit" : "completed";
-
-      return {
-        saleId,
-        status,
-        ...receiptTotals,
-        paidAmount,
-        balanceDue: Math.max(receiptTotals.totalAmount - paidAmount, 0),
-      };
-    },
+    return {
+      saleId,
+      status,
+      ...receiptTotals,
+      paidAmount,
+      balanceDue: Math.max(receiptTotals.totalAmount - paidAmount, 0),
+    };
   });
 }

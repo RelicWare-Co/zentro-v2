@@ -191,7 +191,7 @@ export async function getShiftCloseSummaryViaZero({
         ctx,
       })
     ),
-    zeroDb.run(queries.shifts.organization.fn({ args: undefined, ctx })),
+    zeroDb.run(queries.organization.current.fn({ args: undefined, ctx })),
   ]);
   const shiftRow = shiftRows[0];
 
@@ -220,7 +220,7 @@ export async function listShiftsViaZero({
   const [shiftRows, organizationRows, memberRows, terminalRows] =
     await Promise.all([
       zeroDb.run(queries.shifts.list.fn({ args: listQueryArgs, ctx })),
-      zeroDb.run(queries.shifts.organization.fn({ args: undefined, ctx })),
+      zeroDb.run(queries.organization.current.fn({ args: undefined, ctx })),
       zeroDb.run(queries.sales.filterOptions.fn({ args: undefined, ctx })),
       zeroDb.run(queries.sales.terminalOptions.fn({ args: undefined, ctx })),
     ]);

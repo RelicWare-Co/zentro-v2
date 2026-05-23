@@ -507,13 +507,6 @@ export const queries = defineQueries({
 
       return buildShiftDetailQuery(normalizedShiftId, ctx.orgID);
     }),
-    organization: defineQuery(({ ctx }) => {
-      if (!hasOrgContext(ctx)) {
-        return zql.organization.where(({ cmpLit }) => cmpLit(false, "=", true));
-      }
-
-      return zql.organization.where("id", ctx.orgID).limit(1);
-    }),
   },
   sales: {
     list: defineQuery(SalesListQueryArgsSchema, ({ args, ctx }) => {
@@ -555,6 +548,13 @@ export const queries = defineQueries({
     }),
   },
   organization: {
+    current: defineQuery(({ ctx }) => {
+      if (!hasOrgContext(ctx)) {
+        return zql.organization.where(({ cmpLit }) => cmpLit(false, "=", true));
+      }
+
+      return zql.organization.where("id", ctx.orgID).limit(1);
+    }),
     selection: defineQuery(({ ctx }) => {
       if (!ctx) {
         return zql.invitation.where(({ cmpLit }) => cmpLit(false, "=", true));

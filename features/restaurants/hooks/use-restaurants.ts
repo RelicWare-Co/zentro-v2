@@ -1,5 +1,4 @@
-import { useZero, useQuery as useZeroQuery } from "@rocicorp/zero/react";
-import { useMutation } from "@tanstack/react-query";
+import { useQuery as useZeroQuery } from "@rocicorp/zero/react";
 import { useRef } from "react";
 import { usePageContext } from "vike-react/usePageContext";
 import type { z } from "zod";
@@ -18,6 +17,11 @@ import {
   type RestaurantTableDetail,
   type RestaurantTableRow,
 } from "@/features/restaurants/restaurants.shared";
+import {
+  getZeroQueryError,
+  useZeroMutation,
+  waitForZeroMutation,
+} from "@/lib/use-zero-mutation";
 import type {
   AddRestaurantOrderItemInputSchema,
   CloseRestaurantOrderInputSchema,
@@ -27,7 +31,6 @@ import type {
   DeleteRestaurantDraftItemInputSchema,
   DeleteRestaurantTableInputSchema,
   SendRestaurantOrderToKitchenInputSchema,
-  UpdateRestaurantAreaInputSchema,
   UpdateRestaurantDraftItemInputSchema,
   UpdateRestaurantOrderItemStatusInputSchema,
   UpdateRestaurantOrderMetaInputSchema,
@@ -37,46 +40,6 @@ import { mutators } from "@/src/zero/mutators";
 import { queries } from "@/src/zero/queries";
 
 export type { RestaurantConfiguration } from "@/features/restaurants/restaurants.shared";
-
-type ZeroMutationDetails =
-  | { readonly type: "success" }
-  | {
-      readonly error: { readonly message: string };
-      readonly type: "error";
-    };
-
-interface ZeroMutationResult {
-  readonly client: Promise<ZeroMutationDetails>;
-  readonly server: Promise<ZeroMutationDetails>;
-}
-
-function toError(details: Extract<ZeroMutationDetails, { type: "error" }>) {
-  return new Error(details.error.message || "La mutación de Zero falló");
-}
-
-async function waitForZeroMutation(result: ZeroMutationResult) {
-  const clientResult = await result.client;
-  if (clientResult.type === "error") {
-    throw toError(clientResult);
-  }
-
-  const serverResult = await result.server;
-  if (serverResult.type === "error") {
-    throw toError(serverResult);
-  }
-}
-
-interface ZeroQueryStatus {
-  error?: { message?: string };
-  retry?: () => void;
-  type: string;
-}
-
-function getQueryError(status: ZeroQueryStatus) {
-  return status.type === "error"
-    ? new Error(status.error?.message ?? "No se pudo cargar la consulta Zero")
-    : null;
-}
 
 function buildTableDetailData(params: {
   enabled: boolean;
@@ -133,7 +96,7 @@ export function useRestaurantBootstrap() {
     queries.products.categories()
   );
   const [organizationRows, organizationStatus] = useZeroQuery(
-    queries.shifts.organization()
+    queries.organization.current()
   );
   const [layoutRows, layoutStatus] = useZeroQuery(queries.restaurants.layout());
   const [openOrderRows, openOrderStatus] = useZeroQuery(
@@ -147,7 +110,7 @@ export function useRestaurantBootstrap() {
     layoutStatus,
     openOrderStatus,
   ];
-  const errors = statuses.map((status) => getQueryError(status));
+  const errors = statuses.map((status) => getZeroQueryError(status));
   const isQueryLoading =
     Boolean(zeroContext) &&
     statuses.some((status) => status.type === "unknown") &&
@@ -210,11 +173,11 @@ export function useRestaurantTableDetail(tableId: string | null) {
     queries.restaurants.openOrders()
   );
   const [organizationRows, organizationStatus] = useZeroQuery(
-    queries.shifts.organization()
+    queries.organization.current()
   );
 
   const statuses = [tableStatus, openOrderStatus, organizationStatus];
-  const errors = statuses.map((status) => getQueryError(status));
+  const errors = statuses.map((status) => getZeroQueryError(status));
   const isQueryLoading =
     enabled &&
     statuses.some((status) => status.type === "unknown") &&
@@ -263,11 +226,11 @@ export function useRestaurantConfiguration() {
   const zeroContext = pageContext.zeroContext;
   const [layoutRows, layoutStatus] = useZeroQuery(queries.restaurants.layout());
   const [organizationRows, organizationStatus] = useZeroQuery(
-    queries.shifts.organization()
+    queries.organization.current()
   );
 
   const statuses = [layoutStatus, organizationStatus];
-  const errors = statuses.map((status) => getQueryError(status));
+  const errors = statuses.map((status) => getZeroQueryError(status));
   const isQueryLoading =
     Boolean(zeroContext) &&
     statuses.some((status) => status.type === "unknown") &&
@@ -314,11 +277,11 @@ export function useKitchenBoard() {
     queries.restaurants.kitchenBoard()
   );
   const [organizationRows, organizationStatus] = useZeroQuery(
-    queries.shifts.organization()
+    queries.organization.current()
   );
 
   const statuses = [ticketStatus, organizationStatus];
-  const errors = statuses.map((status) => getQueryError(status));
+  const errors = statuses.map((status) => getZeroQueryError(status));
   const isQueryLoading =
     Boolean(zeroContext) &&
     statuses.some((status) => status.type === "unknown") &&
@@ -359,74 +322,66 @@ export function useKitchenBoard() {
 }
 
 export function useAddRestaurantOrderItemMutation() {
-  const zero = useZero();
-
-  return useMutation({
-    mutationFn: async (
-      input: z.infer<typeof AddRestaurantOrderItemInputSchema>
-    ) => {
+  return useZeroMutation(
+    async (input: z.infer<typeof AddRestaurantOrderItemInputSchema>, zero) => {
       const itemId = crypto.randomUUID();
       await waitForZeroMutation(
         zero.mutate(mutators.restaurants.addOrderItem({ ...input, itemId }))
       );
       return { ...input, itemId };
-    },
-  });
+    }
+  );
 }
 
 export function useUpdateRestaurantOrderMetaMutation() {
-  const zero = useZero();
-
-  return useMutation({
-    mutationFn: async (
-      input: z.infer<typeof UpdateRestaurantOrderMetaInputSchema>
+  return useZeroMutation(
+    async (
+      input: z.infer<typeof UpdateRestaurantOrderMetaInputSchema>,
+      zero
     ) => {
       await waitForZeroMutation(
         zero.mutate(mutators.restaurants.updateOrderMeta(input))
       );
       return { success: true as const };
-    },
-  });
+    }
+  );
 }
 
 export function useUpdateRestaurantDraftItemMutation() {
-  const zero = useZero();
-
-  return useMutation({
-    mutationFn: async (
-      input: z.infer<typeof UpdateRestaurantDraftItemInputSchema>
+  return useZeroMutation(
+    async (
+      input: z.infer<typeof UpdateRestaurantDraftItemInputSchema>,
+      zero
     ) => {
       await waitForZeroMutation(
         zero.mutate(mutators.restaurants.updateDraftItem(input))
       );
       return { success: true as const };
-    },
-  });
+    }
+  );
 }
 
 export function useDeleteRestaurantDraftItemMutation() {
-  const zero = useZero();
-
-  return useMutation({
-    mutationFn: async (
-      input: z.infer<typeof DeleteRestaurantDraftItemInputSchema>
+  return useZeroMutation(
+    async (
+      input: z.infer<typeof DeleteRestaurantDraftItemInputSchema>,
+      zero
     ) => {
       await waitForZeroMutation(
         zero.mutate(mutators.restaurants.deleteDraftItem(input))
       );
       return { success: true as const };
-    },
-  });
+    }
+  );
 }
 
 export function useSendRestaurantOrderToKitchenMutation() {
-  const zero = useZero();
-
-  return useMutation({
-    mutationFn: async (
+  return useZeroMutation(
+    async (
       input: z.infer<typeof SendRestaurantOrderToKitchenInputSchema> & {
         ticketId?: string;
-      }
+      },
+      zero
     ) => {
       const ticketId = input.ticketId ?? crypto.randomUUID();
       await waitForZeroMutation(
@@ -438,120 +393,81 @@ export function useSendRestaurantOrderToKitchenMutation() {
         )
       );
       return { ticketId };
-    },
-  });
+    }
+  );
 }
 
 export function useUpdateRestaurantOrderItemStatusMutation() {
-  const zero = useZero();
-
-  return useMutation({
-    mutationFn: async (
-      input: z.infer<typeof UpdateRestaurantOrderItemStatusInputSchema>
+  return useZeroMutation(
+    async (
+      input: z.infer<typeof UpdateRestaurantOrderItemStatusInputSchema>,
+      zero
     ) => {
       await waitForZeroMutation(
         zero.mutate(mutators.restaurants.updateItemStatus(input))
       );
       return { success: true as const };
-    },
-  });
+    }
+  );
 }
 
 export function useCloseRestaurantOrderMutation() {
-  const zero = useZero();
-
-  return useMutation({
-    mutationFn: async (
-      input: z.infer<typeof CloseRestaurantOrderInputSchema>
-    ) => {
+  return useZeroMutation(
+    async (input: z.infer<typeof CloseRestaurantOrderInputSchema>, zero) => {
       await waitForZeroMutation(
         zero.mutate(mutators.restaurants.closeOrder(input))
       );
       return { success: true as const };
-    },
-  });
+    }
+  );
 }
 
 export function useCreateRestaurantAreaMutation() {
-  const zero = useZero();
-
-  return useMutation({
-    mutationFn: async (
-      input: z.infer<typeof CreateRestaurantAreaInputSchema>
-    ) => {
+  return useZeroMutation(
+    async (input: z.infer<typeof CreateRestaurantAreaInputSchema>, zero) => {
       await waitForZeroMutation(
         zero.mutate(mutators.restaurants.createArea(input))
       );
-    },
-  });
-}
-
-export function useUpdateRestaurantAreaMutation() {
-  const zero = useZero();
-
-  return useMutation({
-    mutationFn: async (
-      input: z.infer<typeof UpdateRestaurantAreaInputSchema>
-    ) => {
-      await waitForZeroMutation(
-        zero.mutate(mutators.restaurants.updateArea(input))
-      );
-    },
-  });
+    }
+  );
 }
 
 export function useDeleteRestaurantAreaMutation() {
-  const zero = useZero();
-
-  return useMutation({
-    mutationFn: async (
-      input: z.infer<typeof DeleteRestaurantAreaInputSchema>
-    ) => {
+  return useZeroMutation(
+    async (input: z.infer<typeof DeleteRestaurantAreaInputSchema>, zero) => {
       await waitForZeroMutation(
         zero.mutate(mutators.restaurants.deleteArea(input))
       );
-    },
-  });
+    }
+  );
 }
 
 export function useCreateRestaurantTableMutation() {
-  const zero = useZero();
-
-  return useMutation({
-    mutationFn: async (
-      input: z.infer<typeof CreateRestaurantTableInputSchema>
-    ) => {
+  return useZeroMutation(
+    async (input: z.infer<typeof CreateRestaurantTableInputSchema>, zero) => {
       await waitForZeroMutation(
         zero.mutate(mutators.restaurants.createTable(input))
       );
-    },
-  });
+    }
+  );
 }
 
 export function useUpdateRestaurantTableMutation() {
-  const zero = useZero();
-
-  return useMutation({
-    mutationFn: async (
-      input: z.infer<typeof UpdateRestaurantTableInputSchema>
-    ) => {
+  return useZeroMutation(
+    async (input: z.infer<typeof UpdateRestaurantTableInputSchema>, zero) => {
       await waitForZeroMutation(
         zero.mutate(mutators.restaurants.updateTable(input))
       );
-    },
-  });
+    }
+  );
 }
 
 export function useDeleteRestaurantTableMutation() {
-  const zero = useZero();
-
-  return useMutation({
-    mutationFn: async (
-      input: z.infer<typeof DeleteRestaurantTableInputSchema>
-    ) => {
+  return useZeroMutation(
+    async (input: z.infer<typeof DeleteRestaurantTableInputSchema>, zero) => {
       await waitForZeroMutation(
         zero.mutate(mutators.restaurants.deleteTable(input))
       );
-    },
-  });
+    }
+  );
 }

@@ -1,5 +1,4 @@
-import { useZero, useQuery as useZeroQuery } from "@rocicorp/zero/react";
-import { useMutation } from "@tanstack/react-query";
+import { useQuery as useZeroQuery } from "@rocicorp/zero/react";
 import { useDeferredValue, useMemo, useRef } from "react";
 import type { z } from "zod";
 import type {
@@ -16,6 +15,11 @@ import {
   filterShiftsClientRefinements,
   normalizeShiftsListLimit,
 } from "@/features/shifts/shifts.shared";
+import {
+  getZeroQueryError,
+  useZeroMutation,
+  waitForZeroMutation,
+} from "@/lib/use-zero-mutation";
 import type {
   CloseShiftInputSchema,
   OpenShiftInputSchema,
@@ -35,40 +39,6 @@ export type RegisterCashMovementInput = z.infer<
   typeof RegisterCashMovementInputSchema
 >;
 
-type ZeroMutationDetails =
-  | { readonly type: "success" }
-  | {
-      readonly error: { readonly message: string };
-      readonly type: "error";
-    };
-
-interface ZeroMutationResult {
-  readonly client: Promise<ZeroMutationDetails>;
-  readonly server: Promise<ZeroMutationDetails>;
-}
-
-function toError(details: Extract<ZeroMutationDetails, { type: "error" }>) {
-  return new Error(details.error.message || "La mutación de Zero falló");
-}
-
-async function waitForZeroMutation(result: ZeroMutationResult) {
-  const clientResult = await result.client;
-  if (clientResult.type === "error") {
-    throw toError(clientResult);
-  }
-
-  const serverResult = await result.server;
-  if (serverResult.type === "error") {
-    throw toError(serverResult);
-  }
-}
-
-function getQueryError(status: { type: string; error?: { message?: string } }) {
-  return status.type === "error"
-    ? new Error(status.error?.message ?? "No se pudo cargar la consulta Zero")
-    : null;
-}
-
 function buildShiftsListQueryArgs(params: ShiftsListParams) {
   return {
     limit: normalizeShiftsListLimit(params.limit),
@@ -86,7 +56,7 @@ function buildShiftsListQueryArgs(params: ShiftsListParams) {
 
 export function useActiveShift() {
   const [rows, status] = useZeroQuery(queries.shifts.active());
-  const error = getQueryError(status);
+  const error = getZeroQueryError(status);
   const activeShift = rows[0] ?? null;
 
   return {
@@ -126,7 +96,7 @@ export function useShiftsList(params: ShiftsListParams = {}) {
     queries.shifts.list(listQueryArgs)
   );
   const [organizationRows, organizationStatus] = useZeroQuery(
-    queries.shifts.organization()
+    queries.organization.current()
   );
   const [memberRows, memberStatus] = useZeroQuery(
     queries.sales.filterOptions()
@@ -135,10 +105,10 @@ export function useShiftsList(params: ShiftsListParams = {}) {
     queries.sales.terminalOptions()
   );
   const error =
-    getQueryError(shiftStatus) ??
-    getQueryError(organizationStatus) ??
-    getQueryError(memberStatus) ??
-    getQueryError(terminalStatus);
+    getZeroQueryError(shiftStatus) ??
+    getZeroQueryError(organizationStatus) ??
+    getZeroQueryError(memberStatus) ??
+    getZeroQueryError(terminalStatus);
 
   const refinedShifts = useMemo(() => {
     const listItems = (shiftRows as ShiftWithRelations[]).map((shiftRow) =>
@@ -245,30 +215,6 @@ function asShiftWithRelations(row: unknown) {
   return row as ShiftWithRelations;
 }
 
-export function useShiftDetail(shiftId: string | null) {
-  const [rows, status] = useZeroQuery(
-    queries.shifts.byId({ shiftId: shiftId ?? null })
-  );
-  const error = getQueryError(status);
-  const shiftRow = rows[0];
-  const shift = shiftRow
-    ? buildShiftListItem(asShiftWithRelations(shiftRow))
-    : null;
-
-  return {
-    data: shift,
-    error,
-    isError: Boolean(error),
-    isLoading: Boolean(shiftId) && status.type === "unknown" && !rows,
-    refetch: () => {
-      if (status.type === "error") {
-        status.retry();
-      }
-      return Promise.resolve();
-    },
-  };
-}
-
 export function useShiftCloseSummary(
   shiftId: string | undefined,
   enabled: boolean
@@ -277,9 +223,10 @@ export function useShiftCloseSummary(
     queries.shifts.byId({ shiftId: shiftId ?? null })
   );
   const [organizationRows, organizationStatus] = useZeroQuery(
-    queries.shifts.organization()
+    queries.organization.current()
   );
-  const error = getQueryError(status) ?? getQueryError(organizationStatus);
+  const error =
+    getZeroQueryError(status) ?? getZeroQueryError(organizationStatus);
   const summary = useMemo<ShiftCloseSummary | undefined>(() => {
     const shiftRow = rows[0];
     if (!(enabled && shiftId && shiftRow)) {
@@ -314,66 +261,54 @@ export function useShiftCloseSummary(
 }
 
 export function useOpenShiftMutation() {
-  const zero = useZero();
-
-  return useMutation({
-    mutationFn: async (input: OpenShiftInput) => {
-      const id = crypto.randomUUID();
-      await waitForZeroMutation(
-        zero.mutate(
-          mutators.shifts.open({
-            ...input,
-            id,
-          })
-        )
-      );
-      return {
-        id,
-        status: "open" as const,
-        startingCash: input.startingCash,
-        openedAt: input.openedAt ?? Date.now(),
-      };
-    },
+  return useZeroMutation(async (input: OpenShiftInput, zero) => {
+    const id = crypto.randomUUID();
+    await waitForZeroMutation(
+      zero.mutate(
+        mutators.shifts.open({
+          ...input,
+          id,
+        })
+      )
+    );
+    return {
+      id,
+      status: "open" as const,
+      startingCash: input.startingCash,
+      openedAt: input.openedAt ?? Date.now(),
+    };
   });
 }
 
 export function useRegisterCashMovementMutation() {
-  const zero = useZero();
-
-  return useMutation({
-    mutationFn: async (input: RegisterCashMovementInput) => {
-      const id = crypto.randomUUID();
-      await waitForZeroMutation(
-        zero.mutate(
-          mutators.shifts.cashMovement({
-            ...input,
-            id,
-          })
-        )
-      );
-      return {
-        id,
-        shiftId: input.shiftId,
-        type: input.type,
-        paymentMethod: input.paymentMethod,
-        amount: input.amount,
-        description: input.description,
-        createdAt: input.createdAt ?? Date.now(),
-      };
-    },
+  return useZeroMutation(async (input: RegisterCashMovementInput, zero) => {
+    const id = crypto.randomUUID();
+    await waitForZeroMutation(
+      zero.mutate(
+        mutators.shifts.cashMovement({
+          ...input,
+          id,
+        })
+      )
+    );
+    return {
+      id,
+      shiftId: input.shiftId,
+      type: input.type,
+      paymentMethod: input.paymentMethod,
+      amount: input.amount,
+      description: input.description,
+      createdAt: input.createdAt ?? Date.now(),
+    };
   });
 }
 
 export function useCloseShiftMutation() {
-  const zero = useZero();
-
-  return useMutation({
-    mutationFn: async (input: CloseShiftInput) => {
-      await waitForZeroMutation(zero.mutate(mutators.shifts.close(input)));
-      return {
-        shiftId: input.shiftId,
-        closedAt: input.closedAt ?? Date.now(),
-      };
-    },
+  return useZeroMutation(async (input: CloseShiftInput, zero) => {
+    await waitForZeroMutation(zero.mutate(mutators.shifts.close(input)));
+    return {
+      shiftId: input.shiftId,
+      closedAt: input.closedAt ?? Date.now(),
+    };
   });
 }

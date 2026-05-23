@@ -1,7 +1,11 @@
-import { useZero, useQuery as useZeroQuery } from "@rocicorp/zero/react";
-import { useMutation } from "@tanstack/react-query";
+import { useQuery as useZeroQuery } from "@rocicorp/zero/react";
 import { useDeferredValue, useRef } from "react";
 import type { z } from "zod";
+import {
+  getZeroQueryError,
+  useZeroMutation,
+  waitForZeroMutation,
+} from "@/lib/use-zero-mutation";
 import type {
   CreateCustomerSchema,
   CustomerSchema,
@@ -16,40 +20,6 @@ export type Customer = z.infer<typeof CustomerSchema>;
 export type CreateCustomerInput = z.infer<typeof CreateCustomerSchema>;
 export type UpdateCustomerInput = z.infer<typeof UpdateCustomerSchema>;
 export type DeleteCustomerInput = z.infer<typeof DeleteCustomerSchema>;
-
-type ZeroMutationDetails =
-  | { readonly type: "success" }
-  | {
-      readonly error: { readonly message: string };
-      readonly type: "error";
-    };
-
-interface ZeroMutationResult {
-  readonly client: Promise<ZeroMutationDetails>;
-  readonly server: Promise<ZeroMutationDetails>;
-}
-
-function toError(details: Extract<ZeroMutationDetails, { type: "error" }>) {
-  return new Error(details.error.message || "La mutación de Zero falló");
-}
-
-async function waitForZeroMutation(result: ZeroMutationResult) {
-  const clientResult = await result.client;
-  if (clientResult.type === "error") {
-    throw toError(clientResult);
-  }
-
-  const serverResult = await result.server;
-  if (serverResult.type === "error") {
-    throw toError(serverResult);
-  }
-}
-
-function getQueryError(status: { type: string; error?: { message?: string } }) {
-  return status.type === "error"
-    ? new Error(status.error?.message ?? "No se pudo cargar la consulta Zero")
-    : null;
-}
 
 function normalizeCustomer(customer: ZeroCustomer): Customer {
   return {
@@ -67,7 +37,7 @@ export function useCustomersSearch(searchQuery: string, limit = 50) {
       searchQuery: deferredSearchQuery.trim() || null,
     })
   );
-  const error = getQueryError(status);
+  const error = getZeroQueryError(status);
   const normalizedCustomers = customers.map(normalizeCustomer);
 
   const hasLoadedRef = useRef(false);
@@ -106,42 +76,30 @@ export function useCustomersSearch(searchQuery: string, limit = 50) {
 }
 
 export function useCreateCustomerMutation() {
-  const zero = useZero();
-
-  return useMutation({
-    mutationFn: async (input: CreateCustomerInput) => {
-      const id = crypto.randomUUID();
-      await waitForZeroMutation(
-        zero.mutate(
-          mutators.customers.create({
-            ...input,
-            id,
-          })
-        )
-      );
-      return { id };
-    },
+  return useZeroMutation(async (input: CreateCustomerInput, zero) => {
+    const id = crypto.randomUUID();
+    await waitForZeroMutation(
+      zero.mutate(
+        mutators.customers.create({
+          ...input,
+          id,
+        })
+      )
+    );
+    return { id };
   });
 }
 
 export function useUpdateCustomerMutation() {
-  const zero = useZero();
-
-  return useMutation({
-    mutationFn: async (input: UpdateCustomerInput) => {
-      await waitForZeroMutation(zero.mutate(mutators.customers.update(input)));
-      return { success: true };
-    },
+  return useZeroMutation(async (input: UpdateCustomerInput, zero) => {
+    await waitForZeroMutation(zero.mutate(mutators.customers.update(input)));
+    return { success: true };
   });
 }
 
 export function useDeleteCustomerMutation() {
-  const zero = useZero();
-
-  return useMutation({
-    mutationFn: async (input: DeleteCustomerInput) => {
-      await waitForZeroMutation(zero.mutate(mutators.customers.delete(input)));
-      return { success: true };
-    },
+  return useZeroMutation(async (input: DeleteCustomerInput, zero) => {
+    await waitForZeroMutation(zero.mutate(mutators.customers.delete(input)));
+    return { success: true };
   });
 }

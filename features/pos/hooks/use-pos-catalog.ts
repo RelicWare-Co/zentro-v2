@@ -1,5 +1,4 @@
-import { useZero, useQuery as useZeroQuery } from "@rocicorp/zero/react";
-import { useMutation } from "@tanstack/react-query";
+import { useQuery as useZeroQuery } from "@rocicorp/zero/react";
 import { useDeferredValue, useMemo, useRef, useState } from "react";
 import {
   buildPosProduct,
@@ -12,44 +11,15 @@ import {
   getEnabledPaymentMethods,
   parseOrganizationSettingsMetadata,
 } from "@/features/settings/settings.shared";
+import {
+  getZeroQueryError,
+  useZeroMutation,
+  waitForZeroMutation,
+} from "@/lib/use-zero-mutation";
 import { mutators } from "@/src/zero/mutators";
 import { queries } from "@/src/zero/queries";
 
 const POS_PRODUCTS_PAGE_SIZE = 100;
-
-type ZeroMutationDetails =
-  | { readonly type: "success" }
-  | {
-      readonly error: { readonly message: string };
-      readonly type: "error";
-    };
-
-interface ZeroMutationResult {
-  readonly client: Promise<ZeroMutationDetails>;
-  readonly server: Promise<ZeroMutationDetails>;
-}
-
-function toError(details: Extract<ZeroMutationDetails, { type: "error" }>) {
-  return new Error(details.error.message || "La mutación de Zero falló");
-}
-
-async function waitForZeroMutation(result: ZeroMutationResult) {
-  const clientResult = await result.client;
-  if (clientResult.type === "error") {
-    throw toError(clientResult);
-  }
-
-  const serverResult = await result.server;
-  if (serverResult.type === "error") {
-    throw toError(serverResult);
-  }
-}
-
-function getQueryError(status: { type: string; error?: { message?: string } }) {
-  return status.type === "error"
-    ? new Error(status.error?.message ?? "No se pudo cargar la consulta Zero")
-    : null;
-}
 
 function normalizeCategory(row: {
   id: string;
@@ -64,9 +34,9 @@ function normalizeCategory(row: {
 
 export function usePosSettings() {
   const [organizationRows, status] = useZeroQuery(
-    queries.shifts.organization()
+    queries.organization.current()
   );
-  const error = getQueryError(status);
+  const error = getZeroQueryError(status);
   const settings = useMemo(() => {
     const organizationSettings = parseOrganizationSettingsMetadata(
       typeof organizationRows[0]?.metadata === "string"
@@ -105,7 +75,7 @@ export function usePosSettings() {
 
 export function usePosCategories() {
   const [categoryRows, status] = useZeroQuery(queries.products.categories());
-  const error = getQueryError(status);
+  const error = getZeroQueryError(status);
   const categories = useMemo(
     () => categoryRows.map(normalizeCategory),
     [categoryRows]
@@ -127,7 +97,7 @@ export function usePosCategories() {
 
 export function usePosModifierProducts() {
   const [modifierRows, status] = useZeroQuery(queries.products.modifiers());
-  const error = getQueryError(status);
+  const error = getZeroQueryError(status);
   const modifierProducts = useMemo(
     () =>
       modifierRows.map((row) => buildPosProduct(row as PosProductWithCategory)),
@@ -168,7 +138,7 @@ export function usePosProducts(activeCategoryId: string, searchQuery: string) {
       limit: 1000,
     })
   );
-  const error = getQueryError(status);
+  const error = getZeroQueryError(status);
 
   const sortedProducts = useMemo(() => {
     const products = productRows.map((row) =>
@@ -234,14 +204,10 @@ export function usePosProducts(activeCategoryId: string, searchQuery: string) {
 }
 
 export function useToggleProductFavoriteMutation() {
-  const zero = useZero();
-
-  return useMutation({
-    mutationFn: async (input: { productId: string }) => {
-      await waitForZeroMutation(
-        zero.mutate(mutators.products.toggleFavorite(input))
-      );
-      return { success: true };
-    },
+  return useZeroMutation(async (input: { productId: string }, zero) => {
+    await waitForZeroMutation(
+      zero.mutate(mutators.products.toggleFavorite(input))
+    );
+    return { success: true };
   });
 }
