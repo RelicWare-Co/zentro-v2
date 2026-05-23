@@ -161,16 +161,34 @@ async function runMutation(
   }
 }
 
-async function performSendToKitchen(
-  resultPromise: Promise<unknown>,
-  activeOrganizationId: string | null
-) {
-  const result = (await resultPromise) as {
-    ticket: KitchenTicket;
-    printing: { enabled: boolean; autoPrintOnSend: boolean };
+async function performSendToKitchen(params: {
+  draftItems: KitchenTicketItem[];
+  kitchenSettings: {
+    printTicketsEnabled: boolean;
+    autoPrintOnSend: boolean;
   };
-  if (result.printing.enabled && result.printing.autoPrintOnSend) {
-    await printKitchenTicket(result.ticket, activeOrganizationId);
+  mutationPromise: Promise<{ ticketId: string }>;
+  openOrder: { orderNumber: number };
+  table: { name: string; areaName: string };
+  activeOrganizationId: string | null;
+}) {
+  const result = await params.mutationPromise;
+  if (
+    params.kitchenSettings.printTicketsEnabled &&
+    params.kitchenSettings.autoPrintOnSend &&
+    params.draftItems.length > 0
+  ) {
+    await printKitchenTicket(
+      {
+        id: result.ticketId,
+        orderNumber: params.openOrder.orderNumber,
+        sequenceNumber: 1,
+        createdAt: Date.now(),
+        table: params.table,
+        items: params.draftItems,
+      },
+      params.activeOrganizationId
+    );
   }
 }
 
@@ -802,15 +820,39 @@ export default function RestaurantsPage() {
   };
 
   const handleSendToKitchen = async () => {
-    if (!openOrder) {
+    if (!(openOrder && bootstrap && selectedTable)) {
       return;
     }
+    const draftItems = openOrder.items
+      .filter((item) => item.status === "draft")
+      .map((item) => ({
+        productName: item.productName,
+        quantity: item.quantity,
+        notes: item.notes ?? null,
+        modifiers: item.modifiers.map((modifier) => ({
+          name: modifier.name,
+          quantity: modifier.quantity,
+          unitPrice: modifier.unitPrice,
+        })),
+        totalAmount: item.totalAmount,
+      }));
+    const ticketId = crypto.randomUUID();
     await runMutation(
       () =>
-        performSendToKitchen(
-          sendToKitchenMutation.mutateAsync({ orderId: openOrder.id }),
-          activeOrganizationId
-        ),
+        performSendToKitchen({
+          activeOrganizationId,
+          draftItems,
+          kitchenSettings: bootstrap.settings.restaurant.kitchen,
+          mutationPromise: sendToKitchenMutation.mutateAsync({
+            orderId: openOrder.id,
+            ticketId,
+          }),
+          openOrder,
+          table: {
+            name: selectedTable.name,
+            areaName: selectedTable.areaName,
+          },
+        }),
       setFeedbackMessage,
       "No se pudo enviar la comanda a cocina.",
       { successMessage: "La comanda fue enviada a cocina." }

@@ -2,14 +2,13 @@ import { describe, expect, test } from "bun:test";
 import { eq } from "drizzle-orm";
 import { organization } from "@/database/drizzle/schema/auth.schema";
 import { serializeOrganizationSettingsMetadata } from "@/features/settings/settings.shared";
-import { createServerORPCClient } from "@/server/orpc/client/server";
-import { buildMockContext } from "./helpers/orpc-context";
-import { makeUser, seedOrganizationWithMember } from "./helpers/seed";
+import { seedOrganizationWithMember } from "./helpers/seed";
 import { createTestDb, type TestDb } from "./helpers/test-db";
 import {
   getModuleCapabilitiesViaZero,
   setModuleEntitlementViaZero,
 } from "./helpers/zero-modules";
+import { getRestaurantBootstrapViaZero } from "./helpers/zero-restaurants";
 import { createZeroContext, createZeroTestDb } from "./helpers/zero-shifts";
 
 async function setRestaurantModuleEnabled(
@@ -135,13 +134,12 @@ describe("module access control", () => {
         memberRole: "owner",
       });
 
-      const u = makeUser({ id: userId, email: "owner@example.com" });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
 
-      await expect(client.restaurants.bootstrap()).rejects.toThrow(
-        "El módulo de restaurantes no está habilitado"
-      );
+      await expect(
+        getRestaurantBootstrapViaZero({ zeroDb, ctx: zeroCtx })
+      ).rejects.toThrow("El módulo de restaurantes no está habilitado");
 
       await cleanup();
     });

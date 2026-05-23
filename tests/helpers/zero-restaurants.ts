@@ -1,3 +1,12 @@
+import { eq } from "drizzle-orm";
+import type { z } from "zod";
+import type { Database } from "@/database/drizzle/db";
+import {
+  restaurantKitchenTicket,
+  restaurantOrder,
+  restaurantOrderItem,
+} from "@/database/drizzle/schema/restaurant.schema";
+import { sale } from "@/database/drizzle/schema/sales.schema";
 import {
   assertRestaurantModuleEnabled,
   buildKitchenBoard,
@@ -11,6 +20,18 @@ import {
   type RestaurantTableRow,
 } from "@/features/restaurants/restaurants.shared";
 import { parseOrganizationSettingsMetadata } from "@/features/settings/settings.shared";
+import type {
+  AddRestaurantOrderItemInputSchema,
+  CloseRestaurantOrderInputSchema,
+  CreateRestaurantAreaInputSchema,
+  CreateRestaurantTableInputSchema,
+  DeleteRestaurantAreaInputSchema,
+  DeleteRestaurantTableInputSchema,
+  SendRestaurantOrderToKitchenInputSchema,
+  UpdateRestaurantAreaInputSchema,
+  UpdateRestaurantTableInputSchema,
+} from "@/schemas/restaurants";
+import { serverMutators } from "@/src/zero/mutators.server";
 import { queries } from "@/src/zero/queries";
 import type { ZeroContext } from "@/src/zero/schema";
 import type { createZeroTestDb } from "./zero-shifts";
@@ -123,4 +144,258 @@ export async function getKitchenBoardViaZero({
     organizationMetadata: organizationRows[0]?.metadata,
     tickets: ticketRows as RestaurantKitchenTicketRow[],
   });
+}
+
+type AddOrderItemInput = z.infer<typeof AddRestaurantOrderItemInputSchema>;
+type SendToKitchenInput = z.infer<
+  typeof SendRestaurantOrderToKitchenInputSchema
+>;
+type CloseOrderInput = z.infer<typeof CloseRestaurantOrderInputSchema>;
+type CreateAreaInput = z.infer<typeof CreateRestaurantAreaInputSchema>;
+type UpdateAreaInput = z.infer<typeof UpdateRestaurantAreaInputSchema>;
+type UpdateTableInput = z.infer<typeof UpdateRestaurantTableInputSchema>;
+type DeleteAreaInput = z.infer<typeof DeleteRestaurantAreaInputSchema>;
+type CreateTableInput = z.infer<typeof CreateRestaurantTableInputSchema>;
+type DeleteTableInput = z.infer<typeof DeleteRestaurantTableInputSchema>;
+
+export async function addRestaurantOrderItemViaZero({
+  db,
+  zeroDb,
+  ctx,
+  input,
+}: {
+  db: Database;
+  zeroDb: ZeroTestDb;
+  ctx: ZeroContext;
+  input: AddOrderItemInput;
+}) {
+  const itemId = crypto.randomUUID();
+
+  await zeroDb.transaction((tx) =>
+    serverMutators.restaurants.addOrderItem.fn({
+      args: { ...input, itemId },
+      ctx,
+      tx,
+    })
+  );
+
+  const [itemRow] = await db
+    .select({
+      id: restaurantOrderItem.id,
+      orderId: restaurantOrderItem.orderId,
+    })
+    .from(restaurantOrderItem)
+    .where(eq(restaurantOrderItem.id, itemId))
+    .limit(1);
+
+  if (!itemRow) {
+    throw new Error(`Ítem no encontrado después de addOrderItem: ${itemId}`);
+  }
+
+  const [orderRow] = await db
+    .select({ tableId: restaurantOrder.tableId })
+    .from(restaurantOrder)
+    .where(eq(restaurantOrder.id, itemRow.orderId))
+    .limit(1);
+
+  return {
+    orderId: itemRow.orderId,
+    itemId: itemRow.id,
+    tableId: orderRow?.tableId ?? input.tableId,
+  };
+}
+
+export async function sendRestaurantOrderToKitchenViaZero({
+  db,
+  zeroDb,
+  ctx,
+  input,
+}: {
+  db: Database;
+  zeroDb: ZeroTestDb;
+  ctx: ZeroContext;
+  input: SendToKitchenInput;
+}) {
+  const ticketId = crypto.randomUUID();
+
+  await zeroDb.transaction((tx) =>
+    serverMutators.restaurants.sendToKitchen.fn({
+      args: { ...input, ticketId },
+      ctx,
+      tx,
+    })
+  );
+
+  const [ticketRow] = await db
+    .select({
+      id: restaurantKitchenTicket.id,
+      orderId: restaurantKitchenTicket.orderId,
+      sequenceNumber: restaurantKitchenTicket.sequenceNumber,
+    })
+    .from(restaurantKitchenTicket)
+    .where(eq(restaurantKitchenTicket.id, ticketId))
+    .limit(1);
+
+  if (!ticketRow) {
+    throw new Error(
+      `Ticket no encontrado después de sendToKitchen: ${ticketId}`
+    );
+  }
+
+  const itemRows = await db
+    .select({ id: restaurantOrderItem.id })
+    .from(restaurantOrderItem)
+    .where(eq(restaurantOrderItem.kitchenTicketId, ticketId));
+
+  return {
+    ticket: {
+      id: ticketRow.id,
+      sequenceNumber: ticketRow.sequenceNumber,
+      items: itemRows,
+    },
+  };
+}
+
+export async function closeRestaurantOrderViaZero({
+  db,
+  zeroDb,
+  ctx,
+  input,
+}: {
+  db: Database;
+  zeroDb: ZeroTestDb;
+  ctx: ZeroContext;
+  input: CloseOrderInput;
+}) {
+  await zeroDb.transaction((tx) =>
+    serverMutators.restaurants.closeOrder.fn({
+      args: input,
+      ctx,
+      tx,
+    })
+  );
+
+  const [orderRow] = await db
+    .select({ saleId: restaurantOrder.saleId })
+    .from(restaurantOrder)
+    .where(eq(restaurantOrder.id, input.orderId))
+    .limit(1);
+
+  if (!orderRow?.saleId) {
+    throw new Error(
+      `Venta no encontrada después de closeOrder: ${input.orderId}`
+    );
+  }
+
+  const [saleRow] = await db
+    .select({
+      id: sale.id,
+      status: sale.status,
+      totalAmount: sale.totalAmount,
+    })
+    .from(sale)
+    .where(eq(sale.id, orderRow.saleId))
+    .limit(1);
+
+  if (!saleRow) {
+    throw new Error(
+      `Venta no encontrada después de closeOrder: ${orderRow.saleId}`
+    );
+  }
+
+  return {
+    saleId: saleRow.id,
+    status: saleRow.status,
+    totalAmount: saleRow.totalAmount,
+  };
+}
+
+export async function createRestaurantAreaViaZero({
+  zeroDb,
+  ctx,
+  input,
+}: {
+  zeroDb: ZeroTestDb;
+  ctx: ZeroContext;
+  input: CreateAreaInput;
+}) {
+  await zeroDb.transaction((tx) =>
+    serverMutators.restaurants.createArea.fn({ args: input, ctx, tx })
+  );
+  return getRestaurantConfigurationViaZero({ zeroDb, ctx });
+}
+
+export async function updateRestaurantAreaViaZero({
+  zeroDb,
+  ctx,
+  input,
+}: {
+  zeroDb: ZeroTestDb;
+  ctx: ZeroContext;
+  input: UpdateAreaInput;
+}) {
+  await zeroDb.transaction((tx) =>
+    serverMutators.restaurants.updateArea.fn({ args: input, ctx, tx })
+  );
+  return getRestaurantConfigurationViaZero({ zeroDb, ctx });
+}
+
+export async function deleteRestaurantAreaViaZero({
+  zeroDb,
+  ctx,
+  input,
+}: {
+  zeroDb: ZeroTestDb;
+  ctx: ZeroContext;
+  input: DeleteAreaInput;
+}) {
+  await zeroDb.transaction((tx) =>
+    serverMutators.restaurants.deleteArea.fn({ args: input, ctx, tx })
+  );
+  return getRestaurantConfigurationViaZero({ zeroDb, ctx });
+}
+
+export async function createRestaurantTableViaZero({
+  zeroDb,
+  ctx,
+  input,
+}: {
+  zeroDb: ZeroTestDb;
+  ctx: ZeroContext;
+  input: CreateTableInput;
+}) {
+  await zeroDb.transaction((tx) =>
+    serverMutators.restaurants.createTable.fn({ args: input, ctx, tx })
+  );
+  return getRestaurantConfigurationViaZero({ zeroDb, ctx });
+}
+
+export async function updateRestaurantTableViaZero({
+  zeroDb,
+  ctx,
+  input,
+}: {
+  zeroDb: ZeroTestDb;
+  ctx: ZeroContext;
+  input: UpdateTableInput;
+}) {
+  await zeroDb.transaction((tx) =>
+    serverMutators.restaurants.updateTable.fn({ args: input, ctx, tx })
+  );
+  return getRestaurantConfigurationViaZero({ zeroDb, ctx });
+}
+
+export async function deleteRestaurantTableViaZero({
+  zeroDb,
+  ctx,
+  input,
+}: {
+  zeroDb: ZeroTestDb;
+  ctx: ZeroContext;
+  input: DeleteTableInput;
+}) {
+  await zeroDb.transaction((tx) =>
+    serverMutators.restaurants.deleteTable.fn({ args: input, ctx, tx })
+  );
+  return getRestaurantConfigurationViaZero({ zeroDb, ctx });
 }

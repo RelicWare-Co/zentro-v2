@@ -119,10 +119,9 @@ Cada checklist se completa surface a surface. Marcar el ítem solo cuando esté 
 
 - [x] **Customers (CRUD)** → mutators `customers.create/update/delete`. Borrados `server/orpc/contracts/customers.ts` y `server/orpc/routers/customers.ts`.
 - [x] **Products (CRUD)** → mutators `products.create/update/delete`. Borrados `server/orpc/contracts/products.ts` y `server/orpc/routers/products.ts`.
-- [ ] **Restaurants areas/tables** → mutators correspondientes.
-- [x] **Settings (read/update)** → queries `organization.environment` / `organization.moduleEntitlements`, mutator server-only `organization.updateSettings` en `server/settings/update-settings.server.ts`, capa `features/settings/organization-environment.shared.ts`, hooks `use-settings.ts`. Eliminados `server/orpc/contracts/settings.ts` y `server/orpc/routers/settings.ts`.
-- [x] **Modules (capabilities/setEntitlement)** → query `modules.capabilities`, mutator server-only `modules.setEntitlement` en `server/modules/set-entitlement.server.ts`, hook `use-module-capabilities.ts`, `app-layout` vía Zero. Eliminados `server/orpc/contracts/modules.ts` y `server/orpc/routers/modules.ts`.
-- [x] **Restaurants (reads)** → Drizzle relations + `zero:schema:gen`; queries `restaurants.layout/openOrders/tableById/kitchenBoard`; capa `features/restaurants/restaurants.shared.ts`; hooks read-only Zero en `use-restaurants.ts`; tests VAL-REST-001/006 vía `tests/helpers/zero-restaurants.ts`. Mutaciones y router oRPC se eliminan en PR8.
+- [x] **Restaurants areas/tables** → mutators server-only `restaurants.createArea/updateArea/deleteArea/createTable/updateTable/deleteTable` en `server/restaurants/restaurant-mutations.server.ts`.
+- [x] **Restaurants (reads)** → Drizzle relations + `zero:schema:gen`; queries `restaurants.layout/openOrders/tableById/kitchenBoard`; capa `features/restaurants/restaurants.shared.ts`; hooks read-only Zero en `use-restaurants.ts`; tests VAL-REST-001/006 vía `tests/helpers/zero-restaurants.ts`.
+- [x] **Restaurants (mutations)** → mutators server-only `restaurants.addOrderItem/updateOrderMeta/updateDraftItem/deleteDraftItem/sendToKitchen/updateItemStatus/closeOrder` + layout CRUD; hooks Zero en `use-restaurants.ts`; tests VAL-REST-002–005 vía `tests/helpers/zero-restaurants.ts`. Eliminados `server/orpc/contracts/restaurants.ts` y `server/orpc/routers/restaurants.ts`.
 
 ### M3 · Flujo POS (alto riesgo, alta visibilidad)
 

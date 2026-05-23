@@ -14,25 +14,6 @@ import {
   updateMemberRole,
   updateOrganization,
 } from "./organization";
-import {
-  addOrderItem,
-  closeOrder,
-  configuration,
-  createArea,
-  createTable,
-  deleteArea,
-  deleteDraftItem,
-  deleteTable,
-  kitchenBoard,
-  bootstrap as restaurantBootstrap,
-  sendToKitchen,
-  tableDetail,
-  updateArea,
-  updateDraftItem,
-  updateItemStatus,
-  updateOrderMeta,
-  updateTable,
-} from "./restaurants";
 
 export const router = {
   organization: {
@@ -52,24 +33,5 @@ export const router = {
   },
   dashboard: {
     overview: dashboardOverview,
-  },
-  restaurants: {
-    bootstrap: restaurantBootstrap,
-    tableDetail,
-    addOrderItem,
-    updateOrderMeta,
-    updateDraftItem,
-    deleteDraftItem,
-    sendToKitchen,
-    updateItemStatus,
-    closeOrder,
-    configuration,
-    createArea,
-    updateArea,
-    deleteArea,
-    createTable,
-    updateTable,
-    deleteTable,
-    kitchenBoard,
   },
 };

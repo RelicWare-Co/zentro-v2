@@ -1,7 +1,8 @@
-import { useQuery as useZeroQuery } from "@rocicorp/zero/react";
+import { useZero, useQuery as useZeroQuery } from "@rocicorp/zero/react";
 import { useMutation } from "@tanstack/react-query";
 import { useRef } from "react";
 import { usePageContext } from "vike-react/usePageContext";
+import type { z } from "zod";
 import type { RestaurantConfiguration } from "@/features/restaurants/restaurants.shared";
 import {
   buildKitchenBoard,
@@ -17,10 +18,53 @@ import {
   type RestaurantTableDetail,
   type RestaurantTableRow,
 } from "@/features/restaurants/restaurants.shared";
-import { orpcQuery } from "@/server/orpc/client/query";
+import type {
+  AddRestaurantOrderItemInputSchema,
+  CloseRestaurantOrderInputSchema,
+  CreateRestaurantAreaInputSchema,
+  CreateRestaurantTableInputSchema,
+  DeleteRestaurantAreaInputSchema,
+  DeleteRestaurantDraftItemInputSchema,
+  DeleteRestaurantTableInputSchema,
+  SendRestaurantOrderToKitchenInputSchema,
+  UpdateRestaurantAreaInputSchema,
+  UpdateRestaurantDraftItemInputSchema,
+  UpdateRestaurantOrderItemStatusInputSchema,
+  UpdateRestaurantOrderMetaInputSchema,
+  UpdateRestaurantTableInputSchema,
+} from "@/schemas/restaurants";
+import { mutators } from "@/src/zero/mutators";
 import { queries } from "@/src/zero/queries";
 
 export type { RestaurantConfiguration } from "@/features/restaurants/restaurants.shared";
+
+type ZeroMutationDetails =
+  | { readonly type: "success" }
+  | {
+      readonly error: { readonly message: string };
+      readonly type: "error";
+    };
+
+interface ZeroMutationResult {
+  readonly client: Promise<ZeroMutationDetails>;
+  readonly server: Promise<ZeroMutationDetails>;
+}
+
+function toError(details: Extract<ZeroMutationDetails, { type: "error" }>) {
+  return new Error(details.error.message || "La mutación de Zero falló");
+}
+
+async function waitForZeroMutation(result: ZeroMutationResult) {
+  const clientResult = await result.client;
+  if (clientResult.type === "error") {
+    throw toError(clientResult);
+  }
+
+  const serverResult = await result.server;
+  if (serverResult.type === "error") {
+    throw toError(serverResult);
+  }
+}
 
 interface ZeroQueryStatus {
   error?: { message?: string };
@@ -315,49 +359,199 @@ export function useKitchenBoard() {
 }
 
 export function useAddRestaurantOrderItemMutation() {
-  return useMutation(orpcQuery.restaurants.addOrderItem.mutationOptions());
+  const zero = useZero();
+
+  return useMutation({
+    mutationFn: async (
+      input: z.infer<typeof AddRestaurantOrderItemInputSchema>
+    ) => {
+      const itemId = crypto.randomUUID();
+      await waitForZeroMutation(
+        zero.mutate(mutators.restaurants.addOrderItem({ ...input, itemId }))
+      );
+      return { ...input, itemId };
+    },
+  });
 }
 
 export function useUpdateRestaurantOrderMetaMutation() {
-  return useMutation(orpcQuery.restaurants.updateOrderMeta.mutationOptions());
+  const zero = useZero();
+
+  return useMutation({
+    mutationFn: async (
+      input: z.infer<typeof UpdateRestaurantOrderMetaInputSchema>
+    ) => {
+      await waitForZeroMutation(
+        zero.mutate(mutators.restaurants.updateOrderMeta(input))
+      );
+      return { success: true as const };
+    },
+  });
 }
 
 export function useUpdateRestaurantDraftItemMutation() {
-  return useMutation(orpcQuery.restaurants.updateDraftItem.mutationOptions());
+  const zero = useZero();
+
+  return useMutation({
+    mutationFn: async (
+      input: z.infer<typeof UpdateRestaurantDraftItemInputSchema>
+    ) => {
+      await waitForZeroMutation(
+        zero.mutate(mutators.restaurants.updateDraftItem(input))
+      );
+      return { success: true as const };
+    },
+  });
 }
 
 export function useDeleteRestaurantDraftItemMutation() {
-  return useMutation(orpcQuery.restaurants.deleteDraftItem.mutationOptions());
+  const zero = useZero();
+
+  return useMutation({
+    mutationFn: async (
+      input: z.infer<typeof DeleteRestaurantDraftItemInputSchema>
+    ) => {
+      await waitForZeroMutation(
+        zero.mutate(mutators.restaurants.deleteDraftItem(input))
+      );
+      return { success: true as const };
+    },
+  });
 }
 
 export function useSendRestaurantOrderToKitchenMutation() {
-  return useMutation(orpcQuery.restaurants.sendToKitchen.mutationOptions());
+  const zero = useZero();
+
+  return useMutation({
+    mutationFn: async (
+      input: z.infer<typeof SendRestaurantOrderToKitchenInputSchema> & {
+        ticketId?: string;
+      }
+    ) => {
+      const ticketId = input.ticketId ?? crypto.randomUUID();
+      await waitForZeroMutation(
+        zero.mutate(
+          mutators.restaurants.sendToKitchen({
+            orderId: input.orderId,
+            ticketId,
+          })
+        )
+      );
+      return { ticketId };
+    },
+  });
 }
 
 export function useUpdateRestaurantOrderItemStatusMutation() {
-  return useMutation(orpcQuery.restaurants.updateItemStatus.mutationOptions());
+  const zero = useZero();
+
+  return useMutation({
+    mutationFn: async (
+      input: z.infer<typeof UpdateRestaurantOrderItemStatusInputSchema>
+    ) => {
+      await waitForZeroMutation(
+        zero.mutate(mutators.restaurants.updateItemStatus(input))
+      );
+      return { success: true as const };
+    },
+  });
 }
 
 export function useCloseRestaurantOrderMutation() {
-  return useMutation(orpcQuery.restaurants.closeOrder.mutationOptions());
+  const zero = useZero();
+
+  return useMutation({
+    mutationFn: async (
+      input: z.infer<typeof CloseRestaurantOrderInputSchema>
+    ) => {
+      await waitForZeroMutation(
+        zero.mutate(mutators.restaurants.closeOrder(input))
+      );
+      return { success: true as const };
+    },
+  });
 }
 
 export function useCreateRestaurantAreaMutation() {
-  return useMutation(orpcQuery.restaurants.createArea.mutationOptions());
+  const zero = useZero();
+
+  return useMutation({
+    mutationFn: async (
+      input: z.infer<typeof CreateRestaurantAreaInputSchema>
+    ) => {
+      await waitForZeroMutation(
+        zero.mutate(mutators.restaurants.createArea(input))
+      );
+    },
+  });
+}
+
+export function useUpdateRestaurantAreaMutation() {
+  const zero = useZero();
+
+  return useMutation({
+    mutationFn: async (
+      input: z.infer<typeof UpdateRestaurantAreaInputSchema>
+    ) => {
+      await waitForZeroMutation(
+        zero.mutate(mutators.restaurants.updateArea(input))
+      );
+    },
+  });
 }
 
 export function useDeleteRestaurantAreaMutation() {
-  return useMutation(orpcQuery.restaurants.deleteArea.mutationOptions());
+  const zero = useZero();
+
+  return useMutation({
+    mutationFn: async (
+      input: z.infer<typeof DeleteRestaurantAreaInputSchema>
+    ) => {
+      await waitForZeroMutation(
+        zero.mutate(mutators.restaurants.deleteArea(input))
+      );
+    },
+  });
 }
 
 export function useCreateRestaurantTableMutation() {
-  return useMutation(orpcQuery.restaurants.createTable.mutationOptions());
+  const zero = useZero();
+
+  return useMutation({
+    mutationFn: async (
+      input: z.infer<typeof CreateRestaurantTableInputSchema>
+    ) => {
+      await waitForZeroMutation(
+        zero.mutate(mutators.restaurants.createTable(input))
+      );
+    },
+  });
 }
 
 export function useUpdateRestaurantTableMutation() {
-  return useMutation(orpcQuery.restaurants.updateTable.mutationOptions());
+  const zero = useZero();
+
+  return useMutation({
+    mutationFn: async (
+      input: z.infer<typeof UpdateRestaurantTableInputSchema>
+    ) => {
+      await waitForZeroMutation(
+        zero.mutate(mutators.restaurants.updateTable(input))
+      );
+    },
+  });
 }
 
 export function useDeleteRestaurantTableMutation() {
-  return useMutation(orpcQuery.restaurants.deleteTable.mutationOptions());
+  const zero = useZero();
+
+  return useMutation({
+    mutationFn: async (
+      input: z.infer<typeof DeleteRestaurantTableInputSchema>
+    ) => {
+      await waitForZeroMutation(
+        zero.mutate(mutators.restaurants.deleteTable(input))
+      );
+    },
+  });
 }
