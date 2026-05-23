@@ -1,6 +1,6 @@
 # Migración oRPC → Zero
 
-> **Estado actual:** Fundación instalada. Aún no hay rutas migradas; `oRPC` y `Zero` coexisten.
+> **Estado actual:** Fundación instalada. Clientes ya migrado a Zero; `oRPC` y `Zero` coexisten para el resto de surfaces.
 > **Última actualización:** generada por el agente al sentar la base inicial de Zero.
 
 Este documento reemplaza al plan anterior. Su única autoridad es el código del repositorio: si algún paso aquí queda desactualizado, ajusta el documento en el mismo cambio que lo desactualice.
@@ -113,11 +113,11 @@ Cada checklist se completa surface a surface. Marcar el ítem solo cuando esté 
 
 - [ ] **Products**: query `productsByOrg`, hook `useProducts`. Reemplaza `orpcQuery.products.*.queryOptions()`.
 - [ ] **Categories**: query `categoriesByOrg`.
-- [ ] **Customers (read-only)**: query `customersByOrg`.
+- [x] **Customers (read-only)**: query `customers.search`.
 
 ### M2 · Mutaciones simples
 
-- [ ] **Customers (CRUD)** → mutators `customers.create/update/delete`. Borra `server/orpc/routers/customers.ts`.
+- [x] **Customers (CRUD)** → mutators `customers.create/update/delete`. Borrados `server/orpc/contracts/customers.ts` y `server/orpc/routers/customers.ts`.
 - [ ] **Products (CRUD)** → mutators `products.create/update/delete`. Borra `server/orpc/routers/products.ts`.
 - [ ] **Restaurants areas/tables** → mutators correspondientes.
 

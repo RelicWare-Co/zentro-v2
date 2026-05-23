@@ -5,6 +5,10 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
+import {
+  useCustomersSearch,
+  useCreateCustomerMutation as useZeroCreateCustomerMutation,
+} from "@/features/customers/hooks/use-customers";
 import { orpcQuery } from "@/server/orpc/client/query";
 
 export function usePosBootstrap() {
@@ -37,18 +41,7 @@ export function usePosProducts(activeCategoryId: string, searchQuery: string) {
 }
 
 export function usePosCustomers() {
-  return useQuery({
-    ...orpcQuery.customers.search.queryOptions({
-      input: {
-        searchQuery: null,
-        limit: 100,
-        cursor: 0,
-      },
-    }),
-    staleTime: 60_000,
-    gcTime: 5 * 60_000,
-    refetchOnWindowFocus: false,
-  });
+  return useCustomersSearch("", 100);
 }
 
 export function useCreditAccounts() {
@@ -170,22 +163,7 @@ export function useCreatePosSaleMutation() {
 }
 
 export function useCreateCustomerMutation() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    ...orpcQuery.customers.create.mutationOptions(),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: orpcQuery.customers.search.queryOptions({
-          input: {
-            searchQuery: null,
-            limit: 100,
-            cursor: 0,
-          },
-        }).queryKey,
-      });
-    },
-  });
+  return useZeroCreateCustomerMutation();
 }
 
 export function useToggleProductFavoriteMutation() {

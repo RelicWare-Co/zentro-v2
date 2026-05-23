@@ -3,12 +3,6 @@ import {
   registerPayment as registerCreditPayment,
   searchAccounts as searchCreditAccounts,
 } from "./credit";
-import {
-  create as createCustomer,
-  deleteCustomer,
-  search as searchCustomers,
-  update as updateCustomer,
-} from "./customers";
 import { overview as dashboardOverview } from "./dashboard";
 import { capabilities, setEntitlement } from "./modules";
 import {
@@ -112,12 +106,6 @@ export const router = {
     createCategory,
     updateCategory,
     deleteCategory,
-  },
-  customers: {
-    search: searchCustomers,
-    create: createCustomer,
-    update: updateCustomer,
-    delete: deleteCustomer,
   },
   credit: {
     searchAccounts: searchCreditAccounts,

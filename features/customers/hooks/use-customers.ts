@@ -1,80 +1,131 @@
-import {
-  keepPreviousData,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useZero, useQuery as useZeroQuery } from "@rocicorp/zero/react";
+import { useMutation } from "@tanstack/react-query";
 import { useDeferredValue } from "react";
 import type { z } from "zod";
-import type { CustomerSchema } from "@/schemas/customers";
-import { orpcQuery } from "@/server/orpc/client/query";
+import type {
+  CreateCustomerSchema,
+  CustomerSchema,
+  DeleteCustomerSchema,
+  UpdateCustomerSchema,
+} from "@/schemas/customers";
+import { mutators } from "@/src/zero/mutators";
+import { queries } from "@/src/zero/queries";
+import type { Customer as ZeroCustomer } from "@/src/zero/schema";
 
 export type Customer = z.infer<typeof CustomerSchema>;
-function getCustomersSearchQueryKey(searchQuery: string | null) {
-  return orpcQuery.customers.search.queryOptions({
-    input: {
-      searchQuery,
-      limit: 50,
-      cursor: 0,
-    },
-  }).queryKey;
+export type CreateCustomerInput = z.infer<typeof CreateCustomerSchema>;
+export type UpdateCustomerInput = z.infer<typeof UpdateCustomerSchema>;
+export type DeleteCustomerInput = z.infer<typeof DeleteCustomerSchema>;
+
+type ZeroMutationDetails =
+  | { readonly type: "success" }
+  | {
+      readonly error: { readonly message: string };
+      readonly type: "error";
+    };
+
+interface ZeroMutationResult {
+  readonly client: Promise<ZeroMutationDetails>;
+  readonly server: Promise<ZeroMutationDetails>;
 }
 
-function invalidateCustomersSearch(
-  queryClient: ReturnType<typeof useQueryClient>,
-  searchQuery: string | null
-) {
-  queryClient
-    .invalidateQueries({
-      queryKey: getCustomersSearchQueryKey(searchQuery),
-    })
-    .catch(() => undefined);
+function toError(details: Extract<ZeroMutationDetails, { type: "error" }>) {
+  return new Error(details.error.message || "La mutación de Zero falló");
 }
 
-export function useCustomersSearch(searchQuery: string) {
+async function waitForZeroMutation(result: ZeroMutationResult) {
+  const clientResult = await result.client;
+  if (clientResult.type === "error") {
+    throw toError(clientResult);
+  }
+
+  const serverResult = await result.server;
+  if (serverResult.type === "error") {
+    throw toError(serverResult);
+  }
+}
+
+function getQueryError(status: { type: string; error?: { message?: string } }) {
+  return status.type === "error"
+    ? new Error(status.error?.message ?? "No se pudo cargar la consulta Zero")
+    : null;
+}
+
+function normalizeCustomer(customer: ZeroCustomer): Customer {
+  return {
+    ...customer,
+    type: customer.type ?? "natural",
+    updatedAt: customer.updatedAt ?? customer.createdAt,
+  };
+}
+
+export function useCustomersSearch(searchQuery: string, limit = 50) {
   const deferredSearchQuery = useDeferredValue(searchQuery);
-  return useQuery({
-    ...orpcQuery.customers.search.queryOptions({
-      input: {
-        searchQuery: deferredSearchQuery.trim() || null,
-        limit: 50,
-        cursor: 0,
-      },
-    }),
-    staleTime: 30_000,
-    gcTime: 5 * 60_000,
-    refetchOnWindowFocus: false,
-    placeholderData: keepPreviousData,
-    retry: false,
-  });
+  const [customers, status] = useZeroQuery(
+    queries.customers.search({
+      limit,
+      searchQuery: deferredSearchQuery.trim() || null,
+    })
+  );
+  const error = getQueryError(status);
+  const normalizedCustomers = customers.map(normalizeCustomer);
+
+  return {
+    data: {
+      data: normalizedCustomers,
+      hasMore: false,
+      nextCursor: null,
+      total: normalizedCustomers.length,
+    },
+    error,
+    isError: Boolean(error),
+    isPending: status.type === "unknown" && normalizedCustomers.length === 0,
+    refetch: () => {
+      if (status.type === "error") {
+        status.retry();
+      }
+      return Promise.resolve();
+    },
+  };
 }
 
 export function useCreateCustomerMutation() {
-  const queryClient = useQueryClient();
+  const zero = useZero();
+
   return useMutation({
-    ...orpcQuery.customers.create.mutationOptions(),
-    onSuccess: () => {
-      invalidateCustomersSearch(queryClient, null);
+    mutationFn: async (input: CreateCustomerInput) => {
+      const id = crypto.randomUUID();
+      await waitForZeroMutation(
+        zero.mutate(
+          mutators.customers.create({
+            ...input,
+            id,
+          })
+        )
+      );
+      return { id };
     },
   });
 }
 
 export function useUpdateCustomerMutation() {
-  const queryClient = useQueryClient();
+  const zero = useZero();
+
   return useMutation({
-    ...orpcQuery.customers.update.mutationOptions(),
-    onSuccess: () => {
-      invalidateCustomersSearch(queryClient, null);
+    mutationFn: async (input: UpdateCustomerInput) => {
+      await waitForZeroMutation(zero.mutate(mutators.customers.update(input)));
+      return { success: true };
     },
   });
 }
 
 export function useDeleteCustomerMutation() {
-  const queryClient = useQueryClient();
+  const zero = useZero();
+
   return useMutation({
-    ...orpcQuery.customers.delete.mutationOptions(),
-    onSuccess: () => {
-      invalidateCustomersSearch(queryClient, null);
+    mutationFn: async (input: DeleteCustomerInput) => {
+      await waitForZeroMutation(zero.mutate(mutators.customers.delete(input)));
+      return { success: true };
     },
   });
 }

@@ -1,7 +1,11 @@
 import { describe, expect, test } from "bun:test";
+import { zeroDrizzle } from "@rocicorp/zero/server/adapters/drizzle";
 import { eq } from "drizzle-orm";
 import { product } from "@/database/drizzle/schema/inventory.schema";
 import { createServerORPCClient } from "@/server/orpc/client/server";
+import { serverMutators } from "@/src/zero/mutators.server";
+import { queries } from "@/src/zero/queries";
+import { type ZeroContext, schema as zeroSchema } from "@/src/zero/schema";
 import { buildMockContext } from "./helpers/orpc-context";
 import {
   makeUser,
@@ -334,9 +338,13 @@ describe("POS checkout", () => {
     test("soft-deleted customer does not appear in search results", async () => {
       const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const u = makeUser({ id: userId });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = zeroDrizzle(zeroSchema, db);
+      const zeroContext = {
+        id: userId,
+        orgID: organizationId,
+        role: "owner",
+        systemRole: null,
+      } satisfies ZeroContext;
 
       const customerId = await seedCustomer(db, {
         organizationId,
@@ -344,17 +352,33 @@ describe("POS checkout", () => {
       });
       expect(customerId).toBeDefined();
 
-      // Verify customer exists before deletion
-      const before = await client.customers.search({ searchQuery: "Deleted" });
-      expect(before.data.length).toBe(1);
-      expect(before.data[0].id).toBe(customerId);
+      // Verify customer exists before deletion through the migrated Zero query.
+      const before = await zeroDb.run(
+        queries.customers.search.fn({
+          args: { limit: 50, searchQuery: "Deleted" },
+          ctx: zeroContext,
+        })
+      );
+      expect(before.length).toBe(1);
+      expect(before[0].id).toBe(customerId);
 
-      // Soft-delete the customer via direct DB update (customers.delete endpoint)
-      await client.customers.delete({ id: customerId });
+      // Soft-delete the customer through the migrated Zero mutator.
+      await zeroDb.transaction((tx) =>
+        serverMutators.customers.delete.fn({
+          args: { id: customerId },
+          ctx: zeroContext,
+          tx,
+        })
+      );
 
-      // Search should exclude soft-deleted
-      const after = await client.customers.search({ searchQuery: "Deleted" });
-      expect(after.data.length).toBe(0);
+      // Search should exclude soft-deleted rows.
+      const after = await zeroDb.run(
+        queries.customers.search.fn({
+          args: { limit: 50, searchQuery: "Deleted" },
+          ctx: zeroContext,
+        })
+      );
+      expect(after.length).toBe(0);
 
       await cleanup();
     });

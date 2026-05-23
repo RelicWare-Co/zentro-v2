@@ -1,5 +1,4 @@
 import { creditContract } from "./credit";
-import { customersContract } from "./customers";
 import { dashboardContract } from "./dashboard";
 import { modulesContract } from "./modules";
 import { organizationContract } from "./organization";
@@ -15,7 +14,6 @@ export const contract = {
   modules: modulesContract,
   settings: settingsContract,
   products: productsContract,
-  customers: customersContract,
   credit: creditContract,
   dashboard: dashboardContract,
   sales: salesContract,

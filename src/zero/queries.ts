@@ -14,10 +14,20 @@
 // - Keep query text identical client/server — Zero merges them by name.
 
 import { defineQueries, defineQuery } from "@rocicorp/zero";
+import { z } from "zod";
 // Importing `./context` registers `ZeroContext` into Zero's DefaultTypes so
 // `ctx` here is typed as `ZeroContext | undefined`.
 import "./context";
 import { zql } from "./schema";
+
+const customersSearchArgsSchema = z.object({
+  limit: z.number().int().min(1).max(100).optional(),
+  searchQuery: z.string().trim().optional().nullable(),
+});
+
+function normalizeLimit(limit?: number) {
+  return Math.min(Math.max(limit ?? 50, 1), 100);
+}
 
 export const queries = defineQueries({
   /**
@@ -36,6 +46,35 @@ export const queries = defineQueries({
       .where("userId", ctx.id)
       .where("organizationId", ctx.orgID);
   }),
+  customers: {
+    search: defineQuery(customersSearchArgsSchema, ({ args, ctx }) => {
+      if (!ctx) {
+        return zql.customer.where(({ cmpLit }) => cmpLit(false, "=", true));
+      }
+
+      const normalizedSearch = args.searchQuery?.trim() ?? "";
+      const searchPattern = `%${normalizedSearch}%`;
+      let query = zql.customer
+        .where("organizationId", ctx.orgID)
+        .where("deletedAt", "IS", null);
+
+      if (normalizedSearch) {
+        query = query.where(({ cmp, or }) =>
+          or(
+            cmp("name", "ILIKE", searchPattern),
+            cmp("documentNumber", "ILIKE", searchPattern),
+            cmp("phone", "ILIKE", searchPattern),
+            cmp("email", "ILIKE", searchPattern)
+          )
+        );
+      }
+
+      return query
+        .orderBy("name", "asc")
+        .orderBy("id", "asc")
+        .limit(normalizeLimit(args.limit));
+    }),
+  },
 });
 
 export type Queries = typeof queries;
