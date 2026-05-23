@@ -24,7 +24,13 @@ export const shift = pgTable(
     closedAt: timestamp("closed_at", { withTimezone: true, mode: "date" }),
     notes: text("notes"),
   },
-  (table) => [index("shift_organizationId_idx").on(table.organizationId)]
+  (table) => [
+    index("shift_organizationId_idx").on(table.organizationId),
+    index("shift_organizationId_openedAt_idx").on(
+      table.organizationId,
+      table.openedAt
+    ),
+  ]
 );
 
 export const cashMovement = pgTable(

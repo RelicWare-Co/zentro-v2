@@ -8,7 +8,14 @@ import {
   User,
   Wallet,
 } from "lucide-react";
-import { useDeferredValue, useId, useMemo, useState } from "react";
+import {
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useId,
+  useMemo,
+  useState,
+} from "react";
 import { Link } from "@/components/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -37,11 +44,12 @@ import {
   formatCurrency,
   formatPaymentMethodLabel,
 } from "@/features/pos/utils";
+import type { ShiftListCursor } from "@/features/shifts/shifts.shared";
 import { useShiftsList } from "./hooks/use-shifts";
 
 const DEFAULT_LIST_PARAMS = {
   limit: 10,
-  cursor: 0,
+  cursor: null,
 };
 
 const ALL_FILTER_VALUE = "all";
@@ -99,6 +107,72 @@ function formatMovementType(type: string) {
   return labels[type] ?? type;
 }
 
+function buildShiftsRangeLabel({
+  hasMoreResults,
+  pageIndex,
+  pageSize,
+  shiftsCount,
+  totalResults,
+}: {
+  hasMoreResults: boolean;
+  pageIndex: number;
+  pageSize: number;
+  shiftsCount: number;
+  totalResults: number | null | undefined;
+}) {
+  if (shiftsCount === 0) {
+    return "0-0";
+  }
+
+  const rangeStart = pageIndex * pageSize + 1;
+  const rangeEnd = pageIndex * pageSize + shiftsCount;
+
+  if (totalResults == null) {
+    return `${rangeStart}-${rangeEnd}${hasMoreResults ? "+" : ""}`;
+  }
+
+  return `${rangeStart}-${rangeEnd} de ${totalResults}`;
+}
+
+function useShiftsListPagination(filterKey: string) {
+  const [pageIndex, setPageIndex] = useState(0);
+  const [pageCursors, setPageCursors] = useState<(ShiftListCursor | null)[]>([
+    null,
+  ]);
+  const listCursor = pageCursors[pageIndex] ?? null;
+
+  const resetPagination = useCallback(() => {
+    setPageIndex(0);
+    setPageCursors([null]);
+  }, []);
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: filterKey drives pagination reset
+  useEffect(() => {
+    resetPagination();
+  }, [filterKey, resetPagination]);
+
+  const goToPreviousPage = () => {
+    setPageIndex((currentPage) => Math.max(currentPage - 1, 0));
+  };
+
+  const goToNextPage = (nextCursor: ShiftListCursor) => {
+    setPageCursors((currentCursors) => {
+      const nextCursors = currentCursors.slice(0, pageIndex + 1);
+      nextCursors.push(nextCursor);
+      return nextCursors;
+    });
+    setPageIndex((currentPage) => currentPage + 1);
+  };
+
+  return {
+    goToNextPage,
+    goToPreviousPage,
+    listCursor,
+    pageIndex,
+    resetPagination,
+  };
+}
+
 export function ShiftsPage() {
   const searchId = useId();
   const statusId = useId();
@@ -119,17 +193,51 @@ export function ShiftsPage() {
   const [hasMovements, setHasMovements] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [cursor, setCursor] = useState(0);
   const [pageSize, setPageSize] = useState(DEFAULT_LIST_PARAMS.limit);
-
   const deferredSearchQuery = useDeferredValue(searchQuery);
 
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
 
+  const shiftsFilterKey = useMemo(
+    () =>
+      JSON.stringify({
+        cashierId,
+        deferredSearchQuery,
+        differenceStatus,
+        endDate,
+        hasMovements,
+        pageSize,
+        paymentMethod,
+        startDate,
+        status,
+        terminalName,
+      }),
+    [
+      cashierId,
+      deferredSearchQuery,
+      differenceStatus,
+      endDate,
+      hasMovements,
+      pageSize,
+      paymentMethod,
+      startDate,
+      status,
+      terminalName,
+    ]
+  );
+
+  const {
+    goToNextPage,
+    goToPreviousPage,
+    listCursor,
+    pageIndex,
+    resetPagination,
+  } = useShiftsListPagination(shiftsFilterKey);
+
   const listParams = useMemo(
     () => ({
       limit: pageSize,
-      cursor,
+      cursor: listCursor,
       searchQuery: deferredSearchQuery.trim() || null,
       status:
         status === "open" || status === "closed"
@@ -153,7 +261,7 @@ export function ShiftsPage() {
     }),
     [
       pageSize,
-      cursor,
+      listCursor,
       deferredSearchQuery,
       status,
       cashierId,
@@ -173,7 +281,8 @@ export function ShiftsPage() {
     terminals: [],
     paymentMethods: [],
   };
-  const totalResults = shiftsQuery.data?.total ?? shifts.length;
+  const totalResults = shiftsQuery.data?.total;
+  const hasMoreResults = shiftsQuery.data?.hasMore ?? false;
   const nextCursor = shiftsQuery.data?.nextCursor ?? null;
   const summary = useMemo(
     () =>
@@ -237,16 +346,16 @@ export function ShiftsPage() {
     setHasMovements("");
     setStartDate("");
     setEndDate("");
-    setCursor(0);
+    resetPagination();
   };
 
-  const updatePagination = (nextCursor: number, nextPageSize = pageSize) => {
-    setCursor(nextCursor);
-    setPageSize(nextPageSize);
-  };
-
-  const rangeStart = totalResults === 0 ? 0 : cursor + 1;
-  const rangeEnd = totalResults === 0 ? 0 : cursor + shifts.length;
+  const rangeLabel = buildShiftsRangeLabel({
+    hasMoreResults,
+    pageIndex,
+    pageSize,
+    shiftsCount: shifts.length,
+    totalResults,
+  });
 
   const renderAdvancedFilters = (mode: "mobile" | "desktop") => {
     const isMobile = mode === "mobile";
@@ -546,7 +655,7 @@ export function ShiftsPage() {
                     className="bg-[var(--color-voltage)] text-black hover:bg-[#d9f15c]"
                     onClick={() => {
                       setIsMobileFilterOpen(false);
-                      setCursor(0);
+                      resetPagination();
                     }}
                     type="button"
                   >
@@ -585,7 +694,7 @@ export function ShiftsPage() {
                     <Button
                       className="bg-[var(--color-voltage)] text-black hover:bg-[#d9f15c]"
                       onClick={() => {
-                        setCursor(0);
+                        resetPagination();
                       }}
                       type="button"
                     >
@@ -887,7 +996,7 @@ export function ShiftsPage() {
               <Select
                 onValueChange={(value) => {
                   setPageSize(Number(value));
-                  setCursor(0);
+                  resetPagination();
                 }}
                 value={`${pageSize}`}
               >
@@ -904,16 +1013,14 @@ export function ShiftsPage() {
               </Select>
               <span>filas</span>
             </div>
-            <div className="hidden tabular-nums sm:block">
-              {rangeStart}-{rangeEnd} de {totalResults}
-            </div>
+            <div className="hidden tabular-nums sm:block">{rangeLabel}</div>
           </div>
 
           <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
             <Button
               className="h-8 rounded-md border-zinc-700 bg-[var(--color-carbon)] px-3 text-zinc-300 hover:bg-white/5 hover:text-white"
-              disabled={cursor <= 0}
-              onClick={() => updatePagination(Math.max(cursor - pageSize, 0))}
+              disabled={pageIndex === 0}
+              onClick={goToPreviousPage}
               size="sm"
               type="button"
               variant="outline"
@@ -922,8 +1029,12 @@ export function ShiftsPage() {
             </Button>
             <Button
               className="h-8 rounded-md border-none bg-[var(--color-voltage)] px-4 font-medium text-black hover:bg-[#c9e605]"
-              disabled={!nextCursor}
-              onClick={() => nextCursor && updatePagination(nextCursor)}
+              disabled={nextCursor === null}
+              onClick={() => {
+                if (nextCursor !== null) {
+                  goToNextPage(nextCursor);
+                }
+              }}
               size="sm"
               type="button"
               variant="default"

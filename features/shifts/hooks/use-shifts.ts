@@ -12,8 +12,9 @@ import {
   buildShiftCloseSummary,
   buildShiftFilterOptions,
   buildShiftListItem,
-  filterShifts,
-  paginateShifts,
+  buildShiftsListPage,
+  filterShiftsClientRefinements,
+  normalizeShiftsListLimit,
 } from "@/features/shifts/shifts.shared";
 import type {
   CloseShiftInputSchema,
@@ -68,8 +69,19 @@ function getQueryError(status: { type: string; error?: { message?: string } }) {
     : null;
 }
 
-function normalizeShiftRows(rows: readonly ShiftWithRelations[]) {
-  return rows.map((shift) => buildShiftListItem(shift));
+function buildShiftsListQueryArgs(params: ShiftsListParams) {
+  return {
+    limit: normalizeShiftsListLimit(params.limit),
+    cursor: params.cursor ?? null,
+    searchQuery: params.searchQuery ?? null,
+    status: params.status ?? null,
+    cashierId: params.cashierId ?? null,
+    terminalName: params.terminalName ?? null,
+    paymentMethod: params.paymentMethod ?? null,
+    hasMovements: params.hasMovements === "yes" ? params.hasMovements : null,
+    startDate: params.startDate ?? null,
+    endDate: params.endDate ?? null,
+  };
 }
 
 export function useActiveShift() {
@@ -106,44 +118,74 @@ export function useActiveShift() {
 
 export function useShiftsList(params: ShiftsListParams = {}) {
   const deferredParams = useDeferredValue(params);
-  const [shiftRows, shiftStatus] = useZeroQuery(queries.shifts.byOrg());
+  const listQueryArgs = useMemo(
+    () => buildShiftsListQueryArgs(deferredParams),
+    [deferredParams]
+  );
+  const [shiftRows, shiftStatus] = useZeroQuery(
+    queries.shifts.list(listQueryArgs)
+  );
   const [organizationRows, organizationStatus] = useZeroQuery(
     queries.shifts.organization()
   );
-  const error = getQueryError(shiftStatus) ?? getQueryError(organizationStatus);
-  const normalizedShifts = useMemo(
-    () => normalizeShiftRows(shiftRows as ShiftWithRelations[]),
-    [shiftRows]
+  const [memberRows, memberStatus] = useZeroQuery(
+    queries.sales.filterOptions()
   );
-  const filteredShifts = useMemo(
-    () => filterShifts(normalizedShifts, deferredParams),
-    [deferredParams, normalizedShifts]
+  const [terminalRows, terminalStatus] = useZeroQuery(
+    queries.sales.terminalOptions()
   );
+  const error =
+    getQueryError(shiftStatus) ??
+    getQueryError(organizationStatus) ??
+    getQueryError(memberStatus) ??
+    getQueryError(terminalStatus);
+
+  const refinedShifts = useMemo(() => {
+    const listItems = (shiftRows as ShiftWithRelations[]).map((shiftRow) =>
+      buildShiftListItem(shiftRow)
+    );
+    return filterShiftsClientRefinements(listItems, deferredParams);
+  }, [deferredParams, shiftRows]);
+
   const paginated = useMemo(
-    () => paginateShifts(filteredShifts, deferredParams),
-    [deferredParams, filteredShifts]
+    () => buildShiftsListPage(refinedShifts, listQueryArgs.limit),
+    [listQueryArgs.limit, refinedShifts]
   );
+
   const filterOptions = useMemo(
     () =>
-      buildShiftFilterOptions(
-        normalizedShifts,
-        typeof organizationRows[0]?.metadata === "string"
-          ? organizationRows[0]?.metadata
-          : null
-      ),
-    [normalizedShifts, organizationRows]
+      buildShiftFilterOptions({
+        members: memberRows.map((memberRow) => ({
+          userId: memberRow.userId,
+          user: (
+            memberRow as {
+              user?: { name?: string | null } | null;
+            }
+          ).user,
+        })),
+        organizationMetadata:
+          typeof organizationRows[0]?.metadata === "string"
+            ? organizationRows[0]?.metadata
+            : null,
+        terminalNames: terminalRows
+          .map((shiftRow) => shiftRow.terminalName)
+          .filter((terminalName): terminalName is string =>
+            Boolean(terminalName)
+          ),
+      }),
+    [memberRows, organizationRows, terminalRows]
   );
 
   const hasLoadedRef = useRef(false);
   const staleDataRef = useRef<{
     data: ShiftListItem[];
-    total: number;
+    total: number | null;
     hasMore: boolean;
-    nextCursor: number | null;
+    nextCursor: (typeof paginated)["nextCursor"];
     filterOptions: ReturnType<typeof buildShiftFilterOptions>;
   }>({
     data: [],
-    total: 0,
+    total: null,
     hasMore: false,
     nextCursor: null,
     filterOptions: {
@@ -154,8 +196,11 @@ export function useShiftsList(params: ShiftsListParams = {}) {
   });
 
   const isQueryLoading =
-    (shiftStatus.type === "unknown" || organizationStatus.type === "unknown") &&
-    normalizedShifts.length === 0;
+    (shiftStatus.type === "unknown" ||
+      organizationStatus.type === "unknown" ||
+      memberStatus.type === "unknown" ||
+      terminalStatus.type === "unknown") &&
+    shiftRows.length === 0;
 
   const nextData = {
     ...paginated,
@@ -176,12 +221,20 @@ export function useShiftsList(params: ShiftsListParams = {}) {
     isLoading: isQueryLoading && !hasLoadedRef.current,
     isPlaceholderData:
       deferredParams !== params || (isQueryLoading && hasLoadedRef.current),
+    isFetching:
+      deferredParams !== params || (isQueryLoading && hasLoadedRef.current),
     refetch: () => {
       if (shiftStatus.type === "error") {
         shiftStatus.retry();
       }
       if (organizationStatus.type === "error") {
         organizationStatus.retry();
+      }
+      if (memberStatus.type === "error") {
+        memberStatus.retry();
+      }
+      if (terminalStatus.type === "error") {
+        terminalStatus.retry();
       }
       return Promise.resolve();
     },

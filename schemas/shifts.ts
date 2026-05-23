@@ -8,9 +8,29 @@ const DifferenceStatusSchema = z.enum(["short", "over", "balanced"]);
 
 const HasMovementsSchema = z.enum(["yes", "no"]);
 
+export const ShiftListCursorSchema = z.object({
+  openedAt: z.number().int(),
+  id: z.string().trim().min(1),
+});
+
+export type ShiftListCursor = z.infer<typeof ShiftListCursorSchema>;
+
+export const ShiftsListQueryArgsSchema = z.object({
+  limit: z.number().int().min(1).max(50).optional(),
+  cursor: ShiftListCursorSchema.optional().nullable(),
+  searchQuery: z.string().optional().nullable(),
+  status: ShiftStatusSchema.optional().nullable(),
+  cashierId: z.string().optional().nullable(),
+  terminalName: z.string().optional().nullable(),
+  paymentMethod: z.string().optional().nullable(),
+  hasMovements: HasMovementsSchema.optional().nullable(),
+  startDate: z.string().optional().nullable(),
+  endDate: z.string().optional().nullable(),
+});
+
 export const ListShiftsInputSchema = z.object({
-  limit: z.coerce.number().int().min(1).max(100).optional(),
-  cursor: z.coerce.number().int().min(0).optional(),
+  limit: z.coerce.number().int().min(1).max(50).optional(),
+  cursor: ShiftListCursorSchema.optional().nullable(),
   searchQuery: z.string().optional().nullable(),
   status: ShiftStatusSchema.optional().nullable(),
   cashierId: z.string().optional().nullable(),
@@ -104,9 +124,9 @@ const ShiftFilterOptionsSchema = z.object({
 
 export const ListShiftsResultSchema = z.object({
   data: ShiftListItemSchema.array(),
-  total: z.number(),
+  total: z.number().nullable(),
   hasMore: z.boolean(),
-  nextCursor: z.number().nullable(),
+  nextCursor: ShiftListCursorSchema.nullable(),
   filterOptions: ShiftFilterOptionsSchema,
 });
 

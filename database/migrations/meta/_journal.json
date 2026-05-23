@@ -15,6 +15,13 @@
       "when": 1779567669923,
       "tag": "0001_true_blonde_phantom",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1779568132173,
+      "tag": "0002_living_wolfpack",
+      "breakpoints": true
     }
   ]
 }

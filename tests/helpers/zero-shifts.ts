@@ -3,9 +3,11 @@ import type { z } from "zod";
 import { buildOrganizationAccessPolicy } from "@/features/organization/organization-policy.shared";
 import {
   buildShiftCloseSummary,
+  buildShiftFilterOptions,
   buildShiftListItem,
-  filterShifts,
-  paginateShifts,
+  buildShiftsListPage,
+  filterShiftsClientRefinements,
+  normalizeShiftsListLimit,
   type ShiftsListParams,
   type ShiftWithRelations,
 } from "@/features/shifts/shifts.shared";
@@ -24,6 +26,21 @@ type CloseShiftInput = z.infer<typeof CloseShiftInputSchema>;
 type RegisterCashMovementInput = z.infer<
   typeof RegisterCashMovementInputSchema
 >;
+
+function buildShiftsListQueryArgs(input: ShiftsListParams) {
+  return {
+    limit: normalizeShiftsListLimit(input.limit),
+    cursor: input.cursor ?? null,
+    searchQuery: input.searchQuery ?? null,
+    status: input.status ?? null,
+    cashierId: input.cashierId ?? null,
+    terminalName: input.terminalName ?? null,
+    paymentMethod: input.paymentMethod ?? null,
+    hasMovements: input.hasMovements === "yes" ? input.hasMovements : null,
+    startDate: input.startDate ?? null,
+    endDate: input.endDate ?? null,
+  };
+}
 
 export function createZeroContext(
   userId: string,
@@ -199,16 +216,41 @@ export async function listShiftsViaZero({
   ctx: ZeroContext;
   input?: ShiftsListParams;
 }) {
-  const [shiftRows] = await Promise.all([
-    zeroDb.run(queries.shifts.byOrg.fn({ args: undefined, ctx })),
-  ]);
-  const normalizedShifts = shiftRows.map((shiftRow) =>
+  const listQueryArgs = buildShiftsListQueryArgs(input);
+  const [shiftRows, organizationRows, memberRows, terminalRows] =
+    await Promise.all([
+      zeroDb.run(queries.shifts.list.fn({ args: listQueryArgs, ctx })),
+      zeroDb.run(queries.shifts.organization.fn({ args: undefined, ctx })),
+      zeroDb.run(queries.sales.filterOptions.fn({ args: undefined, ctx })),
+      zeroDb.run(queries.sales.terminalOptions.fn({ args: undefined, ctx })),
+    ]);
+  const listItems = (shiftRows as ShiftWithRelations[]).map((shiftRow) =>
     buildShiftListItem(shiftRow)
   );
-  const filteredShifts = filterShifts(normalizedShifts, input);
-  const paginated = paginateShifts(filteredShifts, input);
+  const refinedShifts = filterShiftsClientRefinements(listItems, input);
+  const paginated = buildShiftsListPage(refinedShifts, listQueryArgs.limit);
+  const filterOptions = buildShiftFilterOptions({
+    members: memberRows.map((memberRow) => ({
+      userId: memberRow.userId,
+      user: (
+        memberRow as {
+          user?: { name?: string | null } | null;
+        }
+      ).user,
+    })),
+    organizationMetadata:
+      typeof organizationRows[0]?.metadata === "string"
+        ? organizationRows[0]?.metadata
+        : null,
+    terminalNames: terminalRows
+      .map((shiftRow) => shiftRow.terminalName)
+      .filter((terminalName): terminalName is string => Boolean(terminalName)),
+  });
 
-  return paginated;
+  return {
+    ...paginated,
+    filterOptions,
+  };
 }
 
 export async function getShiftDetailViaZero({

@@ -12,11 +12,13 @@ import type {
 import type {
   ListShiftsInputSchema,
   ShiftDetailSchema,
+  ShiftListCursorSchema,
 } from "@/schemas/shifts";
 
 export type ShiftListItem = z.infer<typeof ShiftDetailSchema>;
 export type ShiftCloseSummary = z.infer<typeof ShiftCloseSummaryResultSchema>;
 export type ShiftsListParams = z.infer<typeof ListShiftsInputSchema>;
+export type ShiftListCursor = z.infer<typeof ShiftListCursorSchema>;
 export type CloseShiftInput = z.infer<typeof CloseShiftInputSchema>;
 
 export interface ShiftWithRelations {
@@ -315,44 +317,12 @@ export function buildShiftListItem(shift: ShiftWithRelations): ShiftListItem {
   };
 }
 
-function parseDateBoundary(value: string | null | undefined) {
+export function parseDateBoundary(value: string | null | undefined) {
   if (!value) {
     return null;
   }
   const parsedDate = new Date(`${value}T00:00:00`);
   return Number.isNaN(parsedDate.getTime()) ? null : parsedDate.getTime();
-}
-
-function matchesShiftSearch(shift: ShiftListItem, searchQuery: string) {
-  if (!searchQuery) {
-    return true;
-  }
-
-  const haystack = [
-    shift.id,
-    shift.cashierName,
-    shift.terminalName ?? "",
-    shift.notes ?? "",
-  ]
-    .join(" ")
-    .toLowerCase();
-
-  return haystack.includes(searchQuery);
-}
-
-function matchesShiftPaymentMethod(
-  shift: ShiftListItem,
-  paymentMethod: string
-) {
-  return (
-    shift.payments.some((paymentRow) => paymentRow.method === paymentMethod) ||
-    shift.movements.some(
-      (movementRow) => movementRow.paymentMethod === paymentMethod
-    ) ||
-    shift.closures.some(
-      (closureRow) => closureRow.paymentMethod === paymentMethod
-    )
-  );
 }
 
 function matchesShiftDifferenceStatus(
@@ -371,122 +341,97 @@ function matchesShiftDifferenceStatus(
   }
 }
 
-function matchesShiftDateRange(
-  shift: ShiftListItem,
-  startDateMs: number | null,
-  endDateExclusiveMs: number | null
-) {
-  if (startDateMs !== null && shift.openedAt < startDateMs) {
-    return false;
-  }
-  if (endDateExclusiveMs !== null && shift.openedAt >= endDateExclusiveMs) {
-    return false;
-  }
-  return true;
-}
-
-function matchesShiftFilters(shift: ShiftListItem, input: ShiftsListParams) {
-  const trimmedSearchQuery = input.searchQuery?.trim().toLowerCase() ?? "";
-  const startDateMs = parseDateBoundary(input.startDate);
-  const endDateMs = parseDateBoundary(input.endDate);
-  const endDateExclusiveMs =
-    endDateMs === null ? null : endDateMs + 24 * 60 * 60 * 1000;
-
-  if (input.status && shift.status !== input.status) {
-    return false;
-  }
-  if (input.cashierId && shift.userId !== input.cashierId) {
-    return false;
-  }
-  if (input.terminalName && shift.terminalName !== input.terminalName) {
-    return false;
-  }
-  if (!matchesShiftSearch(shift, trimmedSearchQuery)) {
-    return false;
-  }
-  if (
-    input.paymentMethod &&
-    !matchesShiftPaymentMethod(shift, input.paymentMethod)
-  ) {
-    return false;
-  }
-  if (input.hasMovements === "yes" && shift.movements.length === 0) {
-    return false;
-  }
-  if (input.hasMovements === "no" && shift.movements.length > 0) {
-    return false;
-  }
-  if (
-    input.differenceStatus &&
-    !matchesShiftDifferenceStatus(shift, input.differenceStatus)
-  ) {
-    return false;
-  }
-
-  return matchesShiftDateRange(shift, startDateMs, endDateExclusiveMs);
-}
-
-export function filterShifts(
-  shifts: ShiftListItem[],
-  input: ShiftsListParams
-): ShiftListItem[] {
-  return shifts.filter((shift) => matchesShiftFilters(shift, input));
-}
-
-export function paginateShifts(
+export function filterShiftsClientRefinements(
   shifts: ShiftListItem[],
   input: ShiftsListParams
 ) {
-  const limit = Math.min(Math.max(input.limit ?? 10, 1), 50);
-  const cursor = Math.max(input.cursor ?? 0, 0);
-  const pageRows = shifts.slice(cursor, cursor + limit);
-  const hasMore = cursor + limit < shifts.length;
-  const nextCursor = hasMore ? cursor + limit : null;
+  let rows = shifts;
+
+  if (input.differenceStatus) {
+    const differenceStatus = input.differenceStatus;
+    rows = rows.filter((shift) =>
+      matchesShiftDifferenceStatus(shift, differenceStatus)
+    );
+  }
+
+  if (input.hasMovements === "no") {
+    rows = rows.filter((shift) => shift.movements.length === 0);
+  }
+
+  return rows;
+}
+
+export function normalizeShiftsListLimit(limit?: number) {
+  return Math.min(Math.max(limit ?? 10, 1), 50);
+}
+
+export function buildShiftsListPage(
+  shifts: ShiftListItem[],
+  limit: number
+): {
+  data: ShiftListItem[];
+  hasMore: boolean;
+  nextCursor: ShiftListCursor | null;
+  total: number | null;
+} {
+  const pageSize = normalizeShiftsListLimit(limit);
+  const hasMore = shifts.length > pageSize;
+  const pageRows = hasMore ? shifts.slice(0, pageSize) : shifts;
+  const lastRow = pageRows.at(-1);
+  const nextCursor =
+    hasMore && lastRow
+      ? {
+          openedAt: lastRow.openedAt,
+          id: lastRow.id,
+        }
+      : null;
 
   return {
     data: pageRows,
-    total: shifts.length,
     hasMore,
     nextCursor,
+    total: hasMore ? null : pageRows.length,
   };
 }
 
-export function buildShiftFilterOptions(
-  shifts: ShiftListItem[],
-  organizationMetadata: string | null | undefined
-) {
+export function buildShiftFilterOptions({
+  members,
+  organizationMetadata,
+  terminalNames,
+}: {
+  members: Array<{
+    userId: string;
+    user?: { name?: string | null } | null;
+  }>;
+  organizationMetadata: string | null | undefined;
+  terminalNames: Iterable<string>;
+}) {
   const organizationSettings =
     parseOrganizationSettingsMetadata(organizationMetadata);
-  const cashierMap = new Map<string, string>();
-  const terminalNames = new Set<string>();
-  const paymentMethodIds = new Set<string>();
-
-  for (const shift of shifts) {
-    cashierMap.set(shift.userId, shift.cashierName);
-    if (shift.terminalName) {
-      terminalNames.add(shift.terminalName);
-    }
-    for (const paymentRow of shift.payments) {
-      paymentMethodIds.add(paymentRow.method);
-    }
-    for (const movementRow of shift.movements) {
-      paymentMethodIds.add(movementRow.paymentMethod);
-    }
-    for (const closureRow of shift.closures) {
-      paymentMethodIds.add(closureRow.paymentMethod);
-    }
-  }
+  const normalizedTerminalNames = [
+    ...new Set(
+      [...terminalNames].filter(
+        (terminalName): terminalName is string =>
+          typeof terminalName === "string" && terminalName.trim().length > 0
+      )
+    ),
+  ];
 
   return {
-    cashiers: [...cashierMap.entries()]
-      .map(([id, name]) => ({ id, name }))
+    cashiers: members
+      .map((memberRow) => ({
+        id: memberRow.userId,
+        name: memberRow.user?.name ?? "Cajero",
+      }))
       .toSorted((left, right) => left.name.localeCompare(right.name, "es-CO")),
-    terminals: [...terminalNames].toSorted((left, right) =>
+    terminals: normalizedTerminalNames.toSorted((left, right) =>
       left.localeCompare(right, "es-CO")
     ),
-    paymentMethods: buildPaymentMethodOptions(
-      getAllPaymentMethods(organizationSettings),
-      paymentMethodIds
+    paymentMethods: getAllPaymentMethods(organizationSettings).map(
+      (method) => ({
+        id: method.id,
+        label: method.label,
+      })
     ),
   };
 }
