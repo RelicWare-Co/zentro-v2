@@ -28,6 +28,16 @@
           }
         }
       }
+    },
+    {
+      "includes": ["components/organization-selection.tsx"],
+      "linter": {
+        "rules": {
+          "performance": {
+            "noBarrelFile": "off"
+          }
+        }
+      }
     }
   ]
 }

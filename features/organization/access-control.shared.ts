@@ -1,4 +1,4 @@
-function parseRoleList(role: string | null | undefined) {
+export function parseRoleList(role: string | null | undefined) {
   return (role ?? "").split(",").flatMap((value) => {
     const trimmed = value.trim().toLowerCase();
     return trimmed ? [trimmed] : [];
