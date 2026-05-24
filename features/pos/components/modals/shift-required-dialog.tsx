@@ -9,6 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { usePosPage } from "@/features/pos/pos-page-context";
+import { isPosModalOpen } from "@/features/pos/pos-page-modals.shared";
 
 export function ShiftRequiredDialog() {
   const { state, actions } = usePosPage();
@@ -17,10 +18,10 @@ export function ShiftRequiredDialog() {
     <Dialog
       onOpenChange={(open) => {
         if (!open) {
-          actions.closeShiftRequired();
+          actions.closeActiveModal();
         }
       }}
-      open={state.isShiftRequiredOpen}
+      open={isPosModalOpen(state.activeModal, "shift-required")}
     >
       <DialogContent className="border-zinc-800 bg-[#151515] text-white sm:max-w-[420px]">
         <DialogHeader>
@@ -44,7 +45,7 @@ export function ShiftRequiredDialog() {
         <DialogFooter>
           <Button
             className="text-zinc-400 hover:bg-zinc-800 hover:text-white"
-            onClick={actions.closeShiftRequired}
+            onClick={actions.closeActiveModal}
             variant="ghost"
           >
             Entendido

@@ -42,28 +42,7 @@ export function PosV1Layout() {
 
       <div className="flex min-h-0 flex-1 overflow-hidden">
         <ProductGrid
-          activeCategoryId={state.activeCategoryId}
-          categories={state.categories}
           className={isMobile ? "border-r-0" : undefined}
-          getProductQuantity={actions.getProductQuantity}
-          hasMore={state.hasNextPage}
-          isActiveShift={!!state.activeShift}
-          isLoading={
-            state.isBootstrapLoading ||
-            state.isActiveShiftLoading ||
-            state.isProductsLoading
-          }
-          isLoadingMore={state.isFetchingNextPage}
-          isTogglingFavorite={meta.isTogglingFavorite}
-          onBarcodeScan={actions.handleBarcodeScanV1}
-          onCategoryChange={actions.setActiveCategoryId}
-          onClearSearch={() => actions.setSearchQuery("")}
-          onLoadMore={actions.fetchNextProductsPage}
-          onProductSelect={actions.handleProductSelect}
-          onSearchChange={actions.setSearchQuery}
-          onToggleFavorite={actions.toggleProductFavorite}
-          products={state.products}
-          searchQuery={state.searchQuery}
           shouldAutoFocusSearch={!isMobile}
         />
 

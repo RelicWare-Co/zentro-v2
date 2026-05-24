@@ -13,6 +13,7 @@ import { CheckoutCustomerSection } from "@/features/pos/components/checkout/chec
 import { CheckoutDiscountSection } from "@/features/pos/components/checkout/checkout-discount-section";
 import { CheckoutSummaryFooter } from "@/features/pos/components/checkout/checkout-summary-footer";
 import { usePosPage } from "@/features/pos/pos-page-context";
+import { isPosModalOpen } from "@/features/pos/pos-page-modals.shared";
 import { formatCurrency } from "@/features/pos/utils";
 import { posV2OrderInputClassName } from "@/features/posv2/components/pos-v2-order-styles";
 import { cn, formatMoneyInput, sanitizeMoneyInput } from "@/lib/utils";
@@ -28,10 +29,10 @@ export function CheckoutDetailsModal() {
     <Dialog
       onOpenChange={(open) => {
         if (!open) {
-          actions.closeCheckoutDetails();
+          actions.closeActiveModal();
         }
       }}
-      open={state.isCheckoutDetailsModalOpen}
+      open={isPosModalOpen(state.activeModal, "checkout-details")}
     >
       <DialogContent className="border-zinc-800 bg-[#151515] text-white sm:max-w-[480px]">
         <DialogHeader>
@@ -97,7 +98,7 @@ export function CheckoutDetailsModal() {
         <DialogFooter>
           <Button
             className="text-zinc-400 hover:text-white"
-            onClick={actions.closeCheckoutDetails}
+            onClick={actions.closeActiveModal}
             variant="ghost"
           >
             Cancelar
@@ -105,7 +106,7 @@ export function CheckoutDetailsModal() {
           <Button
             className="bg-[#dfff06] text-black hover:bg-[#c9e605]"
             disabled={!canApply}
-            onClick={actions.closeCheckoutDetails}
+            onClick={actions.closeActiveModal}
           >
             Listo
           </Button>

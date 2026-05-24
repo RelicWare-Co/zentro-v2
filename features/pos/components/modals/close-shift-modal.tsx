@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { usePosPage } from "@/features/pos/pos-page-context";
+import { isPosModalOpen } from "@/features/pos/pos-page-modals.shared";
 import {
   createPaymentMethodLabelMap,
   formatCurrency,
@@ -67,10 +68,10 @@ export function CloseShiftModal() {
     <Dialog
       onOpenChange={(open) => {
         if (!open) {
-          actions.closeCloseShiftModal();
+          actions.closeActiveModal();
         }
       }}
-      open={state.isCloseShiftModalOpen}
+      open={isPosModalOpen(state.activeModal, "close-shift")}
     >
       <DialogContent className="border-zinc-800 bg-[#151515] text-white sm:max-w-[500px]">
         <DialogHeader>
@@ -323,7 +324,7 @@ export function CloseShiftModal() {
         <DialogFooter>
           <Button
             className="text-zinc-400 hover:bg-zinc-800 hover:text-white"
-            onClick={actions.closeCloseShiftModal}
+            onClick={actions.closeActiveModal}
             variant="ghost"
           >
             Cancelar

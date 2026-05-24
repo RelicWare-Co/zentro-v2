@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { usePosPage } from "@/features/pos/pos-page-context";
+import { isPosModalOpen } from "@/features/pos/pos-page-modals.shared";
 import type { CashMovementType } from "@/features/pos/types";
 import { formatMoneyInput, sanitizeMoneyInput } from "@/lib/utils";
 
@@ -31,10 +32,10 @@ export function CashMovementModal() {
     <Dialog
       onOpenChange={(open) => {
         if (!open) {
-          actions.closeCashMovementModal();
+          actions.closeActiveModal();
         }
       }}
-      open={state.isCashMovementModalOpen}
+      open={isPosModalOpen(state.activeModal, "cash-movement")}
     >
       <DialogContent className="border-zinc-800 bg-[#151515] text-white sm:max-w-[425px]">
         <DialogHeader>
@@ -148,7 +149,7 @@ export function CashMovementModal() {
         <DialogFooter>
           <Button
             className="text-zinc-400 hover:bg-zinc-800 hover:text-white"
-            onClick={actions.closeCashMovementModal}
+            onClick={actions.closeActiveModal}
             variant="ghost"
           >
             Cancelar

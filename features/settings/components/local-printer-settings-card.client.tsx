@@ -6,7 +6,6 @@ import {
   TestTube2,
   Usb,
 } from "lucide-react";
-import { useMemo, useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,24 +24,14 @@ import {
 } from "@/components/ui/native-select";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
+import type { usePosPrinterRuntimeState } from "@/features/pos/printing/printer-manager.client";
 import {
-  connectPosPrinter,
-  disconnectPosPrinter,
-  openPosCashDrawer,
-  printPosPrinterTestDocument,
-  reconnectPosPrinter,
-} from "@/features/pos/printing/print-thermal-receipt.client";
-import { usePosPrinterRuntimeState } from "@/features/pos/printing/printer-manager.client";
-import {
-  formatPosSavedPrinterDeviceLabel,
-  getSavedDeviceForConnection,
-  isPosPrinterConnectionTypeSupported,
   POS_PRINTER_CONNECTION_TYPES,
   POS_PRINTER_LANGUAGES,
   POS_PRINTER_OUTPUT_MODES,
   type PosLocalPrinterSettings,
-  usePosLocalPrinterSettings,
 } from "@/features/pos/printing/printer-settings.local.client";
+import { usePrinterSettings } from "@/features/pos/printing/printer-settings-context.client";
 
 function toIntegerInRange(
   value: string,
@@ -399,41 +388,17 @@ function SerialParametersSection({
   );
 }
 
-function ActionButtonsGrid({
-  isBusy,
-  connectionSupported,
-  savedDevice,
-  runtimeState,
-  organizationId,
-  executeAction,
-  resetSettings,
-  setFeedbackMessage,
-  setFeedbackError,
-}: {
-  isBusy: boolean;
-  connectionSupported: boolean;
-  savedDevice: unknown;
-  runtimeState: ReturnType<typeof usePosPrinterRuntimeState>;
-  organizationId: string;
-  executeAction: (
-    action: () => Promise<unknown>,
-    successMessage: string
-  ) => Promise<void>;
-  resetSettings: () => void;
-  setFeedbackMessage: (message: string | null) => void;
-  setFeedbackError: (error: string | null) => void;
-}) {
+function ActionButtonsGrid() {
+  const { actions, meta, state } = usePrinterSettings();
+
   return (
     <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
       <Button
         className="bg-[var(--color-voltage)] text-black hover:bg-[#d9f15c]"
-        disabled={isBusy || !connectionSupported}
-        onClick={() =>
-          executeAction(
-            () => connectPosPrinter(organizationId),
-            "Impresora conectada."
-          )
-        }
+        disabled={state.isBusy || !state.connectionSupported}
+        onClick={() => {
+          actions.connect();
+        }}
         type="button"
       >
         <ScanLine className="size-4" />
@@ -441,13 +406,12 @@ function ActionButtonsGrid({
       </Button>
       <Button
         className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5 hover:text-white"
-        disabled={isBusy || !connectionSupported || !savedDevice}
-        onClick={() =>
-          executeAction(
-            () => reconnectPosPrinter({}, organizationId),
-            "Reconexión finalizada."
-          )
+        disabled={
+          state.isBusy || !state.connectionSupported || !meta.savedDevice
         }
+        onClick={() => {
+          actions.reconnect();
+        }}
         type="button"
         variant="outline"
       >
@@ -456,10 +420,10 @@ function ActionButtonsGrid({
       </Button>
       <Button
         className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5 hover:text-white"
-        disabled={isBusy || runtimeState.status !== "connected"}
-        onClick={() =>
-          executeAction(() => disconnectPosPrinter(), "Impresora desconectada.")
-        }
+        disabled={state.isBusy || meta.runtimeState.status !== "connected"}
+        onClick={() => {
+          actions.disconnect();
+        }}
         type="button"
         variant="outline"
       >
@@ -468,13 +432,10 @@ function ActionButtonsGrid({
       </Button>
       <Button
         className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5 hover:text-white"
-        disabled={isBusy}
-        onClick={() =>
-          executeAction(
-            () => printPosPrinterTestDocument(organizationId),
-            "Ticket de prueba enviado."
-          )
-        }
+        disabled={state.isBusy}
+        onClick={() => {
+          actions.printTest();
+        }}
         type="button"
         variant="outline"
       >
@@ -483,13 +444,10 @@ function ActionButtonsGrid({
       </Button>
       <Button
         className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5 hover:text-white"
-        disabled={isBusy || !connectionSupported}
-        onClick={() =>
-          executeAction(
-            () => openPosCashDrawer(organizationId),
-            "Pulso de caja enviado."
-          )
-        }
+        disabled={state.isBusy || !state.connectionSupported}
+        onClick={() => {
+          actions.openDrawer();
+        }}
         type="button"
         variant="outline"
       >
@@ -498,12 +456,8 @@ function ActionButtonsGrid({
       </Button>
       <Button
         className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5 hover:text-white"
-        disabled={isBusy}
-        onClick={() => {
-          resetSettings();
-          setFeedbackMessage("Configuración local restablecida.");
-          setFeedbackError(null);
-        }}
+        disabled={state.isBusy}
+        onClick={actions.resetLocalSettings}
         type="button"
         variant="outline"
       >
@@ -514,61 +468,15 @@ function ActionButtonsGrid({
   );
 }
 
-export function LocalPrinterSettingsCard({
-  organizationId,
-}: {
-  organizationId: string;
-}) {
-  const { settings, setSettings, resetSettings } =
-    usePosLocalPrinterSettings(organizationId);
-  const runtimeState = usePosPrinterRuntimeState(organizationId);
-  const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
-  const [feedbackError, setFeedbackError] = useState<string | null>(null);
-  const [isBusy, setIsBusy] = useState(false);
-
-  const connectionSupported = isPosPrinterConnectionTypeSupported(
-    settings.connectionType
-  );
-  const savedDevice = getSavedDeviceForConnection(
-    settings,
-    settings.connectionType
-  );
-  const savedDeviceLabel = useMemo(
-    () => formatPosSavedPrinterDeviceLabel(savedDevice),
-    [savedDevice]
-  );
+export function LocalPrinterSettingsCard() {
+  const { actions, meta, state } = usePrinterSettings();
+  const { settings } = state;
+  const { runtimeState } = meta;
 
   const setConnectionSettings = (
     updater: (currentValue: PosLocalPrinterSettings) => PosLocalPrinterSettings
   ) => {
-    setSettings((currentValue) => updater(currentValue));
-    setFeedbackMessage(null);
-    setFeedbackError(null);
-  };
-
-  const executeAction = async (
-    action: () => Promise<unknown>,
-    successMessage: string
-  ) => {
-    setIsBusy(true);
-    setFeedbackMessage(null);
-    setFeedbackError(null);
-
-    try {
-      const result = await action();
-      if (result === false) {
-        throw new Error("No se pudo completar la operación solicitada.");
-      }
-      setFeedbackMessage(successMessage);
-    } catch (error) {
-      setFeedbackError(
-        error instanceof Error
-          ? error.message
-          : "No se pudo completar la operación con la impresora."
-      );
-    } finally {
-      setIsBusy(false);
-    }
+    actions.setConnectionSettings(updater);
   };
 
   return (
@@ -598,8 +506,8 @@ export function LocalPrinterSettingsCard({
         <PrinterStatusDisplay runtimeState={runtimeState} />
         <DriverStatusAlert message={runtimeState.message} />
         <FeedbackAlerts
-          feedbackError={feedbackError}
-          feedbackMessage={feedbackMessage}
+          feedbackError={state.feedbackError}
+          feedbackMessage={state.feedbackMessage}
         />
 
         <div className="space-y-3 rounded-2xl border border-zinc-800 bg-black/20 p-4">
@@ -652,10 +560,10 @@ export function LocalPrinterSettingsCard({
 
         <div className="rounded-2xl border border-zinc-800 bg-black/20 p-4 text-sm text-zinc-300">
           <p className="font-medium text-zinc-100">Impresora guardada</p>
-          <p className="mt-1 text-xs text-zinc-400">{savedDeviceLabel}</p>
+          <p className="mt-1 text-xs text-zinc-400">{state.savedDeviceLabel}</p>
         </div>
 
-        {connectionSupported ? null : (
+        {state.connectionSupported ? null : (
           <Alert
             className="border-red-500/20 bg-red-500/10 text-red-100"
             variant="destructive"
@@ -669,17 +577,7 @@ export function LocalPrinterSettingsCard({
           </Alert>
         )}
 
-        <ActionButtonsGrid
-          connectionSupported={connectionSupported}
-          executeAction={executeAction}
-          isBusy={isBusy}
-          organizationId={organizationId}
-          resetSettings={resetSettings}
-          runtimeState={runtimeState}
-          savedDevice={savedDevice}
-          setFeedbackError={setFeedbackError}
-          setFeedbackMessage={setFeedbackMessage}
-        />
+        <ActionButtonsGrid />
       </CardContent>
     </Card>
   );

@@ -1,6 +1,7 @@
 import type { KeyboardBarcodeScannerEvent } from "@point-of-sale/keyboard-barcode-scanner";
 import { useCallback, useEffect, useRef } from "react";
 import { usePosPage } from "@/features/pos/pos-page-context";
+import { isPosOverlayBlockingCatalog } from "@/features/pos/pos-page-modals.shared";
 import { openPosCashDrawer } from "@/features/pos/printing/print-sale-receipt.client";
 import { CartPanelV2 } from "@/features/posv2/components/cart-panel-v2";
 import { PosV2Header } from "@/features/posv2/components/pos-v2-header";
@@ -40,13 +41,7 @@ export function PosV2Layout() {
   );
 
   const isBarcodeScannerEnabled = !(
-    state.isModifierModalOpen ||
-    state.isCreateCustomerModalOpen ||
-    state.isShiftOpenModalOpen ||
-    state.isCashMovementModalOpen ||
-    state.isCloseShiftModalOpen ||
-    state.isCheckoutModalOpen ||
-    state.isCheckoutDetailsModalOpen ||
+    isPosOverlayBlockingCatalog(state.activeModal, state.isMobileCartOpen) ||
     state.isProcessingCheckout
   );
 
@@ -87,31 +82,7 @@ export function PosV2Layout() {
       />
 
       <div className="grid min-h-0 grid-cols-[minmax(0,1fr)_440px] overflow-hidden">
-        <ProductCatalog
-          activeCategoryId={state.activeCategoryId}
-          categories={state.categories}
-          getProductQuantity={actions.getProductQuantity}
-          hasMore={state.hasNextPage}
-          isActiveShift={!!state.activeShift}
-          isBarcodeScannerConnected={isBarcodeScannerConnected}
-          isLoading={
-            state.isBootstrapLoading ||
-            state.isActiveShiftLoading ||
-            state.isProductsLoading
-          }
-          isLoadingMore={state.isFetchingNextPage}
-          isTogglingFavorite={meta.isTogglingFavorite}
-          onCategoryChange={actions.setActiveCategoryId}
-          onClearSearch={() => actions.setSearchQuery("")}
-          onLoadMore={actions.fetchNextProductsPage}
-          onProductSelect={actions.handleProductSelect}
-          onSearchChange={actions.setSearchQuery}
-          onToggleFavorite={actions.toggleProductFavorite}
-          onViewModeChange={actions.setViewMode}
-          products={state.products}
-          searchQuery={state.searchQuery}
-          viewMode={state.viewMode}
-        />
+        <ProductCatalog isBarcodeScannerConnected={isBarcodeScannerConnected} />
 
         <CartPanelV2 className="min-h-0" />
       </div>

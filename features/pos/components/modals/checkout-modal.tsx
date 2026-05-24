@@ -14,6 +14,7 @@ import { getConfirmButtonText } from "@/features/pos/components/checkout/checkou
 import { CheckoutPaymentsSection } from "@/features/pos/components/checkout/checkout-payments-section";
 import { CheckoutSummaryFooter } from "@/features/pos/components/checkout/checkout-summary-footer";
 import { usePosPage } from "@/features/pos/pos-page-context";
+import { isPosModalOpen } from "@/features/pos/pos-page-modals.shared";
 import { formatCurrency } from "@/features/pos/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -24,7 +25,7 @@ export function CheckoutModal() {
   const creditSaleId = useId();
 
   useEffect(() => {
-    if (!state.isCheckoutModalOpen || isMobile) {
+    if (!isPosModalOpen(state.activeModal, "checkout") || isMobile) {
       return;
     }
 
@@ -34,16 +35,18 @@ export function CheckoutModal() {
     }, 0);
 
     return () => window.clearTimeout(focusTimeout);
-  }, [isMobile, state.isCheckoutModalOpen]);
+  }, [isMobile, state.activeModal]);
+
+  const isOpen = isPosModalOpen(state.activeModal, "checkout");
 
   return (
     <Dialog
       onOpenChange={(open) => {
         if (!open) {
-          actions.closeCheckout();
+          actions.closeActiveModal();
         }
       }}
-      open={state.isCheckoutModalOpen}
+      open={isOpen}
     >
       <DialogContent className="border-zinc-800 bg-[#151515] text-white sm:max-w-[500px]">
         <DialogHeader>
@@ -105,7 +108,7 @@ export function CheckoutModal() {
         <DialogFooter>
           <Button
             className="text-zinc-400 hover:text-white"
-            onClick={actions.closeCheckout}
+            onClick={actions.closeActiveModal}
             variant="ghost"
           >
             Cancelar

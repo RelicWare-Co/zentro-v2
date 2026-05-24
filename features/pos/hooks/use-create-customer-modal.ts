@@ -2,10 +2,9 @@ import { useCallback, useState } from "react";
 import { useCreateCustomerMutation } from "./use-pos-queries";
 
 export function useCreateCustomerModal(
-  onCustomerCreated: (customerId: string) => void
+  onCustomerCreated: (customerId: string) => void,
+  closeModal: () => void
 ) {
-  const [isCreateCustomerModalOpen, setIsCreateCustomerModalOpen] =
-    useState(false);
   const [newCustomerName, setNewCustomerName] = useState("");
   const [newCustomerPhone, setNewCustomerPhone] = useState("");
   const [newCustomerDocumentType, setNewCustomerDocumentType] = useState("CC");
@@ -35,7 +34,7 @@ export function useCreateCustomerModal(
       },
       {
         onSuccess: (result) => {
-          setIsCreateCustomerModalOpen(false);
+          closeModal();
           setNewCustomerName("");
           setNewCustomerPhone("");
           setNewCustomerDocumentType("CC");
@@ -50,6 +49,7 @@ export function useCreateCustomerModal(
     newCustomerDocumentType,
     newCustomerDocumentNumber,
     createCustomerMutation,
+    closeModal,
     onCustomerCreated,
   ]);
 
@@ -64,9 +64,6 @@ export function useCreateCustomerModal(
     newCustomerName.trim().length > 0 && !createCustomerMutation.isPending;
 
   return {
-    // State
-    isCreateCustomerModalOpen,
-    setIsCreateCustomerModalOpen,
     newCustomerName,
     setNewCustomerName,
     newCustomerPhone,

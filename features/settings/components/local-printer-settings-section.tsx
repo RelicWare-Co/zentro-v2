@@ -6,6 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { PrinterSettingsProvider } from "@/features/pos/printing/printer-settings-context.client";
 
 const LocalPrinterSettingsCard = lazy(() =>
   import(
@@ -35,8 +36,10 @@ export function LocalPrinterSettingsSection({
   organizationId: string;
 }) {
   return (
-    <Suspense fallback={<LocalPrinterSettingsFallback />}>
-      <LocalPrinterSettingsCard organizationId={organizationId} />
-    </Suspense>
+    <PrinterSettingsProvider organizationId={organizationId}>
+      <Suspense fallback={<LocalPrinterSettingsFallback />}>
+        <LocalPrinterSettingsCard />
+      </Suspense>
+    </PrinterSettingsProvider>
   );
 }

@@ -48,6 +48,7 @@ export function usePosCheckout(
     requiresReference: boolean;
   }>,
   allowCreditSales: boolean,
+  closeCheckoutModal: () => void,
   onSaleCreated?: (payload: {
     result: {
       saleId: string;
@@ -70,7 +71,6 @@ export function usePosCheckout(
     };
   }) => void | Promise<void>
 ) {
-  const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
   const [payments, setPayments] = useState<PaymentMethod[]>(() => [
     {
       id: crypto.randomUUID(),
@@ -237,7 +237,7 @@ export function usePosCheckout(
             console.error("No se pudo imprimir el ticket de venta", error);
           });
 
-          setIsCheckoutModalOpen(false);
+          closeCheckoutModal();
           clearCart();
           resetDiscount();
           resetPayments();
@@ -257,6 +257,7 @@ export function usePosCheckout(
     resetDiscount,
     resetPayments,
     onSaleCreated,
+    closeCheckoutModal,
   ]);
 
   // Computed values
@@ -320,9 +321,6 @@ export function usePosCheckout(
   ]);
 
   return {
-    // State
-    isCheckoutModalOpen,
-    setIsCheckoutModalOpen,
     payments,
     isCreditSale,
     setIsCreditSale,

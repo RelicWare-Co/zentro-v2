@@ -8,6 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { usePosPage } from "@/features/pos/pos-page-context";
+import { isPosModalOpen } from "@/features/pos/pos-page-modals.shared";
 import { formatCurrency } from "@/features/pos/utils";
 
 export function ModifierModal() {
@@ -17,10 +18,10 @@ export function ModifierModal() {
     <Dialog
       onOpenChange={(open) => {
         if (!open) {
-          actions.closeModifierModal();
+          actions.closeActiveModal();
         }
       }}
-      open={state.isModifierModalOpen}
+      open={isPosModalOpen(state.activeModal, "modifier")}
     >
       <DialogContent className="border-zinc-800 bg-[#151515] text-white sm:max-w-[500px]">
         <DialogHeader>

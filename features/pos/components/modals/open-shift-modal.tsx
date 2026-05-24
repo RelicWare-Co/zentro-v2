@@ -10,6 +10,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { usePosPage } from "@/features/pos/pos-page-context";
+import { isPosModalOpen } from "@/features/pos/pos-page-modals.shared";
 import { formatMoneyInput, sanitizeMoneyInput } from "@/lib/utils";
 
 export function OpenShiftModal() {
@@ -22,10 +23,10 @@ export function OpenShiftModal() {
     <Dialog
       onOpenChange={(open) => {
         if (!open) {
-          actions.closeShiftModal();
+          actions.closeActiveModal();
         }
       }}
-      open={state.isShiftOpenModalOpen}
+      open={isPosModalOpen(state.activeModal, "open-shift")}
     >
       <DialogContent className="border-zinc-800 bg-[#151515] text-white sm:max-w-[400px]">
         <DialogHeader>
@@ -89,7 +90,7 @@ export function OpenShiftModal() {
         <DialogFooter>
           <Button
             className="text-zinc-400 hover:bg-zinc-800 hover:text-white"
-            onClick={actions.closeShiftModal}
+            onClick={actions.closeActiveModal}
             variant="ghost"
           >
             Cancelar

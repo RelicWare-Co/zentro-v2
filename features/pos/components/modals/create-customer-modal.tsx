@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { usePosPage } from "@/features/pos/pos-page-context";
+import { isPosModalOpen } from "@/features/pos/pos-page-modals.shared";
 
 export function CreateCustomerModal() {
   const { state, actions, meta } = usePosPage();
@@ -29,10 +30,10 @@ export function CreateCustomerModal() {
     <Dialog
       onOpenChange={(open) => {
         if (!open) {
-          actions.closeCreateCustomerModal();
+          actions.closeActiveModal();
         }
       }}
-      open={state.isCreateCustomerModalOpen}
+      open={isPosModalOpen(state.activeModal, "create-customer")}
     >
       <DialogContent className="border-zinc-800 bg-[#151515] text-white sm:max-w-[450px]">
         <DialogHeader>
@@ -134,7 +135,7 @@ export function CreateCustomerModal() {
         <DialogFooter>
           <Button
             className="text-zinc-400 hover:text-white"
-            onClick={actions.closeCreateCustomerModal}
+            onClick={actions.closeActiveModal}
             variant="ghost"
           >
             Cancelar
