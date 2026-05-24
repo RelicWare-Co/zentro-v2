@@ -9,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { LIST_PAGE_SIZE_OPTIONS } from "@/features/listing/listing.constants.shared";
 import {
   formatItemCountLabel,
   formatPaymentSummary,
@@ -17,7 +18,6 @@ import {
   getSaleStatusBadgeClass,
   salesDateTimeFormatter,
 } from "@/features/sales/sales-formatters.shared";
-import { SALES_PAGE_SIZE_OPTIONS } from "@/features/sales/sales-page.constants.shared";
 import { useSalesPage } from "@/features/sales/sales-page-context";
 
 export function SalesListPanel() {
@@ -145,7 +145,7 @@ export function SalesListPanel() {
                   <SelectValue placeholder={state.pageSize} />
                 </SelectTrigger>
                 <SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
-                  {SALES_PAGE_SIZE_OPTIONS.map((size) => (
+                  {LIST_PAGE_SIZE_OPTIONS.map((size) => (
                     <SelectItem key={size} value={`${size}`}>
                       {size}
                     </SelectItem>

@@ -1,11 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
-import type { SaleListCursor } from "@/features/sales/sales.shared";
 
-export function useSalesListPagination(filterKey: string) {
+export function useCursorListPagination<TCursor>(filterKey: string) {
   const [pageIndex, setPageIndex] = useState(0);
-  const [pageCursors, setPageCursors] = useState<(SaleListCursor | null)[]>([
-    null,
-  ]);
+  const [pageCursors, setPageCursors] = useState<(TCursor | null)[]>([null]);
   const listCursor = pageCursors[pageIndex] ?? null;
 
   const resetPagination = useCallback(() => {
@@ -22,7 +19,7 @@ export function useSalesListPagination(filterKey: string) {
     setPageIndex((currentPage) => Math.max(currentPage - 1, 0));
   };
 
-  const goToNextPage = (nextCursor: SaleListCursor) => {
+  const goToNextPage = (nextCursor: TCursor) => {
     setPageCursors((currentCursors) => {
       const nextCursors = currentCursors.slice(0, pageIndex + 1);
       nextCursors.push(nextCursor);

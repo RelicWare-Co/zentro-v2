@@ -23,17 +23,17 @@ import {
 } from "@/components/ui/sheet";
 import { ALL_FILTER_VALUE } from "@/features/listing/listing.constants.shared";
 import {
-  SalesAdvancedFiltersDesktop,
-  SalesAdvancedFiltersMobile,
-} from "@/features/sales/components/sales-advanced-filters";
-import { useSalesPage } from "@/features/sales/sales-page-context";
+  ShiftsAdvancedFiltersDesktop,
+  ShiftsAdvancedFiltersMobile,
+} from "@/features/shifts/components/shifts-advanced-filters";
+import { useShiftsPage } from "@/features/shifts/shifts-page-context";
 
-export function SalesFilterToolbar() {
-  const { state, actions, meta } = useSalesPage();
+export function ShiftsFilterToolbar() {
+  const { state, actions, meta } = useShiftsPage();
   const { filters } = state;
 
   return (
-    <div className="flex flex-col gap-4 border-zinc-800 border-b p-4 lg:flex-row lg:items-center lg:justify-between">
+    <div className="flex shrink-0 flex-col gap-4 border-zinc-800 border-b p-4 lg:flex-row lg:items-center lg:justify-between">
       <div className="flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
         <div className="relative w-full sm:max-w-xs md:max-w-sm">
           <Search
@@ -41,11 +41,10 @@ export function SalesFilterToolbar() {
             className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-zinc-500"
           />
           <Input
-            autoComplete="off"
             className="h-10 rounded-lg border-zinc-800 bg-black/20 pl-9 focus-visible:border-[var(--color-voltage)] focus-visible:ring-[var(--color-voltage)]/20"
             id={meta.fieldIds.search}
             onChange={(event) => actions.setSearchQuery(event.target.value)}
-            placeholder="Cliente, cajero o id…"
+            placeholder="Cajero, terminal o id…"
             value={filters.searchQuery}
           />
         </div>
@@ -65,9 +64,8 @@ export function SalesFilterToolbar() {
             </SelectTrigger>
             <SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
               <SelectItem value={ALL_FILTER_VALUE}>Todos</SelectItem>
-              <SelectItem value="completed">Pagada</SelectItem>
-              <SelectItem value="credit">Crédito</SelectItem>
-              <SelectItem value="cancelled">Cancelada</SelectItem>
+              <SelectItem value="open">Abierto</SelectItem>
+              <SelectItem value="closed">Cerrado</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -102,7 +100,24 @@ export function SalesFilterToolbar() {
               </SheetTitle>
             </SheetHeader>
             <div className="flex-1 overflow-y-auto p-4">
-              <SalesAdvancedFiltersMobile />
+              <ShiftsAdvancedFiltersMobile />
+            </div>
+            <div className="grid grid-cols-2 gap-3 border-zinc-800 border-t p-4">
+              <Button
+                className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5 hover:text-white"
+                onClick={actions.clearFilters}
+                type="button"
+                variant="outline"
+              >
+                Limpiar
+              </Button>
+              <Button
+                className="bg-[var(--color-voltage)] text-black hover:bg-[#d9f15c]"
+                onClick={actions.applyMobileFilters}
+                type="button"
+              >
+                Aplicar
+              </Button>
             </div>
           </SheetContent>
         </Sheet>
@@ -131,7 +146,16 @@ export function SalesFilterToolbar() {
               <h4 className="font-medium text-sm text-zinc-200">
                 Filtros avanzados
               </h4>
-              <SalesAdvancedFiltersDesktop />
+              <ShiftsAdvancedFiltersDesktop />
+              <div className="flex justify-end pt-2">
+                <Button
+                  className="bg-[var(--color-voltage)] text-black hover:bg-[#d9f15c]"
+                  onClick={actions.applyDesktopFilters}
+                  type="button"
+                >
+                  Aplicar filtros
+                </Button>
+              </div>
             </div>
           </PopoverContent>
         </Popover>

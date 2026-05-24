@@ -10,23 +10,26 @@ import {
   useState,
   useTransition,
 } from "react";
+import { useCursorListPagination } from "@/features/listing/hooks/use-cursor-list-pagination";
+import { DEFAULT_LIST_LIMIT } from "@/features/listing/listing.constants.shared";
+import { buildListRangeLabel } from "@/features/listing/listing-formatters.shared";
 import { useSaleDetailState } from "@/features/sales/hooks/use-sale-detail-state";
 import {
   useCancelSaleMutation,
   useSaleDetail,
   useSalesList,
 } from "@/features/sales/hooks/use-sales";
-import { useSalesListPagination } from "@/features/sales/hooks/use-sales-list-pagination";
 import { useSalesListParams } from "@/features/sales/hooks/use-sales-list-params";
 import { useSalesViewSummary } from "@/features/sales/hooks/use-sales-view-summary";
-import type { SaleListItem } from "@/features/sales/sales.shared";
+import type {
+  SaleListCursor,
+  SaleListItem,
+} from "@/features/sales/sales.shared";
 import {
-  buildSalesRangeLabel,
   getCurrentSalesDateFilterValue,
   salesDayFormatter,
 } from "@/features/sales/sales-formatters.shared";
 import {
-  DEFAULT_SALES_LIST_LIMIT,
   DEFAULT_SALES_VIEW,
   type SalesView,
 } from "@/features/sales/sales-page.constants.shared";
@@ -179,7 +182,7 @@ export function SalesPageProvider({ children }: { children: ReactNode }) {
   const [amountMax, setAmountMax] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [pageSize, setPageSizeState] = useState(DEFAULT_SALES_LIST_LIMIT);
+  const [pageSize, setPageSizeState] = useState(DEFAULT_LIST_LIMIT);
   const deferredSearchQuery = useDeferredValue(searchQuery);
 
   const salesFilterKey = useMemo(
@@ -222,7 +225,7 @@ export function SalesPageProvider({ children }: { children: ReactNode }) {
     listCursor,
     pageIndex,
     resetPagination,
-  } = useSalesListPagination(salesFilterKey);
+  } = useCursorListPagination<SaleListCursor>(salesFilterKey);
 
   const listParams = useSalesListParams({
     activeView,
@@ -287,11 +290,11 @@ export function SalesPageProvider({ children }: { children: ReactNode }) {
     0
   );
 
-  const rangeLabel = buildSalesRangeLabel({
+  const rangeLabel = buildListRangeLabel({
     hasMoreResults,
+    itemCount: sales.length,
     pageIndex,
     pageSize,
-    salesCount: sales.length,
     totalResults,
   });
 

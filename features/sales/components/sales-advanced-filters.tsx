@@ -6,8 +6,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ALL_FILTER_VALUE } from "@/features/listing/listing.constants.shared";
 import { SalesFilterField } from "@/features/sales/components/sales-ui-primitives";
-import { ALL_FILTER_VALUE } from "@/features/sales/sales-page.constants.shared";
 import { useSalesPage } from "@/features/sales/sales-page-context";
 
 function SalesAdvancedFiltersFields({

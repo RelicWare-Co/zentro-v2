@@ -122,30 +122,3 @@ export function resolveBalanceStatus(balanceStatus: string) {
   }
   return null;
 }
-
-export function buildSalesRangeLabel({
-  hasMoreResults,
-  pageIndex,
-  pageSize,
-  salesCount,
-  totalResults,
-}: {
-  hasMoreResults: boolean;
-  pageIndex: number;
-  pageSize: number;
-  salesCount: number;
-  totalResults: number | null | undefined;
-}) {
-  if (salesCount === 0) {
-    return "0-0";
-  }
-
-  const rangeStart = pageIndex * pageSize + 1;
-  const rangeEnd = pageIndex * pageSize + salesCount;
-
-  if (totalResults == null) {
-    return `${rangeStart}-${rangeEnd}${hasMoreResults ? "+" : ""}`;
-  }
-
-  return `${rangeStart}-${rangeEnd} de ${totalResults}`;
-}
