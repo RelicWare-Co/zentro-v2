@@ -122,7 +122,7 @@ export function ProductCatalog({
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+    <div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] overflow-hidden">
       <CatalogToolbar
         activeCategoryId={activeCategoryId}
         categories={categories}
@@ -134,7 +134,7 @@ export function ProductCatalog({
         viewMode={viewMode}
       />
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3 md:px-6">
+      <div className="min-h-0 overflow-y-auto px-4 py-3 md:px-6">
         {productContent}
 
         {hasMore && (

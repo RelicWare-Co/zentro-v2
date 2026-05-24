@@ -29,6 +29,12 @@ const moduleIconMap = {
   "utensils-crossed": UtensilsCrossed,
 } as const;
 
+const FULL_HEIGHT_ROUTES = new Set(["/pos", "/posv2"]);
+
+function isFullHeightRoute(pathname: string) {
+  return FULL_HEIGHT_ROUTES.has(pathname);
+}
+
 const baseNavItems = [
   {
     name: "Dashboard",
@@ -84,9 +90,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const navItems = [...baseNavItems, ...moduleNavItems].sort(
     (left, right) => left.order - right.order
   );
+  const lockMainScroll = isFullHeightRoute(pageContext.urlPathname);
 
   return (
-    <div className="app-safe-area flex min-h-[100dvh] bg-[var(--color-void)] text-[var(--color-photon)]">
+    <div className="app-safe-area flex h-dvh max-h-dvh overflow-hidden bg-[var(--color-void)] text-[var(--color-photon)]">
       {isSidebarOpen ? (
         <button
           aria-label="Cerrar navegación"
@@ -245,7 +252,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      <div className="flex h-dvh min-w-0 flex-1 flex-col overflow-hidden">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <header className="flex h-16 shrink-0 items-center border-zinc-800 border-b bg-[var(--color-carbon)] px-4 lg:hidden">
           <button
             aria-label="Abrir navegación"
@@ -260,7 +267,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </span>
         </header>
 
-        <main className="flex min-h-0 flex-1 flex-col overflow-auto">
+        <main
+          className={cn(
+            "flex min-h-0 flex-1 flex-col",
+            lockMainScroll ? "relative overflow-hidden" : "overflow-auto"
+          )}
+        >
           {children}
         </main>
       </div>

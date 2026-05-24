@@ -1,7 +1,5 @@
 import { useMemo, useState } from "react";
-import { useCreditAccountsSearch } from "@/features/credit/hooks/use-credit";
 import { CashMovementModal } from "@/features/pos/components/modals/cash-movement-modal";
-import { CheckoutModal } from "@/features/pos/components/modals/checkout-modal";
 import { CloseShiftModal } from "@/features/pos/components/modals/close-shift-modal";
 import { CreateCustomerModal } from "@/features/pos/components/modals/create-customer-modal";
 import { ModifierModal } from "@/features/pos/components/modals/modifier-modal";
@@ -60,7 +58,6 @@ export default function PosV2Page() {
     isLoading: isProductsLoading,
   } = usePosProducts(activeCategoryId, searchQuery);
   const { data: customersData } = usePosCustomers();
-  const { data: creditAccountsData } = useCreditAccountsSearch("");
 
   // Extract data
   const activeShift = activeShiftData?.shift ?? null;
@@ -78,13 +75,11 @@ export default function PosV2Page() {
 
   const products = productsData?.pages.flatMap((page) => page.data) ?? [];
   const customers = customersData?.data ?? [];
-  const creditAccounts = creditAccountsData?.data ?? [];
 
   // Cart hook
   const {
     cart,
     discountInput,
-    setDiscountInput,
     addToCart,
     removeFromCart,
     updateQuantity,
@@ -175,27 +170,6 @@ export default function PosV2Page() {
   // Toggle favorite
   const toggleFavoriteMutation = useToggleProductFavoriteMutation();
 
-  // Credit account for selected customer
-  const selectedCustomerCreditAccount = useMemo(() => {
-    if (!selectedCustomerId) {
-      return null;
-    }
-    return (
-      creditAccounts.find(
-        (account) => account.customerId === selectedCustomerId
-      ) ?? null
-    );
-  }, [creditAccounts, selectedCustomerId]);
-
-  const projectedCreditBalance = useMemo(() => {
-    if (!selectedCustomerCreditAccount) {
-      return checkout.remainingCreditAmount;
-    }
-    return (
-      selectedCustomerCreditAccount.balance + checkout.remainingCreditAmount
-    );
-  }, [selectedCustomerCreditAccount, checkout.remainingCreditAmount]);
-
   // Handlers
   const handleProductSelect = (product: Product) => {
     if (!activeShift) {
@@ -227,11 +201,11 @@ export default function PosV2Page() {
       setIsShiftRequiredOpen(true);
       return;
     }
-    checkout.setIsCheckoutModalOpen(true);
+    checkout.handleFinalizeSale();
   };
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-[#0a0a0a] text-white">
+    <div className="grid h-full min-h-0 grid-rows-[auto_minmax(0,1fr)] overflow-hidden bg-[#0a0a0a] text-white">
       <PosV2Header
         activeShift={activeShift}
         defaultTerminalName={defaultTerminalName}
@@ -245,7 +219,7 @@ export default function PosV2Page() {
         }}
       />
 
-      <div className="flex min-h-0 flex-1 overflow-hidden">
+      <div className="grid min-h-0 grid-cols-[minmax(0,1fr)_380px] overflow-hidden">
         <ProductCatalog
           activeCategoryId={activeCategoryId}
           categories={categories}
@@ -272,14 +246,27 @@ export default function PosV2Page() {
         />
 
         <CartPanelV2
+          canFinalize={checkout.canFinalizeSale}
+          canReturnCashChange={checkout.canReturnCashChange}
           cart={cart}
+          cashChangeDue={checkout.cashChangeDue}
+          checkoutError={checkout.error}
+          className="min-h-0"
           isActiveShift={!!activeShift}
+          isProcessingCheckout={checkout.isProcessing}
+          onAddPaymentMethod={checkout.addPaymentMethod}
           onCheckout={handleCheckout}
           onClearCart={clearCart}
           onRemoveItem={removeFromCart}
+          onRemovePaymentMethod={checkout.removePaymentMethod}
           onUpdateItemDiscount={updateItemDiscount}
+          onUpdatePayment={checkout.updatePayment}
           onUpdateQuantity={updateQuantity}
+          paymentDifference={checkout.paymentDifference}
+          paymentMethodOptions={paymentMethodOptions}
+          payments={checkout.payments}
           totalItems={totalItems}
+          totalPaid={checkout.totalPaid}
           totals={totals}
         />
       </div>
@@ -331,37 +318,6 @@ export default function PosV2Page() {
         setCloseShiftNotes={shift.setCloseShiftNotes}
         setClosureAmounts={shift.setClosureAmounts}
         shiftCloseSummary={shift.shiftCloseSummary}
-      />
-
-      <CheckoutModal
-        allowCreditSales={allowCreditSales}
-        canFinalize={checkout.canFinalizeSale}
-        canReturnCashChange={checkout.canReturnCashChange}
-        cashChangeDue={checkout.cashChangeDue}
-        customers={customers}
-        discountInput={discountInput}
-        error={checkout.error}
-        hasPaymentDifference={checkout.hasPaymentDifference}
-        isCreditSale={checkout.isCreditSale}
-        isOpen={checkout.isCheckoutModalOpen}
-        isProcessing={checkout.isProcessing}
-        onAddPaymentMethod={checkout.addPaymentMethod}
-        onClose={() => checkout.setIsCheckoutModalOpen(false)}
-        onConfirm={checkout.handleFinalizeSale}
-        onCustomerChange={setSelectedCustomerId}
-        onRemovePaymentMethod={checkout.removePaymentMethod}
-        onUpdatePayment={checkout.updatePayment}
-        paymentDifference={checkout.paymentDifference}
-        paymentMethodOptions={paymentMethodOptions}
-        payments={checkout.payments}
-        projectedCreditBalance={projectedCreditBalance}
-        remainingCreditAmount={checkout.remainingCreditAmount}
-        selectedCustomerCreditAccount={selectedCustomerCreditAccount}
-        selectedCustomerId={selectedCustomerId}
-        setDiscountInput={setDiscountInput}
-        setIsCreditSale={checkout.setIsCreditSale}
-        shouldCreateCreditBalance={checkout.shouldCreateCreditBalance}
-        totalAmount={totals.totalAmount}
       />
 
       <CreateCustomerModal
