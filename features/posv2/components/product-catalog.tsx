@@ -11,6 +11,7 @@ interface ProductCatalogProps {
   getProductQuantity: (productId: string) => number;
   hasMore?: boolean;
   isActiveShift: boolean;
+  isBarcodeScannerConnected?: boolean;
   isLoading: boolean;
   isLoadingMore?: boolean;
   isTogglingFavorite?: boolean;
@@ -33,6 +34,7 @@ export function ProductCatalog({
   products,
   isLoading,
   isActiveShift,
+  isBarcodeScannerConnected,
   viewMode,
   getProductQuantity,
   onCategoryChange,
@@ -126,6 +128,7 @@ export function ProductCatalog({
       <CatalogToolbar
         activeCategoryId={activeCategoryId}
         categories={categories}
+        isBarcodeScannerConnected={isBarcodeScannerConnected}
         onCategoryChange={onCategoryChange}
         onClearSearch={onClearSearch}
         onSearchChange={onSearchChange}

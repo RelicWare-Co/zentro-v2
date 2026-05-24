@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 interface CatalogToolbarProps {
   activeCategoryId: string;
   categories: Category[];
+  isBarcodeScannerConnected?: boolean;
   onCategoryChange: (id: string) => void;
   onClearSearch: () => void;
   onSearchChange: (query: string) => void;
@@ -20,6 +21,7 @@ export function CatalogToolbar({
   activeCategoryId,
   searchQuery,
   viewMode,
+  isBarcodeScannerConnected,
   onCategoryChange,
   onSearchChange,
   onClearSearch,
@@ -122,7 +124,20 @@ export function CatalogToolbar({
           </button>
         ) : null}
         <button
-          className="absolute top-1/2 right-2.5 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-md text-[#6b6b6b]"
+          aria-label={
+            isBarcodeScannerConnected
+              ? "Escáner de código de barras conectado"
+              : "Escáner de código de barras desconectado"
+          }
+          className={cn(
+            "absolute top-1/2 right-2.5 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-md transition-colors",
+            isBarcodeScannerConnected ? "text-[#dfff06]" : "text-[#6b6b6b]"
+          )}
+          title={
+            isBarcodeScannerConnected
+              ? "Escáner listo"
+              : "Escáner no disponible"
+          }
           type="button"
         >
           <Barcode className="size-4" />

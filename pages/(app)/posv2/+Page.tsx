@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import type { KeyboardBarcodeScannerEvent } from "@point-of-sale/keyboard-barcode-scanner";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CashMovementModal } from "@/features/pos/components/modals/cash-movement-modal";
 import { CloseShiftModal } from "@/features/pos/components/modals/close-shift-modal";
 import { CreateCustomerModal } from "@/features/pos/components/modals/create-customer-modal";
@@ -27,6 +28,11 @@ import {
 import { CartPanelV2 } from "@/features/posv2/components/cart-panel-v2";
 import { PosV2Header } from "@/features/posv2/components/pos-v2-header";
 import { ProductCatalog } from "@/features/posv2/components/product-catalog";
+import { useKeyboardBarcodeScanner } from "@/features/posv2/hooks/use-keyboard-barcode-scanner.client";
+import {
+  buildPosV2BarcodeScanPayload,
+  findProductByBarcodeScan,
+} from "@/features/posv2/posv2-barcode.shared";
 import { useActiveShift } from "@/features/shifts/hooks/use-shifts";
 import { useActiveOrganization } from "@/lib/auth-client";
 
@@ -36,6 +42,7 @@ export default function PosV2Page() {
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [isShiftRequiredOpen, setIsShiftRequiredOpen] = useState(false);
+  const pendingBarcodeLookupRef = useRef<string[] | null>(null);
 
   const { data: activeOrganization } = useActiveOrganization();
   const activeOrganizationId = activeOrganization?.id ?? null;
@@ -179,22 +186,68 @@ export default function PosV2Page() {
     handleProductSelection(product);
   };
 
-  const _handleBarcodeScan = (value: string): boolean => {
-    if (!activeShift) {
-      setIsShiftRequiredOpen(true);
+  const resolveBarcodeProduct = useCallback(
+    (lookupValues: string[]) =>
+      findProductByBarcodeScan(products, lookupValues),
+    [products]
+  );
+
+  const handleBarcodeScan = useCallback(
+    (event: KeyboardBarcodeScannerEvent) => {
+      const payload = buildPosV2BarcodeScanPayload(event);
+      if (payload.lookupValues.length === 0) {
+        return false;
+      }
+
+      if (!activeShift) {
+        setIsShiftRequiredOpen(true);
+        return false;
+      }
+
+      const matchedProduct = resolveBarcodeProduct(payload.lookupValues);
+      if (matchedProduct) {
+        pendingBarcodeLookupRef.current = null;
+        setSearchQuery("");
+        handleProductSelection(matchedProduct);
+        return true;
+      }
+
+      pendingBarcodeLookupRef.current = payload.lookupValues;
+      setSearchQuery(payload.value);
       return false;
+    },
+    [activeShift, handleProductSelection, resolveBarcodeProduct]
+  );
+
+  const isBarcodeScannerEnabled = !(
+    isModifierModalOpen ||
+    createCustomerModal.isCreateCustomerModalOpen ||
+    shift.isShiftOpenModalOpen ||
+    shift.isCashMovementModalOpen ||
+    shift.isCloseShiftModalOpen ||
+    checkout.isProcessing
+  );
+
+  const { isConnected: isBarcodeScannerConnected } = useKeyboardBarcodeScanner({
+    enabled: isBarcodeScannerEnabled,
+    onScan: handleBarcodeScan,
+  });
+
+  useEffect(() => {
+    const pendingLookup = pendingBarcodeLookupRef.current;
+    if (!(pendingLookup && activeShift)) {
+      return;
     }
-    const matchedProduct = products.find(
-      (p) =>
-        p.barcode?.trim() === value ||
-        p.sku?.trim().toLowerCase() === value.toLowerCase()
-    );
-    if (matchedProduct) {
-      handleProductSelection(matchedProduct);
-      return true;
+
+    const matchedProduct = resolveBarcodeProduct(pendingLookup);
+    if (!matchedProduct) {
+      return;
     }
-    return false;
-  };
+
+    pendingBarcodeLookupRef.current = null;
+    setSearchQuery("");
+    handleProductSelection(matchedProduct);
+  }, [activeShift, handleProductSelection, resolveBarcodeProduct]);
 
   const handleCheckout = () => {
     if (!activeShift) {
@@ -226,6 +279,7 @@ export default function PosV2Page() {
           getProductQuantity={getProductQuantity}
           hasMore={!!hasNextPage}
           isActiveShift={!!activeShift}
+          isBarcodeScannerConnected={isBarcodeScannerConnected}
           isLoading={
             isBootstrapLoading || isActiveShiftLoading || isProductsLoading
           }
