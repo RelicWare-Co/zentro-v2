@@ -1,13 +1,19 @@
-import { Banknote, Building2, CreditCard, Layers } from "lucide-react";
+import { Banknote, Building2, CreditCard, Layers, Wallet } from "lucide-react";
 import {
   posV2OrderBorder,
   posV2OrderSurfaceBg,
 } from "@/features/posv2/components/pos-v2-order-styles";
 import { cn } from "@/lib/utils";
 
-export type PosV2PaymentMode = "cash" | "transfer" | "card" | "multiple";
+export type PosV2PaymentMode =
+  | "cash"
+  | "transfer"
+  | "card"
+  | "accountCredit"
+  | "multiple";
 
 interface PaymentMethodGridV2Props {
+  allowCreditSales?: boolean;
   availableModes: PosV2PaymentMode[];
   className?: string;
   onSelect: (mode: PosV2PaymentMode) => void;
@@ -20,7 +26,8 @@ const PAYMENT_MODE_CONFIG: Record<
 > = {
   cash: { icon: Banknote, label: "Efectivo" },
   transfer: { icon: Building2, label: "Transferencia" },
-  card: { icon: CreditCard, label: "Crédito" },
+  card: { icon: CreditCard, label: "Tarjeta" },
+  accountCredit: { icon: Wallet, label: "Crédito" },
   multiple: { icon: Layers, label: "Múltiple" },
 };
 
@@ -35,7 +42,7 @@ export function PaymentMethodGridV2({
       <p className="mb-2 font-semibold text-[#6b6b6b] text-[10px] uppercase tracking-[0.14em]">
         Método de pago
       </p>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-3 gap-2">
         {availableModes.map((mode) => {
           const config = PAYMENT_MODE_CONFIG[mode];
           const Icon = config.icon;
@@ -69,7 +76,8 @@ export function PaymentMethodGridV2({
 }
 
 export function resolveAvailablePaymentModes(
-  paymentMethodOptions: Array<{ id: string }>
+  paymentMethodOptions: Array<{ id: string }>,
+  allowCreditSales = false
 ): PosV2PaymentMode[] {
   const enabledIds = new Set(
     paymentMethodOptions.map((option) => option.id.toLowerCase())
@@ -92,6 +100,10 @@ export function resolveAvailablePaymentModes(
     modes.push("card");
   }
 
+  if (allowCreditSales) {
+    modes.push("accountCredit");
+  }
+
   const paymentMethodCount = paymentMethodOptions.length;
   if (paymentMethodCount >= 2) {
     modes.push("multiple");
@@ -104,7 +116,7 @@ export function resolveMethodIdForMode(
   mode: PosV2PaymentMode,
   paymentMethodOptions: Array<{ id: string }>
 ): string {
-  if (mode === "cash") {
+  if (mode === "cash" || mode === "accountCredit") {
     return (
       paymentMethodOptions.find((option) => option.id.toLowerCase() === "cash")
         ?.id ?? "cash"
@@ -133,8 +145,14 @@ export function resolveMethodIdForMode(
 
 export function inferPaymentModeFromPayments(
   payments: Array<{ method: string }>,
-  paymentMethodOptions: Array<{ id: string }>
+  paymentMethodOptions: Array<{ id: string }>,
+  isCreditSale = false,
+  allowCreditSales = false
 ): PosV2PaymentMode {
+  if (isCreditSale && allowCreditSales) {
+    return "accountCredit";
+  }
+
   if (payments.length > 1) {
     return "multiple";
   }

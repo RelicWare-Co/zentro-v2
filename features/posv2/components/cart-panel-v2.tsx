@@ -1,6 +1,6 @@
 import { Check, Search, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { CartItem, CartTotals, PaymentMethod } from "@/features/pos/types";
+import { usePosPage } from "@/features/pos/pos-page-context";
 import { formatCurrency } from "@/features/pos/utils";
 import { CheckoutSectionV2 } from "@/features/posv2/components/checkout-section-v2";
 import {
@@ -11,63 +11,12 @@ import { cn } from "@/lib/utils";
 import { CartItemCardV2 } from "./cart-item-card-v2";
 
 interface CartPanelV2Props {
-  canFinalize: boolean;
-  canReturnCashChange: boolean;
-  cart: CartItem[];
-  cashChangeDue: number;
-  checkoutError: Error | null;
   className?: string;
-  isActiveShift: boolean;
-  isProcessingCheckout: boolean;
-  onAddPaymentMethod: () => void;
-  onCheckout: () => void;
-  onClearCart: () => void;
-  onRemoveItem: (cartItemId: string) => void;
-  onRemovePaymentMethod: (index: number) => void;
-  onUpdateItemDiscount: (cartItemId: string, value: string) => void;
-  onUpdatePayment: (
-    index: number,
-    field: "method" | "amount" | "reference",
-    value: string
-  ) => void;
-  onUpdateQuantity: (cartItemId: string, delta: number) => void;
-  paymentDifference: number;
-  paymentMethodOptions: Array<{
-    id: string;
-    label: string;
-    requiresReference: boolean;
-  }>;
-  payments: PaymentMethod[];
-  totalItems: number;
-  totalPaid: number;
-  totals: CartTotals;
 }
 
-export function CartPanelV2({
-  cart,
-  totalItems,
-  totals,
-  payments,
-  paymentMethodOptions,
-  totalPaid,
-  paymentDifference,
-  canReturnCashChange,
-  cashChangeDue,
-  canFinalize,
-  isProcessingCheckout,
-  checkoutError,
-  isActiveShift,
-  onUpdateQuantity,
-  onRemoveItem,
-  onUpdateItemDiscount,
-  onClearCart,
-  onUpdatePayment,
-  onAddPaymentMethod,
-  onRemovePaymentMethod,
-  onCheckout,
-  className,
-}: CartPanelV2Props) {
-  const { subTotal, tax, discountAmount, totalAmount } = totals;
+export function CartPanelV2({ className }: CartPanelV2Props) {
+  const { state, actions } = usePosPage();
+  const { subTotal, tax, discountAmount, totalAmount } = state.totals;
   const hasDiscount = discountAmount > 0;
 
   return (
@@ -78,7 +27,6 @@ export function CartPanelV2({
         className
       )}
     >
-      {/* Header */}
       <div
         className={cn(
           "flex items-center justify-between border-b p-3",
@@ -90,13 +38,15 @@ export function CartPanelV2({
           <h2 className="font-semibold text-base text-white leading-none">
             Orden Actual
           </h2>
-          <p className="mt-1 text-[#6b6b6b] text-xs">{totalItems} artículos</p>
+          <p className="mt-1 text-[#6b6b6b] text-xs">
+            {state.totalItems} artículos
+          </p>
         </div>
         <Button
           aria-label="Limpiar carrito"
           className="h-8 rounded-lg px-2 font-medium text-red-400 text-xs transition-all hover:bg-red-400/10 hover:text-red-300"
-          disabled={cart.length === 0}
-          onClick={onClearCart}
+          disabled={state.cart.length === 0}
+          onClick={actions.clearCart}
           variant="ghost"
         >
           <Trash2 className="mr-1 size-4" />
@@ -104,7 +54,6 @@ export function CartPanelV2({
         </Button>
       </div>
 
-      {/* Items — only this row scrolls */}
       <div
         className={cn(
           "min-h-0 overflow-y-auto overscroll-contain",
@@ -112,17 +61,21 @@ export function CartPanelV2({
         )}
       >
         <div className="space-y-1.5 px-2 py-2">
-          {cart.map((item) => (
+          {state.cart.map((item) => (
             <CartItemCardV2
               item={item}
               key={item.id}
-              onRemove={() => onRemoveItem(item.id)}
-              onUpdateDiscount={(value) => onUpdateItemDiscount(item.id, value)}
-              onUpdateQuantity={(delta) => onUpdateQuantity(item.id, delta)}
+              onRemove={() => actions.removeFromCart(item.id)}
+              onUpdateDiscount={(value) =>
+                actions.updateItemDiscount(item.id, value)
+              }
+              onUpdateQuantity={(delta) =>
+                actions.updateQuantity(item.id, delta)
+              }
             />
           ))}
 
-          {cart.length === 0 && (
+          {state.cart.length === 0 && (
             <div className="flex h-40 flex-col items-center justify-center gap-2 text-[#6b6b6b]">
               <div className="flex size-10 items-center justify-center rounded-full border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.04)]">
                 <Search className="size-4 text-[#3d3d3d]" />
@@ -133,8 +86,7 @@ export function CartPanelV2({
         </div>
       </div>
 
-      {/* Checkout — pinned bottom row */}
-      {cart.length > 0 ? (
+      {state.cart.length > 0 ? (
         <div
           className={cn(
             "border-t shadow-[0_-4px_16px_rgba(0,0,0,0.25)]",
@@ -178,30 +130,22 @@ export function CartPanelV2({
               </div>
             </div>
 
-            <CheckoutSectionV2
-              canReturnCashChange={canReturnCashChange}
-              cashChangeDue={cashChangeDue}
-              error={checkoutError}
-              onAddPaymentMethod={onAddPaymentMethod}
-              onRemovePaymentMethod={onRemovePaymentMethod}
-              onUpdatePayment={onUpdatePayment}
-              paymentDifference={paymentDifference}
-              paymentMethodOptions={paymentMethodOptions}
-              payments={payments}
-              totalAmount={totalAmount}
-              totalPaid={totalPaid}
-            />
+            <CheckoutSectionV2 />
           </div>
 
           <div className="px-3 pb-2">
             <Button
               className="h-9 w-full rounded-lg border border-[rgba(255,255,255,0.12)] bg-[#151515] font-semibold text-white text-xs shadow-none transition-all hover:border-[rgba(255,255,255,0.2)] hover:bg-[#1a1a1a] disabled:opacity-40"
-              disabled={!canFinalize || isProcessingCheckout || !isActiveShift}
-              onClick={onCheckout}
+              disabled={
+                !state.canFinalizeSale ||
+                state.isProcessingCheckout ||
+                !state.activeShift
+              }
+              onClick={actions.finalizeSale}
               type="button"
             >
               <Check className="mr-1.5 size-3.5" />
-              {isProcessingCheckout
+              {state.isProcessingCheckout
                 ? "Procesando..."
                 : `Cobrar — ${formatCurrency(totalAmount)}`}
             </Button>

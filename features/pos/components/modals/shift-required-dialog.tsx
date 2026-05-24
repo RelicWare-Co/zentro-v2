@@ -8,20 +8,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { usePosPage } from "@/features/pos/pos-page-context";
 
-interface ShiftRequiredDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onOpenShift: () => void;
-}
+export function ShiftRequiredDialog() {
+  const { state, actions } = usePosPage();
 
-export function ShiftRequiredDialog({
-  isOpen,
-  onClose,
-  onOpenShift,
-}: ShiftRequiredDialogProps) {
   return (
-    <Dialog onOpenChange={onClose} open={isOpen}>
+    <Dialog
+      onOpenChange={(open) => {
+        if (!open) {
+          actions.closeShiftRequired();
+        }
+      }}
+      open={state.isShiftRequiredOpen}
+    >
       <DialogContent className="border-zinc-800 bg-[#151515] text-white sm:max-w-[420px]">
         <DialogHeader>
           <div className="flex items-center gap-3">
@@ -44,14 +44,14 @@ export function ShiftRequiredDialog({
         <DialogFooter>
           <Button
             className="text-zinc-400 hover:bg-zinc-800 hover:text-white"
-            onClick={onClose}
+            onClick={actions.closeShiftRequired}
             variant="ghost"
           >
             Entendido
           </Button>
           <Button
             className="bg-[var(--color-voltage)] text-black hover:bg-[#c9e605]"
-            onClick={onOpenShift}
+            onClick={actions.openShiftFromRequired}
           >
             Abrir turno
           </Button>
