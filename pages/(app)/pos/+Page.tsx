@@ -241,7 +241,7 @@ export default function PosPage() {
   };
 
   return (
-    <div className="flex h-dvh flex-col overflow-hidden bg-[var(--color-void)] text-[var(--color-photon)]">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-[var(--color-void)] text-[var(--color-photon)]">
       <PosHeader
         activeShift={activeShift}
         customers={customers}

@@ -56,15 +56,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const pageContext = usePageContext();
   const isAuthPage =
     pageContext.urlPathname === "/login" || pageContext.urlPathname === "/join";
-  const isFullScreenPage =
-    pageContext.urlPathname === "/pos" || pageContext.urlPathname === "/posv2";
 
   let content: ReactNode;
 
   if (isAuthPage) {
     content = <ZeroProviderGate allowAnonymous>{children}</ZeroProviderGate>;
-  } else if (isFullScreenPage) {
-    content = <ZeroProviderGate>{children}</ZeroProviderGate>;
   } else {
     content = (
       <ZeroProviderGate>

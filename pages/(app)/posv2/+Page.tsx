@@ -231,7 +231,7 @@ export default function PosV2Page() {
   };
 
   return (
-    <div className="flex h-dvh flex-col overflow-hidden bg-[#0a0a0a] text-white">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-[#0a0a0a] text-white">
       <PosV2Header
         activeShift={activeShift}
         defaultTerminalName={defaultTerminalName}
