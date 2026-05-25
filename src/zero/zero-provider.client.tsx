@@ -11,22 +11,19 @@ import { ZeroProvider } from "@rocicorp/zero/react";
 import { type ReactNode, useMemo, useRef } from "react";
 import { createZeroOptions } from "./client";
 import type { ZeroContext } from "./context";
-import { resolveStableZeroContext } from "./zero-context-stable.shared";
+import { zeroContextSignature } from "./zero-context-stable.shared";
 
 function useStableZeroContext(context: ZeroContext | undefined) {
-  const stableRef = useRef<ZeroContext | undefined>(context);
-  const signatureRef = useRef<string | null>(null);
+  const stableRef = useRef(context);
+  const signatureRef = useRef(zeroContextSignature(context));
 
-  return useMemo(() => {
-    const resolved = resolveStableZeroContext(
-      stableRef.current,
-      signatureRef.current,
-      context
-    );
-    stableRef.current = resolved.context;
-    signatureRef.current = resolved.signature;
-    return resolved.context;
-  }, [context]);
+  const signature = zeroContextSignature(context);
+  if (signature !== signatureRef.current) {
+    signatureRef.current = signature;
+    stableRef.current = context;
+  }
+
+  return stableRef.current;
 }
 
 export interface ZentroZeroProviderProps {
