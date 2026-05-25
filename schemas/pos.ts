@@ -61,6 +61,8 @@ const PosActiveShiftSchema = z.object({
   notes: z.string().nullable().optional(),
 });
 
+export { PosActiveShiftSchema };
+
 export const PosBootstrapResultSchema = z.object({
   activeShift: PosActiveShiftSchema.nullable(),
   categories: PosCategorySchema.array(),

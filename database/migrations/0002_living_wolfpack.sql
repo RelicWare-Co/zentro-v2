@@ -1,0 +1,1 @@
+CREATE INDEX "shift_organizationId_openedAt_idx" ON "shift" USING btree ("organization_id","opened_at");

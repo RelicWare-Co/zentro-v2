@@ -1,16 +1,16 @@
 import { relations } from "drizzle-orm";
 import {
   index,
-  integer,
-  sqliteTable,
+  pgTable,
   text,
+  timestamp,
   uniqueIndex,
-} from "drizzle-orm/sqlite-core";
+} from "drizzle-orm/pg-core";
 import { organization } from "./auth.schema";
 import { creditAccount } from "./credit.schema";
 import { sale } from "./sales.schema";
 
-export const customer = sqliteTable(
+export const customer = pgTable(
   "customer",
   {
     id: text("id").primaryKey(),
@@ -26,9 +26,12 @@ export const customer = sqliteTable(
     address: text("address"),
     city: text("city"),
     taxRegime: text("tax_regime"), // 'responsable_iva', 'no_responsable', etc. (Para FE DIAN)
-    deletedAt: integer("deleted_at", { mode: "timestamp_ms" }), // Soft delete: null = activo, fecha = eliminado
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
-    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+    deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "date" }), // Soft delete: null = activo, fecha = eliminado
+    createdAt: timestamp("created_at", {
+      withTimezone: true,
+      mode: "date",
+    }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" })
       .$onUpdate(() => new Date())
       .notNull(),
   },

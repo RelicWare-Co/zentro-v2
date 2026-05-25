@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
-import { parseMoneyInput } from "@/lib/utils";
-import type { ActiveShift } from "../types";
 import {
   useCloseShiftMutation,
   useOpenShiftMutation,
   useRegisterCashMovementMutation,
   useShiftCloseSummary,
-} from "./use-pos-queries";
+} from "@/features/shifts/hooks/use-shifts";
+import { parseMoneyInput } from "@/lib/utils";
+import type { ActiveShift } from "../types";
 
 function getDefaultMovementPaymentMethodId(
   paymentMethodOptions: Array<{ id: string }>
@@ -21,13 +21,10 @@ function getDefaultMovementPaymentMethodId(
 
 export function usePosShift(
   activeShift: ActiveShift | null,
-  paymentMethodOptions: Array<{ id: string }>
+  paymentMethodOptions: Array<{ id: string }>,
+  isCloseShiftModalOpen: boolean,
+  closeModal: () => void
 ) {
-  // Modals state
-  const [isShiftOpenModalOpen, setIsShiftOpenModalOpen] = useState(false);
-  const [isCashMovementModalOpen, setIsCashMovementModalOpen] = useState(false);
-  const [isCloseShiftModalOpen, setIsCloseShiftModalOpen] = useState(false);
-
   // Open shift form state
   const [startingCash, setStartingCash] = useState("");
   const [openShiftNotes, setOpenShiftNotes] = useState("");
@@ -80,13 +77,13 @@ export function usePosShift(
       },
       {
         onSuccess: () => {
-          setIsShiftOpenModalOpen(false);
+          closeModal();
           setStartingCash("");
           setOpenShiftNotes("");
         },
       }
     );
-  }, [openShiftMutation, openShiftNotes, startingCash]);
+  }, [closeModal, openShiftMutation, openShiftNotes, startingCash]);
 
   // Cash movement handler
   const handleCashMovement = useCallback(() => {
@@ -112,7 +109,7 @@ export function usePosShift(
       },
       {
         onSuccess: () => {
-          setIsCashMovementModalOpen(false);
+          closeModal();
           setMovementAmount("");
           setMovementDescription("");
           setMovementType("inflow");
@@ -130,6 +127,7 @@ export function usePosShift(
     movementType,
     paymentMethodOptions,
     registerCashMovementMutation,
+    closeModal,
   ]);
 
   // Close shift handler
@@ -162,7 +160,7 @@ export function usePosShift(
       },
       {
         onSuccess: () => {
-          setIsCloseShiftModalOpen(false);
+          closeModal();
           setClosureAmounts({});
           setCloseShiftNotes("");
         },
@@ -174,6 +172,7 @@ export function usePosShift(
     closeShiftNotes,
     closureAmounts,
     shiftCloseSummary,
+    closeModal,
   ]);
 
   // Computed values
@@ -188,8 +187,9 @@ export function usePosShift(
 
   const hasInvalidCloseAmounts =
     shiftCloseSummary?.summaryByMethod.some((summaryRow) => {
-      const rawAmount = closureAmounts[summaryRow.paymentMethod];
-      const amount = parseMoneyInput(rawAmount);
+      const amount = parseMoneyInput(
+        closureAmounts[summaryRow.paymentMethod] ?? ""
+      );
       return !Number.isFinite(amount) || amount < 0;
     }) ?? false;
 
@@ -198,14 +198,6 @@ export function usePosShift(
   );
 
   return {
-    // Modal states
-    isShiftOpenModalOpen,
-    setIsShiftOpenModalOpen,
-    isCashMovementModalOpen,
-    setIsCashMovementModalOpen,
-    isCloseShiftModalOpen,
-    setIsCloseShiftModalOpen,
-
     // Form states - Open shift
     startingCash,
     setStartingCash,

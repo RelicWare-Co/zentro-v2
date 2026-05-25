@@ -9,7 +9,11 @@ export function sanitizeMoneyInput(value: string) {
   return value.replace(/[^\d]/g, "");
 }
 
-export function parseMoneyInput(value: string | number) {
+export function parseMoneyInput(value: string | number | null | undefined) {
+  if (value == null) {
+    return 0;
+  }
+
   if (typeof value === "number") {
     return Number.isFinite(value) ? Math.max(0, Math.round(value)) : 0;
   }

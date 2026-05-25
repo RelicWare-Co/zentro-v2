@@ -6,12 +6,11 @@ if (!process.env.DATABASE_URL) {
 }
 
 export default defineConfig({
-  dialect: "turso",
+  dialect: "postgresql",
   schema: "./database/drizzle/schema/index.ts",
   out: "./database/migrations",
 
   dbCredentials: {
     url: process.env.DATABASE_URL,
-    authToken: process.env.DATABASE_AUTH_TOKEN,
   },
 });

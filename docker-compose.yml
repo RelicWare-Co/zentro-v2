@@ -1,0 +1,31 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: zentro-postgres
+    # Zero needs logical replication to mirror upstream into its SQLite replica.
+    # `wal_level=logical` enables that, `max_*` raise the modest defaults so
+    # zero-cache + drizzle migrations can coexist comfortably in dev.
+    command:
+      - "postgres"
+      - "-c"
+      - "wal_level=logical"
+      - "-c"
+      - "max_wal_senders=10"
+      - "-c"
+      - "max_replication_slots=10"
+    environment:
+      POSTGRES_USER: zentro
+      POSTGRES_PASSWORD: zentro
+      POSTGRES_DB: zentro
+    ports:
+      - "5432:5432"
+    volumes:
+      - zentro_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U zentro -d zentro"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  zentro_postgres_data:

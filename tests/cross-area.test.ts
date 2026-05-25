@@ -9,28 +9,47 @@ import {
   product,
 } from "@/database/drizzle/schema/inventory.schema";
 import { payment, sale } from "@/database/drizzle/schema/sales.schema";
-import { createServerORPCClient } from "@/server/orpc/client/server";
-import { createCoreSale } from "@/server/sales/create-sale.server";
-import { buildMockContext } from "./helpers/orpc-context";
 import {
-  makeUser,
   seedCustomer,
   seedOrganizationWithMember,
   seedProduct,
 } from "./helpers/seed";
 import { createTestDb } from "./helpers/test-db";
+import {
+  listCreditTransactionsViaZero,
+  registerCreditPaymentViaZero,
+  searchCreditAccountsViaZero,
+} from "./helpers/zero-credit";
+import {
+  createSaleViaZero,
+  getSaleDetailViaZero,
+  listSalesViaZero,
+} from "./helpers/zero-sales";
+import {
+  closeShiftViaZero,
+  createZeroContext,
+  createZeroTestDb,
+  getShiftCloseSummaryViaZero,
+  getShiftDetailViaZero,
+  listShiftsViaZero,
+  openShiftViaZero,
+  registerCashMovementViaZero,
+} from "./helpers/zero-shifts";
 
 describe("cross-area end-to-end flows", () => {
   describe("VAL-CROSS-001: full POS checkout flow works end-to-end and data is consistent across queries", () => {
     test("checkout flow: open shift, add product, create sale, close shift, verify consistency", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const u = makeUser({ id: userId });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
 
       // Step 1: Open shift
-      const shiftOpen = await client.shifts.open({ startingCash: 10_000 });
+      const shiftOpen = await openShiftViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: { startingCash: 10_000 },
+      });
       const shiftId = shiftOpen.id;
       expect(shiftOpen.status).toBe("open");
       expect(shiftOpen.startingCash).toBe(10_000);
@@ -51,10 +70,15 @@ describe("cross-area end-to-end flows", () => {
       expect(beforeStock[0].stock).toBe(30);
 
       // Step 3: Create sale through oRPC (with cash overpayment covering change)
-      const saleResult = await client.sales.create({
-        shiftId,
-        items: [{ productId, quantity: 2, unitPrice: 12_000 }],
-        payments: [{ method: "cash", amount: 25_000 }],
+      const saleResult = await createSaleViaZero({
+        db,
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          shiftId,
+          items: [{ productId, quantity: 2, unitPrice: 12_000 }],
+          payments: [{ method: "cash", amount: 25_000 }],
+        },
       });
 
       expect(saleResult.status).toBe("completed");
@@ -93,9 +117,13 @@ describe("cross-area end-to-end flows", () => {
       expect(paymentRows[0].shiftId).toBe(shiftId);
 
       // Step 7: Verify sale appears in sales list
-      const salesList = await client.sales.list({
-        cashierId: userId,
-        limit: 10,
+      const salesList = await listSalesViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          cashierId: userId,
+          limit: 10,
+        },
       });
       expect(salesList.data.length).toBe(1);
       expect(salesList.data[0].id).toBe(saleResult.saleId);
@@ -108,9 +136,13 @@ describe("cross-area end-to-end flows", () => {
       expect(salesList.total).toBe(1);
 
       // Step 8: Verify shift history reflects the sale
-      const shiftsList = await client.shifts.list({
-        status: "open",
-        limit: 10,
+      const shiftsList = await listShiftsViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          status: "open",
+          limit: 10,
+        },
       });
       expect(shiftsList.data.length).toBe(1);
       const shiftRow = shiftsList.data[0];
@@ -126,7 +158,11 @@ describe("cross-area end-to-end flows", () => {
 
       // Step 9: Close summary expected cash = startingCash + cashSales - change
       // = 10000 + 25000 - 1000 = 34000
-      const closeSummary = await client.shifts.closeSummary({ shiftId });
+      const closeSummary = await getShiftCloseSummaryViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        shiftId,
+      });
       const cashSummary = closeSummary.summaryByMethod.find(
         (s: { paymentMethod: string }) => s.paymentMethod === "cash"
       );
@@ -135,9 +171,13 @@ describe("cross-area end-to-end flows", () => {
       expect(closeSummary.totalExpected).toBe(34_000);
 
       // Step 10: Close shift
-      const closeResult = await client.shifts.close({
-        shiftId,
-        closures: [{ paymentMethod: "cash", actualAmount: 34_000 }],
+      const closeResult = await closeShiftViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          shiftId,
+          closures: [{ paymentMethod: "cash", actualAmount: 34_000 }],
+        },
       });
       expect(closeResult.shiftId).toBe(shiftId);
       expect(closeResult.closures.length).toBe(1);
@@ -147,7 +187,11 @@ describe("cross-area end-to-end flows", () => {
       expect(closeResult.closures[0].difference).toBe(0);
 
       // Step 11: After closing, verify shift status changed
-      const closedShiftDetail = await client.shifts.detail({ shiftId });
+      const closedShiftDetail = await getShiftDetailViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        shiftId,
+      });
       expect(closedShiftDetail.status).toBe("closed");
       expect(closedShiftDetail.totals.totalPayments).toBe(25_000);
       expect(closedShiftDetail.totals.totalExpected).toBe(34_000);
@@ -157,7 +201,9 @@ describe("cross-area end-to-end flows", () => {
       expect(closedShiftDetail.operations.paidSalesAmount).toBe(24_000);
 
       // Step 12: Verify sale detail still consistent
-      const saleDetail = await client.sales.detail({
+      const saleDetail = await getSaleDetailViaZero({
+        zeroDb,
+        ctx: zeroCtx,
         saleId: saleResult.saleId,
       });
       expect(saleDetail).not.toBeNull();
@@ -177,14 +223,17 @@ describe("cross-area end-to-end flows", () => {
     });
 
     test("checkout flow with cash movement, card sale, and mixed payments is consistent", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const u = makeUser({ id: userId });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
 
       // Open shift
-      const shiftOpen = await client.shifts.open({ startingCash: 5000 });
+      const shiftOpen = await openShiftViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: { startingCash: 5000 },
+      });
       const shiftId = shiftOpen.id;
 
       // Seed products
@@ -206,26 +255,39 @@ describe("cross-area end-to-end flows", () => {
       ]);
 
       // Cash movement
-      await client.shifts.cashMovement({
-        shiftId,
-        type: "inflow",
-        paymentMethod: "cash",
-        amount: 2000,
-        description: "Extra inflow",
+      await registerCashMovementViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          shiftId,
+          type: "inflow",
+          paymentMethod: "cash",
+          amount: 2000,
+          description: "Extra inflow",
+        },
       });
 
-      // Sale 1: cash payment
-      await client.sales.create({
-        shiftId,
-        items: [{ productId: productA, quantity: 1, unitPrice: 5000 }],
-        payments: [{ method: "cash", amount: 5000 }],
+      await createSaleViaZero({
+        db,
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          shiftId,
+          items: [{ productId: productA, quantity: 1, unitPrice: 5000 }],
+          payments: [{ method: "cash", amount: 5000 }],
+        },
       });
 
       // Sale 2: card payment
-      await client.sales.create({
-        shiftId,
-        items: [{ productId: productB, quantity: 2, unitPrice: 3000 }],
-        payments: [{ method: "card", amount: 6000 }],
+      await createSaleViaZero({
+        db,
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          shiftId,
+          items: [{ productId: productB, quantity: 2, unitPrice: 3000 }],
+          payments: [{ method: "card", amount: 6000 }],
+        },
       });
 
       // Verify stock
@@ -243,7 +305,11 @@ describe("cross-area end-to-end flows", () => {
       expect(stockB[0].stock).toBe(13);
 
       // Verify shift detail
-      const shiftDetail = await client.shifts.detail({ shiftId });
+      const shiftDetail = await getShiftDetailViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        shiftId,
+      });
       expect(shiftDetail.operations.paidSalesCount).toBe(2);
       expect(shiftDetail.operations.paidSalesAmount).toBe(11_000);
       expect(shiftDetail.totals.totalPayments).toBe(11_000); // 5000 + 6000 (payments only, movements excluded)
@@ -261,7 +327,11 @@ describe("cross-area end-to-end flows", () => {
       expect(cardBreakdown?.amount).toBe(6000);
 
       // Verify close summary
-      const closeSummary = await client.shifts.closeSummary({ shiftId });
+      const closeSummary = await getShiftCloseSummaryViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        shiftId,
+      });
       const cashSummary = closeSummary.summaryByMethod.find(
         (s: { paymentMethod: string }) => s.paymentMethod === "cash"
       );
@@ -273,12 +343,16 @@ describe("cross-area end-to-end flows", () => {
       expect(closeSummary.totalExpected).toBe(18_000);
 
       // Close shift
-      const closeResult = await client.shifts.close({
-        shiftId,
-        closures: [
-          { paymentMethod: "cash", actualAmount: 12_000 },
-          { paymentMethod: "card", actualAmount: 6000 },
-        ],
+      const closeResult = await closeShiftViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          shiftId,
+          closures: [
+            { paymentMethod: "cash", actualAmount: 12_000 },
+            { paymentMethod: "card", actualAmount: 6000 },
+          ],
+        },
       });
       expect(closeResult.closures.length).toBe(2);
       expect(
@@ -288,7 +362,11 @@ describe("cross-area end-to-end flows", () => {
       ).toBe(true);
 
       // Verify sales list shows both sales
-      const salesList = await client.sales.list({ limit: 10 });
+      const salesList = await listSalesViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: { limit: 10 },
+      });
       expect(salesList.data.length).toBe(2);
       expect(salesList.total).toBe(2);
 
@@ -298,14 +376,17 @@ describe("cross-area end-to-end flows", () => {
 
   describe("VAL-CROSS-002: credit sale flow works end-to-end", () => {
     test("create credit sale, register payment, verify balance reaches zero", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const u = makeUser({ id: userId });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
 
       // Step 1: Open shift
-      const shiftOpen = await client.shifts.open({ startingCash: 5000 });
+      const shiftOpen = await openShiftViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: { startingCash: 5000 },
+      });
       const shiftId = shiftOpen.id;
 
       // Step 2: Seed product and customer
@@ -324,12 +405,17 @@ describe("cross-area end-to-end flows", () => {
       ]);
 
       // Step 3: Create credit sale (pay 5000 cash, 25000 on credit)
-      const saleResult = await client.sales.create({
-        shiftId,
-        customerId,
-        items: [{ productId, quantity: 1, unitPrice: 30_000 }],
-        payments: [{ method: "cash", amount: 5000 }],
-        isCreditSale: true,
+      const saleResult = await createSaleViaZero({
+        db,
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          shiftId,
+          customerId,
+          items: [{ productId, quantity: 1, unitPrice: 30_000 }],
+          payments: [{ method: "cash", amount: 5000 }],
+          isCreditSale: true,
+        },
       });
 
       expect(saleResult.status).toBe("credit");
@@ -373,12 +459,16 @@ describe("cross-area end-to-end flows", () => {
       expect(afterStock[0].stock).toBe(9);
 
       // Step 7: Register first partial credit payment (10000)
-      const payment1 = await client.credit.registerPayment({
-        shiftId,
-        creditAccountId: accountId,
-        amount: 10_000,
-        method: "cash",
-        saleId: saleResult.saleId,
+      const payment1 = await registerCreditPaymentViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          shiftId,
+          creditAccountId: accountId,
+          amount: 10_000,
+          method: "cash",
+          saleId: saleResult.saleId,
+        },
       });
 
       expect(payment1.newBalance).toBe(15_000);
@@ -413,12 +503,16 @@ describe("cross-area end-to-end flows", () => {
       expect(saleAfterPartial[0].status).toBe("credit");
 
       // Step 11: Register second partial payment (remaining 15000)
-      const payment2 = await client.credit.registerPayment({
-        shiftId,
-        creditAccountId: accountId,
-        amount: 15_000,
-        method: "cash",
-        saleId: saleResult.saleId,
+      const payment2 = await registerCreditPaymentViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          shiftId,
+          creditAccountId: accountId,
+          amount: 15_000,
+          method: "cash",
+          saleId: saleResult.saleId,
+        },
       });
 
       expect(payment2.newBalance).toBe(0);
@@ -438,7 +532,10 @@ describe("cross-area end-to-end flows", () => {
       expect(saleAfterFull[0].status).toBe("completed");
 
       // Step 14: Verify credit account search shows zero balance
-      const accountSearch = await client.credit.searchAccounts({});
+      const accountSearch = await searchCreditAccountsViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+      });
       const foundAccount = accountSearch.data.find(
         (a: { customerId: string }) => a.customerId === customerId
       );
@@ -446,7 +543,9 @@ describe("cross-area end-to-end flows", () => {
       expect(foundAccount?.balance).toBe(0);
 
       // Step 15: Verify transaction listing shows both charge and payments in correct order
-      const txList = await client.credit.transactions({
+      const txList = await listCreditTransactionsViaZero({
+        zeroDb,
+        ctx: zeroCtx,
         creditAccountId: accountId,
       });
       expect(txList.data.length).toBe(3);
@@ -461,13 +560,16 @@ describe("cross-area end-to-end flows", () => {
     });
 
     test("credit sale with no initial payment, full payment brings balance to zero", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const u = makeUser({ id: userId });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
 
-      const shiftOpen = await client.shifts.open({ startingCash: 0 });
+      const shiftOpen = await openShiftViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: { startingCash: 0 },
+      });
       const shiftId = shiftOpen.id;
 
       const [productId, customerId] = await Promise.all([
@@ -485,16 +587,18 @@ describe("cross-area end-to-end flows", () => {
       ]);
 
       // Credit sale with no initial payment
-      const saleResult = await createCoreSale(
-        {
+      const saleResult = await createSaleViaZero({
+        db,
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
           shiftId,
           customerId,
           items: [{ productId, quantity: 1, unitPrice: 50_000 }],
           payments: [],
           isCreditSale: true,
         },
-        { db, organizationId, userId }
-      );
+      });
 
       expect(saleResult.status).toBe("credit");
       expect(saleResult.totalAmount).toBe(50_000);
@@ -513,12 +617,16 @@ describe("cross-area end-to-end flows", () => {
       expect(accountRows[0].balance).toBe(50_000);
 
       // Full payment in one go
-      const paymentResult = await client.credit.registerPayment({
-        shiftId,
-        creditAccountId: accountId,
-        amount: 50_000,
-        method: "cash",
-        saleId: saleResult.saleId,
+      const paymentResult = await registerCreditPaymentViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          shiftId,
+          creditAccountId: accountId,
+          amount: 50_000,
+          method: "cash",
+          saleId: saleResult.saleId,
+        },
       });
 
       expect(paymentResult.newBalance).toBe(0);
@@ -540,13 +648,16 @@ describe("cross-area end-to-end flows", () => {
     });
 
     test("multiple credit sales for same customer, payments reduce total balance correctly", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const u = makeUser({ id: userId });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
 
-      const shiftOpen = await client.shifts.open({ startingCash: 0 });
+      const shiftOpen = await openShiftViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: { startingCash: 0 },
+      });
       const shiftId = shiftOpen.id;
 
       const [productId, customerId] = await Promise.all([
@@ -564,27 +675,31 @@ describe("cross-area end-to-end flows", () => {
       ]);
 
       // Two credit sales (sequential to avoid SQLite BUSY on a single test DB connection)
-      const sale1 = await createCoreSale(
-        {
+      const sale1 = await createSaleViaZero({
+        db,
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
           shiftId,
           customerId,
           items: [{ productId, quantity: 1, unitPrice: 10_000 }],
           payments: [],
           isCreditSale: true,
         },
-        { db, organizationId, userId }
-      );
+      });
       expect(sale1.saleId).toBeDefined();
-      const sale2 = await createCoreSale(
-        {
+      const sale2 = await createSaleViaZero({
+        db,
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
           shiftId,
           customerId,
           items: [{ productId, quantity: 1, unitPrice: 10_000 }],
           payments: [],
           isCreditSale: true,
         },
-        { db, organizationId, userId }
-      );
+      });
 
       const accountRows = await db
         .select()
@@ -599,12 +714,16 @@ describe("cross-area end-to-end flows", () => {
       expect(accountRows[0].balance).toBe(20_000);
 
       // Pay off first sale via saleId
-      await client.credit.registerPayment({
-        shiftId,
-        creditAccountId: accountId,
-        amount: 10_000,
-        method: "cash",
-        saleId: sale1.saleId,
+      await registerCreditPaymentViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          shiftId,
+          creditAccountId: accountId,
+          amount: 10_000,
+          method: "cash",
+          saleId: sale1.saleId,
+        },
       });
 
       const afterPay1 = await db
@@ -614,12 +733,16 @@ describe("cross-area end-to-end flows", () => {
       expect(afterPay1[0].balance).toBe(10_000);
 
       // Pay off remaining balance
-      await client.credit.registerPayment({
-        shiftId,
-        creditAccountId: accountId,
-        amount: 10_000,
-        method: "cash",
-        saleId: sale2.saleId,
+      await registerCreditPaymentViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          shiftId,
+          creditAccountId: accountId,
+          amount: 10_000,
+          method: "cash",
+          saleId: sale2.saleId,
+        },
       });
 
       const afterPay2 = await db
@@ -637,7 +760,10 @@ describe("cross-area end-to-end flows", () => {
       expect(saleRows.every((s) => s.status === "completed")).toBe(true);
 
       // Account search shows zero
-      const search = await client.credit.searchAccounts({});
+      const search = await searchCreditAccountsViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+      });
       const acc = search.data.find(
         (a: { customerId: string }) => a.customerId === customerId
       );

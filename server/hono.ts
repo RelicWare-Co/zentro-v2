@@ -3,21 +3,11 @@ import { parseError } from "evlog";
 import { type EvlogVariables, evlog } from "evlog/hono";
 import { Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
-import { dbSqlite } from "@/database/drizzle/db";
 import { auth } from "./auth";
+import { createDashboardApp } from "./dashboard/handler.server";
 import { dbMiddleware } from "./db-middleware";
-import { orpcHandler } from "./orpc/handler";
-
-const BODY_PARSER_METHODS = new Set([
-  "arrayBuffer",
-  "blob",
-  "formData",
-  "json",
-  "text",
-] as const);
-
-type BodyParserMethod =
-  typeof BODY_PARSER_METHODS extends Set<infer T> ? T : never;
+import { createOrganizationApp } from "./organization/handler.server";
+import { createZeroApp } from "./zero/handler.server";
 
 function getApp() {
   const app = new Hono<EvlogVariables>();
@@ -43,32 +33,9 @@ function getApp() {
   // Better Auth handler
   app.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));
 
-  // oRPC OpenAPI handler (REST transport + Scalar docs)
-  app.use("/api/*", async (c, next) => {
-    const request = new Proxy(c.req.raw, {
-      get(target, prop) {
-        if (BODY_PARSER_METHODS.has(prop as BodyParserMethod)) {
-          return () => c.req[prop as BodyParserMethod]();
-        }
-        return Reflect.get(target, prop, target);
-      },
-    });
-
-    const { matched, response } = await orpcHandler.handle(request, {
-      prefix: "/api",
-      context: {
-        headers: c.req.raw.headers,
-        db: dbSqlite(),
-        log: c.get("log"),
-      },
-    });
-
-    if (matched) {
-      return c.newResponse(response.body, response);
-    }
-
-    await next();
-  });
+  app.route("/api/zero", createZeroApp());
+  app.route("/api/dashboard", createDashboardApp());
+  app.route("/api/organization", createOrganizationApp());
 
   vike(app, [
     // Make database available in Context as `context.db`

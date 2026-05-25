@@ -1,12 +1,12 @@
 import { relations } from "drizzle-orm";
-import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { index, integer, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { organization, user } from "./auth.schema";
 import { creditTransaction } from "./credit.schema";
 import { customer } from "./customer.schema";
 import { product } from "./inventory.schema";
 import { shift } from "./pos.schema";
 
-export const sale = sqliteTable(
+export const sale = pgTable(
   "sale",
   {
     id: text("id").primaryKey(),
@@ -25,12 +25,21 @@ export const sale = sqliteTable(
     discountAmount: integer("discount_amount").notNull().default(0), // Total de descuentos aplicados
     totalAmount: integer("total_amount").notNull(), // subtotal + taxAmount - discountAmount
     status: text("status").notNull().default("completed"), // 'completed', 'credit' (fiado), 'cancelled'
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+    createdAt: timestamp("created_at", {
+      withTimezone: true,
+      mode: "date",
+    }).notNull(),
   },
-  (table) => [index("sale_organizationId_idx").on(table.organizationId)]
+  (table) => [
+    index("sale_organizationId_idx").on(table.organizationId),
+    index("sale_organizationId_createdAt_idx").on(
+      table.organizationId,
+      table.createdAt
+    ),
+  ]
 );
 
-export const saleItem = sqliteTable(
+export const saleItem = pgTable(
   "sale_item",
   {
     id: text("id").primaryKey(),
@@ -54,7 +63,7 @@ export const saleItem = sqliteTable(
   (table) => [index("saleItem_organizationId_idx").on(table.organizationId)]
 );
 
-export const saleItemModifier = sqliteTable(
+export const saleItemModifier = pgTable(
   "sale_item_modifier",
   {
     id: text("id").primaryKey(),
@@ -77,7 +86,7 @@ export const saleItemModifier = sqliteTable(
 );
 
 // Puede haber múltiples pagos por venta (Split Payment)
-export const payment = sqliteTable(
+export const payment = pgTable(
   "payment",
   {
     id: text("id").primaryKey(),
@@ -91,7 +100,10 @@ export const payment = sqliteTable(
     method: text("method").notNull(), // 'cash', 'card', 'transfer_nequi', 'transfer_bancolombia'
     reference: text("reference"), // Número de comprobante, voucher o últimos 4 dígitos de tarjeta
     amount: integer("amount").notNull(),
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+    createdAt: timestamp("created_at", {
+      withTimezone: true,
+      mode: "date",
+    }).notNull(),
   },
   (table) => [index("payment_saleId_idx").on(table.saleId)]
 );

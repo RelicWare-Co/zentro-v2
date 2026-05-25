@@ -1,34 +1,56 @@
 import { describe, expect, test } from "bun:test";
+import { zeroDrizzle } from "@rocicorp/zero/server/adapters/drizzle";
 import { eq } from "drizzle-orm";
 import { product } from "@/database/drizzle/schema/inventory.schema";
-import { createServerORPCClient } from "@/server/orpc/client/server";
-import { buildMockContext } from "./helpers/orpc-context";
+import { serverMutators } from "@/src/zero/mutators.server";
+import { queries } from "@/src/zero/queries";
+import { schema as zeroSchema } from "@/src/zero/schema";
 import {
-  makeUser,
   seedCategory,
   seedCustomer,
   seedOrganizationWithMember,
   seedProduct,
 } from "./helpers/seed";
 import { createTestDb } from "./helpers/test-db";
+import {
+  getActiveShiftViaZero,
+  listPosCategoriesViaZero,
+  listPosModifiersViaZero,
+  searchPosProductsViaZero,
+} from "./helpers/zero-pos";
+import { createSaleViaZero, getSaleDetailViaZero } from "./helpers/zero-sales";
+import {
+  createZeroContext,
+  createZeroTestDb,
+  getShiftCloseSummaryViaZero,
+  openShiftViaZero,
+  registerCashMovementViaZero,
+} from "./helpers/zero-shifts";
 
 describe("POS checkout", () => {
   describe("VAL-POS-001: shift open prevents duplicate for same user", () => {
     test("opening a second shift for same user is rejected", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const u = makeUser({ id: userId });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
 
       // Open first shift
-      const first = await client.shifts.open({ startingCash: 5000 });
+      const first = await openShiftViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: { startingCash: 5000 },
+      });
       expect(first.status).toBe("open");
 
       // Try open second shift for same user
-      await expect(client.shifts.open({ startingCash: 3000 })).rejects.toThrow(
-        "El usuario ya tiene un turno abierto"
-      );
+      await expect(
+        openShiftViaZero({
+          zeroDb,
+          ctx: zeroCtx,
+          input: { startingCash: 3000 },
+        })
+      ).rejects.toThrow("El usuario ya tiene un turno abierto");
 
       await cleanup();
     });
@@ -36,14 +58,17 @@ describe("POS checkout", () => {
 
   describe("VAL-POS-002: shift close computes expected amounts correctly including cash change", () => {
     test("close summary expected cash accounts for cash change given", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const u = makeUser({ id: userId });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
 
       // Open shift with starting cash
-      const shiftOpen = await client.shifts.open({ startingCash: 10_000 });
+      const shiftOpen = await openShiftViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: { startingCash: 10_000 },
+      });
       const shiftId = shiftOpen.id;
 
       // Seed product and create a sale with cash overpayment (change given)
@@ -55,15 +80,24 @@ describe("POS checkout", () => {
         trackInventory: true,
       });
 
-      await client.sales.create({
-        shiftId,
-        items: [{ productId, quantity: 1, unitPrice: 15_000 }],
-        payments: [{ method: "cash", amount: 20_000 }],
+      await createSaleViaZero({
+        db,
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          shiftId,
+          items: [{ productId, quantity: 1, unitPrice: 15_000 }],
+          payments: [{ method: "cash", amount: 20_000 }],
+        },
       });
 
       // Close summary: expected cash = startingCash + cashSales - change
       // = 10000 + 20000 - 5000 = 25000
-      const summary = await client.shifts.closeSummary({ shiftId });
+      const summary = await getShiftCloseSummaryViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        shiftId,
+      });
       const cashSummary = summary.summaryByMethod.find(
         (s: { paymentMethod: string }) => s.paymentMethod === "cash"
       );
@@ -76,36 +110,51 @@ describe("POS checkout", () => {
 
   describe("VAL-POS-003: cash movements are included in shift close summary", () => {
     test("close summary reflects registered inflow, expense, and payout", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const u = makeUser({ id: userId });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
 
-      const shiftOpen = await client.shifts.open({ startingCash: 5000 });
+      const shiftOpen = await openShiftViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: { startingCash: 5000 },
+      });
       const shiftId = shiftOpen.id;
 
       // Register movements
-      await client.shifts.cashMovement({
-        shiftId,
-        type: "inflow",
-        paymentMethod: "cash",
-        amount: 3000,
-        description: "Extra inflow",
+      await registerCashMovementViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          shiftId,
+          type: "inflow",
+          paymentMethod: "cash",
+          amount: 3000,
+          description: "Extra inflow",
+        },
       });
-      await client.shifts.cashMovement({
-        shiftId,
-        type: "expense",
-        paymentMethod: "cash",
-        amount: 2000,
-        description: "Office supplies",
+      await registerCashMovementViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          shiftId,
+          type: "expense",
+          paymentMethod: "cash",
+          amount: 2000,
+          description: "Office supplies",
+        },
       });
-      await client.shifts.cashMovement({
-        shiftId,
-        type: "payout",
-        paymentMethod: "cash",
-        amount: 1000,
-        description: "Payout to vendor",
+      await registerCashMovementViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          shiftId,
+          type: "payout",
+          paymentMethod: "cash",
+          amount: 1000,
+          description: "Payout to vendor",
+        },
       });
 
       // Create a sale with card (so cash only has movements + starting cash)
@@ -116,13 +165,22 @@ describe("POS checkout", () => {
         stock: 10,
         trackInventory: true,
       });
-      await client.sales.create({
-        shiftId,
-        items: [{ productId, quantity: 1, unitPrice: 10_000 }],
-        payments: [{ method: "card", amount: 10_000 }],
+      await createSaleViaZero({
+        db,
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          shiftId,
+          items: [{ productId, quantity: 1, unitPrice: 10_000 }],
+          payments: [{ method: "card", amount: 10_000 }],
+        },
       });
 
-      const summary = await client.shifts.closeSummary({ shiftId });
+      const summary = await getShiftCloseSummaryViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        shiftId,
+      });
       const cashSummary = summary.summaryByMethod.find(
         (s: { paymentMethod: string }) => s.paymentMethod === "cash"
       );
@@ -141,11 +199,10 @@ describe("POS checkout", () => {
 
   describe("VAL-POS-004: POS bootstrap returns active shift, categories, and modifier products only", () => {
     test("bootstrap payload contains active shift, categories, and modifier products", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const u = makeUser({ id: userId });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
 
       // Seed categories
       const [catA, catB] = await Promise.all([
@@ -175,22 +232,28 @@ describe("POS checkout", () => {
       ]);
 
       // Open shift
-      const shiftOpen = await client.shifts.open({ startingCash: 0 });
+      const shiftOpen = await openShiftViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: { startingCash: 0 },
+      });
       expect(shiftOpen.id).toBeDefined();
 
-      const bootstrap = await client.pos.bootstrap();
+      const [activeShift, categories, modifierProducts] = await Promise.all([
+        getActiveShiftViaZero({ zeroDb, ctx: zeroCtx }),
+        listPosCategoriesViaZero({ zeroDb, ctx: zeroCtx }),
+        listPosModifiersViaZero({ zeroDb, ctx: zeroCtx }),
+      ]);
 
-      expect(bootstrap.activeShift).toBeDefined();
-      expect(bootstrap.activeShift?.id).toBe(shiftOpen.id);
-      expect(bootstrap.activeShift?.status).toBe("open");
+      expect(activeShift).toBeDefined();
+      expect(activeShift?.id).toBe(shiftOpen.id);
+      expect(activeShift?.status).toBe("open");
 
-      const categoryIds = bootstrap.categories.map((c: { id: string }) => c.id);
+      const categoryIds = categories.map((category) => category.id);
       expect(categoryIds).toContain(catA);
       expect(categoryIds).toContain(catB);
 
-      const modifierIds = bootstrap.modifierProducts.map(
-        (p: { id: string }) => p.id
-      );
+      const modifierIds = modifierProducts.map((product) => product.id);
       expect(modifierIds).toContain(modifierId);
       expect(modifierIds.length).toBe(1);
 
@@ -198,14 +261,16 @@ describe("POS checkout", () => {
     });
 
     test("bootstrap returns null activeShift when no open shift", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const u = makeUser({ id: userId });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
 
-      const bootstrap = await client.pos.bootstrap();
-      expect(bootstrap.activeShift).toBeNull();
+      const activeShift = await getActiveShiftViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+      });
+      expect(activeShift).toBeNull();
 
       await cleanup();
     });
@@ -213,11 +278,10 @@ describe("POS checkout", () => {
 
   describe("VAL-POS-005: product search paginates, filters by category, and prioritizes exact barcode match", () => {
     test("product search paginates with limit and cursor", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const u = makeUser({ id: userId });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
 
       // Seed 5 products
       await Promise.all(
@@ -233,19 +297,31 @@ describe("POS checkout", () => {
       );
 
       // Page 1: limit 2
-      const page1 = await client.pos.searchProducts({ limit: 2, cursor: 0 });
+      const page1 = await searchPosProductsViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: { limit: 2, cursor: 0 },
+      });
       expect(page1.data.length).toBe(2);
       expect(page1.hasMore).toBe(true);
       expect(page1.nextCursor).toBe(2);
 
       // Page 2: cursor 2
-      const page2 = await client.pos.searchProducts({ limit: 2, cursor: 2 });
+      const page2 = await searchPosProductsViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: { limit: 2, cursor: 2 },
+      });
       expect(page2.data.length).toBe(2);
       expect(page2.hasMore).toBe(true);
       expect(page2.nextCursor).toBe(4);
 
       // Page 3: cursor 4
-      const page3 = await client.pos.searchProducts({ limit: 2, cursor: 4 });
+      const page3 = await searchPosProductsViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: { limit: 2, cursor: 4 },
+      });
       expect(page3.data.length).toBe(1);
       expect(page3.hasMore).toBe(false);
       expect(page3.nextCursor).toBeNull();
@@ -254,11 +330,10 @@ describe("POS checkout", () => {
     });
 
     test("product search filters by category", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const u = makeUser({ id: userId });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
 
       const [catA, catB] = await Promise.all([
         seedCategory(db, { organizationId, name: "CatA" }),
@@ -283,8 +358,16 @@ describe("POS checkout", () => {
       expect(prodB).toBeDefined();
 
       const [resultA, resultB] = await Promise.all([
-        client.pos.searchProducts({ categoryId: catA }),
-        client.pos.searchProducts({ categoryId: catB }),
+        searchPosProductsViaZero({
+          zeroDb,
+          ctx: zeroCtx,
+          input: { categoryId: catA },
+        }),
+        searchPosProductsViaZero({
+          zeroDb,
+          ctx: zeroCtx,
+          input: { categoryId: catB },
+        }),
       ]);
       expect(resultA.data.length).toBe(1);
       expect(resultA.data[0].id).toBe(prodA);
@@ -295,11 +378,10 @@ describe("POS checkout", () => {
     });
 
     test("product search prioritizes exact barcode match", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const u = makeUser({ id: userId });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
 
       await seedProduct(db, {
         organizationId,
@@ -321,7 +403,11 @@ describe("POS checkout", () => {
         price: 3000,
       });
 
-      const result = await client.pos.searchProducts({ searchQuery: "12345" });
+      const result = await searchPosProductsViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: { searchQuery: "12345" },
+      });
       expect(result.data.length).toBeGreaterThanOrEqual(2);
       // Exact barcode match should be first
       expect(result.data[0].barcode).toBe("12345");
@@ -332,11 +418,10 @@ describe("POS checkout", () => {
 
   describe("VAL-POS-006: customer search excludes soft-deleted customers", () => {
     test("soft-deleted customer does not appear in search results", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const u = makeUser({ id: userId });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = zeroDrizzle(zeroSchema, db);
+      const zeroContext = createZeroContext(userId, organizationId);
 
       const customerId = await seedCustomer(db, {
         organizationId,
@@ -344,32 +429,51 @@ describe("POS checkout", () => {
       });
       expect(customerId).toBeDefined();
 
-      // Verify customer exists before deletion
-      const before = await client.customers.search({ searchQuery: "Deleted" });
-      expect(before.data.length).toBe(1);
-      expect(before.data[0].id).toBe(customerId);
+      // Verify customer exists before deletion through the migrated Zero query.
+      const before = await zeroDb.run(
+        queries.customers.search.fn({
+          args: { limit: 50, searchQuery: "Deleted" },
+          ctx: zeroContext,
+        })
+      );
+      expect(before.length).toBe(1);
+      expect(before[0].id).toBe(customerId);
 
-      // Soft-delete the customer via direct DB update (customers.delete endpoint)
-      await client.customers.delete({ id: customerId });
+      // Soft-delete the customer through the migrated Zero mutator.
+      await zeroDb.transaction((tx) =>
+        serverMutators.customers.delete.fn({
+          args: { id: customerId },
+          ctx: zeroContext,
+          tx,
+        })
+      );
 
-      // Search should exclude soft-deleted
-      const after = await client.customers.search({ searchQuery: "Deleted" });
-      expect(after.data.length).toBe(0);
+      // Search should exclude soft-deleted rows.
+      const after = await zeroDb.run(
+        queries.customers.search.fn({
+          args: { limit: 50, searchQuery: "Deleted" },
+          ctx: zeroContext,
+        })
+      );
+      expect(after.length).toBe(0);
 
       await cleanup();
     });
   });
 
-  describe("VAL-POS-007: sale creation through sales.create with shift context works end-to-end", () => {
+  describe("VAL-POS-007: sale creation through Zero sales.create with shift context works end-to-end", () => {
     test("POS end-to-end: open shift, search product, create sale, verify stock and shift link", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const u = makeUser({ id: userId });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
 
       // Bootstrap POS (open shift implicitly)
-      const shiftOpen = await client.shifts.open({ startingCash: 10_000 });
+      const shiftOpen = await openShiftViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: { startingCash: 10_000 },
+      });
       const shiftId = shiftOpen.id;
 
       // Create category and product
@@ -388,7 +492,11 @@ describe("POS checkout", () => {
 
       // Verify product appears in search and check stock before
       const [searchResult, beforeStock] = await Promise.all([
-        client.pos.searchProducts({ searchQuery: "Coffee" }),
+        searchPosProductsViaZero({
+          zeroDb,
+          ctx: zeroCtx,
+          input: { searchQuery: "Coffee" },
+        }),
         db
           .select({ stock: product.stock })
           .from(product)
@@ -399,10 +507,15 @@ describe("POS checkout", () => {
       expect(beforeStock[0].stock).toBe(50);
 
       // Create sale
-      const saleResult = await client.sales.create({
-        shiftId,
-        items: [{ productId, quantity: 2, unitPrice: 8000 }],
-        payments: [{ method: "cash", amount: 16_000 }],
+      const saleResult = await createSaleViaZero({
+        db,
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          shiftId,
+          items: [{ productId, quantity: 2, unitPrice: 8000 }],
+          payments: [{ method: "cash", amount: 16_000 }],
+        },
       });
 
       expect(saleResult.status).toBe("completed");
@@ -418,7 +531,11 @@ describe("POS checkout", () => {
       expect(afterStock[0].stock).toBe(48);
 
       // Verify sale detail links to shift
-      const detail = await client.sales.detail({ saleId: saleResult.saleId });
+      const detail = await getSaleDetailViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        saleId: saleResult.saleId,
+      });
       expect(detail).not.toBeNull();
       expect(detail?.shift?.id).toBe(shiftId);
       expect(detail?.items.length).toBe(1);

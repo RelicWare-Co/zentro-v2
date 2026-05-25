@@ -15,60 +15,35 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { usePosPage } from "@/features/pos/pos-page-context";
+import { isPosModalOpen } from "@/features/pos/pos-page-modals.shared";
 import type { CashMovementType } from "@/features/pos/types";
 import { formatMoneyInput, sanitizeMoneyInput } from "@/lib/utils";
 
-interface CashMovementModalProps {
-  canRegister: boolean;
-  error: Error | null;
-  hasActiveShift: boolean;
-  isOpen: boolean;
-  isRegistering: boolean;
-  movementAmount: string;
-  movementDescription: string;
-  movementPaymentMethod: string;
-  movementType: string;
-  onClose: () => void;
-  onConfirm: () => void;
-  paymentMethodOptions: Array<{ id: string; label: string }>;
-  setMovementAmount: (value: string) => void;
-  setMovementDescription: (value: string) => void;
-  setMovementPaymentMethod: (value: string) => void;
-  setMovementType: (value: CashMovementType) => void;
-}
-
-export function CashMovementModal({
-  isOpen,
-  onClose,
-  movementType,
-  setMovementType,
-  movementPaymentMethod,
-  setMovementPaymentMethod,
-  paymentMethodOptions,
-  movementAmount,
-  setMovementAmount,
-  movementDescription,
-  setMovementDescription,
-  canRegister,
-  isRegistering,
-  hasActiveShift,
-  error,
-  onConfirm,
-}: CashMovementModalProps) {
+export function CashMovementModal() {
+  const { state, actions, meta } = usePosPage();
+  const { shift, paymentMethodOptions } = meta;
   const movementTypeId = useId();
   const movementPaymentMethodId = useId();
   const movementAmountId = useId();
   const movementDescriptionId = useId();
 
   return (
-    <Dialog onOpenChange={onClose} open={isOpen}>
+    <Dialog
+      onOpenChange={(open) => {
+        if (!open) {
+          actions.closeActiveModal();
+        }
+      }}
+      open={isPosModalOpen(state.activeModal, "cash-movement")}
+    >
       <DialogContent className="border-zinc-800 bg-[#151515] text-white sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Movimiento del Turno</DialogTitle>
         </DialogHeader>
 
         <div className="grid gap-4 py-4">
-          {!hasActiveShift && (
+          {!state.activeShift && (
             <p className="text-red-400 text-sm">
               Debes abrir un turno antes de registrar movimientos.
             </p>
@@ -83,9 +58,9 @@ export function CashMovementModal({
             </label>
             <Select
               onValueChange={(value) =>
-                setMovementType(value as CashMovementType)
+                shift.setMovementType(value as CashMovementType)
               }
-              value={movementType}
+              value={shift.movementType}
             >
               <SelectTrigger
                 className="h-10 w-full rounded-md border border-zinc-800 bg-[#0a0a0a] px-3 py-2 text-sm text-white focus:ring-2 focus:ring-[var(--color-voltage)]"
@@ -109,8 +84,8 @@ export function CashMovementModal({
               Método Afectado
             </label>
             <Select
-              onValueChange={setMovementPaymentMethod}
-              value={movementPaymentMethod}
+              onValueChange={shift.setMovementPaymentMethod}
+              value={shift.movementPaymentMethod}
             >
               <SelectTrigger
                 className="h-10 w-full rounded-md border border-zinc-800 bg-[#0a0a0a] px-3 py-2 text-sm text-white focus:ring-2 focus:ring-[var(--color-voltage)]"
@@ -140,11 +115,11 @@ export function CashMovementModal({
               id={movementAmountId}
               inputMode="numeric"
               onChange={(e) =>
-                setMovementAmount(sanitizeMoneyInput(e.target.value))
+                shift.setMovementAmount(sanitizeMoneyInput(e.target.value))
               }
               placeholder="0"
               type="text"
-              value={formatMoneyInput(movementAmount)}
+              value={formatMoneyInput(shift.movementAmount)}
             />
           </div>
 
@@ -158,31 +133,37 @@ export function CashMovementModal({
             <Input
               className="border-zinc-800 bg-[#0a0a0a] text-white focus-visible:ring-[var(--color-voltage)]"
               id={movementDescriptionId}
-              onChange={(e) => setMovementDescription(e.target.value)}
+              onChange={(e) => shift.setMovementDescription(e.target.value)}
               placeholder="Ej. Pago de internet, Base adicional..."
-              value={movementDescription}
+              value={shift.movementDescription}
             />
           </div>
 
-          {error instanceof Error && (
-            <p className="text-red-400 text-sm">{error.message}</p>
+          {shift.cashMovementError instanceof Error && (
+            <p className="text-red-400 text-sm">
+              {shift.cashMovementError.message}
+            </p>
           )}
         </div>
 
         <DialogFooter>
           <Button
             className="text-zinc-400 hover:bg-zinc-800 hover:text-white"
-            onClick={onClose}
+            onClick={actions.closeActiveModal}
             variant="ghost"
           >
             Cancelar
           </Button>
           <Button
             className="bg-[var(--color-voltage)] text-black hover:bg-[#c9e605]"
-            disabled={!canRegister || isRegistering}
-            onClick={onConfirm}
+            disabled={
+              !shift.canRegisterCashMovement || shift.isRegisteringMovement
+            }
+            onClick={actions.confirmCashMovement}
           >
-            {isRegistering ? "Registrando..." : "Registrar Movimiento"}
+            {shift.isRegisteringMovement
+              ? "Registrando..."
+              : "Registrar Movimiento"}
           </Button>
         </DialogFooter>
       </DialogContent>

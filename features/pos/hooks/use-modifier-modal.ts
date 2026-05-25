@@ -3,9 +3,12 @@ import type { CartItemModifier, Product } from "../types";
 
 export function useModifierModal(
   onAddToCart: (product: Product, modifiers: CartItemModifier[]) => void,
-  modifierProducts: Product[]
+  modifierProducts: Product[],
+  modalControl: {
+    openModifierModal: () => void;
+    closeModifierModal: () => void;
+  }
 ) {
-  const [isModifierModalOpen, setIsModifierModalOpen] = useState(false);
   const [selectedProductForModifiers, setSelectedProductForModifiers] =
     useState<Product | null>(null);
   const [modifierQuantities, setModifierQuantities] = useState<
@@ -35,9 +38,9 @@ export function useModifierModal(
 
       setSelectedProductForModifiers(product);
       setModifierQuantities({});
-      setIsModifierModalOpen(true);
+      modalControl.openModifierModal();
     },
-    [modifierProducts.length, onAddToCart]
+    [modalControl, modifierProducts.length, onAddToCart]
   );
 
   const handleConfirmModifiers = useCallback(() => {
@@ -61,10 +64,11 @@ export function useModifierModal(
     }, []);
 
     onAddToCart(selectedProductForModifiers, selectedModifiers);
-    setIsModifierModalOpen(false);
+    modalControl.closeModifierModal();
     setSelectedProductForModifiers(null);
     setModifierQuantities({});
   }, [
+    modalControl,
     modifierProducts,
     modifierQuantities,
     onAddToCart,
@@ -77,20 +81,18 @@ export function useModifierModal(
     }
 
     onAddToCart(selectedProductForModifiers, []);
-    setIsModifierModalOpen(false);
+    modalControl.closeModifierModal();
     setSelectedProductForModifiers(null);
     setModifierQuantities({});
-  }, [onAddToCart, selectedProductForModifiers]);
+  }, [modalControl, onAddToCart, selectedProductForModifiers]);
 
   const handleCloseModal = useCallback(() => {
-    setIsModifierModalOpen(false);
+    modalControl.closeModifierModal();
     setSelectedProductForModifiers(null);
     setModifierQuantities({});
-  }, []);
+  }, [modalControl]);
 
   return {
-    isModifierModalOpen,
-    setIsModifierModalOpen,
     selectedProductForModifiers,
     modifierQuantities,
     updateModifierQuantity,

@@ -6,11 +6,7 @@ export const guard = (pageContext: PageContextServer) => {
     throw redirect("/login");
   }
 
-  const session = pageContext.session as
-    | ({ activeOrganizationId?: string | null } & typeof pageContext.session)
-    | null;
-
-  if (!session?.activeOrganizationId) {
+  if (!pageContext.zeroContext?.orgID) {
     throw redirect("/organization");
   }
 };

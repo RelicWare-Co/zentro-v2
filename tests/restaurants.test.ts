@@ -8,20 +8,31 @@ import {
 } from "@/database/drizzle/schema/restaurant.schema";
 import { sale } from "@/database/drizzle/schema/sales.schema";
 import { serializeOrganizationSettingsMetadata } from "@/features/settings/settings.shared";
-import { createServerORPCClient } from "@/server/orpc/client/server";
-import { buildMockContext } from "./helpers/orpc-context";
 import {
-  makeUser,
   seedOrganizationWithMember,
   seedProduct,
   seedRestaurantArea,
   seedRestaurantTable,
   seedShift,
 } from "./helpers/seed";
-import { createTestDb } from "./helpers/test-db";
+import { createTestDb, type TestDb } from "./helpers/test-db";
+import {
+  addRestaurantOrderItemViaZero,
+  closeRestaurantOrderViaZero,
+  createRestaurantAreaViaZero,
+  createRestaurantTableViaZero,
+  deleteRestaurantAreaViaZero,
+  deleteRestaurantTableViaZero,
+  getKitchenBoardViaZero,
+  getRestaurantBootstrapViaZero,
+  sendRestaurantOrderToKitchenViaZero,
+  updateRestaurantAreaViaZero,
+  updateRestaurantTableViaZero,
+} from "./helpers/zero-restaurants";
+import { createZeroContext, createZeroTestDb } from "./helpers/zero-shifts";
 
 async function setRestaurantModuleEnabled(
-  db: ReturnType<typeof createTestDb>["db"],
+  db: TestDb,
   organizationId: string,
   enabled: boolean
 ) {
@@ -45,7 +56,7 @@ async function setRestaurantModuleEnabled(
 }
 
 async function setKitchenDisplayEnabled(
-  db: ReturnType<typeof createTestDb>["db"],
+  db: TestDb,
   organizationId: string,
   displayEnabled: boolean
 ) {
@@ -71,19 +82,17 @@ async function setKitchenDisplayEnabled(
 describe("restaurant module", () => {
   describe("VAL-REST-001: bootstrap rejects when restaurant module is disabled", () => {
     test("restaurant bootstrap rejects when module disabled", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db, {
         memberRole: "owner",
       });
-      // Default metadata has restaurants disabled
 
-      const u = makeUser({ id: userId, email: "owner@example.com" });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
 
-      await expect(client.restaurants.bootstrap()).rejects.toThrow(
-        "El módulo de restaurantes no está habilitado"
-      );
+      await expect(
+        getRestaurantBootstrapViaZero({ zeroDb, ctx: zeroCtx })
+      ).rejects.toThrow("El módulo de restaurantes no está habilitado");
 
       await cleanup();
     });
@@ -91,7 +100,7 @@ describe("restaurant module", () => {
 
   describe("VAL-REST-002: add order item creates open order with correct totals", () => {
     test("add order item creates open order and returns correct totals", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db, {
         memberRole: "owner",
       });
@@ -116,20 +125,23 @@ describe("restaurant module", () => {
         }),
       ]);
 
-      const u = makeUser({ id: userId, email: "owner@example.com" });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
 
-      const result = await client.restaurants.addOrderItem({
-        tableId,
-        productId,
-        quantity: 2,
+      const result = await addRestaurantOrderItemViaZero({
+        db,
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          tableId,
+          productId,
+          quantity: 2,
+        },
       });
       expect(result.orderId).toBeString();
       expect(result.itemId).toBeString();
       expect(result.tableId).toBe(tableId);
 
-      // Verify order is open
       const orderRows = await db
         .select()
         .from(restaurantOrder)
@@ -138,7 +150,6 @@ describe("restaurant module", () => {
       expect(orderRows[0].status).toBe("open");
       expect(orderRows[0].tableId).toBe(tableId);
 
-      // Verify item totals
       const itemRows = await db
         .select()
         .from(restaurantOrderItem)
@@ -154,7 +165,7 @@ describe("restaurant module", () => {
 
   describe("VAL-REST-003: send to kitchen creates ticket and updates item status", () => {
     test("send to kitchen creates kitchen ticket and marks items as sent", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db, {
         memberRole: "owner",
       });
@@ -179,26 +190,30 @@ describe("restaurant module", () => {
         }),
       ]);
 
-      const u = makeUser({ id: userId, email: "owner@example.com" });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
 
-      // Add item to table
-      const addResult = await client.restaurants.addOrderItem({
-        tableId,
-        productId,
-        quantity: 1,
+      const addResult = await addRestaurantOrderItemViaZero({
+        db,
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          tableId,
+          productId,
+          quantity: 1,
+        },
       });
 
-      // Send to kitchen
-      const sendResult = await client.restaurants.sendToKitchen({
-        orderId: addResult.orderId,
+      const sendResult = await sendRestaurantOrderToKitchenViaZero({
+        db,
+        zeroDb,
+        ctx: zeroCtx,
+        input: { orderId: addResult.orderId },
       });
       expect(sendResult.ticket.id).toBeString();
       expect(sendResult.ticket.sequenceNumber).toBe(1);
       expect(sendResult.ticket.items.length).toBe(1);
 
-      // Verify ticket exists in DB
       const ticketRows = await db
         .select()
         .from(restaurantKitchenTicket)
@@ -206,7 +221,6 @@ describe("restaurant module", () => {
       expect(ticketRows.length).toBe(1);
       expect(ticketRows[0].status).toBe("sent");
 
-      // Verify items updated
       const itemRows = await db
         .select()
         .from(restaurantOrderItem)
@@ -221,7 +235,7 @@ describe("restaurant module", () => {
 
   describe("VAL-REST-004: close order creates a sale and marks order closed", () => {
     test("close order creates sale and marks order closed", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db, {
         memberRole: "owner",
       });
@@ -251,28 +265,40 @@ describe("restaurant module", () => {
         }),
       ]);
 
-      const u = makeUser({ id: userId, email: "owner@example.com" });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
 
-      // Add item, send to kitchen, then close
-      const addResult = await client.restaurants.addOrderItem({
-        tableId,
-        productId,
-        quantity: 1,
+      const addResult = await addRestaurantOrderItemViaZero({
+        db,
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          tableId,
+          productId,
+          quantity: 1,
+        },
       });
-      await client.restaurants.sendToKitchen({ orderId: addResult.orderId });
+      await sendRestaurantOrderToKitchenViaZero({
+        db,
+        zeroDb,
+        ctx: zeroCtx,
+        input: { orderId: addResult.orderId },
+      });
 
-      const closeResult = await client.restaurants.closeOrder({
-        orderId: addResult.orderId,
-        shiftId,
-        payments: [{ method: "cash", amount: 25_000 }],
+      const closeResult = await closeRestaurantOrderViaZero({
+        db,
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          orderId: addResult.orderId,
+          shiftId,
+          payments: [{ method: "cash", amount: 25_000 }],
+        },
       });
       expect(closeResult.saleId).toBeString();
       expect(closeResult.status).toBe("completed");
       expect(closeResult.totalAmount).toBe(25_000);
 
-      // Verify order closed
       const orderRows = await db
         .select()
         .from(restaurantOrder)
@@ -281,7 +307,6 @@ describe("restaurant module", () => {
       expect(orderRows[0].status).toBe("closed");
       expect(orderRows[0].saleId).toBe(closeResult.saleId);
 
-      // Verify sale exists
       const saleRows = await db
         .select()
         .from(sale)
@@ -296,7 +321,7 @@ describe("restaurant module", () => {
 
   describe("VAL-REST-005: area/table CRUD requires manager access", () => {
     test("non-manager is rejected from createArea, updateArea, deleteArea", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const [{ organizationId, userId: managerId }, { userId: cashierId }] =
         await Promise.all([
           seedOrganizationWithMember(db, {
@@ -309,7 +334,7 @@ describe("restaurant module", () => {
             memberRole: "member",
           }),
         ]);
-      // Add cashier as member of same organization
+
       const memberId = crypto.randomUUID();
       const now = new Date();
       await db
@@ -324,122 +349,151 @@ describe("restaurant module", () => {
 
       await setRestaurantModuleEnabled(db, organizationId, true);
 
-      const manager = makeUser({ id: managerId, email: "manager@example.com" });
-      const managerCtx = buildMockContext(db, manager, organizationId);
-      const managerClient = createServerORPCClient(managerCtx);
+      const managerZeroDb = createZeroTestDb(db);
+      const managerCtx = createZeroContext(managerId, organizationId);
+      const cashierZeroDb = createZeroTestDb(db);
+      const cashierCtx = createZeroContext(cashierId, organizationId);
 
-      const area = await managerClient.restaurants.createArea({
-        name: "Patio",
+      const area = await createRestaurantAreaViaZero({
+        zeroDb: managerZeroDb,
+        ctx: managerCtx,
+        input: { name: "Patio" },
       });
       const areaId = area[0].id;
-      const table = await managerClient.restaurants.createTable({
-        areaId,
-        name: "T2",
-        seats: 4,
+      const table = await createRestaurantTableViaZero({
+        zeroDb: managerZeroDb,
+        ctx: managerCtx,
+        input: {
+          areaId,
+          name: "T2",
+          seats: 4,
+        },
       });
       const tableId = table[0].tables[0].id;
 
-      const cashier = makeUser({ id: cashierId, email: "cashier@example.com" });
-      const cashierCtx = buildMockContext(db, cashier, organizationId);
-      const cashierClient = createServerORPCClient(cashierCtx);
-
-      // createArea rejected
       await expect(
-        cashierClient.restaurants.createArea({ name: "Forbidden Area" })
-      ).rejects.toThrow("administrador de la organización");
-
-      // updateArea rejected
-      await expect(
-        cashierClient.restaurants.updateArea({ id: areaId, name: "New Name" })
-      ).rejects.toThrow("administrador de la organización");
-
-      // deleteArea rejected
-      await expect(
-        cashierClient.restaurants.deleteArea({ id: areaId })
-      ).rejects.toThrow("administrador de la organización");
-
-      // createTable rejected
-      await expect(
-        cashierClient.restaurants.createTable({
-          areaId,
-          name: "Forbidden Table",
-          seats: 2,
+        createRestaurantAreaViaZero({
+          zeroDb: cashierZeroDb,
+          ctx: cashierCtx,
+          input: { name: "Forbidden Area" },
         })
       ).rejects.toThrow("administrador de la organización");
 
-      // updateTable rejected
       await expect(
-        cashierClient.restaurants.updateTable({
-          id: tableId,
-          name: "New Table Name",
+        updateRestaurantAreaViaZero({
+          zeroDb: cashierZeroDb,
+          ctx: cashierCtx,
+          input: { id: areaId, name: "New Name" },
         })
       ).rejects.toThrow("administrador de la organización");
 
-      // deleteTable rejected
       await expect(
-        cashierClient.restaurants.deleteTable({ id: tableId })
+        deleteRestaurantAreaViaZero({
+          zeroDb: cashierZeroDb,
+          ctx: cashierCtx,
+          input: { id: areaId },
+        })
+      ).rejects.toThrow("administrador de la organización");
+
+      await expect(
+        createRestaurantTableViaZero({
+          zeroDb: cashierZeroDb,
+          ctx: cashierCtx,
+          input: {
+            areaId,
+            name: "Forbidden Table",
+            seats: 2,
+          },
+        })
+      ).rejects.toThrow("administrador de la organización");
+
+      await expect(
+        updateRestaurantTableViaZero({
+          zeroDb: cashierZeroDb,
+          ctx: cashierCtx,
+          input: {
+            id: tableId,
+            name: "New Table Name",
+          },
+        })
+      ).rejects.toThrow("administrador de la organización");
+
+      await expect(
+        deleteRestaurantTableViaZero({
+          zeroDb: cashierZeroDb,
+          ctx: cashierCtx,
+          input: { id: tableId },
+        })
       ).rejects.toThrow("administrador de la organización");
 
       await cleanup();
     });
 
     test("manager can create, update, and delete area and table", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db, {
         memberRole: "owner",
       });
       await setRestaurantModuleEnabled(db, organizationId, true);
 
-      const u = makeUser({ id: userId, email: "owner@example.com" });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
 
-      // Create area
-      const createAreaResult = await client.restaurants.createArea({
-        name: "Garden",
+      const createAreaResult = await createRestaurantAreaViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: { name: "Garden" },
       });
       expect(createAreaResult.length).toBe(1);
       const areaId = createAreaResult[0].id;
       expect(createAreaResult[0].name).toBe("Garden");
 
-      // Update area
-      const updateAreaResult = await client.restaurants.updateArea({
-        id: areaId,
-        name: "Garden Updated",
+      const updateAreaResult = await updateRestaurantAreaViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: { id: areaId, name: "Garden Updated" },
       });
       expect(updateAreaResult[0].name).toBe("Garden Updated");
 
-      // Create table
-      const createTableResult = await client.restaurants.createTable({
-        areaId,
-        name: "GT1",
-        seats: 6,
+      const createTableResult = await createRestaurantTableViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          areaId,
+          name: "GT1",
+          seats: 6,
+        },
       });
       expect(createTableResult[0].tables.length).toBe(1);
       const tableId = createTableResult[0].tables[0].id;
       expect(createTableResult[0].tables[0].name).toBe("GT1");
 
-      // Update table
-      const updateTableResult = await client.restaurants.updateTable({
-        id: tableId,
-        name: "GT1 Updated",
-        seats: 8,
+      const updateTableResult = await updateRestaurantTableViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          id: tableId,
+          name: "GT1 Updated",
+          seats: 8,
+        },
       });
       const updatedTable = updateTableResult[0].tables.find(
-        (t: { id: string }) => t.id === tableId
+        (table) => table.id === tableId
       );
       expect(updatedTable?.name).toBe("GT1 Updated");
       expect(updatedTable?.seats).toBe(8);
 
-      // Delete table
-      const deleteTableResult = await client.restaurants.deleteTable({
-        id: tableId,
+      const deleteTableResult = await deleteRestaurantTableViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: { id: tableId },
       });
       expect(deleteTableResult[0].tables.length).toBe(0);
 
-      // Delete area
-      const deleteAreaResult = await client.restaurants.deleteArea({
-        id: areaId,
+      const deleteAreaResult = await deleteRestaurantAreaViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: { id: areaId },
       });
       expect(deleteAreaResult.length).toBe(0);
 
@@ -449,26 +503,24 @@ describe("restaurant module", () => {
 
   describe("VAL-REST-006: kitchen board rejects when display is disabled", () => {
     test("kitchen board rejects when kitchen display setting is disabled", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db, {
         memberRole: "owner",
       });
-      // Enable restaurant module but disable kitchen display
       await setKitchenDisplayEnabled(db, organizationId, false);
 
-      const u = makeUser({ id: userId, email: "owner@example.com" });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
 
-      await expect(client.restaurants.kitchenBoard()).rejects.toThrow(
-        "La vista de cocina no está habilitada"
-      );
+      await expect(
+        getKitchenBoardViaZero({ zeroDb, ctx: zeroCtx })
+      ).rejects.toThrow("La vista de cocina no está habilitada");
 
       await cleanup();
     });
 
     test("kitchen board succeeds when kitchen display is enabled", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db, {
         memberRole: "owner",
       });
@@ -493,20 +545,27 @@ describe("restaurant module", () => {
         }),
       ]);
 
-      const u = makeUser({ id: userId, email: "owner@example.com" });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
 
-      // Add and send to kitchen to create a ticket
-      const addResult = await client.restaurants.addOrderItem({
-        tableId,
-        productId,
-        quantity: 1,
+      const addResult = await addRestaurantOrderItemViaZero({
+        db,
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          tableId,
+          productId,
+          quantity: 1,
+        },
       });
-      await client.restaurants.sendToKitchen({ orderId: addResult.orderId });
+      await sendRestaurantOrderToKitchenViaZero({
+        db,
+        zeroDb,
+        ctx: zeroCtx,
+        input: { orderId: addResult.orderId },
+      });
 
-      // Kitchen board should return tickets
-      const board = await client.restaurants.kitchenBoard();
+      const board = await getKitchenBoardViaZero({ zeroDb, ctx: zeroCtx });
       expect(board.tickets.length).toBeGreaterThanOrEqual(1);
       expect(board.tickets[0].items.length).toBeGreaterThanOrEqual(1);
 

@@ -15,47 +15,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { usePosPage } from "@/features/pos/pos-page-context";
+import { isPosModalOpen } from "@/features/pos/pos-page-modals.shared";
 
-interface CreateCustomerModalProps {
-  canCreate: boolean;
-  documentNumber: string;
-  documentType: string;
-  error: Error | null;
-  isCreating: boolean;
-  isOpen: boolean;
-  name: string;
-  onClose: () => void;
-  onConfirm: () => void;
-  phone: string;
-  setDocumentNumber: (value: string) => void;
-  setDocumentType: (value: string) => void;
-  setName: (value: string) => void;
-  setPhone: (value: string) => void;
-}
-
-export function CreateCustomerModal({
-  isOpen,
-  onClose,
-  name,
-  setName,
-  phone,
-  setPhone,
-  documentType,
-  setDocumentType,
-  documentNumber,
-  setDocumentNumber,
-  canCreate,
-  isCreating,
-  error,
-  onConfirm,
-}: CreateCustomerModalProps) {
+export function CreateCustomerModal() {
+  const { state, actions, meta } = usePosPage();
+  const { createCustomerModal } = meta;
   const customerNameId = useId();
   const customerPhoneId = useId();
   const customerDocumentTypeId = useId();
   const customerDocumentNumberId = useId();
 
   return (
-    <Dialog onOpenChange={onClose} open={isOpen}>
+    <Dialog
+      onOpenChange={(open) => {
+        if (!open) {
+          actions.closeActiveModal();
+        }
+      }}
+      open={isPosModalOpen(state.activeModal, "create-customer")}
+    >
       <DialogContent className="border-zinc-800 bg-[#151515] text-white sm:max-w-[450px]">
         <DialogHeader>
           <DialogTitle>Crear cliente rápido</DialogTitle>
@@ -72,9 +51,11 @@ export function CreateCustomerModal({
             <Input
               className="border-zinc-800 bg-[#0a0a0a] text-white"
               id={customerNameId}
-              onChange={(event) => setName(event.target.value)}
+              onChange={(event) =>
+                createCustomerModal.setNewCustomerName(event.target.value)
+              }
               placeholder="Nombre del cliente"
-              value={name}
+              value={createCustomerModal.newCustomerName}
             />
           </div>
 
@@ -88,9 +69,11 @@ export function CreateCustomerModal({
             <Input
               className="border-zinc-800 bg-[#0a0a0a] text-white"
               id={customerPhoneId}
-              onChange={(event) => setPhone(event.target.value)}
+              onChange={(event) =>
+                createCustomerModal.setNewCustomerPhone(event.target.value)
+              }
               placeholder="Opcional"
-              value={phone}
+              value={createCustomerModal.newCustomerPhone}
             />
           </div>
 
@@ -102,7 +85,10 @@ export function CreateCustomerModal({
               >
                 Tipo doc
               </label>
-              <Select onValueChange={setDocumentType} value={documentType}>
+              <Select
+                onValueChange={createCustomerModal.setNewCustomerDocumentType}
+                value={createCustomerModal.newCustomerDocumentType}
+              >
                 <SelectTrigger
                   className="h-10 w-full rounded-md border border-zinc-800 bg-[#0a0a0a] px-3 py-2 text-sm text-white focus:ring-2 focus:ring-[var(--color-voltage)]"
                   id={customerDocumentTypeId}
@@ -128,32 +114,41 @@ export function CreateCustomerModal({
               <Input
                 className="border-zinc-800 bg-[#0a0a0a] text-white"
                 id={customerDocumentNumberId}
-                onChange={(event) => setDocumentNumber(event.target.value)}
+                onChange={(event) =>
+                  createCustomerModal.setNewCustomerDocumentNumber(
+                    event.target.value
+                  )
+                }
                 placeholder="Opcional"
-                value={documentNumber}
+                value={createCustomerModal.newCustomerDocumentNumber}
               />
             </div>
           </div>
 
-          {error instanceof Error && (
-            <p className="text-red-400 text-sm">{error.message}</p>
+          {createCustomerModal.error instanceof Error && (
+            <p className="text-red-400 text-sm">
+              {createCustomerModal.error.message}
+            </p>
           )}
         </div>
 
         <DialogFooter>
           <Button
             className="text-zinc-400 hover:text-white"
-            onClick={onClose}
+            onClick={actions.closeActiveModal}
             variant="ghost"
           >
             Cancelar
           </Button>
           <Button
             className="bg-[var(--color-voltage)] text-black hover:bg-[#c9e605]"
-            disabled={!canCreate || isCreating}
-            onClick={onConfirm}
+            disabled={
+              !createCustomerModal.canCreateCustomer ||
+              createCustomerModal.isCreating
+            }
+            onClick={actions.confirmCreateCustomer}
           >
-            {isCreating ? "Creando..." : "Crear cliente"}
+            {createCustomerModal.isCreating ? "Creando..." : "Crear cliente"}
           </Button>
         </DialogFooter>
       </DialogContent>

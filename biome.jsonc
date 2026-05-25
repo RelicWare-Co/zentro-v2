@@ -5,6 +5,9 @@
     "ultracite/biome/react",
     "ultracite/biome/vitest"
   ],
+  "files": {
+    "includes": ["!.agents"]
+  },
   "overrides": [
     {
       "includes": ["pages/**/+*.ts", "pages/**/+*.tsx"],
@@ -18,6 +21,16 @@
     },
     {
       "includes": ["database/drizzle/schema/index.ts"],
+      "linter": {
+        "rules": {
+          "performance": {
+            "noBarrelFile": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["components/organization-selection.tsx"],
       "linter": {
         "rules": {
           "performance": {

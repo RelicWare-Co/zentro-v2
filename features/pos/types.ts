@@ -1,6 +1,6 @@
 import type { z } from "zod";
 import type { SearchCustomersResultSchema } from "@/schemas/customers";
-import type { PosBootstrapResultSchema, PosProductSchema } from "@/schemas/pos";
+import type { PosActiveShiftSchema, PosProductSchema } from "@/schemas/pos";
 
 // Producto retornado por la búsqueda POS
 export type Product = z.infer<typeof PosProductSchema>;
@@ -11,9 +11,7 @@ export type PosCustomer = z.infer<
 >["data"][number];
 
 // Turno activo
-export type ActiveShift = z.infer<
-  typeof PosBootstrapResultSchema
->["activeShift"];
+export type ActiveShift = z.infer<typeof PosActiveShiftSchema> | null;
 
 // Categoría de productos
 export interface Category {

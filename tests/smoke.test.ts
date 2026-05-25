@@ -1,6 +1,4 @@
 import { describe, expect, test } from "bun:test";
-import { createServerORPCClient } from "@/server/orpc/client/server";
-import { buildMockContext } from "./helpers/orpc-context";
 import {
   seedCategory,
   seedCustomer,
@@ -9,10 +7,11 @@ import {
   seedShift,
 } from "./helpers/seed";
 import { createTestDb } from "./helpers/test-db";
+import { getJoinLinkPreviewViaZero } from "./helpers/zero-organization";
 
 describe("test infrastructure smoke", () => {
   test("createTestDb returns migrated DB that can query", async () => {
-    const { db, cleanup } = createTestDb();
+    const { db, cleanup } = await createTestDb();
     const { organizationId, userId } = await seedOrganizationWithMember(db);
     expect(organizationId).toBeString();
     expect(userId).toBeString();
@@ -20,7 +19,7 @@ describe("test infrastructure smoke", () => {
   });
 
   test("seed helpers insert rows", async () => {
-    const { db, cleanup } = createTestDb();
+    const { db, cleanup } = await createTestDb();
     const { organizationId, userId } = await seedOrganizationWithMember(db);
     const categoryId = await seedCategory(db, {
       organizationId,
@@ -50,32 +49,11 @@ describe("test infrastructure smoke", () => {
     await cleanup();
   });
 
-  test("buildMockContext + createServerORPCClient can call a public procedure", async () => {
-    const { db, cleanup } = createTestDb();
-    const { organizationId, userId } = await seedOrganizationWithMember(db, {
-      userName: "Test User",
-      userEmail: "test-user@example.com",
-    });
-
-    const user = {
-      id: userId,
-      name: "Test User",
-      email: "test-user@example.com",
-      emailVerified: true,
-      image: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      role: "user",
-      banned: false,
-      banReason: null,
-      banExpires: null,
-    };
-
-    const ctx = buildMockContext(db, user as any, organizationId);
-    const client = createServerORPCClient(ctx);
-
-    // joinLinkPreview is a public procedure that does not require auth/org
-    const result = await client.organization.joinLinkPreview({
+  test("getJoinLinkPreviewViaZero returns not-found for missing token", async () => {
+    const { db, cleanup } = await createTestDb();
+    await seedOrganizationWithMember(db);
+    const result = await getJoinLinkPreviewViaZero({
+      db,
       token: "nonexistent-token",
     });
     expect(result.status).toBe("not-found");

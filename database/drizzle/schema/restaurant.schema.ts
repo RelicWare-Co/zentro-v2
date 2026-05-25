@@ -1,15 +1,19 @@
+import { relations } from "drizzle-orm";
 import {
+  boolean,
+  foreignKey,
   index,
   integer,
-  sqliteTable,
+  pgTable,
   text,
+  timestamp,
   uniqueIndex,
-} from "drizzle-orm/sqlite-core";
+} from "drizzle-orm/pg-core";
 import { organization, user } from "./auth.schema";
 import { product } from "./inventory.schema";
 import { sale } from "./sales.schema";
 
-export const restaurantArea = sqliteTable(
+export const restaurantArea = pgTable(
   "restaurant_area",
   {
     id: text("id").primaryKey(),
@@ -18,8 +22,11 @@ export const restaurantArea = sqliteTable(
       .references(() => organization.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
     sortOrder: integer("sort_order").default(0).notNull(),
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
-    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+    createdAt: timestamp("created_at", {
+      withTimezone: true,
+      mode: "date",
+    }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" })
       .$onUpdate(() => new Date())
       .notNull(),
   },
@@ -32,7 +39,7 @@ export const restaurantArea = sqliteTable(
   ]
 );
 
-export const restaurantTable = sqliteTable(
+export const restaurantTable = pgTable(
   "restaurant_table",
   {
     id: text("id").primaryKey(),
@@ -45,9 +52,12 @@ export const restaurantTable = sqliteTable(
     name: text("name").notNull(),
     seats: integer("seats").default(0).notNull(),
     sortOrder: integer("sort_order").default(0).notNull(),
-    isActive: integer("is_active", { mode: "boolean" }).default(true).notNull(),
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
-    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+    isActive: boolean("is_active").default(true).notNull(),
+    createdAt: timestamp("created_at", {
+      withTimezone: true,
+      mode: "date",
+    }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" })
       .$onUpdate(() => new Date())
       .notNull(),
   },
@@ -62,7 +72,7 @@ export const restaurantTable = sqliteTable(
   ]
 );
 
-export const restaurantOrder = sqliteTable(
+export const restaurantOrder = pgTable(
   "restaurant_order",
   {
     id: text("id").primaryKey(),
@@ -83,11 +93,14 @@ export const restaurantOrder = sqliteTable(
     status: text("status").notNull().default("open"),
     guestCount: integer("guest_count").default(0).notNull(),
     notes: text("notes"),
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
-    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+    createdAt: timestamp("created_at", {
+      withTimezone: true,
+      mode: "date",
+    }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" })
       .$onUpdate(() => new Date())
       .notNull(),
-    closedAt: integer("closed_at", { mode: "timestamp_ms" }),
+    closedAt: timestamp("closed_at", { withTimezone: true, mode: "date" }),
   },
   (table) => [
     index("restaurantOrder_organizationId_idx").on(table.organizationId),
@@ -100,7 +113,7 @@ export const restaurantOrder = sqliteTable(
   ]
 );
 
-export const restaurantKitchenTicket = sqliteTable(
+export const restaurantKitchenTicket = pgTable(
   "restaurant_kitchen_ticket",
   {
     id: text("id").primaryKey(),
@@ -115,11 +128,14 @@ export const restaurantKitchenTicket = sqliteTable(
       .references(() => user.id),
     sequenceNumber: integer("sequence_number").notNull(),
     status: text("status").notNull().default("sent"),
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
-    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+    createdAt: timestamp("created_at", {
+      withTimezone: true,
+      mode: "date",
+    }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" })
       .$onUpdate(() => new Date())
       .notNull(),
-    printedAt: integer("printed_at", { mode: "timestamp_ms" }),
+    printedAt: timestamp("printed_at", { withTimezone: true, mode: "date" }),
   },
   (table) => [
     index("restaurantKitchenTicket_organizationId_idx").on(
@@ -133,7 +149,7 @@ export const restaurantKitchenTicket = sqliteTable(
   ]
 );
 
-export const restaurantOrderItem = sqliteTable(
+export const restaurantOrderItem = pgTable(
   "restaurant_order_item",
   {
     id: text("id").primaryKey(),
@@ -143,12 +159,7 @@ export const restaurantOrderItem = sqliteTable(
     orderId: text("order_id")
       .notNull()
       .references(() => restaurantOrder.id, { onDelete: "cascade" }),
-    kitchenTicketId: text("kitchen_ticket_id").references(
-      () => restaurantKitchenTicket.id,
-      {
-        onDelete: "set null",
-      }
-    ),
+    kitchenTicketId: text("kitchen_ticket_id"),
     productId: text("product_id")
       .notNull()
       .references(() => product.id),
@@ -158,43 +169,182 @@ export const restaurantOrderItem = sqliteTable(
     discountAmount: integer("discount_amount").default(0).notNull(),
     notes: text("notes"),
     status: text("status").notNull().default("draft"),
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
-    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+    createdAt: timestamp("created_at", {
+      withTimezone: true,
+      mode: "date",
+    }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" })
       .$onUpdate(() => new Date())
       .notNull(),
-    sentAt: integer("sent_at", { mode: "timestamp_ms" }),
-    readyAt: integer("ready_at", { mode: "timestamp_ms" }),
-    servedAt: integer("served_at", { mode: "timestamp_ms" }),
-    cancelledAt: integer("cancelled_at", { mode: "timestamp_ms" }),
+    sentAt: timestamp("sent_at", { withTimezone: true, mode: "date" }),
+    readyAt: timestamp("ready_at", { withTimezone: true, mode: "date" }),
+    servedAt: timestamp("served_at", { withTimezone: true, mode: "date" }),
+    cancelledAt: timestamp("cancelled_at", {
+      withTimezone: true,
+      mode: "date",
+    }),
   },
   (table) => [
+    foreignKey({
+      name: "roi_kitchen_ticket_fk",
+      columns: [table.kitchenTicketId],
+      foreignColumns: [restaurantKitchenTicket.id],
+    }).onDelete("set null"),
     index("restaurantOrderItem_organizationId_idx").on(table.organizationId),
     index("restaurantOrderItem_orderId_idx").on(table.orderId),
     index("restaurantOrderItem_ticketId_idx").on(table.kitchenTicketId),
   ]
 );
 
-export const restaurantOrderItemModifier = sqliteTable(
+export const restaurantOrderItemModifier = pgTable(
   "restaurant_order_item_modifier",
   {
     id: text("id").primaryKey(),
-    organizationId: text("organization_id")
-      .notNull()
-      .references(() => organization.id, { onDelete: "cascade" }),
-    orderItemId: text("order_item_id")
-      .notNull()
-      .references(() => restaurantOrderItem.id, { onDelete: "cascade" }),
-    modifierProductId: text("modifier_product_id")
-      .notNull()
-      .references(() => product.id),
+    organizationId: text("organization_id").notNull(),
+    orderItemId: text("order_item_id").notNull(),
+    modifierProductId: text("modifier_product_id").notNull(),
     quantity: integer("quantity").notNull(),
     unitPrice: integer("unit_price").notNull(),
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+    createdAt: timestamp("created_at", {
+      withTimezone: true,
+      mode: "date",
+    }).notNull(),
   },
   (table) => [
+    foreignKey({
+      name: "roim_org_fk",
+      columns: [table.organizationId],
+      foreignColumns: [organization.id],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "roim_order_item_fk",
+      columns: [table.orderItemId],
+      foreignColumns: [restaurantOrderItem.id],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "roim_product_fk",
+      columns: [table.modifierProductId],
+      foreignColumns: [product.id],
+    }),
     index("restaurantOrderItemModifier_organizationId_idx").on(
       table.organizationId
     ),
     index("restaurantOrderItemModifier_orderItemId_idx").on(table.orderItemId),
   ]
+);
+
+export const restaurantAreaRelations = relations(
+  restaurantArea,
+  ({ one, many }) => ({
+    organization: one(organization, {
+      fields: [restaurantArea.organizationId],
+      references: [organization.id],
+    }),
+    tables: many(restaurantTable),
+  })
+);
+
+export const restaurantTableRelations = relations(
+  restaurantTable,
+  ({ one, many }) => ({
+    organization: one(organization, {
+      fields: [restaurantTable.organizationId],
+      references: [organization.id],
+    }),
+    area: one(restaurantArea, {
+      fields: [restaurantTable.areaId],
+      references: [restaurantArea.id],
+    }),
+    orders: many(restaurantOrder),
+  })
+);
+
+export const restaurantOrderRelations = relations(
+  restaurantOrder,
+  ({ one, many }) => ({
+    organization: one(organization, {
+      fields: [restaurantOrder.organizationId],
+      references: [organization.id],
+    }),
+    table: one(restaurantTable, {
+      fields: [restaurantOrder.tableId],
+      references: [restaurantTable.id],
+    }),
+    openedByUser: one(user, {
+      fields: [restaurantOrder.openedByUserId],
+      references: [user.id],
+      relationName: "restaurantOrderOpenedBy",
+    }),
+    closedByUser: one(user, {
+      fields: [restaurantOrder.closedByUserId],
+      references: [user.id],
+      relationName: "restaurantOrderClosedBy",
+    }),
+    sale: one(sale, {
+      fields: [restaurantOrder.saleId],
+      references: [sale.id],
+    }),
+    items: many(restaurantOrderItem),
+    kitchenTickets: many(restaurantKitchenTicket),
+  })
+);
+
+export const restaurantKitchenTicketRelations = relations(
+  restaurantKitchenTicket,
+  ({ one, many }) => ({
+    organization: one(organization, {
+      fields: [restaurantKitchenTicket.organizationId],
+      references: [organization.id],
+    }),
+    order: one(restaurantOrder, {
+      fields: [restaurantKitchenTicket.orderId],
+      references: [restaurantOrder.id],
+    }),
+    createdByUser: one(user, {
+      fields: [restaurantKitchenTicket.createdByUserId],
+      references: [user.id],
+    }),
+    items: many(restaurantOrderItem),
+  })
+);
+
+export const restaurantOrderItemRelations = relations(
+  restaurantOrderItem,
+  ({ one, many }) => ({
+    organization: one(organization, {
+      fields: [restaurantOrderItem.organizationId],
+      references: [organization.id],
+    }),
+    order: one(restaurantOrder, {
+      fields: [restaurantOrderItem.orderId],
+      references: [restaurantOrder.id],
+    }),
+    kitchenTicket: one(restaurantKitchenTicket, {
+      fields: [restaurantOrderItem.kitchenTicketId],
+      references: [restaurantKitchenTicket.id],
+    }),
+    product: one(product, {
+      fields: [restaurantOrderItem.productId],
+      references: [product.id],
+    }),
+    modifiers: many(restaurantOrderItemModifier),
+  })
+);
+
+export const restaurantOrderItemModifierRelations = relations(
+  restaurantOrderItemModifier,
+  ({ one }) => ({
+    organization: one(organization, {
+      fields: [restaurantOrderItemModifier.organizationId],
+      references: [organization.id],
+    }),
+    orderItem: one(restaurantOrderItem, {
+      fields: [restaurantOrderItemModifier.orderItemId],
+      references: [restaurantOrderItem.id],
+    }),
+    modifierProduct: one(product, {
+      fields: [restaurantOrderItemModifier.modifierProductId],
+      references: [product.id],
+    }),
+  })
 );

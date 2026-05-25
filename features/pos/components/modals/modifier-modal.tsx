@@ -7,53 +7,36 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import type { Product } from "@/features/pos/types";
+import { usePosPage } from "@/features/pos/pos-page-context";
+import { isPosModalOpen } from "@/features/pos/pos-page-modals.shared";
 import { formatCurrency } from "@/features/pos/utils";
 
-interface ModifierModalProps {
-  isOpen: boolean;
-  modifierProducts: Product[];
-  modifierQuantities: Record<string, number>;
-  onClose: () => void;
-  onConfirm: () => void;
-  onQuickAdd: () => void;
-  onUpdateModifierQuantity: (modifierId: string, delta: number) => void;
-  selectedProduct: Product | null;
-}
+export function ModifierModal() {
+  const { state, actions } = usePosPage();
 
-export function ModifierModal({
-  isOpen,
-  onClose,
-  selectedProduct,
-  modifierProducts,
-  modifierQuantities,
-  onUpdateModifierQuantity,
-  onConfirm,
-  onQuickAdd,
-}: ModifierModalProps) {
   return (
     <Dialog
       onOpenChange={(open) => {
         if (!open) {
-          onClose();
+          actions.closeActiveModal();
         }
       }}
-      open={isOpen}
+      open={isPosModalOpen(state.activeModal, "modifier")}
     >
       <DialogContent className="border-zinc-800 bg-[#151515] text-white sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>
-            Añadir modificadores · {selectedProduct?.name}
+            Añadir modificadores · {state.selectedProductForModifiers?.name}
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-3 py-2">
-          {modifierProducts.length === 0 ? (
+          {state.modifierProducts.length === 0 ? (
             <p className="text-sm text-zinc-400">
               No hay modificadores configurados para este negocio.
             </p>
           ) : (
-            modifierProducts.map((modifierProduct) => (
+            state.modifierProducts.map((modifierProduct) => (
               <div
                 className="flex items-center justify-between rounded-lg border border-zinc-800 bg-[#0a0a0a] p-3"
                 key={modifierProduct.id}
@@ -70,19 +53,19 @@ export function ModifierModal({
                   <button
                     className="flex size-8 items-center justify-center rounded-l-md text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white"
                     onClick={() =>
-                      onUpdateModifierQuantity(modifierProduct.id, -1)
+                      actions.updateModifierQuantity(modifierProduct.id, -1)
                     }
                     type="button"
                   >
                     <Minus className="size-3" />
                   </button>
                   <div className="w-9 text-center font-semibold text-sm text-white">
-                    {modifierQuantities[modifierProduct.id] ?? 0}
+                    {state.modifierQuantities[modifierProduct.id] ?? 0}
                   </div>
                   <button
                     className="flex size-8 items-center justify-center rounded-r-md text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white"
                     onClick={() =>
-                      onUpdateModifierQuantity(modifierProduct.id, 1)
+                      actions.updateModifierQuantity(modifierProduct.id, 1)
                     }
                     type="button"
                   >
@@ -97,14 +80,14 @@ export function ModifierModal({
         <DialogFooter>
           <Button
             className="text-zinc-300 hover:text-white"
-            onClick={onQuickAdd}
+            onClick={actions.quickAddWithoutModifiers}
             variant="ghost"
           >
             Agregar sin modificadores
           </Button>
           <Button
             className="bg-[var(--color-voltage)] text-black hover:bg-[#c9e605]"
-            onClick={onConfirm}
+            onClick={actions.confirmModifiers}
           >
             Confirmar selección
           </Button>

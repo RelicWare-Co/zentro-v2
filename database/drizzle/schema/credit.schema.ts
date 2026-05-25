@@ -1,15 +1,16 @@
 import { relations } from "drizzle-orm";
 import {
   integer,
-  sqliteTable,
+  pgTable,
   text,
+  timestamp,
   uniqueIndex,
-} from "drizzle-orm/sqlite-core";
+} from "drizzle-orm/pg-core";
 import { organization } from "./auth.schema";
 import { customer } from "./customer.schema";
 import { payment, sale } from "./sales.schema";
 
-export const creditAccount = sqliteTable(
+export const creditAccount = pgTable(
   "credit_account",
   {
     id: text("id").primaryKey(),
@@ -21,8 +22,11 @@ export const creditAccount = sqliteTable(
       .references(() => customer.id), // Sin cascade: proteger historial crediticio
     balance: integer("balance").notNull().default(0), // Positivo = El cliente debe dinero
     interestRate: integer("interest_rate").default(0), // % o fijo, si lo manejan
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
-    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+    createdAt: timestamp("created_at", {
+      withTimezone: true,
+      mode: "date",
+    }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" })
       .$onUpdate(() => new Date())
       .notNull(),
   },
@@ -35,7 +39,7 @@ export const creditAccount = sqliteTable(
   ]
 );
 
-export const creditTransaction = sqliteTable("credit_transaction", {
+export const creditTransaction = pgTable("credit_transaction", {
   id: text("id").primaryKey(),
   organizationId: text("organization_id")
     .notNull()
@@ -48,7 +52,10 @@ export const creditTransaction = sqliteTable("credit_transaction", {
   type: text("type").notNull(), // 'charge' (fiado/deuda), 'payment' (abono), 'interest' (interés generado)
   amount: integer("amount").notNull(),
   notes: text("notes"),
-  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+  createdAt: timestamp("created_at", {
+    withTimezone: true,
+    mode: "date",
+  }).notNull(),
 });
 
 export const creditAccountRelations = relations(

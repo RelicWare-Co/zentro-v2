@@ -4,16 +4,40 @@ import { admin } from "better-auth/plugins/admin";
 import { organization } from "better-auth/plugins/organization";
 import { dbSqlite } from "@/database/drizzle/db";
 
+function csvEnv(name: string) {
+  return (
+    process.env[name]
+      ?.split(",")
+      .map((value) => value.trim())
+      .filter(Boolean) ?? []
+  );
+}
+
 function createAuth() {
+  const cookieDomain = process.env.BETTER_AUTH_COOKIE_DOMAIN?.trim();
+  const trustedOrigins = csvEnv("BETTER_AUTH_TRUSTED_ORIGINS");
+
   return betterAuth({
+    advanced: {
+      useSecureCookies: process.env.NODE_ENV === "production",
+      ...(cookieDomain
+        ? {
+            crossSubDomainCookies: {
+              domain: cookieDomain,
+              enabled: true,
+            },
+          }
+        : {}),
+    },
     session: {
       cookieCache: {
         enabled: true,
         maxAge: 5 * 60, // Cache duration in seconds
       },
     },
+    trustedOrigins: trustedOrigins.length > 0 ? trustedOrigins : undefined,
     database: drizzleAdapter(dbSqlite(), {
-      provider: "sqlite",
+      provider: "pg",
     }),
     experimental: { joins: true },
     emailAndPassword: {

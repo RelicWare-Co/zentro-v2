@@ -1,10 +1,71 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery as useZeroQuery } from "@rocicorp/zero/react";
+import { useDeferredValue, useMemo, useRef } from "react";
 import type { z } from "zod";
-import type { CategorySchema, ProductSchema } from "@/schemas/products";
-import { orpcQuery } from "@/server/orpc/client/query";
+import {
+  getZeroQueryError,
+  useZeroMutation,
+  waitForZeroMutation,
+} from "@/lib/use-zero-mutation";
+import type {
+  CategorySchema,
+  CreateCategorySchema,
+  CreateProductSchema,
+  DeleteCategorySchema,
+  DeleteProductSchema,
+  ProductSchema,
+  RegisterInventoryMovementSchema,
+  UpdateCategorySchema,
+  UpdateProductSchema,
+} from "@/schemas/products";
+import { mutators } from "@/src/zero/mutators";
+import { queries } from "@/src/zero/queries";
+import type {
+  Category as ZeroCategory,
+  Product as ZeroProduct,
+} from "@/src/zero/schema";
+
+type ZeroProductWithCategory = ZeroProduct & {
+  readonly category?: ZeroCategory | null;
+};
 
 export type Product = z.infer<typeof ProductSchema>;
 export type Category = z.infer<typeof CategorySchema>;
+type CreateProductInput = z.infer<typeof CreateProductSchema>;
+type UpdateProductInput = z.infer<typeof UpdateProductSchema>;
+type DeleteProductInput = z.infer<typeof DeleteProductSchema>;
+type RegisterInventoryMovementInput = z.infer<
+  typeof RegisterInventoryMovementSchema
+>;
+type CreateCategoryInput = z.infer<typeof CreateCategorySchema>;
+type UpdateCategoryInput = z.infer<typeof UpdateCategorySchema>;
+type DeleteCategoryInput = z.infer<typeof DeleteCategorySchema>;
+
+function normalizeProduct(product: ZeroProductWithCategory): Product {
+  return {
+    id: product.id,
+    name: product.name,
+    categoryId: product.categoryId ?? null,
+    categoryName: product.category?.name ?? null,
+    sku: product.sku ?? null,
+    barcode: product.barcode ?? null,
+    price: product.price,
+    cost: product.cost ?? 0,
+    taxRate: product.taxRate ?? 0,
+    stock: product.stock ?? 0,
+    trackInventory: product.trackInventory ?? true,
+    isModifier: product.isModifier ?? false,
+    isFavorite: product.isFavorite ?? false,
+    createdAt: product.createdAt,
+  };
+}
+
+function normalizeCategory(category: ZeroCategory): Category {
+  return {
+    id: category.id,
+    name: category.name,
+    description: category.description ?? null,
+  };
+}
 
 export function useProductsQueries(options: {
   page: number;
@@ -12,27 +73,63 @@ export function useProductsQueries(options: {
   query: string;
   categoryId: string | null;
 }) {
-  const productsQuery = useQuery(
-    orpcQuery.products.list.queryOptions({
-      input: {
-        page: options.page,
-        pageSize: options.pageSize,
-        query: options.query || null,
-        categoryId: options.categoryId || null,
-      },
+  const deferredSearchQuery = useDeferredValue(options.query);
+  const [productRows, productsStatus] = useZeroQuery(
+    queries.products.search({
+      categoryId: options.categoryId,
+      limit: 1000,
+      searchQuery: deferredSearchQuery.trim() || null,
     })
   );
-  const categoriesQuery = useQuery(
-    orpcQuery.products.categories.queryOptions()
+  const [categoryRows, categoriesStatus] = useZeroQuery(
+    queries.products.categories()
   );
 
+  const productsError = getZeroQueryError(productsStatus);
+  const categoriesError = getZeroQueryError(categoriesStatus);
+  const products = useMemo(
+    () => productRows.map((product) => normalizeProduct(product)),
+    [productRows]
+  );
+  const categories = useMemo(
+    () => categoryRows.map(normalizeCategory),
+    [categoryRows]
+  );
+  const pagedProducts = useMemo(() => {
+    const start = options.page * options.pageSize;
+    return products.slice(start, start + options.pageSize);
+  }, [options.page, options.pageSize, products]);
+
+  const hasLoadedRef = useRef(false);
+  const staleDataRef = useRef({
+    categories: [] as Category[],
+    products: [] as Product[],
+    total: 0,
+  });
+  const isLoading =
+    (productsStatus.type === "unknown" && products.length === 0) ||
+    (categoriesStatus.type === "unknown" && categories.length === 0);
+
+  const currentData = {
+    categories,
+    products: pagedProducts,
+    total: products.length,
+  };
+
+  if (!isLoading) {
+    staleDataRef.current = currentData;
+    hasLoadedRef.current = true;
+  }
+
+  const displayData = isLoading ? staleDataRef.current : currentData;
+
   return {
-    products: productsQuery.data?.items ?? [],
-    total: productsQuery.data?.total ?? 0,
-    categories: categoriesQuery.data ?? [],
-    isPending: productsQuery.isPending || categoriesQuery.isPending,
-    isError: productsQuery.isError || categoriesQuery.isError,
-    error: productsQuery.error ?? categoriesQuery.error,
+    products: displayData.products,
+    total: displayData.total,
+    categories: displayData.categories,
+    isPending: isLoading && !hasLoadedRef.current,
+    isError: Boolean(productsError ?? categoriesError),
+    error: productsError ?? categoriesError,
   };
 }
 
@@ -45,72 +142,83 @@ export function useProductsMutations(options?: {
   onDeleteCategorySuccess?: () => void;
   onRegisterInventoryMovementSuccess?: () => void;
 }) {
-  const queryClient = useQueryClient();
-  const invalidateProducts = async () => {
-    await queryClient.invalidateQueries({
-      queryKey: ["orpc", "products", "list"],
-    });
-  };
-  const invalidateProductsAndCategories = async () => {
-    await Promise.all([
-      queryClient.invalidateQueries({
-        queryKey: ["orpc", "products", "list"],
-      }),
-      queryClient.invalidateQueries({
-        queryKey: orpcQuery.products.categories.queryOptions().queryKey,
-      }),
-    ]);
-  };
-
-  const createProductMutation = useMutation({
-    ...orpcQuery.products.create.mutationOptions(),
-    onSuccess: async () => {
-      options?.onCreateProductSuccess?.();
-      await invalidateProducts();
+  const createProductMutation = useZeroMutation(
+    async (input: CreateProductInput, zero) => {
+      const id = crypto.randomUUID();
+      await waitForZeroMutation(
+        zero.mutate(
+          mutators.products.create({
+            ...input,
+            id,
+          })
+        )
+      );
+      return { id };
     },
-  });
-  const updateProductMutation = useMutation({
-    ...orpcQuery.products.update.mutationOptions(),
-    onSuccess: async () => {
-      options?.onUpdateProductSuccess?.();
-      await invalidateProducts();
+    { onSuccess: () => options?.onCreateProductSuccess?.() }
+  );
+  const updateProductMutation = useZeroMutation(
+    async (input: UpdateProductInput, zero) => {
+      await waitForZeroMutation(zero.mutate(mutators.products.update(input)));
+      return { success: true };
     },
-  });
-  const deleteProductMutation = useMutation({
-    ...orpcQuery.products.delete.mutationOptions(),
-    onSuccess: async () => {
-      options?.onDeleteProductSuccess?.();
-      await invalidateProducts();
+    { onSuccess: () => options?.onUpdateProductSuccess?.() }
+  );
+  const deleteProductMutation = useZeroMutation(
+    async (input: DeleteProductInput, zero) => {
+      await waitForZeroMutation(zero.mutate(mutators.products.delete(input)));
+      return { success: true };
     },
-  });
-  const registerInventoryMovementMutation = useMutation({
-    ...orpcQuery.products.registerInventoryMovement.mutationOptions(),
-    onSuccess: async () => {
-      options?.onRegisterInventoryMovementSuccess?.();
-      await invalidateProducts();
+    { onSuccess: () => options?.onDeleteProductSuccess?.() }
+  );
+  const registerInventoryMovementMutation = useZeroMutation(
+    async (input: RegisterInventoryMovementInput, zero) => {
+      const id = crypto.randomUUID();
+      await waitForZeroMutation(
+        zero.mutate(
+          mutators.products.registerInventoryMovement({
+            ...input,
+            id,
+          })
+        )
+      );
+      return { id, productId: input.productId, quantity: input.quantity };
     },
-  });
-  const createCategoryMutation = useMutation({
-    ...orpcQuery.products.createCategory.mutationOptions(),
-    onSuccess: async () => {
-      options?.onCreateCategorySuccess?.();
-      await invalidateProductsAndCategories();
+    { onSuccess: () => options?.onRegisterInventoryMovementSuccess?.() }
+  );
+  const createCategoryMutation = useZeroMutation(
+    async (input: CreateCategoryInput, zero) => {
+      const id = crypto.randomUUID();
+      await waitForZeroMutation(
+        zero.mutate(
+          mutators.products.createCategory({
+            ...input,
+            id,
+          })
+        )
+      );
+      return { id };
     },
-  });
-  const updateCategoryMutation = useMutation({
-    ...orpcQuery.products.updateCategory.mutationOptions(),
-    onSuccess: async () => {
-      options?.onUpdateCategorySuccess?.();
-      await invalidateProductsAndCategories();
+    { onSuccess: () => options?.onCreateCategorySuccess?.() }
+  );
+  const updateCategoryMutation = useZeroMutation(
+    async (input: UpdateCategoryInput, zero) => {
+      await waitForZeroMutation(
+        zero.mutate(mutators.products.updateCategory(input))
+      );
+      return { success: true };
     },
-  });
-  const deleteCategoryMutation = useMutation({
-    ...orpcQuery.products.deleteCategory.mutationOptions(),
-    onSuccess: async () => {
-      options?.onDeleteCategorySuccess?.();
-      await invalidateProductsAndCategories();
+    { onSuccess: () => options?.onUpdateCategorySuccess?.() }
+  );
+  const deleteCategoryMutation = useZeroMutation(
+    async (input: DeleteCategoryInput, zero) => {
+      await waitForZeroMutation(
+        zero.mutate(mutators.products.deleteCategory(input))
+      );
+      return { success: true };
     },
-  });
+    { onSuccess: () => options?.onDeleteCategorySuccess?.() }
+  );
 
   return {
     createProductMutation,

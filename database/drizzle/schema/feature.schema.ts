@@ -1,30 +1,40 @@
 import {
+  foreignKey,
   index,
-  integer,
-  sqliteTable,
+  pgTable,
   text,
+  timestamp,
   uniqueIndex,
-} from "drizzle-orm/sqlite-core";
+} from "drizzle-orm/pg-core";
 import { organization, user } from "./auth.schema";
 
-export const organizationModuleEntitlement = sqliteTable(
+export const organizationModuleEntitlement = pgTable(
   "organization_module_entitlement",
   {
     id: text("id").primaryKey(),
-    organizationId: text("organization_id")
-      .notNull()
-      .references(() => organization.id, { onDelete: "cascade" }),
+    organizationId: text("organization_id").notNull(),
     moduleKey: text("module_key").notNull(),
     status: text("status").notNull().default("granted"),
-    updatedByUserId: text("updated_by_user_id").references(() => user.id, {
-      onDelete: "set null",
-    }),
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
-    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+    updatedByUserId: text("updated_by_user_id"),
+    createdAt: timestamp("created_at", {
+      withTimezone: true,
+      mode: "date",
+    }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" })
       .$onUpdate(() => new Date())
       .notNull(),
   },
   (table) => [
+    foreignKey({
+      name: "org_mod_ent_org_fk",
+      columns: [table.organizationId],
+      foreignColumns: [organization.id],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "org_mod_ent_upd_by_fk",
+      columns: [table.updatedByUserId],
+      foreignColumns: [user.id],
+    }).onDelete("set null"),
     index("orgModuleEntitlement_organizationId_idx").on(table.organizationId),
     uniqueIndex("orgModuleEntitlement_org_module_uidx").on(
       table.organizationId,

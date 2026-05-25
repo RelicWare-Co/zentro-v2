@@ -1,5 +1,4 @@
-import { type Dispatch, type SetStateAction, useEffect, useId } from "react";
-import type { z } from "zod";
+import { useEffect, useId } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -11,7 +10,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import type { ActiveShift } from "@/features/pos/types";
+import { usePosPage } from "@/features/pos/pos-page-context";
+import { isPosModalOpen } from "@/features/pos/pos-page-modals.shared";
 import {
   createPaymentMethodLabelMap,
   formatCurrency,
@@ -22,42 +22,13 @@ import {
   parseMoneyInput,
   sanitizeMoneyInput,
 } from "@/lib/utils";
-import type { ShiftCloseSummaryResultSchema } from "@/schemas/pos";
 
-interface CloseShiftModalProps {
-  activeShift: ActiveShift | null;
-  closeShiftNotes: string;
-  closureAmounts: Record<string, string>;
-  error: Error | null;
-  hasInvalidAmounts: boolean;
-  isClosing: boolean;
-  isLoading: boolean;
-  isOpen: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-  setCloseShiftNotes: (value: string) => void;
-  setClosureAmounts: Dispatch<SetStateAction<Record<string, string>>>;
-  shiftCloseSummary: z.infer<typeof ShiftCloseSummaryResultSchema> | undefined;
-}
-
-export function CloseShiftModal({
-  isOpen,
-  onClose,
-  activeShift,
-  shiftCloseSummary,
-  isLoading,
-  closureAmounts,
-  setClosureAmounts,
-  closeShiftNotes,
-  setCloseShiftNotes,
-  hasInvalidAmounts,
-  isClosing,
-  error,
-  onConfirm,
-}: CloseShiftModalProps) {
+export function CloseShiftModal() {
+  const { state, actions, meta } = usePosPage();
+  const { shift } = meta;
   const closeShiftNotesId = useId();
+  const { shiftCloseSummary, setClosureAmounts } = shift;
 
-  // Initialize closure amounts when summary is loaded
   useEffect(() => {
     if (!shiftCloseSummary) {
       return;
@@ -77,16 +48,16 @@ export function CloseShiftModal({
     );
   }, [shiftCloseSummary, setClosureAmounts]);
 
-  const cashSummary = shiftCloseSummary?.summaryByMethod.find(
+  const cashSummary = shift.shiftCloseSummary?.summaryByMethod.find(
     (row) => row.paymentMethod === "cash"
   );
   const paymentMethodLabels = createPaymentMethodLabelMap(
-    shiftCloseSummary?.paymentMethods ?? []
+    shift.shiftCloseSummary?.paymentMethods ?? []
   );
-  const movementSummary = shiftCloseSummary?.movements;
+  const movementSummary = shift.shiftCloseSummary?.movements;
   const movementItems = movementSummary?.items ?? [];
   const nonCashSummaryRows =
-    shiftCloseSummary?.summaryByMethod.filter(
+    shift.shiftCloseSummary?.summaryByMethod.filter(
       (row) => row.paymentMethod !== "cash"
     ) ?? [];
   const hasMovementItems = movementItems.length > 0;
@@ -94,7 +65,14 @@ export function CloseShiftModal({
     hasMovementItems || nonCashSummaryRows.length > 0;
 
   return (
-    <Dialog onOpenChange={onClose} open={isOpen}>
+    <Dialog
+      onOpenChange={(open) => {
+        if (!open) {
+          actions.closeActiveModal();
+        }
+      }}
+      open={isPosModalOpen(state.activeModal, "close-shift")}
+    >
       <DialogContent className="border-zinc-800 bg-[#151515] text-white sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Cierre de Turno</DialogTitle>
@@ -105,15 +83,15 @@ export function CloseShiftModal({
             <h4 className="mb-3 font-medium text-sm text-zinc-400">
               Resumen del Sistema
             </h4>
-            {isLoading && (
+            {shift.isShiftSummaryFetching && (
               <p className="text-sm text-zinc-400">Cargando resumen…</p>
             )}
-            {shiftCloseSummary && (
+            {shift.shiftCloseSummary && (
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-zinc-300">Base inicial</span>
                   <span className="font-medium text-white tabular-nums">
-                    {formatCurrency(shiftCloseSummary.shift.startingCash)}
+                    {formatCurrency(shift.shiftCloseSummary.shift.startingCash)}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -134,7 +112,7 @@ export function CloseShiftModal({
                         <span className="font-medium text-emerald-400 tabular-nums">
                           +
                           {formatCurrency(
-                            shiftCloseSummary.movements.totals.inflow
+                            shift.shiftCloseSummary.movements.totals.inflow
                           )}
                         </span>
                       </div>
@@ -143,7 +121,7 @@ export function CloseShiftModal({
                         <span className="font-medium text-red-400 tabular-nums">
                           -
                           {formatCurrency(
-                            shiftCloseSummary.movements.totals.expense
+                            shift.shiftCloseSummary.movements.totals.expense
                           )}
                         </span>
                       </div>
@@ -152,7 +130,7 @@ export function CloseShiftModal({
                         <span className="font-medium text-red-400 tabular-nums">
                           -
                           {formatCurrency(
-                            shiftCloseSummary.movements.totals.payout
+                            shift.shiftCloseSummary.movements.totals.payout
                           )}
                         </span>
                       </div>
@@ -160,16 +138,16 @@ export function CloseShiftModal({
                         <span className="text-zinc-300">Ajuste neto</span>
                         <span
                           className={`font-medium tabular-nums ${
-                            shiftCloseSummary.movements.totals.net >= 0
+                            shift.shiftCloseSummary.movements.totals.net >= 0
                               ? "text-emerald-400"
                               : "text-red-400"
                           }`}
                         >
-                          {shiftCloseSummary.movements.totals.net >= 0
+                          {shift.shiftCloseSummary.movements.totals.net >= 0
                             ? "+"
                             : ""}
                           {formatCurrency(
-                            shiftCloseSummary.movements.totals.net
+                            shift.shiftCloseSummary.movements.totals.net
                           )}
                         </span>
                       </div>
@@ -209,7 +187,7 @@ export function CloseShiftModal({
                     Total Esperado
                   </span>
                   <span className="font-bold text-[var(--color-voltage)] tabular-nums">
-                    {formatCurrency(shiftCloseSummary.totalExpected)}
+                    {formatCurrency(shift.shiftCloseSummary.totalExpected)}
                   </span>
                 </div>
               </div>
@@ -256,9 +234,9 @@ export function CloseShiftModal({
             </div>
           ) : null}
 
-          {shiftCloseSummary && (
+          {shift.shiftCloseSummary && (
             <div className="grid gap-3">
-              {shiftCloseSummary.summaryByMethod.map((row) => (
+              {shift.shiftCloseSummary.summaryByMethod.map((row) => (
                 <div className="grid gap-2" key={row.paymentMethod}>
                   <label
                     className="font-medium text-sm text-zinc-300"
@@ -279,7 +257,7 @@ export function CloseShiftModal({
                       id={`closure-${row.paymentMethod}`}
                       inputMode="numeric"
                       onChange={(event) =>
-                        setClosureAmounts((prev) => ({
+                        shift.setClosureAmounts((prev) => ({
                           ...prev,
                           [row.paymentMethod]: sanitizeMoneyInput(
                             event.target.value
@@ -289,14 +267,16 @@ export function CloseShiftModal({
                       placeholder="0"
                       type="text"
                       value={formatMoneyInput(
-                        closureAmounts[row.paymentMethod] ?? ""
+                        shift.closureAmounts[row.paymentMethod] ?? ""
                       )}
                     />
                   </div>
-                  {closureAmounts[row.paymentMethod] && (
+                  {shift.closureAmounts[row.paymentMethod] && (
                     <div
                       className={`mt-1 flex items-center justify-between text-sm tabular-nums ${
-                        parseMoneyInput(closureAmounts[row.paymentMethod]) -
+                        parseMoneyInput(
+                          shift.closureAmounts[row.paymentMethod]
+                        ) -
                           row.expectedAmount ===
                         0
                           ? "text-green-400"
@@ -306,8 +286,9 @@ export function CloseShiftModal({
                       <span>Diferencia:</span>
                       <span className="font-semibold">
                         {formatCurrency(
-                          parseMoneyInput(closureAmounts[row.paymentMethod]) -
-                            row.expectedAmount
+                          parseMoneyInput(
+                            shift.closureAmounts[row.paymentMethod]
+                          ) - row.expectedAmount
                         )}
                       </span>
                     </div>
@@ -327,21 +308,23 @@ export function CloseShiftModal({
             <Textarea
               className="min-h-[72px] border-zinc-800 bg-[#0a0a0a] text-white focus-visible:ring-[var(--color-voltage)]"
               id={closeShiftNotesId}
-              onChange={(event) => setCloseShiftNotes(event.target.value)}
+              onChange={(event) => shift.setCloseShiftNotes(event.target.value)}
               placeholder="Opcional: explica diferencias o novedades del cierre"
-              value={closeShiftNotes}
+              value={shift.closeShiftNotes}
             />
           </div>
 
-          {error instanceof Error && (
-            <p className="text-red-400 text-sm">{error.message}</p>
+          {shift.closeShiftError instanceof Error && (
+            <p className="text-red-400 text-sm">
+              {shift.closeShiftError.message}
+            </p>
           )}
         </div>
 
         <DialogFooter>
           <Button
             className="text-zinc-400 hover:bg-zinc-800 hover:text-white"
-            onClick={onClose}
+            onClick={actions.closeActiveModal}
             variant="ghost"
           >
             Cancelar
@@ -349,14 +332,16 @@ export function CloseShiftModal({
           <Button
             className="border border-red-900/50 bg-red-900/30 text-red-400 hover:bg-red-900/50 hover:text-red-300"
             disabled={
-              !(activeShift && shiftCloseSummary) ||
-              hasInvalidAmounts ||
-              isLoading ||
-              isClosing
+              !(state.activeShift && shift.shiftCloseSummary) ||
+              shift.hasInvalidCloseAmounts ||
+              shift.isShiftSummaryFetching ||
+              shift.isClosingShift
             }
-            onClick={onConfirm}
+            onClick={actions.confirmCloseShift}
           >
-            {isClosing ? "Cerrando..." : "Cerrar Turno Definitivamente"}
+            {shift.isClosingShift
+              ? "Cerrando..."
+              : "Cerrar Turno Definitivamente"}
           </Button>
         </DialogFooter>
       </DialogContent>

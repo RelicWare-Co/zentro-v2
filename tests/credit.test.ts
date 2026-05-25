@@ -6,23 +6,28 @@ import {
 } from "@/database/drizzle/schema/credit.schema";
 import { customer } from "@/database/drizzle/schema/customer.schema";
 import { sale } from "@/database/drizzle/schema/sales.schema";
-import { createServerORPCClient } from "@/server/orpc/client/server";
 import { createCoreSale } from "@/server/sales/create-sale.server";
-import { buildMockContext } from "./helpers/orpc-context";
 import {
-  makeUser,
   seedCustomer,
   seedOrganizationWithMember,
   seedProduct,
   seedShift,
 } from "./helpers/seed";
 import { createTestDb } from "./helpers/test-db";
+import {
+  listCreditTransactionsViaZero,
+  registerCreditPaymentViaZero,
+  searchCreditAccountsViaZero,
+} from "./helpers/zero-credit";
+import { createZeroContext, createZeroTestDb } from "./helpers/zero-shifts";
 
 describe("credit ledger", () => {
   describe("VAL-CRED-001: credit account search returns customer data and balances", () => {
     test("search returns customer info and current balance", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
       const [productId, customerId, shiftId] = await Promise.all([
         seedProduct(db, {
           organizationId,
@@ -56,11 +61,10 @@ describe("credit ledger", () => {
         { db, organizationId, userId }
       );
 
-      const u = makeUser({ id: userId });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
-
-      const result = await client.credit.searchAccounts({});
+      const result = await searchCreditAccountsViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+      });
       expect(result.data.length).toBe(1);
       const account = result.data[0];
       expect(account.customerId).toBe(customerId);
@@ -74,8 +78,10 @@ describe("credit ledger", () => {
     });
 
     test("search excludes accounts for soft-deleted customers", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
       const customerId = await seedCustomer(db, {
         organizationId,
         name: "Bob",
@@ -97,11 +103,10 @@ describe("credit ledger", () => {
         .set({ deletedAt: now })
         .where(eq(customer.id, customerId));
 
-      const u = makeUser({ id: userId });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
-
-      const result = await client.credit.searchAccounts({});
+      const result = await searchCreditAccountsViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+      });
       expect(result.data.length).toBe(0);
       expect(result.total).toBe(0);
 
@@ -109,8 +114,10 @@ describe("credit ledger", () => {
     });
 
     test("search filters by customer name", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
       const [customerA, customerB] = await Promise.all([
         seedCustomer(db, {
           organizationId,
@@ -144,12 +151,10 @@ describe("credit ledger", () => {
         },
       ]);
 
-      const u = makeUser({ id: userId });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
-
-      const result = await client.credit.searchAccounts({
-        searchQuery: "Alice",
+      const result = await searchCreditAccountsViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: { searchQuery: "Alice" },
       });
       expect(result.data.length).toBe(1);
       expect(result.data[0].customerName).toBe("Alice");
@@ -161,8 +166,10 @@ describe("credit ledger", () => {
 
   describe("VAL-CRED-002: transaction listing is in descending chronological order", () => {
     test("transactions ordered newest first", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
       const customerId = await seedCustomer(db, {
         organizationId,
         name: "Alice",
@@ -211,11 +218,9 @@ describe("credit ledger", () => {
         },
       ]);
 
-      const u = makeUser({ id: userId });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
-
-      const result = await client.credit.transactions({
+      const result = await listCreditTransactionsViaZero({
+        zeroDb,
+        ctx: zeroCtx,
         creditAccountId: accountId,
       });
       expect(result.data.length).toBe(3);
@@ -232,8 +237,10 @@ describe("credit ledger", () => {
 
   describe("VAL-CRED-003: payment registration decreases balance and links to sale", () => {
     test("payment decreases balance and creates linked transaction", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
       const [productId, customerId, shiftId] = await Promise.all([
         seedProduct(db, {
           organizationId,
@@ -264,10 +271,6 @@ describe("credit ledger", () => {
         { db, organizationId, userId }
       );
 
-      const u = makeUser({ id: userId });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
-
       const accountRows = await db
         .select()
         .from(creditAccount)
@@ -280,12 +283,16 @@ describe("credit ledger", () => {
       const accountId = accountRows[0].id;
       expect(accountRows[0].balance).toBe(15_000);
 
-      const paymentResult = await client.credit.registerPayment({
-        shiftId,
-        creditAccountId: accountId,
-        amount: 5000,
-        method: "cash",
-        saleId: saleResult.saleId,
+      const paymentResult = await registerCreditPaymentViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          shiftId,
+          creditAccountId: accountId,
+          amount: 5000,
+          method: "cash",
+          saleId: saleResult.saleId,
+        },
       });
 
       expect(paymentResult.amount).toBe(5000);
@@ -312,20 +319,22 @@ describe("credit ledger", () => {
       expect(transactionRows[0].saleId).toBe(saleResult.saleId);
       expect(transactionRows[0].paymentId).toBe(paymentResult.paymentId);
 
-      // Sale has remaining balance (20000 total - 5000 initial - 5000 credit = 10000), so stays credit
       const saleRows = await db
         .select()
         .from(sale)
         .where(eq(sale.id, saleResult.saleId));
       expect(saleRows[0].status).toBe("credit");
 
-      // Pay remaining balance
-      const paymentResult2 = await client.credit.registerPayment({
-        shiftId,
-        creditAccountId: accountId,
-        amount: 10_000,
-        method: "cash",
-        saleId: saleResult.saleId,
+      const paymentResult2 = await registerCreditPaymentViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          shiftId,
+          creditAccountId: accountId,
+          amount: 10_000,
+          method: "cash",
+          saleId: saleResult.saleId,
+        },
       });
 
       expect(paymentResult2.newBalance).toBe(0);
@@ -340,8 +349,10 @@ describe("credit ledger", () => {
     });
 
     test("partial payment keeps sale in credit status", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
       const [productId, customerId, shiftId] = await Promise.all([
         seedProduct(db, {
           organizationId,
@@ -372,10 +383,6 @@ describe("credit ledger", () => {
         { db, organizationId, userId }
       );
 
-      const u = makeUser({ id: userId });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
-
       const accountRows = await db
         .select()
         .from(creditAccount)
@@ -387,13 +394,16 @@ describe("credit ledger", () => {
         );
       const accountId = accountRows[0].id;
 
-      // Partial payment: 3000 of 15000 balance
-      await client.credit.registerPayment({
-        shiftId,
-        creditAccountId: accountId,
-        amount: 3000,
-        method: "cash",
-        saleId: saleResult.saleId,
+      await registerCreditPaymentViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          shiftId,
+          creditAccountId: accountId,
+          amount: 3000,
+          method: "cash",
+          saleId: saleResult.saleId,
+        },
       });
 
       const saleRows = await db
@@ -406,8 +416,10 @@ describe("credit ledger", () => {
     });
 
     test("payment without saleId still decreases balance", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
       const customerId = await seedCustomer(db, {
         organizationId,
         name: "Bob",
@@ -431,15 +443,15 @@ describe("credit ledger", () => {
         status: "open",
       });
 
-      const u = makeUser({ id: userId });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
-
-      const paymentResult = await client.credit.registerPayment({
-        shiftId,
-        creditAccountId: accountId,
-        amount: 3000,
-        method: "cash",
+      const paymentResult = await registerCreditPaymentViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          shiftId,
+          creditAccountId: accountId,
+          amount: 3000,
+          method: "cash",
+        },
       });
 
       expect(paymentResult.newBalance).toBe(5000);
@@ -463,8 +475,10 @@ describe("credit ledger", () => {
 
   describe("VAL-CRED-004: overpayment rejection", () => {
     test("payment amount exceeding balance is rejected", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
       const customerId = await seedCustomer(db, {
         organizationId,
         name: "Alice",
@@ -488,16 +502,16 @@ describe("credit ledger", () => {
         status: "open",
       });
 
-      const u = makeUser({ id: userId });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
-
       await expect(
-        client.credit.registerPayment({
-          shiftId,
-          creditAccountId: accountId,
-          amount: 6000,
-          method: "cash",
+        registerCreditPaymentViaZero({
+          zeroDb,
+          ctx: zeroCtx,
+          input: {
+            shiftId,
+            creditAccountId: accountId,
+            amount: 6000,
+            method: "cash",
+          },
         })
       ).rejects.toThrow("El abono no puede superar el saldo pendiente");
 
@@ -507,8 +521,10 @@ describe("credit ledger", () => {
 
   describe("VAL-CRED-005: closed shift rejects credit payments", () => {
     test("payment on closed shift is rejected", async () => {
-      const { db, cleanup } = createTestDb();
+      const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
       const customerId = await seedCustomer(db, {
         organizationId,
         name: "Alice",
@@ -533,16 +549,16 @@ describe("credit ledger", () => {
         closedAt: now,
       });
 
-      const u = makeUser({ id: userId });
-      const ctx = buildMockContext(db, u, organizationId);
-      const client = createServerORPCClient(ctx);
-
       await expect(
-        client.credit.registerPayment({
-          shiftId,
-          creditAccountId: accountId,
-          amount: 1000,
-          method: "cash",
+        registerCreditPaymentViaZero({
+          zeroDb,
+          ctx: zeroCtx,
+          input: {
+            shiftId,
+            creditAccountId: accountId,
+            amount: 1000,
+            method: "cash",
+          },
         })
       ).rejects.toThrow("No se puede registrar pago en un turno cerrado");
 
