@@ -1,4 +1,5 @@
 import "./tailwind.css";
+import { Loader2 } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
 import { usePageContext } from "vike-react/usePageContext";
 import { AppLayout } from "@/components/app-layout";
@@ -39,6 +40,14 @@ function getUsableCacheURL(cacheURL: string | undefined) {
   }
 
   return cacheURL;
+}
+
+function ZeroProviderLoading() {
+  return (
+    <div className="app-safe-area flex min-h-[100dvh] w-full items-center justify-center bg-[var(--color-void)] text-[var(--color-photon)]">
+      <Loader2 className="size-8 animate-spin text-[var(--color-voltage)]" />
+    </div>
+  );
 }
 
 function ZeroProviderGate({
@@ -104,39 +113,36 @@ function ZeroProviderGate({
   const zeroContext = pageContext.zeroContext;
   const cacheURL = runtimeCacheURL;
 
-  if (zeroContext) {
-    if (!(ZentroZeroProvider && cacheURL)) {
-      return null;
-    }
+  if (!(ZentroZeroProvider && cacheURL)) {
+    return allowAnonymous ? null : <ZeroProviderLoading />;
+  }
 
+  const Provider = ZentroZeroProvider;
+  const resolvedCacheURL = cacheURL;
+
+  if (zeroContext) {
     return (
-      <ZentroZeroProvider
-        cacheURL={cacheURL}
+      <Provider
+        cacheURL={resolvedCacheURL}
         context={zeroContext}
         userID={zeroContext.id}
       >
         {children}
-      </ZentroZeroProvider>
-    );
-  }
-
-  if (allowAnonymous && ZentroZeroProvider) {
-    if (!cacheURL) {
-      return null;
-    }
-
-    return (
-      <ZentroZeroProvider cacheURL={cacheURL} userID={null}>
-        {children}
-      </ZentroZeroProvider>
+      </Provider>
     );
   }
 
   if (allowAnonymous) {
-    return null;
+    return (
+      <Provider cacheURL={resolvedCacheURL} userID={null}>
+        {children}
+      </Provider>
+    );
   }
 
-  return <>{children}</>;
+  // App routes mount Zero hooks in AppLayout. Never render them outside
+  // ZeroProvider — pageContext.zeroContext can lag behind client auth in prod.
+  return <ZeroProviderLoading />;
 }
 
 export default function Layout({ children }: { children: React.ReactNode }) {
