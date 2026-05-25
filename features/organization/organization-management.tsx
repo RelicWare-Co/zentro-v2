@@ -43,8 +43,16 @@ function OrganizationPageLayout() {
     return <OrganizationPageNoActiveOrg />;
   }
 
-  if (state.isError || !state.data) {
+  if (state.isError) {
     return <OrganizationPageError />;
+  }
+
+  if (!state.data) {
+    return state.isPending ? (
+      <OrganizationPageLoading />
+    ) : (
+      <OrganizationPageError />
+    );
   }
 
   return (

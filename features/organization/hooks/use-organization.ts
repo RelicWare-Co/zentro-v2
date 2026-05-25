@@ -1,7 +1,6 @@
 import { useQuery as useZeroQuery } from "@rocicorp/zero/react";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { usePageContext } from "vike-react/usePageContext";
 import type { z } from "zod";
 import {
   buildOrganizationJoinPath,
@@ -11,6 +10,7 @@ import {
   type OrganizationManagement,
   toTimestamp,
 } from "@/features/organization/organization.shared";
+import { usePageZeroContext } from "@/lib/use-page-zero-context";
 import {
   getZeroQueryError,
   useZeroMutation,
@@ -113,8 +113,7 @@ interface ManagementOrganizationRow {
 }
 
 export function useOrganizationSelection() {
-  const pageContext = usePageContext();
-  const zeroContext = pageContext.zeroContext;
+  const zeroContext = usePageZeroContext();
   const [invitationRows, status] = useZeroQuery(
     queries.organization.selection()
   );
@@ -168,32 +167,33 @@ export function useOrganizationSelection() {
 }
 
 export function useOrganizationManagement() {
-  const pageContext = usePageContext();
-  const zeroContext = pageContext.zeroContext;
+  const zeroContext = usePageZeroContext();
   const [organizationRows, status] = useZeroQuery(
     queries.organization.management()
   );
   const error = getZeroQueryError(status);
+  const organizationRow = organizationRows[0] as
+    | ManagementOrganizationRow
+    | undefined;
+  const currentMember = organizationRow?.members?.find(
+    (memberRow) => memberRow.userId === zeroContext?.id
+  );
   const isQueryLoading =
-    Boolean(zeroContext?.orgID) &&
-    status.type === "unknown" &&
-    organizationRows.length === 0;
+    !error &&
+    (!zeroContext?.orgID ||
+      status.type === "unknown" ||
+      !organizationRow ||
+      (!currentMember && status.type !== "complete"));
 
   const data = useMemo((): OrganizationManagement | undefined => {
     if (!zeroContext?.orgID) {
       return;
     }
 
-    const organizationRow = organizationRows[0] as
-      | ManagementOrganizationRow
-      | undefined;
     if (!organizationRow) {
       return;
     }
 
-    const currentMember = organizationRow.members?.find(
-      (memberRow) => memberRow.userId === zeroContext.id
-    );
     if (!currentMember) {
       return;
     }
@@ -247,7 +247,7 @@ export function useOrganizationManagement() {
         revokedAt: row.revokedAt,
       })),
     });
-  }, [organizationRows, zeroContext]);
+  }, [currentMember, organizationRow, zeroContext]);
 
   return {
     data,

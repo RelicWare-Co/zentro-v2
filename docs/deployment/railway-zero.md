@@ -9,8 +9,8 @@ This document describes the production deployment for Zentro on Railway. It is t
 - App service: `zentro-v2`
 - Zero service: `zero-cache`
 - Database service: `Postgres`
-- App public URL: `https://zentro-v2-production.up.railway.app`
-- Zero public URL: `https://zero-cache-production-de34.up.railway.app`
+- App public URL: `https://zentro.relicware.co`
+- Zero public URL: `https://zero.relicware.co`
 
 Do not commit Railway secrets, database passwords, or auth secrets. Keep those in Railway variables only.
 
@@ -62,13 +62,14 @@ Set these on the `zentro-v2` service.
 
 | Variable | Value |
 | --- | --- |
-| `DATABASE_URL` | Railway reference to `Postgres.DATABASE_URL` |
+| `DATABASE_URL` | `${{ Postgres.DATABASE_URL }}` |
 | `NODE_ENV` | `production` |
-| `BETTER_AUTH_URL` | Public app origin, for example `https://zentro-v2-production.up.railway.app` |
+| `BETTER_AUTH_URL` | `https://${{ zentro-v2.RAILWAY_PUBLIC_DOMAIN }}` |
+| `BETTER_AUTH_COOKIE_DOMAIN` | `relicware.co` (root domain for sibling subdomains) |
 | `BETTER_AUTH_SECRET` | Secret generated value |
-| `BETTER_AUTH_TRUSTED_ORIGINS` | Comma-separated app and zero-cache origins |
-| `ZERO_CACHE_URL` | Public zero-cache origin, for example `https://zero-cache-production-de34.up.railway.app` |
-| `VITE_ZERO_CACHE_URL` | Same public zero-cache origin; kept for compatibility |
+| `BETTER_AUTH_TRUSTED_ORIGINS` | `https://${{ zentro-v2.RAILWAY_PUBLIC_DOMAIN }},https://${{ zero-cache.RAILWAY_PUBLIC_DOMAIN }}` |
+| `ZERO_CACHE_URL` | `https://${{ zero-cache.RAILWAY_PUBLIC_DOMAIN }}` |
+| `VITE_ZERO_CACHE_URL` | `https://${{ zero-cache.RAILWAY_PUBLIC_DOMAIN }}` (compatibility; runtime uses `ZERO_CACHE_URL`) |
 
 `ZERO_CACHE_URL` is intentionally runtime-read by `server/runtime-config.server.ts` and exposed as `/api/runtime-config`. This avoids freezing `http://localhost:4848` into the static Vike HTML or client bundle during Git-based Railway builds.
 
@@ -97,8 +98,8 @@ Set these on the `zero-cache` service.
 | `ZERO_CHANGE_DB` | Railway reference to `Postgres.DATABASE_URL` for the current MVP |
 | `ZERO_REPLICA_FILE` | `/data/replica.db` |
 | `ZERO_ADMIN_PASSWORD` | Secret generated value |
-| `ZERO_QUERY_URL` | `https://zentro-v2-production.up.railway.app/api/zero/query` |
-| `ZERO_MUTATE_URL` | `https://zentro-v2-production.up.railway.app/api/zero/mutate` |
+| `ZERO_QUERY_URL` | `https://${{ zentro-v2.RAILWAY_PUBLIC_DOMAIN }}/api/zero/query` |
+| `ZERO_MUTATE_URL` | `https://${{ zentro-v2.RAILWAY_PUBLIC_DOMAIN }}/api/zero/mutate` |
 | `ZERO_QUERY_FORWARD_COOKIES` | `true` |
 | `ZERO_MUTATE_FORWARD_COOKIES` | `true` |
 | `ZERO_ENABLE_CRUD_MUTATIONS` | `false` |
@@ -155,29 +156,41 @@ ws://localhost:4848/sync/v50/connect
 
 ## Auth And Cookie Domains
 
-For Railway default domains, use:
+Production uses sibling custom domains on a shared root:
 
 ```txt
-BETTER_AUTH_URL=https://zentro-v2-production.up.railway.app
-BETTER_AUTH_TRUSTED_ORIGINS=https://zentro-v2-production.up.railway.app,https://zero-cache-production-de34.up.railway.app
-ZERO_CACHE_URL=https://zero-cache-production-de34.up.railway.app
+zentro.relicware.co   (app)
+zero.relicware.co     (zero-cache)
 ```
 
-For custom domains, prefer sibling subdomains:
+Configure auth with Railway reference variables so domain changes redeploy automatically:
 
 ```txt
-app.example.com
-zero.example.com
+BETTER_AUTH_URL=https://${{ zentro-v2.RAILWAY_PUBLIC_DOMAIN }}
+BETTER_AUTH_COOKIE_DOMAIN=relicware.co
+BETTER_AUTH_TRUSTED_ORIGINS=https://${{ zentro-v2.RAILWAY_PUBLIC_DOMAIN }},https://${{ zero-cache.RAILWAY_PUBLIC_DOMAIN }}
+ZERO_CACHE_URL=https://${{ zero-cache.RAILWAY_PUBLIC_DOMAIN }}
+VITE_ZERO_CACHE_URL=https://${{ zero-cache.RAILWAY_PUBLIC_DOMAIN }}
 ```
 
-Then configure:
+On `zero-cache`:
 
 ```txt
-BETTER_AUTH_COOKIE_DOMAIN=example.com
-BETTER_AUTH_TRUSTED_ORIGINS=https://app.example.com,https://zero.example.com
-ZERO_CACHE_URL=https://zero.example.com
-VITE_ZERO_CACHE_URL=https://zero.example.com
+ZERO_QUERY_URL=https://${{ zentro-v2.RAILWAY_PUBLIC_DOMAIN }}/api/zero/query
+ZERO_MUTATE_URL=https://${{ zentro-v2.RAILWAY_PUBLIC_DOMAIN }}/api/zero/mutate
 ```
+
+`BETTER_AUTH_COOKIE_DOMAIN` must stay a literal root domain (not a Railway reference). It is the only auth-related variable that cannot be derived from `RAILWAY_PUBLIC_DOMAIN`.
+
+### Railway default domains do not work for Zero cookie auth
+
+Do not use `*.up.railway.app` domains for Zero with cookie auth. `up.railway.app` is on the [Public Suffix List](https://github.com/publicsuffix/list/pull/2552), so browsers will not share session cookies between separate Railway hostnames. Symptom:
+
+```txt
+Connection userID does not match validated server userID.
+```
+
+Use custom sibling subdomains (as above) or switch Zero to token auth.
 
 Keep `SameSite=None` out of the auth setup unless there is a specific browser flow that requires it.
 
@@ -211,15 +224,15 @@ Avoid bundling Zero version upgrades and destructive schema changes in the same 
 App checks:
 
 ```sh
-curl -I https://zentro-v2-production.up.railway.app/
-curl -I https://zentro-v2-production.up.railway.app/login
-curl https://zentro-v2-production.up.railway.app/api/runtime-config
+curl -I https://zentro.relicware.co/
+curl -I https://zentro.relicware.co/login
+curl https://zentro.relicware.co/api/runtime-config
 ```
 
 Zero checks:
 
 ```sh
-curl -f https://zero-cache-production-de34.up.railway.app/keepalive
+curl -f https://zero.relicware.co/keepalive
 ```
 
 Railway CLI checks:
@@ -267,13 +280,21 @@ Fix:
 
 ### Auth Or Queries Miss Session Context
 
+Symptom:
+
+```txt
+Connection userID does not match validated server userID.
+```
+
 Checks:
 
-1. `BETTER_AUTH_URL` matches the app origin.
-2. `BETTER_AUTH_TRUSTED_ORIGINS` includes both app and zero-cache origins.
-3. `ZERO_QUERY_FORWARD_COOKIES=true`.
-4. `ZERO_MUTATE_FORWARD_COOKIES=true`.
-5. App and zero-cache domains can share the auth cookie strategy.
+1. App and zero-cache use sibling custom domains on a shared root (not separate `*.up.railway.app` hostnames).
+2. `BETTER_AUTH_COOKIE_DOMAIN` matches the shared root (for example `relicware.co`).
+3. `BETTER_AUTH_URL` matches the app origin.
+4. `BETTER_AUTH_TRUSTED_ORIGINS` includes both app and zero-cache origins.
+5. `ZERO_QUERY_FORWARD_COOKIES=true`.
+6. `ZERO_MUTATE_FORWARD_COOKIES=true`.
+7. Users re-login after changing cookie domain so cookies are re-issued with the new `Domain`.
 
 ## Future Scale-Up
 
