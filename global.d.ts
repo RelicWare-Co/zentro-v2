@@ -11,6 +11,7 @@ declare global {
     interface PageContext {
       session: Session | null;
       user: User | null;
+      zeroCacheURL: string;
       zeroContext: ZeroContext | null;
     }
     interface Server {

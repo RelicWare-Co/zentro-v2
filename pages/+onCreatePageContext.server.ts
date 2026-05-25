@@ -1,5 +1,6 @@
 import type { PageContextServer } from "vike/types";
 import { auth } from "@/server/auth";
+import { getPublicZeroCacheURL } from "@/server/runtime-config.server";
 import { resolveZeroAuthFromSession } from "@/server/zero/context.server";
 
 export async function onCreatePageContext(pageContext: PageContextServer) {
@@ -19,4 +20,5 @@ export async function onCreatePageContext(pageContext: PageContextServer) {
   pageContext.user = session?.user ?? null;
   pageContext.session = session?.session ?? null;
   pageContext.zeroContext = zeroAuth?.ctx ?? null;
+  pageContext.zeroCacheURL = getPublicZeroCacheURL();
 }

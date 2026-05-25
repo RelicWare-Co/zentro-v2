@@ -108,7 +108,7 @@ Zero is the primary API for app data (see `MIGRATION_PLAN.md`).
 - `src/zero/mutators.ts` — shared mutator registry built with `defineMutators`/`defineMutator`. Browser-safe. Mutators must be `async` and `await` all `tx.mutate.*` writes.
 - `src/zero/mutators.server.ts` — server-only override registry passed to the `/api/zero/mutate` endpoint. Use this for hard validation, audit logs, and side-effects that should not run optimistically.
 - `src/zero/db-provider.server.ts` — `zeroDrizzle(schema, db)` adapter wired to the existing Drizzle client. Used by `handleMutateRequest`.
-- `src/zero/client.ts` — `createZeroOptions({ userID, context })` builder. Reads `VITE_ZERO_CACHE_URL` from `import.meta.env`.
+- `src/zero/client.ts` — `createZeroOptions({ userID, context, cacheURL })` builder. In production, `server/runtime-config.server.ts` reads `ZERO_CACHE_URL` or `VITE_ZERO_CACHE_URL` and exposes it through `/api/runtime-config`; `ZeroProviderGate` uses that runtime value before opening a Zero websocket so static Vike HTML cannot freeze the localhost fallback.
 - `src/zero/zero-provider.client.tsx` — React `<ZeroProvider>` wrapper. Browser-only; mounted via the dynamic-import gate in `pages/+Layout.tsx`.
 - `server/zero/context.server.ts` — `resolveZeroAuth(headers)` derives `ZeroContext` from the better-auth session. **Always** use this; never trust client-supplied identity.
 - `server/zero/handler.server.ts` — Hono router that mounts `/api/zero/query` and `/api/zero/mutate`. Already registered in `server/hono.ts`.
@@ -150,7 +150,7 @@ Zero is the primary API for app data (see `MIGRATION_PLAN.md`).
 - The app/API service builds with `bun run build` and starts with `bun run start`. Run `bun run db:migrate` as the Railway pre-deploy command when deploying schema changes.
 - Railway app deploy settings are codified in `railway.json`; Railpack package/build/start hints live in `railpack.json` for Git-based deploys.
 - The zero-cache service needs a persistent volume mounted at `/data`, `ZERO_REPLICA_FILE=/data/replica.db`, public routing to port `4848`, and health checks on `/keepalive`.
-- Use sibling custom domains for cookie auth, for example `app.example.com` and `zero.example.com`. Configure the app with `BETTER_AUTH_COOKIE_DOMAIN=example.com`, `BETTER_AUTH_TRUSTED_ORIGINS=https://app.example.com,https://zero.example.com`, and `VITE_ZERO_CACHE_URL=https://zero.example.com`.
+- Use sibling custom domains for cookie auth, for example `app.example.com` and `zero.example.com`. Configure the app with `BETTER_AUTH_COOKIE_DOMAIN=example.com`, `BETTER_AUTH_TRUSTED_ORIGINS=https://app.example.com,https://zero.example.com`, and `ZERO_CACHE_URL=https://zero.example.com` or `VITE_ZERO_CACHE_URL=https://zero.example.com`.
 - Configure zero-cache with `ZERO_QUERY_FORWARD_COOKIES=true` and `ZERO_MUTATE_FORWARD_COOKIES=true`. `ZERO_QUERY_URL` and `ZERO_MUTATE_URL` should point to the app's `/api/zero/query` and `/api/zero/mutate` endpoints.
 
 ## UI

@@ -8,6 +8,39 @@ import { TanstackQueryProvider } from "@/lib/query-provider";
 type ZeroProviderModule = typeof import("@/src/zero/zero-provider.client");
 type ZentroZeroProviderComponent = ZeroProviderModule["ZentroZeroProvider"];
 
+function isRemotePageWithLocalCacheURL(cacheURL: string) {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  const pageHost = window.location.hostname;
+  const isLocalPage =
+    pageHost === "localhost" || pageHost === "127.0.0.1" || pageHost === "::1";
+
+  if (isLocalPage) {
+    return false;
+  }
+
+  try {
+    const cacheHost = new URL(cacheURL).hostname;
+    return cacheHost === "localhost" || cacheHost === "127.0.0.1";
+  } catch {
+    return false;
+  }
+}
+
+function getUsableCacheURL(cacheURL: string | undefined) {
+  if (!cacheURL?.trim()) {
+    return null;
+  }
+
+  if (isRemotePageWithLocalCacheURL(cacheURL)) {
+    return null;
+  }
+
+  return cacheURL;
+}
+
 function ZeroProviderGate({
   allowAnonymous = false,
   children,
@@ -18,6 +51,9 @@ function ZeroProviderGate({
   const pageContext = usePageContext();
   const [ZentroZeroProvider, setProvider] =
     useState<ZentroZeroProviderComponent | null>(null);
+  const [runtimeCacheURL, setRuntimeCacheURL] = useState<string | null>(() =>
+    getUsableCacheURL(pageContext.zeroCacheURL)
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -31,22 +67,69 @@ function ZeroProviderGate({
     };
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    fetch("/api/runtime-config", {
+      headers: {
+        accept: "application/json",
+      },
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          return;
+        }
+
+        const config = (await response.json()) as { zeroCacheURL?: unknown };
+        const cacheURL =
+          typeof config.zeroCacheURL === "string"
+            ? getUsableCacheURL(config.zeroCacheURL)
+            : null;
+
+        if (!(cancelled || !cacheURL)) {
+          setRuntimeCacheURL(cacheURL);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setRuntimeCacheURL(getUsableCacheURL(pageContext.zeroCacheURL));
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pageContext.zeroCacheURL]);
+
   const zeroContext = pageContext.zeroContext;
+  const cacheURL = runtimeCacheURL;
 
   if (zeroContext) {
-    if (!ZentroZeroProvider) {
+    if (!(ZentroZeroProvider && cacheURL)) {
       return null;
     }
 
     return (
-      <ZentroZeroProvider context={zeroContext} userID={zeroContext.id}>
+      <ZentroZeroProvider
+        cacheURL={cacheURL}
+        context={zeroContext}
+        userID={zeroContext.id}
+      >
         {children}
       </ZentroZeroProvider>
     );
   }
 
   if (allowAnonymous && ZentroZeroProvider) {
-    return <ZentroZeroProvider userID={null}>{children}</ZentroZeroProvider>;
+    if (!cacheURL) {
+      return null;
+    }
+
+    return (
+      <ZentroZeroProvider cacheURL={cacheURL} userID={null}>
+        {children}
+      </ZentroZeroProvider>
+    );
   }
 
   if (allowAnonymous) {

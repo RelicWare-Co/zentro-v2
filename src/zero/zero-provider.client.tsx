@@ -13,12 +13,14 @@ import { createZeroOptions } from "./client";
 import type { ZeroContext } from "./context";
 
 export interface ZentroZeroProviderProps {
+  cacheURL: string;
   children: ReactNode;
   context?: ZeroContext;
   userID: string | null;
 }
 
 export function ZentroZeroProvider({
+  cacheURL,
   userID,
   context,
   children,
@@ -26,10 +28,11 @@ export function ZentroZeroProvider({
   const opts = useMemo(
     () =>
       createZeroOptions({
+        cacheURL,
         userID,
         context,
       }),
-    [context, userID]
+    [cacheURL, context, userID]
   );
 
   return <ZeroProvider {...opts}>{children}</ZeroProvider>;

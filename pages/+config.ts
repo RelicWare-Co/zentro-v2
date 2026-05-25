@@ -18,7 +18,7 @@ const config: Config = {
   ssr: false,
 
   extends: [vikeReact],
-  passToClient: ["user", "zeroContext"],
+  passToClient: ["user", "zeroContext", "zeroCacheURL"],
 };
 
 export default config;

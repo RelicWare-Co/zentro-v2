@@ -14,13 +14,16 @@ const DEFAULT_CACHE_URL = "http://localhost:4848";
  * Returns the public URL where `zero-cache` is reachable from the browser.
  *
  * Reads `import.meta.env.VITE_ZERO_CACHE_URL` (Vite/Vike) and falls back to
- * the dev default. Centralised here so we have exactly one source of truth.
+ * the dev default. Production should pass a runtime URL from Vike pageContext
+ * so Git-based deploys don't accidentally freeze the localhost fallback.
  */
 export function getZeroCacheURL(): string {
   return import.meta.env.VITE_ZERO_CACHE_URL ?? DEFAULT_CACHE_URL;
 }
 
 export interface CreateZeroOptionsInput {
+  /** Public zero-cache URL. Prefer the server-provided runtime value. */
+  cacheURL?: string;
   /** Server-derived auth context. Pass `undefined` for logged-out clients. */
   context: ZeroContext | undefined;
   /** Authenticated user id. Pass `null` (not `'anon'`) for logged-out clients. */
@@ -36,12 +39,16 @@ export interface CreateZeroOptionsInput {
  * `MutatorRegistry` shape from `./mutators`. Use `ReturnType<typeof
  * createZeroOptions>` if you need to name the type.
  */
-export function createZeroOptions({ userID, context }: CreateZeroOptionsInput) {
+export function createZeroOptions({
+  userID,
+  context,
+  cacheURL,
+}: CreateZeroOptionsInput) {
   return {
     schema,
     mutators,
     userID: userID ?? null,
-    cacheURL: getZeroCacheURL(),
+    cacheURL: cacheURL ?? getZeroCacheURL(),
     context,
     // `'idb'` is the default but we set it explicitly so future audits don't
     // have to wonder where local data goes.
