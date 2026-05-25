@@ -1,6 +1,6 @@
 import "./tailwind.css";
 import { Loader2 } from "lucide-react";
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { usePageContext } from "vike-react/usePageContext";
 import { AppLayout } from "@/components/app-layout";
 import { Toaster } from "@/components/ui/sonner";
@@ -63,6 +63,15 @@ function ZeroProviderGate({
   const [runtimeCacheURL, setRuntimeCacheURL] = useState<string | null>(() =>
     getUsableCacheURL(pageContext.zeroCacheURL)
   );
+  const latestZeroContextRef = useRef(pageContext.zeroContext);
+
+  if (!pageContext.user) {
+    latestZeroContextRef.current = null;
+  } else if (pageContext.zeroContext) {
+    latestZeroContextRef.current = pageContext.zeroContext;
+  }
+
+  const zeroContext = pageContext.zeroContext ?? latestZeroContextRef.current;
 
   useEffect(() => {
     let cancelled = false;
@@ -110,7 +119,6 @@ function ZeroProviderGate({
     };
   }, [pageContext.zeroCacheURL]);
 
-  const zeroContext = pageContext.zeroContext;
   const cacheURL = runtimeCacheURL;
 
   if (!(ZentroZeroProvider && cacheURL)) {

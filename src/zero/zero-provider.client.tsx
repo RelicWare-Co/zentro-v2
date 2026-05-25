@@ -8,9 +8,26 @@
 // rather than importing it directly from a non-client module.
 
 import { ZeroProvider } from "@rocicorp/zero/react";
-import { type ReactNode, useMemo } from "react";
+import { type ReactNode, useMemo, useRef } from "react";
 import { createZeroOptions } from "./client";
 import type { ZeroContext } from "./context";
+import { resolveStableZeroContext } from "./zero-context-stable.shared";
+
+function useStableZeroContext(context: ZeroContext | undefined) {
+  const stableRef = useRef<ZeroContext | undefined>(context);
+  const signatureRef = useRef<string | null>(null);
+
+  return useMemo(() => {
+    const resolved = resolveStableZeroContext(
+      stableRef.current,
+      signatureRef.current,
+      context
+    );
+    stableRef.current = resolved.context;
+    signatureRef.current = resolved.signature;
+    return resolved.context;
+  }, [context]);
+}
 
 export interface ZentroZeroProviderProps {
   cacheURL: string;
@@ -25,14 +42,15 @@ export function ZentroZeroProvider({
   context,
   children,
 }: ZentroZeroProviderProps) {
+  const stableContext = useStableZeroContext(context);
   const opts = useMemo(
     () =>
       createZeroOptions({
         cacheURL,
         userID,
-        context,
+        context: stableContext,
       }),
-    [cacheURL, context, userID]
+    [cacheURL, stableContext, userID]
   );
 
   return <ZeroProvider {...opts}>{children}</ZeroProvider>;
