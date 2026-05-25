@@ -49,6 +49,10 @@ function ZeroProviderGate({
     return <ZentroZeroProvider userID={null}>{children}</ZentroZeroProvider>;
   }
 
+  if (allowAnonymous) {
+    return null;
+  }
+
   return <>{children}</>;
 }
 

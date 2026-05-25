@@ -15,6 +15,7 @@
 - Install dependencies with `bun install`.
 - Run the dev server with `bun run dev`.
 - Build with `bun run build`.
+- Run a built production server with `bun run start`; production startup must use Bun, not Node.
 - Type-check with `bunx tsc --noEmit`.
 - Run tests with `bun test`.
 - Database commands:
@@ -35,6 +36,7 @@
   - `bun run check` — read-only lint/format check.
   - `bun run fix` — auto-fix issues. Run this before committing if you touched JS/TS/JSON/CSS files.
 - **Lefthook** runs `ultracite fix` automatically on pre-commit for staged `.{js,jsx,ts,tsx,json,jsonc,css}` files and re-stages fixes. Do not disable `stage_fixed`.
+- `package.json` runs `scripts/install-lefthook.mjs` from `prepare` via Bun; it installs lefthook only when `.git` exists so Railway/tarball installs do not fail.
 - **Do not** create legacy config files (`.eslintrc.*`, `.prettierrc.*`) or manually override formatting rules. If rules need changing, update `biome.jsonc` within the Ultracite preset system.
 - Follow Ultracite standards when writing or editing code:
   - Prefer `const`, destructuring, optional chaining, nullish coalescing, template literals, `for...of`, and concise arrow functions.
@@ -141,6 +143,15 @@ Zero is the primary API for app data (see `MIGRATION_PLAN.md`).
 - Logged-out callers receive `userID: null` and an undefined context; queries and mutators must handle that case explicitly (deny by default).
 - Cookie auth requires `zero-cache` to forward browser cookies to `/api/zero/*`. Set `ZERO_QUERY_FORWARD_COOKIES=true` and `ZERO_MUTATE_FORWARD_COOKIES=true` locally and in production.
 - `/login` and `/join` mount `ZeroProviderGate` with `allowAnonymous` so authenticated join-link redemption can use Zero before an active org is selected. Public join-link preview must use the sanitized REST endpoint `GET /api/organization/join-link-preview?token=...`, not a Zero query, because ZQL returns full rows.
+
+### Railway deployment
+
+- Preferred first production topology on Railway: one app/API service for this repo, one `rocicorp/zero:1.5.0` zero-cache image service, and the existing Postgres service in the same project/environment.
+- The app/API service builds with `bun run build` and starts with `bun run start`. Run `bun run db:migrate` as the Railway pre-deploy command when deploying schema changes.
+- Railway app deploy settings are codified in `railway.json`; Railpack package/build/start hints live in `railpack.json` for Git-based deploys.
+- The zero-cache service needs a persistent volume mounted at `/data`, `ZERO_REPLICA_FILE=/data/replica.db`, public routing to port `4848`, and health checks on `/keepalive`.
+- Use sibling custom domains for cookie auth, for example `app.example.com` and `zero.example.com`. Configure the app with `BETTER_AUTH_COOKIE_DOMAIN=example.com`, `BETTER_AUTH_TRUSTED_ORIGINS=https://app.example.com,https://zero.example.com`, and `VITE_ZERO_CACHE_URL=https://zero.example.com`.
+- Configure zero-cache with `ZERO_QUERY_FORWARD_COOKIES=true` and `ZERO_MUTATE_FORWARD_COOKIES=true`. `ZERO_QUERY_URL` and `ZERO_MUTATE_URL` should point to the app's `/api/zero/query` and `/api/zero/mutate` endpoints.
 
 ## UI
 
