@@ -8,13 +8,17 @@ bun create vike@latest --react --tailwindcss --shadcn-ui --hono --drizzle --shad
 
 Zentro is a full-stack business management app with a POS, sales, inventory, kitchen, customers, credit tracking, and more.
 
+## Deployment
+
+Production deployment runs on Railway with Bun, Vike/Hono, Railway Postgres, and self-hosted Rocicorp Zero. See [Railway + Zero Deployment](docs/deployment/railway-zero.md) for the service topology, variables, rollout order, health checks, and operational notes.
+
 ## Tech Stack
 
 - **Framework:** [Vike](https://vike.dev) + [React](https://react.dev)
 - **Server:** [Hono](https://hono.dev)
-- **API:** oRPC with OpenAPI transport
-- **Server state:** TanStack Query
-- **Database:** Drizzle ORM over SQLite (libSQL)
+- **API:** Zero query/mutate endpoints and authenticated REST helpers
+- **Server state:** Rocicorp Zero + TanStack Query
+- **Database:** Drizzle ORM over PostgreSQL
 - **Auth:** better-auth with organization support
 - **Styling:** Tailwind CSS v4 + shadcn/ui
 
@@ -36,6 +40,7 @@ Zentro is a full-stack business management app with a POS, sales, inventory, kit
 
 ## Contents
 
+- [Deployment](#deployment)
 - [Vike](#vike)
   - [Plus files](#plus-files)
   - [Routing](#routing)
@@ -99,4 +104,3 @@ use the `<Button />` component in your project:
 `import { Button } from "@/components/ui/button";`
 
 more [shadcn/ui components](https://ui.shadcn.com/docs/components/accordion)
-

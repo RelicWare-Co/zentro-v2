@@ -146,6 +146,7 @@ Zero is the primary API for app data (see `MIGRATION_PLAN.md`).
 
 ### Railway deployment
 
+- Full production deployment documentation lives in `docs/deployment/railway-zero.md`. Update that document when Railway service topology, variables, domains, build commands, rollout order, or Zero operating procedures change.
 - Preferred first production topology on Railway: one app/API service for this repo, one `rocicorp/zero:1.5.0` zero-cache image service, and the existing Postgres service in the same project/environment.
 - The app/API service builds with `bun run build` and starts with `bun run start`. Run `bun run db:migrate` as the Railway pre-deploy command when deploying schema changes.
 - Railway app deploy settings are codified in `railway.json`; Railpack package/build/start hints live in `railpack.json` for Git-based deploys.
