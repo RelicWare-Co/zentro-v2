@@ -134,7 +134,7 @@ export function OrganizationSelectionProvider({
 
   const refreshAndEnter = useCallback(() => {
     queryClient.clear();
-    window.location.href = "/dashboard";
+    window.location.assign("/dashboard");
   }, []);
 
   const selectOrganization = useCallback(
@@ -223,13 +223,20 @@ export function OrganizationSelectionProvider({
         }
 
         if (result?.data) {
-          await Promise.all([
-            refetchOrganizations(),
-            authClient.organization.setActive({
-              organizationId: result.data.id,
-            }),
-            refreshAndEnter(),
-          ]);
+          const activateResult = await authClient.organization.setActive({
+            organizationId: result.data.id,
+          });
+          if (activateResult?.error) {
+            setErrorMsg(
+              activateResult.error.message ||
+                "La organización se creó, pero no se pudo activar."
+            );
+            await refetchOrganizations();
+            return;
+          }
+
+          await refetchOrganizations();
+          refreshAndEnter();
         }
       } catch {
         setErrorMsg("Ocurrió un error inesperado al crear la organización.");
@@ -257,14 +264,19 @@ export function OrganizationSelectionProvider({
           return;
         }
 
-        await Promise.all([
-          refetchOrganizations(),
-          refetchSelectionData(),
-          authClient.organization.setActive({
-            organizationId: invitation.organizationId,
-          }),
-          refreshAndEnter(),
-        ]);
+        const activateResult = await authClient.organization.setActive({
+          organizationId: invitation.organizationId,
+        });
+        if (activateResult?.error) {
+          setErrorMsg(
+            activateResult.error.message ||
+              "No se pudo activar la organización de la invitación."
+          );
+          return;
+        }
+
+        await Promise.all([refetchOrganizations(), refetchSelectionData()]);
+        refreshAndEnter();
       } catch {
         setErrorMsg("No se pudo aceptar la invitación.");
       } finally {

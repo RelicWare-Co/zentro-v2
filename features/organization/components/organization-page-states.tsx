@@ -16,7 +16,11 @@ export function OrganizationPageNoActiveOrg() {
   return <OrganizationSelection />;
 }
 
-export function OrganizationPageError() {
+export function OrganizationPageError({
+  fallback = "Intenta recargar la página.",
+}: {
+  fallback?: string;
+}) {
   const { state } = useOrganizationPage();
 
   return (
@@ -27,7 +31,7 @@ export function OrganizationPageError() {
       >
         <AlertTitle>No se pudo cargar la organización</AlertTitle>
         <AlertDescription>
-          {getErrorMessage(state.error, "Intenta recargar la página.")}
+          {getErrorMessage(state.error, fallback)}
         </AlertDescription>
       </Alert>
     </div>

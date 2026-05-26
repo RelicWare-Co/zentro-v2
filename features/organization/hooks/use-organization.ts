@@ -180,10 +180,9 @@ export function useOrganizationManagement() {
   );
   const isQueryLoading =
     !error &&
-    (!zeroContext?.orgID ||
-      status.type === "unknown" ||
-      !organizationRow ||
-      (!currentMember && status.type !== "complete"));
+    Boolean(zeroContext?.orgID) &&
+    (status.type === "unknown" ||
+      (status.type !== "complete" && !(organizationRow && currentMember)));
 
   const data = useMemo((): OrganizationManagement | undefined => {
     if (!zeroContext?.orgID) {

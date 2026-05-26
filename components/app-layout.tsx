@@ -38,7 +38,12 @@ function isFullHeightRoute(pathname: string) {
 function shouldWaitForActiveOrganization(params: {
   hasActiveZeroOrganization: boolean;
   isActiveOrgPending: boolean;
+  isOrganizationRoute: boolean;
 }) {
+  if (params.isOrganizationRoute && !params.hasActiveZeroOrganization) {
+    return false;
+  }
+
   return params.isActiveOrgPending && !params.hasActiveZeroOrganization;
 }
 
@@ -99,10 +104,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const { data: capabilities } = useModuleCapabilities();
   const hasActiveZeroOrganization = Boolean(pageContext.zeroContext?.orgID);
 
+  const isOrganizationRoute = pageContext.urlPathname === "/organization";
+
   if (
     shouldWaitForActiveOrganization({
       hasActiveZeroOrganization,
       isActiveOrgPending,
+      isOrganizationRoute,
     })
   ) {
     return (
@@ -202,7 +210,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 return;
               }
               queryClient.clear();
-              window.location.href = "/organization";
+              window.location.assign("/organization");
             }}
             title={isCollapsed ? "Cambiar organización" : undefined}
             type="button"

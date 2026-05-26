@@ -51,7 +51,7 @@ function OrganizationPageLayout() {
     return state.isPending ? (
       <OrganizationPageLoading />
     ) : (
-      <OrganizationPageError />
+      <OrganizationPageError fallback="Los datos aún no están disponibles. Si acabas de crear o cambiar de organización, recarga la página." />
     );
   }
 
