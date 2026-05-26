@@ -1,6 +1,6 @@
 # Docker Deployment
 
-Production deployment guide for Zentro on any cloud that runs containers from Dockerfiles, with an external managed Postgres and two services: the app/API and `zero-cache`.
+Production deployment guide for Zentro with Docker: either **Docker Compose** (`deploy/docker-compose.prod.yml`) or separate containers on any cloud that supports Dockerfiles, plus an external managed Postgres.
 
 Do not commit secrets, database passwords, or auth secrets. Keep those in your platform's secret manager or runtime environment variables only.
 
@@ -22,7 +22,45 @@ flowchart LR
 | zero-cache | Container from `deploy/zero-cache/Dockerfile` | Platform volume at `/data` |
 | Postgres | External managed database | Provider-managed |
 
-Local development uses `docker compose up -d` (Postgres only) or `deploy/docker-compose.local.yml` (full stack). Neither replaces production platform configuration.
+Local development uses `docker compose up -d` (Postgres only) or `deploy/docker-compose.local.yml` (full stack with bundled Postgres).
+
+## Docker Compose (production)
+
+Use `deploy/docker-compose.prod.yml` when the host runs Compose directly. It deploys **app + zero-cache** only; Postgres stays external.
+
+```sh
+cp deploy/.env.production.example deploy/.env.production
+# edit deploy/.env.production — DATABASE_URL, domains, secrets
+
+docker compose -f deploy/docker-compose.prod.yml --env-file deploy/.env.production up -d --build
+```
+
+| File | Purpose |
+| --- | --- |
+| `deploy/docker-compose.prod.yml` | Production Compose stack (app + zero-cache) |
+| `deploy/.env.production.example` | Template for required production env vars |
+| `deploy/.env.production` | Local secrets file (gitignored) |
+
+Compose behavior:
+
+- **External DB** — `DATABASE_URL` must reach your managed Postgres (`wal_level=logical`).
+- **Internal callbacks** — zero-cache calls `http://app:3000/api/zero/*` on the Compose network.
+- **Public URLs** — `BETTER_AUTH_URL`, `ZERO_CACHE_URL`, and `BETTER_AUTH_TRUSTED_ORIGINS` must match what browsers use (HTTPS + sibling subdomains).
+- **Persistent zero replica** — named volume `zentro_zero_data` mounted at `/data`.
+- **Fail-fast migrations** — app entrypoint runs `db:migrate` before start; failed migrations stop the container.
+- **Health gates** — zero-cache starts only after the app health check passes.
+
+Update or redeploy:
+
+```sh
+docker compose -f deploy/docker-compose.prod.yml --env-file deploy/.env.production up -d --build
+```
+
+Stop without deleting the zero replica:
+
+```sh
+docker compose -f deploy/docker-compose.prod.yml --env-file deploy/.env.production down
+```
 
 ## Repository layout
 
@@ -30,6 +68,7 @@ Local development uses `docker compose up -d` (Postgres only) or `deploy/docker-
 | --- | --- |
 | `deploy/app/Dockerfile` | Production app image (Bun build + runtime) |
 | `deploy/zero-cache/Dockerfile` | Thin wrapper around `rocicorp/zero:1.5.0` |
+| `deploy/docker-compose.prod.yml` | Production Compose (app + zero-cache, external Postgres) |
 | `deploy/docker-compose.local.yml` | Local full-stack smoke test (Postgres + app + zero-cache) |
 | `scripts/docker-entrypoint.sh` | Runs migrations, then starts the app |
 | `.dockerignore` | Keeps build context small and excludes secrets |
@@ -282,18 +321,20 @@ Because the app is full CSR (`ssr: false`), Zero URL configuration must not rely
 
 ## Local full-stack verification
 
-Smoke-test the production Docker images locally:
+Smoke-test the production Docker images locally with bundled Postgres:
 
 ```sh
 docker compose -f deploy/docker-compose.local.yml up --build
 ```
 
-This starts Postgres, the app, and zero-cache with the same Dockerfiles used in production. Tear down with:
+This starts Postgres, the app, and zero-cache with localhost URLs. Tear down with:
 
 ```sh
 docker compose -f deploy/docker-compose.local.yml down      # keep volumes
 docker compose -f deploy/docker-compose.local.yml down -v   # reset DB + zero replica
 ```
+
+For production-like deploy against an external database, use `deploy/docker-compose.prod.yml` instead (see [Docker Compose (production)](#docker-compose-production)).
 
 ## Verification
 

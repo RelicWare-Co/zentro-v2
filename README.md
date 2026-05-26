@@ -10,7 +10,7 @@ Zentro is a full-stack business management app with a POS, sales, inventory, kit
 
 ## Deployment
 
-Production deployment uses Docker containers with Bun, Vike/Hono, external managed Postgres, and self-hosted Rocicorp Zero. See [Docker Deployment](docs/deployment/docker.md) for the service topology, variables, volume setup, rollout order, health checks, and operational notes.
+Production deployment uses Docker containers with Bun, Vike/Hono, external managed Postgres, and self-hosted Rocicorp Zero. See [Docker Deployment](docs/deployment/docker.md) for Compose production setup, service topology, variables, volume setup, rollout order, health checks, and operational notes.
 
 ## Tech Stack
 
