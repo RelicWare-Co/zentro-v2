@@ -1,6 +1,7 @@
 // https://vike.dev/Head
 
 import logoUrl from "@/assets/logo.svg";
+import { ORGANIZATION_SWITCH_BOOT_SCRIPT } from "@/features/organization/organization-transition.shared";
 
 const THEME_INIT_SCRIPT = `(function(){try{var stored=window.localStorage.getItem('theme');var mode=(stored==='light'||stored==='dark'||stored==='auto')?stored:'auto';var prefersDark=window.matchMedia('(prefers-color-scheme: dark)').matches;var resolved=mode==='auto'?(prefersDark?'dark':'light'):mode;var root=document.documentElement;root.classList.remove('light','dark');root.classList.add(resolved);if(mode==='auto'){root.removeAttribute('data-theme')}else{root.setAttribute('data-theme',mode)}root.style.colorScheme=resolved;}catch(e){}})();`;
 
@@ -24,6 +25,7 @@ export function Head() {
       <meta content="Zentro" name="apple-mobile-web-app-title" />
       <meta content="telephone=no" name="format-detection" />
       <script>{THEME_INIT_SCRIPT}</script>
+      <script>{ORGANIZATION_SWITCH_BOOT_SCRIPT}</script>
     </>
   );
 }

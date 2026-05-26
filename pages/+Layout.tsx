@@ -4,6 +4,8 @@ import { type ReactNode, useEffect, useRef, useState } from "react";
 import { usePageContext } from "vike-react/usePageContext";
 import { AppLayout } from "@/components/app-layout";
 import { Toaster } from "@/components/ui/sonner";
+import { clearOrganizationSwitchBootOverlay } from "@/features/organization/organization-transition.shared";
+import { OrganizationTransitionProvider } from "@/features/organization/organization-transition-context";
 import { TanstackQueryProvider } from "@/lib/query-provider";
 
 type ZeroProviderModule = typeof import("@/src/zero/zero-provider.client");
@@ -198,6 +200,16 @@ function ZeroProviderGate({
 
   const cacheURL = runtimeCacheURL;
 
+  useEffect(() => {
+    if (!(ZentroZeroProvider && cacheURL)) {
+      return;
+    }
+
+    if (zeroContext || allowAnonymous) {
+      clearOrganizationSwitchBootOverlay();
+    }
+  }, [ZentroZeroProvider, allowAnonymous, cacheURL, zeroContext]);
+
   if (providerState === "error") {
     return (
       <ZeroProviderProblem
@@ -279,7 +291,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <TanstackQueryProvider>
-      {content}
+      <OrganizationTransitionProvider>{content}</OrganizationTransitionProvider>
       <Toaster richColors />
     </TanstackQueryProvider>
   );

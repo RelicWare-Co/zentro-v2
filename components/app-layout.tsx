@@ -20,6 +20,7 @@ import { useState } from "react";
 import { usePageContext } from "vike-react/usePageContext";
 import { OrganizationSelection } from "@/components/organization-selection";
 import { useModuleCapabilities } from "@/features/modules/hooks/use-module-capabilities";
+import { useOrganizationTransition } from "@/features/organization/organization-transition-context";
 import { authClient } from "@/lib/auth-client";
 import { queryClient } from "@/lib/query-client";
 import { cn } from "@/lib/utils";
@@ -102,6 +103,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const { data: activeOrganization, isPending: isActiveOrgPending } =
     authClient.useActiveOrganization();
   const { data: capabilities } = useModuleCapabilities();
+  const { runOrganizationTransition } = useOrganizationTransition();
   const hasActiveZeroOrganization = Boolean(pageContext.zeroContext?.orgID);
 
   const isOrganizationRoute = pageContext.urlPathname === "/organization";
@@ -203,14 +205,25 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               isCollapsed && "lg:justify-center lg:px-0"
             )}
             onClick={async () => {
-              const result = await authClient.organization.setActive({
-                organizationId: null,
-              });
-              if (result?.error) {
-                return;
+              try {
+                await runOrganizationTransition({
+                  destination: "/organization",
+                  message: "Abriendo selector de organización...",
+                  prepare: async () => {
+                    const result = await authClient.organization.setActive({
+                      organizationId: null,
+                    });
+                    if (result?.error) {
+                      throw new Error(
+                        result.error.message ||
+                          "No se pudo abrir el selector de organización."
+                      );
+                    }
+                  },
+                });
+              } catch {
+                // Toast handled by transition helper.
               }
-              queryClient.clear();
-              window.location.assign("/organization");
             }}
             title={isCollapsed ? "Cambiar organización" : undefined}
             type="button"

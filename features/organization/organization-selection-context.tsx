@@ -8,8 +8,8 @@ import {
   useState,
 } from "react";
 import { useOrganizationSelection } from "@/features/organization/hooks/use-organization";
+import { useOrganizationTransition } from "@/features/organization/organization-transition-context";
 import { authClient } from "@/lib/auth-client";
-import { queryClient } from "@/lib/query-client";
 
 export interface OrganizationListItem {
   id: string;
@@ -103,6 +103,7 @@ export function OrganizationSelectionProvider({
     isPending: isSelectionPending,
     refetch: refetchSelectionData,
   } = selectionQuery;
+  const { runOrganizationTransition } = useOrganizationTransition();
 
   const [isCreating, setIsCreating] = useState(false);
   const [newOrgName, setNewOrgNameState] = useState("");
@@ -132,31 +133,44 @@ export function OrganizationSelectionProvider({
     };
   }, [refetchSelectionData, refetchOrganizations]);
 
-  const refreshAndEnter = useCallback(() => {
-    queryClient.clear();
-    window.location.assign("/dashboard");
-  }, []);
+  const enterOrganizationWorkspace = useCallback(
+    (message = "Entrando a la organización...") =>
+      runOrganizationTransition({
+        destination: "/dashboard",
+        message,
+        prepare: async () => undefined,
+      }),
+    [runOrganizationTransition]
+  );
 
   const selectOrganization = useCallback(
     async (orgId: string) => {
       setErrorMsg(null);
       setIsSelectingId(orgId);
       try {
-        const result = await authClient.organization.setActive({
-          organizationId: orgId,
+        await runOrganizationTransition({
+          message: "Entrando a la organización...",
+          prepare: async () => {
+            const result = await authClient.organization.setActive({
+              organizationId: orgId,
+            });
+            if (result?.error) {
+              throw new Error(
+                result.error.message ||
+                  "No se pudo seleccionar la organización."
+              );
+            }
+          },
         });
-        if (result?.error) {
-          setErrorMsg(
-            result.error.message || "No se pudo seleccionar la organización."
-          );
-          return;
+      } catch (error) {
+        if (error instanceof Error) {
+          setErrorMsg(error.message);
         }
-        refreshAndEnter();
       } finally {
         setIsSelectingId(null);
       }
     },
-    [refreshAndEnter]
+    [runOrganizationTransition]
   );
 
   const setNewOrgName = useCallback(
@@ -236,7 +250,7 @@ export function OrganizationSelectionProvider({
           }
 
           await refetchOrganizations();
-          refreshAndEnter();
+          await enterOrganizationWorkspace("Organización creada. Entrando...");
         }
       } catch {
         setErrorMsg("Ocurrió un error inesperado al crear la organización.");
@@ -244,7 +258,7 @@ export function OrganizationSelectionProvider({
         setIsSubmitting(false);
       }
     },
-    [newOrgName, newOrgSlug, refetchOrganizations, refreshAndEnter]
+    [newOrgName, newOrgSlug, refetchOrganizations, enterOrganizationWorkspace]
   );
 
   const acceptInvitation = useCallback(
@@ -276,14 +290,18 @@ export function OrganizationSelectionProvider({
         }
 
         await Promise.all([refetchOrganizations(), refetchSelectionData()]);
-        refreshAndEnter();
-      } catch {
-        setErrorMsg("No se pudo aceptar la invitación.");
+        await enterOrganizationWorkspace("Invitación aceptada. Entrando...");
+      } catch (error) {
+        setErrorMsg(
+          error instanceof Error
+            ? error.message
+            : "No se pudo aceptar la invitación."
+        );
       } finally {
         setIsAcceptingInvitationId(null);
       }
     },
-    [refetchOrganizations, refetchSelectionData, refreshAndEnter]
+    [enterOrganizationWorkspace, refetchOrganizations, refetchSelectionData]
   );
 
   const rejectInvitation = useCallback(

@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useDeleteOrganizationMutation } from "@/features/organization/hooks/use-organization";
 import { useOrganizationPage } from "@/features/organization/organization-page-context";
+import { useOrganizationTransition } from "@/features/organization/organization-transition-context";
 import { authClient } from "@/lib/auth-client";
 import { getErrorMessage } from "@/lib/utils";
 
@@ -26,6 +27,7 @@ export function OrganizationDeleteDialog({
   const { state, actions } = useOrganizationPage();
   const data = state.data;
   const deleteMutation = useDeleteOrganizationMutation();
+  const { runOrganizationTransition } = useOrganizationTransition();
 
   const handleDelete = async () => {
     if (!data) {
@@ -37,9 +39,21 @@ export function OrganizationDeleteDialog({
       await deleteMutation.mutateAsync({
         organizationId: data.organization.id,
       });
-      actions.setFeedback("Organización eliminada. Redirigiendo...", "success");
-      await authClient.organization.setActive({ organizationId: null });
-      window.location.href = "/organization";
+      await runOrganizationTransition({
+        destination: "/organization",
+        message: "Organización eliminada. Abriendo selector...",
+        prepare: async () => {
+          const result = await authClient.organization.setActive({
+            organizationId: null,
+          });
+          if (result?.error) {
+            throw new Error(
+              result.error.message ||
+                "No se pudo abrir el selector de organización."
+            );
+          }
+        },
+      });
     } catch (error) {
       actions.setFeedback(
         getErrorMessage(error, "No se pudo eliminar la organización."),
