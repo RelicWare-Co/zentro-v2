@@ -16,6 +16,7 @@ const config: Config = {
   // The app shell is client-rendered. The Hono server remains for API, auth,
   // Vike routing/pageContext, and Zero query/mutate endpoints.
   ssr: false,
+  clientRouting: true,
 
   extends: [vikeReact],
   passToClient: ["user", "zeroContext", "zeroCacheURL"],

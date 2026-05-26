@@ -3,9 +3,7 @@ import {
   type ReactNode,
   use,
   useCallback,
-  useEffect,
   useMemo,
-  useRef,
   useState,
 } from "react";
 import type { z } from "zod";
@@ -76,22 +74,12 @@ export function OrganizationPageProvider({
     authClient.useActiveOrganization();
   const zeroContext = usePageZeroContext();
   const managementQuery = useOrganizationManagement();
-  const didReloadStaleContextRef = useRef(false);
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
   const [feedbackType, setFeedbackType] = useState<FeedbackType>("success");
   const [activeTab, setActiveTabState] = useState<OrganizationTab>("general");
 
   const hasStaleZeroContext =
     Boolean(activeOrganization) && !isActiveOrgPending && !zeroContext?.orgID;
-
-  useEffect(() => {
-    if (!hasStaleZeroContext || didReloadStaleContextRef.current) {
-      return;
-    }
-
-    didReloadStaleContextRef.current = true;
-    window.location.reload();
-  }, [hasStaleZeroContext]);
 
   const setFeedback = useCallback(
     (message: string | null, type: FeedbackType = "success") => {

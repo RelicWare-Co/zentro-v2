@@ -23,6 +23,7 @@ import { useModuleCapabilities } from "@/features/modules/hooks/use-module-capab
 import { useOrganizationTransition } from "@/features/organization/organization-transition-context";
 import { authClient } from "@/lib/auth-client";
 import { queryClient } from "@/lib/query-client";
+import { usePageZeroContext } from "@/lib/use-page-zero-context";
 import { cn } from "@/lib/utils";
 
 const moduleIconMap = {
@@ -55,15 +56,15 @@ function hasAnyActiveOrganization(params: {
   hasActiveZeroOrganization: boolean;
   isActiveOrgPending: boolean;
 }) {
-  if (params.isActiveOrgPending) {
-    return (
-      Boolean(params.activeOrganization) || params.hasActiveZeroOrganization
-    );
+  if (params.hasActiveZeroOrganization) {
+    return true;
   }
 
-  // Client session is authoritative once loaded; pageContext.zeroContext can
-  // lag behind better-auth after setActive({ organizationId: null }).
-  return Boolean(params.activeOrganization);
+  if (params.isActiveOrgPending) {
+    return Boolean(params.activeOrganization);
+  }
+
+  return false;
 }
 
 function getActiveOrganizationName(
@@ -104,7 +105,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     authClient.useActiveOrganization();
   const { data: capabilities } = useModuleCapabilities();
   const { runOrganizationTransition } = useOrganizationTransition();
-  const hasActiveZeroOrganization = Boolean(pageContext.zeroContext?.orgID);
+  const zeroContext = usePageZeroContext();
+  const hasActiveZeroOrganization = Boolean(zeroContext?.orgID);
 
   const isOrganizationRoute = pageContext.urlPathname === "/organization";
 

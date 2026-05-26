@@ -43,6 +43,19 @@ type AnyServerMutator = Mutator<any, any, any, any>;
 export function createZeroApp() {
   const app = new Hono<EvlogVariables>();
 
+  app.get("/context", async (c) => {
+    const authBundle = await resolveZeroAuth(c.req.raw.headers);
+    c.get("log").set({
+      zero: "context",
+      userId: authBundle?.userID ?? null,
+    });
+
+    return c.json({
+      userID: authBundle?.userID ?? null,
+      zeroContext: authBundle?.ctx ?? null,
+    });
+  });
+
   app.post("/query", async (c) => {
     const authBundle = await resolveZeroAuth(c.req.raw.headers);
     c.get("log").set({ zero: "query", userId: authBundle?.userID ?? null });

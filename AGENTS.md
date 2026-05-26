@@ -50,6 +50,7 @@
 ## Stack
 
 - App framework: Vike with React, configured as full CSR (`ssr: false` in `pages/+config.ts`).
+- Vike client routing is enabled (`clientRouting: true`) so organization changes can update the client Zero context and navigate without a full page reload.
 - Server: Hono through `@vikejs/hono`.
 - Styling: Tailwind CSS v4, shadcn/radix-style UI components in `components/ui`.
 - Auth: better-auth with organization support.

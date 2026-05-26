@@ -4,12 +4,14 @@ import {
   type ReactNode,
   use,
   useCallback,
+  useEffect,
   useMemo,
   useState,
 } from "react";
 import { toast } from "sonner";
-import { markOrganizationSwitchPending } from "@/features/organization/organization-transition.shared";
+import { usePageContext } from "vike-react/usePageContext";
 import { queryClient } from "@/lib/query-client";
+import type { ZeroContext } from "@/src/zero/context";
 
 export interface OrganizationTransitionOptions {
   destination?: string;
@@ -22,6 +24,7 @@ export interface OrganizationTransitionContextValue {
   runOrganizationTransition: (
     options: OrganizationTransitionOptions
   ) => Promise<void>;
+  zeroContext: ZeroContext | null;
 }
 
 const OrganizationTransitionContext =
@@ -56,8 +59,42 @@ export function OrganizationTransitionProvider({
 }: {
   children: ReactNode;
 }) {
+  const pageContext = usePageContext();
+  const [zeroContext, setZeroContext] = useState<ZeroContext | null>(
+    pageContext.zeroContext ?? null
+  );
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [message, setMessage] = useState("Cambiando organización...");
+
+  useEffect(() => {
+    if (!pageContext.user) {
+      setZeroContext(null);
+      return;
+    }
+
+    if (pageContext.zeroContext) {
+      setZeroContext(pageContext.zeroContext);
+    }
+  }, [pageContext.user, pageContext.zeroContext]);
+
+  const refreshZeroContext = useCallback(async () => {
+    const response = await fetch("/api/zero/context", {
+      headers: {
+        accept: "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("No se pudo actualizar el contexto de Zero.");
+    }
+
+    const data = (await response.json()) as {
+      zeroContext?: ZeroContext | null;
+    };
+    const nextContext = data.zeroContext ?? null;
+    setZeroContext(nextContext);
+    return nextContext;
+  }, []);
 
   const runOrganizationTransition = useCallback(
     async ({
@@ -73,9 +110,19 @@ export function OrganizationTransitionProvider({
       try {
         await prepare();
         queryClient.clear();
-        markOrganizationSwitchPending();
+        const nextContext = await refreshZeroContext();
+
+        if (window.location.pathname !== destination) {
+          const { navigate } = await import("vike/client/router");
+          await navigate(destination, {
+            pageContext: {
+              zeroContext: nextContext,
+            },
+          });
+        }
+
         toast.dismiss(toastId);
-        window.location.assign(destination);
+        setIsTransitioning(false);
       } catch (error) {
         setIsTransitioning(false);
         toast.error(
@@ -87,15 +134,16 @@ export function OrganizationTransitionProvider({
         throw error;
       }
     },
-    []
+    [refreshZeroContext]
   );
 
   const value = useMemo(
     () => ({
       isTransitioning,
       runOrganizationTransition,
+      zeroContext,
     }),
-    [isTransitioning, runOrganizationTransition]
+    [isTransitioning, runOrganizationTransition, zeroContext]
   );
 
   return (
