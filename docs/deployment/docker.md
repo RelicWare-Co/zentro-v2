@@ -62,6 +62,28 @@ Stop without deleting the zero replica:
 docker compose -f deploy/docker-compose.prod.yml --env-file deploy/.env.production down
 ```
 
+### Coolify
+
+Coolify treats the compose file as the source of truth. Variables with **literal values** in `environment:` (for example `NODE_ENV=production`) appear as locked **Hardcoded env** in the UI. Use `${VAR}` or `${VAR:-default}` references instead so Coolify exposes editable fields.
+
+Required variables use `${VAR:?}` — deployment is blocked until they are set in Coolify → Environment Variables.
+
+Magic URLs for sibling domains (service names `app` and `zero-cache`):
+
+1. Assign domains in Coolify to **app** port `3000` and **zero-cache** port `4848`.
+2. Set public URLs from the generated magic vars:
+
+```txt
+BETTER_AUTH_URL=${SERVICE_URL_APP}
+ZERO_CACHE_URL=${SERVICE_URL_ZERO-CACHE}
+BETTER_AUTH_TRUSTED_ORIGINS=${SERVICE_URL_APP},${SERVICE_URL_ZERO-CACHE}
+BETTER_AUTH_COOKIE_DOMAIN=example.com
+```
+
+`ZERO_QUERY_URL` / `ZERO_MUTATE_URL` stay on the internal Docker network (`http://app:3000/api/zero/*`) via compose defaults — browsers never call these directly.
+
+Variables derived from `DATABASE_URL` (`ZERO_UPSTREAM_DB`, etc.) are wired in compose; edit **`DATABASE_URL`** in the UI, not the derived names.
+
 ## Repository layout
 
 | Path | Purpose |
