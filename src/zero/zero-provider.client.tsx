@@ -11,6 +11,7 @@ import { ZeroProvider } from "@rocicorp/zero/react";
 import { type ReactNode, useMemo, useRef } from "react";
 import { createZeroOptions } from "./client";
 import type { ZeroContext } from "./context";
+import { ZeroConnectionBoundary } from "./zero-connection-boundary.client";
 import { zeroContextSignature } from "./zero-context-stable.shared";
 
 function useStableZeroContext(context: ZeroContext | undefined) {
@@ -30,6 +31,7 @@ export interface ZentroZeroProviderProps {
   cacheURL: string;
   children: ReactNode;
   context?: ZeroContext;
+  mode?: "optional" | "required";
   userID: string | null;
 }
 
@@ -37,6 +39,7 @@ export function ZentroZeroProvider({
   cacheURL,
   userID,
   context,
+  mode = "required",
   children,
 }: ZentroZeroProviderProps) {
   const stableContext = useStableZeroContext(context);
@@ -50,5 +53,9 @@ export function ZentroZeroProvider({
     [cacheURL, stableContext, userID]
   );
 
-  return <ZeroProvider {...opts}>{children}</ZeroProvider>;
+  return (
+    <ZeroProvider {...opts}>
+      <ZeroConnectionBoundary mode={mode}>{children}</ZeroConnectionBoundary>
+    </ZeroProvider>
+  );
 }

@@ -35,6 +35,30 @@ function isFullHeightRoute(pathname: string) {
   return FULL_HEIGHT_ROUTES.has(pathname);
 }
 
+function shouldWaitForActiveOrganization(params: {
+  hasActiveZeroOrganization: boolean;
+  isActiveOrgPending: boolean;
+}) {
+  return params.isActiveOrgPending && !params.hasActiveZeroOrganization;
+}
+
+function hasAnyActiveOrganization(params: {
+  activeOrganization: ReturnType<
+    typeof authClient.useActiveOrganization
+  >["data"];
+  hasActiveZeroOrganization: boolean;
+}) {
+  return Boolean(params.activeOrganization) || params.hasActiveZeroOrganization;
+}
+
+function getActiveOrganizationName(
+  activeOrganization: ReturnType<
+    typeof authClient.useActiveOrganization
+  >["data"]
+) {
+  return activeOrganization?.name ?? "Organización activa";
+}
+
 const baseNavItems = [
   {
     name: "Dashboard",
@@ -64,8 +88,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const { data: activeOrganization, isPending: isActiveOrgPending } =
     authClient.useActiveOrganization();
   const { data: capabilities } = useModuleCapabilities();
+  const hasActiveZeroOrganization = Boolean(pageContext.zeroContext?.orgID);
 
-  if (isActiveOrgPending) {
+  if (
+    shouldWaitForActiveOrganization({
+      hasActiveZeroOrganization,
+      isActiveOrgPending,
+    })
+  ) {
     return (
       <div className="app-safe-area flex min-h-[100dvh] w-full items-center justify-center bg-[var(--color-void)] text-[var(--color-photon)]">
         <Loader2 className="size-8 animate-spin text-[var(--color-voltage)]" />
@@ -73,7 +103,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!activeOrganization) {
+  if (
+    !hasAnyActiveOrganization({
+      activeOrganization,
+      hasActiveZeroOrganization,
+    })
+  ) {
     return <OrganizationSelection />;
   }
 
@@ -168,7 +203,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               )}
             >
               <p className="truncate font-medium text-sm text-white">
-                {activeOrganization.name || "Sin organización"}
+                {getActiveOrganizationName(activeOrganization)}
               </p>
               <p className="truncate text-xs text-zinc-500">Cambiar</p>
             </div>
