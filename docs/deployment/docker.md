@@ -32,7 +32,8 @@ Use `deploy/docker-compose.prod.yml` when the host runs Compose directly. It dep
 cp deploy/.env.production.example deploy/.env.production
 # edit deploy/.env.production — DATABASE_URL, domains, secrets
 
-docker compose -f deploy/docker-compose.prod.yml --env-file deploy/.env.production up -d --build
+docker compose -f deploy/docker-compose.prod.yml --project-directory . \
+  --env-file deploy/.env.production up -d --build
 ```
 
 | File | Purpose |
@@ -53,16 +54,22 @@ Compose behavior:
 Update or redeploy:
 
 ```sh
-docker compose -f deploy/docker-compose.prod.yml --env-file deploy/.env.production up -d --build
+docker compose -f deploy/docker-compose.prod.yml --project-directory . \
+  --env-file deploy/.env.production up -d --build
 ```
 
 Stop without deleting the zero replica:
 
 ```sh
-docker compose -f deploy/docker-compose.prod.yml --env-file deploy/.env.production down
+docker compose -f deploy/docker-compose.prod.yml --project-directory . \
+  --env-file deploy/.env.production down
 ```
 
 ### Coolify
+
+Coolify sets `--project-directory` to the **repository root** and uses `-f deploy/docker-compose.prod.yml`. The compose build `context` must be `.` (repo root), not `..` — otherwise Docker looks for `/artifacts/deploy` and the build fails.
+
+Set **Work directory** to the repo root (empty or `.`). Compose file path: `deploy/docker-compose.prod.yml`.
 
 Coolify treats the compose file as the source of truth. Variables with **literal values** in `environment:` (for example `NODE_ENV=production`) appear as locked **Hardcoded env** in the UI. Use `${VAR}` or `${VAR:-default}` references instead so Coolify exposes editable fields.
 

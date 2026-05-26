@@ -5,23 +5,27 @@
 # Set values in Coolify → Environment Variables (or copy deploy/.env.production.example
 # to deploy/.env.production for plain docker compose).
 #
-# Setup (plain docker compose):
+# Setup (plain docker compose — run from repo root):
 #   cp deploy/.env.production.example deploy/.env.production
-#   docker compose -f deploy/docker-compose.prod.yml --env-file deploy/.env.production up -d --build
+#   docker compose -f deploy/docker-compose.prod.yml --project-directory . \
+#     --env-file deploy/.env.production up -d --build
+#
+# Build context is "." (repo root). Coolify sets --project-directory to the repo root;
+# do not use context ".." here — it resolves to the parent dir and breaks the build.
 
 name: zentro
 
 services:
   app:
     build:
-      context: ..
+      context: .
       dockerfile: deploy/app/Dockerfile
     image: zentro-app:prod
     restart: unless-stopped
     ports:
       - "${APP_PORT:-3000}:3000"
     env_file:
-      - .env.production
+      - deploy/.env.production
     environment:
       # Coolify magic URLs — assign domains to app:3000 and zero-cache:4848 in the UI
       - SERVICE_URL_APP_3000
@@ -48,14 +52,14 @@ services:
 
   zero-cache:
     build:
-      context: ..
+      context: .
       dockerfile: deploy/zero-cache/Dockerfile
     image: zentro-zero:prod
     restart: unless-stopped
     ports:
       - "${ZERO_PORT:-4848}:4848"
     env_file:
-      - .env.production
+      - deploy/.env.production
     volumes:
       - zentro_zero_data:/data
     environment:
