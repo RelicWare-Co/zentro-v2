@@ -1,0 +1,88 @@
+# Full local stack: Postgres + app + zero-cache (mirrors production Docker images).
+# From repo root:
+#   docker compose -f deploy/docker-compose.local.yml up --build
+#   docker compose -f deploy/docker-compose.local.yml down -v   # reset DB + zero replica
+
+name: zentro-local
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    command:
+      - postgres
+      - -c
+      - wal_level=logical
+      - -c
+      - max_wal_senders=10
+      - -c
+      - max_replication_slots=10
+    environment:
+      POSTGRES_USER: zentro
+      POSTGRES_PASSWORD: zentro
+      POSTGRES_DB: zentro
+    ports:
+      - "5432:5432"
+    volumes:
+      - zentro_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U zentro -d zentro"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: ..
+      dockerfile: deploy/app/Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      RUN_MIGRATIONS: "true"
+      DATABASE_URL: postgresql://zentro:zentro@postgres:5432/zentro
+      BETTER_AUTH_URL: http://localhost:3000
+      BETTER_AUTH_SECRET: local-docker-stack-secret
+      BETTER_AUTH_TRUSTED_ORIGINS: http://localhost:3000,http://localhost:4848
+      ZERO_CACHE_URL: http://localhost:4848
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'bun -e "const r=await fetch(''http://127.0.0.1:3000/''); process.exit(r.ok || r.status===302 ? 0 : 1)"',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+
+  zero-cache:
+    build:
+      context: ..
+      dockerfile: deploy/zero-cache/Dockerfile
+    ports:
+      - "4848:4848"
+    volumes:
+      - zentro_zero_data:/data
+    environment:
+      ZERO_UPSTREAM_DB: postgresql://zentro:zentro@postgres:5432/zentro
+      ZERO_CVR_DB: postgresql://zentro:zentro@postgres:5432/zentro
+      ZERO_CHANGE_DB: postgresql://zentro:zentro@postgres:5432/zentro
+      ZERO_REPLICA_FILE: /data/replica.db
+      ZERO_QUERY_URL: http://app:3000/api/zero/query
+      ZERO_MUTATE_URL: http://app:3000/api/zero/mutate
+      ZERO_QUERY_FORWARD_COOKIES: "true"
+      ZERO_MUTATE_FORWARD_COOKIES: "true"
+      ZERO_ADMIN_PASSWORD: local-docker-stack-zero-admin
+    depends_on:
+      app:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+volumes:
+  zentro_postgres_data:
+  zentro_zero_data:

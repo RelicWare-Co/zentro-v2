@@ -1,0 +1,35 @@
+# Dependencies and build output (rebuilt inside the image)
+node_modules
+dist
+
+# Git and local tooling
+.git
+.gitignore
+.lefthook
+.cursor
+.factory
+.agents
+.claude
+.codex
+
+# Environment and secrets — never bake into images
+.env
+.env.*
+!.env.example
+
+# Tests and dev-only artifacts
+tests
+coverage
+*.test.ts
+*.test.tsx
+
+# Documentation and agent metadata (not needed at runtime)
+docs
+*.md
+!README.md
+
+# OS and editor noise
+.DS_Store
+Thumbs.db
+*.log
+tmp

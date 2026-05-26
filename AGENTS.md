@@ -144,15 +144,16 @@ Zero is the primary API for app data (see `MIGRATION_PLAN.md`).
 - Cookie auth requires `zero-cache` to forward browser cookies to `/api/zero/*`. Set `ZERO_QUERY_FORWARD_COOKIES=true` and `ZERO_MUTATE_FORWARD_COOKIES=true` locally and in production.
 - `/login` and `/join` mount `ZeroProviderGate` with `allowAnonymous` so authenticated join-link redemption can use Zero before an active org is selected. Public join-link preview must use the sanitized REST endpoint `GET /api/organization/join-link-preview?token=...`, not a Zero query, because ZQL returns full rows.
 
-### Railway deployment
+### Docker deployment
 
-- Full production deployment documentation lives in `docs/deployment/railway-zero.md`. Update that document when Railway service topology, variables, domains, build commands, rollout order, or Zero operating procedures change.
-- Preferred first production topology on Railway: one app/API service for this repo, one `rocicorp/zero:1.5.0` zero-cache image service, and the existing Postgres service in the same project/environment.
-- The app/API service builds with `bun run build` and starts with `bun run start`. Run `bun run db:migrate` as the Railway pre-deploy command when deploying schema changes.
-- Railway app deploy settings are codified in `railway.json`; Railpack package/build/start hints live in `railpack.json` for Git-based deploys.
-- The zero-cache service needs a persistent volume mounted at `/data`, `ZERO_REPLICA_FILE=/data/replica.db`, public routing to port `4848`, and health checks on `/keepalive`.
-- Use sibling custom domains for cookie auth, for example `app.example.com` and `zero.example.com`. Configure the app with `BETTER_AUTH_COOKIE_DOMAIN=example.com`, `BETTER_AUTH_TRUSTED_ORIGINS=https://app.example.com,https://zero.example.com`, and `ZERO_CACHE_URL=https://zero.example.com` or `VITE_ZERO_CACHE_URL=https://zero.example.com`.
+- Full production deployment documentation lives in `docs/deployment/docker.md`. Update that document when service topology, variables, domains, build commands, rollout order, or Zero operating procedures change.
+- Production topology: one app/API container (`deploy/app/Dockerfile`), one zero-cache container (`deploy/zero-cache/Dockerfile`), and external managed Postgres with `wal_level=logical`.
+- Build from Git or CI with dockerfile path `deploy/app/Dockerfile` or `deploy/zero-cache/Dockerfile` and build context at the repository root.
+- Database migrations run in `scripts/docker-entrypoint.sh` before `bun run start` when `RUN_MIGRATIONS=true` (default). The entrypoint uses `set -euo pipefail` so migration failures stop the container and block health-check promotion.
+- Attach persistent storage at `/data` on the zero-cache service (`ZERO_REPLICA_FILE=/data/replica.db`). Configure the volume in the platform, not via a `VOLUME` instruction in the Dockerfile.
+- Use sibling custom domains for cookie auth, for example `app.example.com` and `zero.example.com`. Configure the app with `BETTER_AUTH_COOKIE_DOMAIN=example.com`, `BETTER_AUTH_TRUSTED_ORIGINS=https://app.example.com,https://zero.example.com`, and `ZERO_CACHE_URL=https://zero.example.com`.
 - Configure zero-cache with `ZERO_QUERY_FORWARD_COOKIES=true` and `ZERO_MUTATE_FORWARD_COOKIES=true`. `ZERO_QUERY_URL` and `ZERO_MUTATE_URL` should point to the app's `/api/zero/query` and `/api/zero/mutate` endpoints.
+- `ZERO_ADMIN_PASSWORD` is **required** on zero-cache in production; without it the container exits before serving traffic.
 
 ## UI
 
