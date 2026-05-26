@@ -47,8 +47,17 @@ function hasAnyActiveOrganization(params: {
     typeof authClient.useActiveOrganization
   >["data"];
   hasActiveZeroOrganization: boolean;
+  isActiveOrgPending: boolean;
 }) {
-  return Boolean(params.activeOrganization) || params.hasActiveZeroOrganization;
+  if (params.isActiveOrgPending) {
+    return (
+      Boolean(params.activeOrganization) || params.hasActiveZeroOrganization
+    );
+  }
+
+  // Client session is authoritative once loaded; pageContext.zeroContext can
+  // lag behind better-auth after setActive({ organizationId: null }).
+  return Boolean(params.activeOrganization);
 }
 
 function getActiveOrganizationName(
@@ -107,6 +116,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     !hasAnyActiveOrganization({
       activeOrganization,
       hasActiveZeroOrganization,
+      isActiveOrgPending,
     })
   ) {
     return <OrganizationSelection />;
@@ -185,8 +195,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               isCollapsed && "lg:justify-center lg:px-0"
             )}
             onClick={async () => {
-              await authClient.organization.setActive({ organizationId: null });
+              const result = await authClient.organization.setActive({
+                organizationId: null,
+              });
+              if (result?.error) {
+                return;
+              }
               queryClient.clear();
+              window.location.href = "/organization";
             }}
             title={isCollapsed ? "Cambiar organización" : undefined}
             type="button"
