@@ -8,7 +8,6 @@ import {
   useMemo,
   useState,
 } from "react";
-import { toast } from "sonner";
 import { usePageContext } from "vike-react/usePageContext";
 import { queryClient } from "@/lib/query-client";
 import type { ZeroContext } from "@/src/zero/context";
@@ -105,8 +104,6 @@ export function OrganizationTransitionProvider({
       setMessage(transitionMessage);
       setIsTransitioning(true);
 
-      const toastId = toast.loading(transitionMessage);
-
       try {
         await prepare();
         queryClient.clear();
@@ -121,16 +118,9 @@ export function OrganizationTransitionProvider({
           });
         }
 
-        toast.dismiss(toastId);
         setIsTransitioning(false);
       } catch (error) {
         setIsTransitioning(false);
-        toast.error(
-          error instanceof Error
-            ? error.message
-            : "No se pudo cambiar de organización.",
-          { id: toastId }
-        );
         throw error;
       }
     },
