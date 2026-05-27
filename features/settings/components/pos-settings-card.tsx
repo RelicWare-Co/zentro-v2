@@ -52,6 +52,7 @@ export function PosSettingsCard() {
             onChange={(event) =>
               actions.updatePosField("defaultTerminalName", event.target.value)
             }
+            placeholder="Ej. Caja principal"
             value={draftSettings.pos.defaultTerminalName}
           />
         </div>
@@ -69,6 +70,7 @@ export function PosSettingsCard() {
                 parseMoneyInput(event.target.value)
               )
             }
+            placeholder="0"
             type="text"
             value={formatMoneyInput(draftSettings.pos.defaultStartingCash)}
           />
@@ -105,6 +107,7 @@ export function PosSettingsCard() {
                             label: event.target.value,
                           })
                         }
+                        placeholder="Ej. Tarjeta débito"
                         value={paymentMethod.label}
                       />
                     </div>

@@ -88,6 +88,7 @@ export function CheckoutDiscountSection({
             onChange={(event) =>
               actions.setDiscountInput(sanitizeMoneyInput(event.target.value))
             }
+            placeholder="0"
             ref={discountInputRef}
             type="text"
             value={formatMoneyInput(state.discountInput)}

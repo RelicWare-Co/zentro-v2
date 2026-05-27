@@ -56,6 +56,7 @@ export function CreditSettingsCard() {
                 ),
               })
             }
+            placeholder="0"
             type="number"
             value={draftSettings.credit.defaultInterestRate}
           />

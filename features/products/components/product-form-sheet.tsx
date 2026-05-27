@@ -91,6 +91,7 @@ function ProductFormSheetContent({
                       name: event.target.value,
                     }))
                   }
+                  placeholder="Ej. Café americano"
                   required
                   value={form.name}
                 />
@@ -132,6 +133,7 @@ function ProductFormSheetContent({
                       sku: event.target.value,
                     }))
                   }
+                  placeholder="Ej. CAF-001"
                   value={form.sku}
                 />
               </ProductsField>
@@ -144,6 +146,7 @@ function ProductFormSheetContent({
                       barcode: event.target.value,
                     }))
                   }
+                  placeholder="Ej. 7701234567890"
                   value={form.barcode}
                 />
               </ProductsField>
@@ -157,6 +160,7 @@ function ProductFormSheetContent({
                       price: sanitizeMoneyInput(event.target.value),
                     }))
                   }
+                  placeholder="0"
                   required
                   type="text"
                   value={formatMoneyInput(form.price)}
@@ -172,6 +176,7 @@ function ProductFormSheetContent({
                       cost: sanitizeMoneyInput(event.target.value),
                     }))
                   }
+                  placeholder="0"
                   type="text"
                   value={formatMoneyInput(form.cost)}
                 />
@@ -187,6 +192,7 @@ function ProductFormSheetContent({
                       taxRate: event.target.value,
                     }))
                   }
+                  placeholder="0"
                   type="number"
                   value={form.taxRate}
                 />
@@ -202,6 +208,7 @@ function ProductFormSheetContent({
                         stock: event.target.value,
                       }))
                     }
+                    placeholder="0"
                     type="number"
                     value={form.stock}
                   />

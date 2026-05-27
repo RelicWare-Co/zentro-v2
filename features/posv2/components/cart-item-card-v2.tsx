@@ -83,6 +83,7 @@ export function CartItemCardV2({
                 onChange={(event) =>
                   onUpdateDiscount(sanitizeMoneyInput(event.target.value))
                 }
+                placeholder="0"
                 type="text"
                 value={formatMoneyInput(item.discountAmount)}
               />

@@ -55,6 +55,7 @@ function CategoryDialogContent({
             <Input
               className="border-zinc-700 bg-black/20"
               onChange={(event) => setName(event.target.value)}
+              placeholder="Ej. Bebidas"
               required
               value={name}
             />
@@ -63,6 +64,7 @@ function CategoryDialogContent({
             <Textarea
               className="min-h-[80px] border-zinc-700 bg-black/20"
               onChange={(event) => setDescription(event.target.value)}
+              placeholder="Descripción opcional…"
               value={description}
             />
           </ProductsField>

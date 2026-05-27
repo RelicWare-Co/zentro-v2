@@ -225,6 +225,7 @@ export function CreateRestaurantTableDialog({
                 id="restaurant-new-table-seats"
                 min={0}
                 onChange={(event) => setSeats(event.target.value)}
+                placeholder="4"
                 type="number"
                 value={seats}
               />

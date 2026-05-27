@@ -66,6 +66,7 @@ function CustomerFormSheetContent() {
                   name: event.target.value,
                 }))
               }
+              placeholder="Ej. Juan Pérez"
               required
               value={form.name}
             />
@@ -124,6 +125,7 @@ function CustomerFormSheetContent() {
                   documentNumber: event.target.value,
                 }))
               }
+              placeholder="Ej. 1234567890"
               value={form.documentNumber}
             />
           </CustomerFormField>
@@ -136,6 +138,7 @@ function CustomerFormSheetContent() {
                   phone: event.target.value,
                 }))
               }
+              placeholder="Ej. 3001234567"
               type="tel"
               value={form.phone}
             />
@@ -149,6 +152,7 @@ function CustomerFormSheetContent() {
                   email: event.target.value,
                 }))
               }
+              placeholder="cliente@ejemplo.com"
               type="email"
               value={form.email}
             />

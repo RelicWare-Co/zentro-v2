@@ -94,6 +94,7 @@ export function GeneralTab() {
                     className="border-zinc-800 bg-black/30"
                     disabled={updateMutation.isPending}
                     onChange={(e) => setEditName(e.target.value)}
+                    placeholder="Ej. Tienda Principal"
                     value={editName}
                   />
                 </div>
@@ -107,6 +108,7 @@ export function GeneralTab() {
                         e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "")
                       )
                     }
+                    placeholder="tienda-principal"
                     value={editSlug}
                   />
                 </div>

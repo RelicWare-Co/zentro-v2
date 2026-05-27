@@ -377,6 +377,7 @@ export function RestaurantServiceView({
                   id="serviceGuestCount"
                   min={0}
                   onChange={(event) => onGuestCountChange(event.target.value)}
+                  placeholder="2"
                   type="number"
                   value={guestCountInput}
                 />

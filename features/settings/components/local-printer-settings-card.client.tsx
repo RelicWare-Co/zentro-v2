@@ -288,6 +288,7 @@ function SerialParametersSection({
                 },
               }))
             }
+            placeholder="9600"
             value={settings.serial.baudRate}
           />
           <NumberField
@@ -301,6 +302,7 @@ function SerialParametersSection({
                 },
               }))
             }
+            placeholder="255"
             value={settings.serial.bufferSize}
           />
           <div className="grid gap-2">
@@ -585,10 +587,12 @@ export function LocalPrinterSettingsCard() {
 
 function NumberField({
   label,
+  placeholder,
   value,
   onChange,
 }: {
   label: string;
+  placeholder?: string;
   value: number;
   onChange: (value: string) => void;
 }) {
@@ -599,6 +603,7 @@ function NumberField({
         className="border-zinc-700 bg-black/20"
         inputMode="numeric"
         onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
         type="number"
         value={value}
       />

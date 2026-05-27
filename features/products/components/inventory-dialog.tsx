@@ -142,6 +142,7 @@ export function InventoryDialog() {
               onChange={(event) =>
                 actions.setInventoryQuantity(event.target.value)
               }
+              placeholder="Ej. 10"
               required
               type="number"
               value={state.inventoryQuantity}
@@ -153,6 +154,7 @@ export function InventoryDialog() {
               onChange={(event) =>
                 actions.setInventoryNotes(event.target.value)
               }
+              placeholder="Motivo o referencia del movimiento…"
               value={state.inventoryNotes}
             />
           </ProductsField>

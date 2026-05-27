@@ -46,6 +46,7 @@ export function InventorySettingsCard() {
                   ),
                 })
               }
+              placeholder="5"
               type="number"
               value={draftSettings.inventory.lowStockThreshold}
             />
@@ -66,6 +67,7 @@ export function InventorySettingsCard() {
                   ),
                 })
               }
+              placeholder="19"
               type="number"
               value={draftSettings.inventory.defaultTaxRate}
             />

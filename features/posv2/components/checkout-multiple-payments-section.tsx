@@ -75,6 +75,7 @@ export function MultiplePaymentsSection() {
                       sanitizeMoneyInput(event.target.value)
                     )
                   }
+                  placeholder="0"
                   type="text"
                   value={formatMoneyInput(payment.amount)}
                 />

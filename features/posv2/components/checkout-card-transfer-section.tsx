@@ -33,6 +33,7 @@ export function CardTransferCheckoutSection() {
               sanitizeMoneyInput(event.target.value)
             )
           }
+          placeholder="0"
           type="text"
           value={formatMoneyInput(state.payments[0]?.amount ?? "")}
         />
