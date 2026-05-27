@@ -1,0 +1,15 @@
+# Fills the open "Crear producto" sheet. Expects PRODUCT_NAME and PRODUCT_PRICE env vars.
+---
+- tapOn:
+    text: "Ej. Café americano"
+- inputText: ${PRODUCT_NAME}
+
+- tapOn:
+    text: "0"
+    index: 0
+- inputText: ${PRODUCT_PRICE}
+
+- tapOn: "Guardar producto"
+- extendedWaitUntil:
+    notVisible: "Guardar producto"
+    timeout: 15000

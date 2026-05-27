@@ -1,0 +1,23 @@
+# Signs in with MAESTRO_LOGIN_EMAIL / MAESTRO_LOGIN_PASSWORD.
+# Ends on org selection or dashboard when the session already has an active org.
+---
+- extendedWaitUntil:
+    visible: "Registrarse"
+    timeout: 30000
+
+- tapOn: "tu@negocio.com…"
+- inputText: ${MAESTRO_LOGIN_EMAIL}
+
+- tapOn: "••••••••"
+- inputText: ${MAESTRO_LOGIN_PASSWORD}
+- pressKey: Enter
+
+- extendedWaitUntil:
+    visible: "Acceso a organizaciones"
+    optional: true
+    timeout: 15000
+
+- extendedWaitUntil:
+    visible: "Panel de control"
+    optional: true
+    timeout: 15000

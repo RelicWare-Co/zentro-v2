@@ -1,0 +1,52 @@
+url: ${MAESTRO_BASE_URL}/login
+tags: [products]
+---
+- launchApp
+
+- runFlow: ../subflows/login.yaml
+- runFlow: ../subflows/select-organization.yaml
+
+- extendedWaitUntil:
+    visible: "Panel de control"
+    timeout: 30000
+
+- tapOn: Productos
+
+- repeat:
+    times: 1
+    commands:
+      - tapOn: "Agregar producto"
+
+      - tapOn:
+          text: "Ej. Café americano"
+      - inputText:
+          text: ${"Product_" + Math.floor(Math.random() * 10000)}
+          label: "Random product name"
+
+      - tapOn:
+          text: "Ej. 7701234567890"
+      - inputRandomNumber:
+          length: 9
+      - pressKey: tab
+
+      - inputRandomNumber:
+          length: 5
+      - pressKey: tab
+
+      - tapOn:
+          text: "0"
+          index: 1
+      - inputRandomNumber:
+          length: 4
+
+      - tapOn:
+          text: "0"
+          index: 2
+      - eraseText: 2
+      - inputRandomNumber:
+          length: 2
+
+      - tapOn: "Guardar producto"
+      - extendedWaitUntil:
+          notVisible: "Guardar producto"
+          timeout: 15000

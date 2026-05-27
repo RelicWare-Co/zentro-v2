@@ -163,3 +163,6 @@ dev.db
 *.db-wal
 
 *.db-wal2
+
+# Maestro E2E artifacts
+build/maestro-results/

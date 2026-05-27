@@ -1,0 +1,13 @@
+# Picks an organization by visible name (MAESTRO_ORG_NAME). No-op if already on dashboard.
+---
+- runFlow:
+    when:
+      visible: "Acceso a organizaciones"
+    commands:
+      - extendedWaitUntil:
+          visible: ${MAESTRO_ORG_NAME}
+          timeout: 15000
+      - tapOn: ${MAESTRO_ORG_NAME}
+      - extendedWaitUntil:
+          visible: "Panel de control"
+          timeout: 30000

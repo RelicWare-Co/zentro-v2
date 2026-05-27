@@ -1,0 +1,48 @@
+url: ${MAESTRO_BASE_URL}/login
+tags: [products]
+---
+- launchApp
+
+- runFlow: ../subflows/login.yaml
+- runFlow: ../subflows/select-organization.yaml
+
+- extendedWaitUntil:
+    visible: "Panel de control"
+    timeout: 30000
+
+- tapOn: Productos
+
+- tapOn: "Agregar producto"
+- runFlow:
+    file: ../subflows/fill-product-form.yaml
+    env:
+      PRODUCT_NAME: "Camiseta Basica"
+      PRODUCT_PRICE: "25000"
+
+- tapOn: "Agregar producto"
+- runFlow:
+    file: ../subflows/fill-product-form.yaml
+    env:
+      PRODUCT_NAME: "Zapatos Deportivos"
+      PRODUCT_PRICE: "80000"
+
+- tapOn: "Agregar producto"
+- runFlow:
+    file: ../subflows/fill-product-form.yaml
+    env:
+      PRODUCT_NAME: "Bolso de Cuero"
+      PRODUCT_PRICE: "45000"
+
+- tapOn: "Agregar producto"
+- runFlow:
+    file: ../subflows/fill-product-form.yaml
+    env:
+      PRODUCT_NAME: "Pantalon Slim"
+      PRODUCT_PRICE: "60000"
+
+- tapOn: "Agregar producto"
+- runFlow:
+    file: ../subflows/fill-product-form.yaml
+    env:
+      PRODUCT_NAME: "Chaqueta de Invierno"
+      PRODUCT_PRICE: "120000"

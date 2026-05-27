@@ -1,0 +1,11 @@
+url: ${MAESTRO_BASE_URL}/login
+tags: [auth, smoke]
+---
+- launchApp
+
+- runFlow: ../subflows/login.yaml
+- runFlow: ../subflows/select-organization.yaml
+
+- extendedWaitUntil:
+    visible: "Panel de control"
+    timeout: 30000

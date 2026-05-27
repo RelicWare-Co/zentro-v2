@@ -18,6 +18,11 @@
 - Run a built production server with `bun run start`; production startup must use Bun, not Node.
 - Type-check with `bunx tsc --noEmit`.
 - Run tests with `bun test`.
+- Maestro E2E (web; flows in `.maestro/`, see `.maestro/README.md`):
+  - `bun run e2e:maestro:validate` — static flow checks (no browser).
+  - `bun run e2e:maestro` — run all flows (requires Maestro CLI, `bun run dev`, and usually `bun run zero:dev`).
+  - `bun run e2e:maestro:smoke` — flows tagged `smoke` only.
+  - Set `MAESTRO_LOGIN_EMAIL`, `MAESTRO_LOGIN_PASSWORD`, and `MAESTRO_ORG_NAME` in the shell (defaults in `.maestro/config.yaml` use `http://localhost:3000`).
 - Database commands:
   - `bun run db:generate`
   - `bun run db:migrate`
