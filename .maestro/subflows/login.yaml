@@ -1,23 +1,28 @@
-# Signs in with MAESTRO_LOGIN_EMAIL / MAESTRO_LOGIN_PASSWORD.
-# Ends on org selection or dashboard when the session already has an active org.
+# Signs in with MAESTRO_LOGIN_EMAIL / MAESTRO_LOGIN_PASSWORD when the login form is shown.
+# If a session cookie is already present, skips credentials and waits for org selection or dashboard.
+url: ${MAESTRO_BASE_URL}
 ---
 - extendedWaitUntil:
     visible: "Registrarse"
-    timeout: 30000
+    optional: true
+    timeout: 8000
 
-- tapOn: "tu@negocio.com…"
-- inputText: ${MAESTRO_LOGIN_EMAIL}
-
-- tapOn: "••••••••"
-- inputText: ${MAESTRO_LOGIN_PASSWORD}
-- pressKey: Enter
+- runFlow:
+    when:
+      visible: "Registrarse"
+    commands:
+      - tapOn: "tu@negocio.com…"
+      - inputText: ${MAESTRO_LOGIN_EMAIL}
+      - tapOn: "••••••••"
+      - inputText: ${MAESTRO_LOGIN_PASSWORD}
+      - pressKey: Enter
 
 - extendedWaitUntil:
-    visible: "Acceso a organizaciones"
+    visible: "Elige Cómo Quieres Entrar"
     optional: true
-    timeout: 15000
+    timeout: 20000
 
 - extendedWaitUntil:
     visible: "Panel de control"
     optional: true
-    timeout: 15000
+    timeout: 20000

@@ -6,7 +6,7 @@ tags: [auth, organization]
 - runFlow: ../subflows/login.yaml
 
 - extendedWaitUntil:
-    visible: "Acceso a organizaciones"
+    visible: "Elige Cómo Quieres Entrar"
     timeout: 30000
 
 - tapOn: "Crear Nueva Organización"

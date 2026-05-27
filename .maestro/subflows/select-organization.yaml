@@ -1,8 +1,9 @@
 # Picks an organization by visible name (MAESTRO_ORG_NAME). No-op if already on dashboard.
+url: ${MAESTRO_BASE_URL}
 ---
 - runFlow:
     when:
-      visible: "Acceso a organizaciones"
+      visible: "Elige Cómo Quieres Entrar"
     commands:
       - extendedWaitUntil:
           visible: ${MAESTRO_ORG_NAME}

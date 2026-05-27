@@ -18,31 +18,31 @@ tags: [products]
       - tapOn: "Agregar producto"
 
       - tapOn:
-          text: "Ej. Café americano"
+          id: product-form-name
       - inputText:
           text: ${"Product_" + Math.floor(Math.random() * 10000)}
           label: "Random product name"
 
       - tapOn:
-          text: "Ej. 7701234567890"
+          id: product-form-barcode
       - inputRandomNumber:
           length: 9
-      - pressKey: tab
-
-      - inputRandomNumber:
-          length: 5
-      - pressKey: tab
 
       - tapOn:
-          text: "0"
-          index: 1
+          id: product-form-price
+      - eraseText
+      - inputRandomNumber:
+          length: 5
+
+      - tapOn:
+          id: product-form-cost
+      - eraseText
       - inputRandomNumber:
           length: 4
 
       - tapOn:
-          text: "0"
-          index: 2
-      - eraseText: 2
+          id: product-form-stock
+      - eraseText
       - inputRandomNumber:
           length: 2
 

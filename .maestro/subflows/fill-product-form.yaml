@@ -1,12 +1,14 @@
 # Fills the open "Crear producto" sheet. Expects PRODUCT_NAME and PRODUCT_PRICE env vars.
+# Uses data-testid selectors — avoid tapOn "0" (several money fields share that placeholder).
+url: ${MAESTRO_BASE_URL}
 ---
 - tapOn:
-    text: "Ej. Café americano"
+    id: product-form-name
 - inputText: ${PRODUCT_NAME}
 
 - tapOn:
-    text: "0"
-    index: 0
+    id: product-form-price
+- eraseText
 - inputText: ${PRODUCT_PRICE}
 
 - tapOn: "Guardar producto"

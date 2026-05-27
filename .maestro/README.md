@@ -40,9 +40,13 @@ bun run e2e:maestro:validate # static YAML checks (no browser)
 
 | Path | Purpose |
 |------|---------|
-| `auth/` | Login, org selection, org creation |
+| `auth/` | Login, register, org selection, org creation |
 | `products/` | Product CRUD smoke flows |
 | `subflows/` | Shared steps (not run directly) |
 | `config.yaml` | Discovery, tags, defaults, output dir |
 
 Flows are isolated: each top-level flow launches the app and signs in when needed.
+
+After login, org selection is detected by the heading **Elige Cómo Quieres Entrar** (not the badge alone).
+
+Product flows target `data-testid` on the create-product sheet (`product-form-name`, `product-form-price`, etc.). Do not use `tapOn: "0"` — precio, costo, impuesto y stock comparten el placeholder `0` y Maestro puede enfocar el campo equivocado (p. ej. nombre).

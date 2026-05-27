@@ -85,6 +85,7 @@ function ProductFormSheetContent({
               <ProductsField label="Nombre" required>
                 <Input
                   className="border-zinc-700 bg-black/20"
+                  data-testid="product-form-name"
                   onChange={(event) =>
                     setForm((current) => ({
                       ...current,
@@ -140,6 +141,7 @@ function ProductFormSheetContent({
               <ProductsField label="Código de barras">
                 <Input
                   className="border-zinc-700 bg-black/20"
+                  data-testid="product-form-barcode"
                   onChange={(event) =>
                     setForm((current) => ({
                       ...current,
@@ -153,6 +155,7 @@ function ProductFormSheetContent({
               <ProductsField label="Precio unitario" required>
                 <Input
                   className="border-zinc-700 bg-black/20"
+                  data-testid="product-form-price"
                   inputMode="numeric"
                   onChange={(event) =>
                     setForm((current) => ({
@@ -169,6 +172,7 @@ function ProductFormSheetContent({
               <ProductsField label="Costo">
                 <Input
                   className="border-zinc-700 bg-black/20"
+                  data-testid="product-form-cost"
                   inputMode="numeric"
                   onChange={(event) =>
                     setForm((current) => ({
@@ -201,6 +205,7 @@ function ProductFormSheetContent({
                 <ProductsField label="Stock inicial">
                   <Input
                     className="border-zinc-700 bg-black/20"
+                    data-testid="product-form-stock"
                     min={0}
                     onChange={(event) =>
                       setForm((current) => ({
