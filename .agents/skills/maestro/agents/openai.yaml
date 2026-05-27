@@ -1,0 +1,4 @@
+interface:
+  display_name: "Maestro E2E"
+  short_description: "Author, run, and debug Maestro E2E flows"
+  default_prompt: "Use $maestro to design, run, or debug Maestro end-to-end tests for this project."
