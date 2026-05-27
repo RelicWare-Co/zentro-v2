@@ -20,7 +20,12 @@ import {
 import { CreditFormField } from "@/features/credit/components/credit-ui-primitives";
 import { creditCurrencyFormatter } from "@/features/credit/credit-formatters.shared";
 import { useCreditPage } from "@/features/credit/credit-page-context";
-import { getErrorMessage } from "@/lib/utils";
+import {
+  formatMoneyInput,
+  getErrorMessage,
+  parseMoneyInput,
+  sanitizeMoneyInput,
+} from "@/lib/utils";
 
 function CreditPaymentSheetForm() {
   const { state, actions, meta } = useCreditPage();
@@ -36,9 +41,7 @@ function CreditPaymentSheetForm() {
   const notesId = useId();
 
   const maxAmount = state.selectedAccount?.balance ?? 0;
-  const parsedAmount = Number.isFinite(Number(amount))
-    ? Math.max(0, Math.round(Number(amount)))
-    : 0;
+  const parsedAmount = parseMoneyInput(amount);
   const isOverpayment = parsedAmount > maxAmount;
   const isValidAmount = parsedAmount > 0 && !isOverpayment;
   const selectedMethod = meta.paymentMethods.find(
@@ -99,15 +102,17 @@ function CreditPaymentSheetForm() {
         <div className="grid gap-4">
           <CreditFormField htmlFor={amountId} label="Monto" required>
             <Input
+              autoComplete="off"
               className="border-zinc-700 bg-black/20"
               id={amountId}
-              min={1}
-              onChange={(event) => setAmount(event.target.value)}
-              placeholder="Ej. 50000"
+              inputMode="numeric"
+              onChange={(event) =>
+                setAmount(sanitizeMoneyInput(event.target.value))
+              }
+              placeholder="Ej. 50.000"
               required
-              step={1}
-              type="number"
-              value={amount}
+              type="text"
+              value={formatMoneyInput(amount)}
             />
             {isOverpayment ? (
               <p className="text-red-400 text-sm">

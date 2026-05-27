@@ -5,6 +5,11 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+const moneyInputDisplayFormatter = new Intl.NumberFormat("es-CO", {
+  maximumFractionDigits: 0,
+  useGrouping: true,
+});
+
 export function sanitizeMoneyInput(value: string) {
   return value.replace(/[^\d]/g, "");
 }
@@ -31,7 +36,9 @@ export function parseMoneyInput(value: string | number | null | undefined) {
 
 export function formatMoneyInput(value: string | number) {
   const parsedValue = parseMoneyInput(value);
-  return parsedValue === 0 ? "" : String(parsedValue);
+  return parsedValue === 0
+    ? ""
+    : moneyInputDisplayFormatter.format(parsedValue);
 }
 
 export function getErrorMessage(error: unknown, fallback: string): string {

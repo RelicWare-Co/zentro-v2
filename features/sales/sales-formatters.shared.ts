@@ -3,6 +3,7 @@ import {
   SALE_STATUS_VALUES,
   type SalesView,
 } from "@/features/sales/sales-page.constants.shared";
+import { parseMoneyInput } from "@/lib/utils";
 
 export const salesDateTimeFormatter = new Intl.DateTimeFormat("es-CO", {
   day: "numeric",
@@ -91,12 +92,8 @@ export function resolveSalesDateFilters(
 }
 
 export function resolveAmountRange(amountMin: string, amountMax: string) {
-  const min = amountMin ? Number(amountMin) : null;
-  const max = amountMax ? Number(amountMax) : null;
-  const resolvedMin =
-    min !== null && Number.isFinite(min) && min >= 0 ? Math.trunc(min) : null;
-  const resolvedMax =
-    max !== null && Number.isFinite(max) && max >= 0 ? Math.trunc(max) : null;
+  const resolvedMin = amountMin.trim() ? parseMoneyInput(amountMin) : null;
+  const resolvedMax = amountMax.trim() ? parseMoneyInput(amountMax) : null;
   if (
     resolvedMin !== null &&
     resolvedMax !== null &&

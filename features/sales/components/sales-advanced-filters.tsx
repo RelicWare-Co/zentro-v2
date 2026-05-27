@@ -9,6 +9,7 @@ import {
 import { ALL_FILTER_VALUE } from "@/features/listing/listing.constants.shared";
 import { SalesFilterField } from "@/features/sales/components/sales-ui-primitives";
 import { useSalesPage } from "@/features/sales/sales-page-context";
+import { formatMoneyInput, sanitizeMoneyInput } from "@/lib/utils";
 
 function SalesAdvancedFiltersFields({
   layout,
@@ -140,12 +141,12 @@ function SalesAdvancedFiltersFields({
           className={inputClassName}
           id={`${idPrefix}${meta.fieldIds.amountMin}`}
           inputMode="numeric"
-          min={0}
-          onChange={(event) => actions.setAmountMin(event.target.value)}
-          placeholder="Ej. 5000…"
-          step={500}
-          type="number"
-          value={filters.amountMin}
+          onChange={(event) =>
+            actions.setAmountMin(sanitizeMoneyInput(event.target.value))
+          }
+          placeholder="Ej. 5.000…"
+          type="text"
+          value={formatMoneyInput(filters.amountMin)}
         />
       </SalesFilterField>
 
@@ -158,12 +159,12 @@ function SalesAdvancedFiltersFields({
           className={inputClassName}
           id={`${idPrefix}${meta.fieldIds.amountMax}`}
           inputMode="numeric"
-          min={0}
-          onChange={(event) => actions.setAmountMax(event.target.value)}
-          placeholder="Ej. 25000…"
-          step={500}
-          type="number"
-          value={filters.amountMax}
+          onChange={(event) =>
+            actions.setAmountMax(sanitizeMoneyInput(event.target.value))
+          }
+          placeholder="Ej. 25.000…"
+          type="text"
+          value={formatMoneyInput(filters.amountMax)}
         />
       </SalesFilterField>
 
