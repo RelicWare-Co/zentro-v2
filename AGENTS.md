@@ -18,11 +18,10 @@
 - Run a built production server with `bun run start`; production startup must use Bun, not Node.
 - Type-check with `bunx tsc --noEmit`.
 - Run tests with `bun test`.
-- Maestro E2E (web; flows in `.maestro/`, see `.maestro/README.md`):
-  - `bun run e2e:maestro:validate` — static flow checks (no browser).
-  - `bun run e2e:maestro` — run all flows (requires Maestro CLI, `bun run dev`, and usually `bun run zero:dev`).
-  - `bun run e2e:maestro:smoke` — flows tagged `smoke` only.
-  - Set `MAESTRO_LOGIN_EMAIL`, `MAESTRO_LOGIN_PASSWORD`, and `MAESTRO_ORG_NAME` in the shell (defaults in `.maestro/config.yaml` use `http://localhost:3000`).
+- Playwright E2E (web; specs in `tests/e2e/`, see `tests/e2e/README.md`):
+  - `bun run e2e:playwright` — run all flows (starts app + zero-cache via config when not already running; requires Postgres).
+  - `bun run e2e:playwright:smoke` — specs tagged `@smoke` only.
+  - Set `PLAYWRIGHT_LOGIN_EMAIL`, `PLAYWRIGHT_LOGIN_PASSWORD`, and `PLAYWRIGHT_ORG_NAME` in the shell (legacy `MAESTRO_*` names still work as fallbacks).
 - Database commands:
   - `bun run db:generate`
   - `bun run db:migrate`
@@ -186,3 +185,7 @@ Five canonical roles mapped to the default label strings (`needs-triage`, `needs
 ### Domain docs
 
 Single-context repo — one `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+
+### Playwright testing
+
+Use `.agents/skills/playwright-testing` as the project-local goto before adding, configuring, writing, running, or debugging Playwright tests.

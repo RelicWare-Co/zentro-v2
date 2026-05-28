@@ -164,5 +164,8 @@ dev.db
 
 *.db-wal2
 
-# Maestro E2E artifacts
-build/maestro-results/
+# Playwright E2E artifacts
+test-results/
+playwright-report/
+playwright/.auth/
+playwright/.auth/e2e-bootstrap.json

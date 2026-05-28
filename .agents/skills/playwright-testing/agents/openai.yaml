@@ -1,0 +1,4 @@
+interface:
+  display_name: "Playwright Testing"
+  short_description: "Project Playwright testing guide"
+  default_prompt: "Use $playwright-testing to add or debug Playwright tests in this project."
