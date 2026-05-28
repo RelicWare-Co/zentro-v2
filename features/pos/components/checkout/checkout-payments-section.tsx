@@ -1,5 +1,5 @@
 import { Plus, XIcon } from "lucide-react";
-import { useRef } from "react";
+import { useId, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -29,6 +29,8 @@ export function CheckoutPaymentsSection({
   const { state, actions, meta } = usePosPage();
   const internalRef = useRef<HTMLInputElement | null>(null);
   const paymentAmountInputRef = externalRef ?? internalRef;
+  const methodId = useId();
+  const amountId = useId();
 
   const paymentMethodById = new Map(
     meta.paymentMethodOptions.map((paymentMethod) => [
@@ -73,6 +75,7 @@ export function CheckoutPaymentsSection({
               >
                 <SelectTrigger
                   className={`${paymentFieldClassName} ${paymentSelectFieldClassName} flex-1 px-3 [&_[data-slot=select-value]]:leading-none`}
+                  id={`${methodId}-${index}`}
                 >
                   <SelectValue placeholder="Método" />
                 </SelectTrigger>
@@ -96,6 +99,7 @@ export function CheckoutPaymentsSection({
                   autoComplete="off"
                   autoFocus={autoFocusFirstAmount && index === 0}
                   className={`${paymentFieldClassName} pl-7`}
+                  id={`${amountId}-${index}`}
                   inputMode="numeric"
                   onChange={(e) =>
                     actions.updatePayment(
@@ -116,6 +120,7 @@ export function CheckoutPaymentsSection({
               <Input
                 autoComplete="off"
                 className="h-10 touch-manipulation border-zinc-700 bg-[#151515] text-base focus-visible:border-[var(--color-voltage)] focus-visible:ring-0 md:h-9 md:text-sm"
+                id={`${amountId}-ref-${index}`}
                 onChange={(e) =>
                   actions.updatePayment(index, "reference", e.target.value)
                 }

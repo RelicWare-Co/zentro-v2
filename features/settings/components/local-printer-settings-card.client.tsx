@@ -6,6 +6,7 @@ import {
   TestTube2,
   Usb,
 } from "lucide-react";
+import { useId } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -173,12 +174,17 @@ function ConnectionSettingsForm({
     updater: (currentValue: PosLocalPrinterSettings) => PosLocalPrinterSettings
   ) => void;
 }) {
+  const connectionTypeId = useId();
+  const languageId = useId();
+  const codepageId = useId();
+  const outputModeId = useId();
   return (
     <div className="grid gap-3 md:grid-cols-2">
       <div className="grid gap-2">
-        <Label>Tipo de conexión</Label>
+        <Label htmlFor={connectionTypeId}>Tipo de conexión</Label>
         <NativeSelect
           className="w-full"
+          id={connectionTypeId}
           onChange={(event) =>
             setConnectionSettings((currentValue) => ({
               ...currentValue,
@@ -197,9 +203,10 @@ function ConnectionSettingsForm({
       </div>
 
       <div className="grid gap-2">
-        <Label>Lenguaje de fallback</Label>
+        <Label htmlFor={languageId}>Lenguaje de fallback</Label>
         <NativeSelect
           className="w-full"
+          id={languageId}
           onChange={(event) =>
             setConnectionSettings((currentValue) => ({
               ...currentValue,
@@ -218,9 +225,10 @@ function ConnectionSettingsForm({
       </div>
 
       <div className="grid gap-2">
-        <Label>Mapping de codepage</Label>
+        <Label htmlFor={codepageId}>Mapping de codepage</Label>
         <Input
           className="border-zinc-700 bg-black/20"
+          id={codepageId}
           onChange={(event) =>
             setConnectionSettings((currentValue) => ({
               ...currentValue,
@@ -233,9 +241,10 @@ function ConnectionSettingsForm({
       </div>
 
       <div className="grid gap-2">
-        <Label>Modo de salida</Label>
+        <Label htmlFor={outputModeId}>Modo de salida</Label>
         <NativeSelect
           className="w-full"
+          id={outputModeId}
           onChange={(event) =>
             setConnectionSettings((currentValue) => ({
               ...currentValue,
@@ -265,6 +274,10 @@ function SerialParametersSection({
     updater: (currentValue: PosLocalPrinterSettings) => PosLocalPrinterSettings
   ) => void;
 }) {
+  const dataBitsId = useId();
+  const parityId = useId();
+  const flowControlId = useId();
+  const stopBitsId = useId();
   if (settings.connectionType !== "serial") {
     return null;
   }
@@ -306,9 +319,10 @@ function SerialParametersSection({
             value={settings.serial.bufferSize}
           />
           <div className="grid gap-2">
-            <Label>Data bits</Label>
+            <Label htmlFor={dataBitsId}>Data bits</Label>
             <NativeSelect
               className="w-full"
+              id={dataBitsId}
               onChange={(event) =>
                 setConnectionSettings((currentValue) => ({
                   ...currentValue,
@@ -325,9 +339,10 @@ function SerialParametersSection({
             </NativeSelect>
           </div>
           <div className="grid gap-2">
-            <Label>Paridad</Label>
+            <Label htmlFor={parityId}>Paridad</Label>
             <NativeSelect
               className="w-full"
+              id={parityId}
               onChange={(event) =>
                 setConnectionSettings((currentValue) => ({
                   ...currentValue,
@@ -346,9 +361,10 @@ function SerialParametersSection({
             </NativeSelect>
           </div>
           <div className="grid gap-2">
-            <Label>Flow control</Label>
+            <Label htmlFor={flowControlId}>Flow control</Label>
             <NativeSelect
               className="w-full"
+              id={flowControlId}
               onChange={(event) =>
                 setConnectionSettings((currentValue) => ({
                   ...currentValue,
@@ -366,9 +382,10 @@ function SerialParametersSection({
             </NativeSelect>
           </div>
           <div className="grid gap-2">
-            <Label>Stop bits</Label>
+            <Label htmlFor={stopBitsId}>Stop bits</Label>
             <NativeSelect
               className="w-full"
+              id={stopBitsId}
               onChange={(event) =>
                 setConnectionSettings((currentValue) => ({
                   ...currentValue,
@@ -596,11 +613,13 @@ function NumberField({
   value: number;
   onChange: (value: string) => void;
 }) {
+  const id = useId();
   return (
     <div className="grid gap-2">
-      <Label>{label}</Label>
+      <Label htmlFor={id}>{label}</Label>
       <Input
         className="border-zinc-700 bg-black/20"
+        id={id}
         inputMode="numeric"
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}

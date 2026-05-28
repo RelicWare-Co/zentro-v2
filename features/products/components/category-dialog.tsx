@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -32,6 +32,8 @@ function CategoryDialogContent({
 }) {
   const [name, setName] = useState(category?.name ?? "");
   const [description, setDescription] = useState(category?.description ?? "");
+  const nameId = useId();
+  const descriptionId = useId();
 
   return (
     <Dialog onOpenChange={onOpenChange} open={open}>
@@ -51,18 +53,20 @@ function CategoryDialogContent({
             }).catch(() => undefined);
           }}
         >
-          <ProductsField label="Nombre" required>
+          <ProductsField htmlFor={nameId} label="Nombre" required>
             <Input
               className="border-zinc-700 bg-black/20"
+              id={nameId}
               onChange={(event) => setName(event.target.value)}
               placeholder="Ej. Bebidas"
               required
               value={name}
             />
           </ProductsField>
-          <ProductsField label="Descripción">
+          <ProductsField htmlFor={descriptionId} label="Descripción">
             <Textarea
               className="min-h-[80px] border-zinc-700 bg-black/20"
+              id={descriptionId}
               onChange={(event) => setDescription(event.target.value)}
               placeholder="Descripción opcional…"
               value={description}

@@ -1,4 +1,5 @@
 import { History, Plus, Search, Wallet } from "lucide-react";
+import { useId } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TableCell, TableHead, TableRow } from "@/components/ui/table";
@@ -8,6 +9,7 @@ import { useCreditPage } from "@/features/credit/credit-page-context";
 
 export function CreditAccountsPanel() {
   const { state, actions } = useCreditPage();
+  const searchId = useId();
 
   return (
     <>
@@ -15,6 +17,7 @@ export function CreditAccountsPanel() {
         <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-zinc-500" />
         <Input
           className="border-zinc-800 bg-black/20 pl-9"
+          id={searchId}
           onChange={(event) => actions.setSearchQuery(event.target.value)}
           placeholder="Buscar por nombre, documento o teléfono…"
           value={state.searchQuery}

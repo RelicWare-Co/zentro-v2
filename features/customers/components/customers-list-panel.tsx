@@ -1,4 +1,5 @@
 import { Edit3, Loader2, Plus, Search, Trash2, Users } from "lucide-react";
+import { useId } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +10,7 @@ import { useCustomersPage } from "@/features/customers/customers-page-context";
 
 export function CustomersListPanel() {
   const { state, actions } = useCustomersPage();
+  const searchId = useId();
 
   return (
     <>
@@ -16,6 +18,7 @@ export function CustomersListPanel() {
         <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-zinc-500" />
         <Input
           className="border-zinc-800 bg-black/20 pl-9"
+          id={searchId}
           onChange={(event) => actions.setSearchQuery(event.target.value)}
           placeholder="Buscar por nombre, teléfono, documento o email…"
           value={state.searchQuery}

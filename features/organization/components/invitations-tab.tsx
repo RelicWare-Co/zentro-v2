@@ -1,5 +1,5 @@
 import { Loader2, UserPlus, XCircle } from "lucide-react";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -45,6 +45,8 @@ export function InvitationsTab() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("member");
   const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
+  const inviteEmailId = useId();
+  const inviteRoleId = useId();
 
   const inviteMutation = useInviteMemberMutation();
   const cancelMutation = useCancelInvitationMutation();
@@ -90,10 +92,11 @@ export function InvitationsTab() {
             <form className="space-y-4" onSubmit={handleInvite}>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label>Correo electrónico</Label>
+                  <Label htmlFor={inviteEmailId}>Correo electrónico</Label>
                   <Input
                     className="border-zinc-800 bg-black/30"
                     disabled={inviteMutation.isPending}
+                    id={inviteEmailId}
                     onChange={(e) => setInviteEmail(e.target.value)}
                     placeholder="colaborador@ejemplo.com"
                     required
@@ -102,13 +105,16 @@ export function InvitationsTab() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Rol</Label>
+                  <Label htmlFor={inviteRoleId}>Rol</Label>
                   <Select
                     disabled={inviteMutation.isPending}
                     onValueChange={setInviteRole}
                     value={inviteRole}
                   >
-                    <SelectTrigger className="border-zinc-800 bg-black/30">
+                    <SelectTrigger
+                      className="border-zinc-800 bg-black/30"
+                      id={inviteRoleId}
+                    >
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>

@@ -1,4 +1,4 @@
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -30,6 +30,12 @@ function CustomerFormSheetContent() {
   const [form, setForm] = useState(() =>
     getCustomerFormInitialValue(state.editingCustomer)
   );
+  const nameId = useId();
+  const typeId = useId();
+  const documentTypeId = useId();
+  const documentNumberId = useId();
+  const phoneId = useId();
+  const emailId = useId();
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -57,9 +63,10 @@ function CustomerFormSheetContent() {
 
       <div className="flex-1 space-y-6 overflow-y-auto p-6">
         <div className="grid gap-4">
-          <CustomerFormField label="Nombre" required>
+          <CustomerFormField htmlFor={nameId} label="Nombre" required>
             <Input
               className="border-zinc-700 bg-black/20"
+              id={nameId}
               onChange={(event) =>
                 setForm((current) => ({
                   ...current,
@@ -71,7 +78,7 @@ function CustomerFormSheetContent() {
               value={form.name}
             />
           </CustomerFormField>
-          <CustomerFormField label="Tipo de cliente">
+          <CustomerFormField htmlFor={typeId} label="Tipo de cliente">
             <Select
               onValueChange={(value) =>
                 setForm((current) => ({
@@ -81,7 +88,10 @@ function CustomerFormSheetContent() {
               }
               value={form.type || "natural"}
             >
-              <SelectTrigger className="w-full border-zinc-700 bg-black/20 text-white">
+              <SelectTrigger
+                className="w-full border-zinc-700 bg-black/20 text-white"
+                id={typeId}
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
@@ -93,7 +103,7 @@ function CustomerFormSheetContent() {
               </SelectContent>
             </Select>
           </CustomerFormField>
-          <CustomerFormField label="Tipo de documento">
+          <CustomerFormField htmlFor={documentTypeId} label="Tipo de documento">
             <Select
               onValueChange={(value) =>
                 setForm((current) => ({
@@ -103,7 +113,10 @@ function CustomerFormSheetContent() {
               }
               value={form.documentType || "none"}
             >
-              <SelectTrigger className="w-full border-zinc-700 bg-black/20 text-white">
+              <SelectTrigger
+                className="w-full border-zinc-700 bg-black/20 text-white"
+                id={documentTypeId}
+              >
                 <SelectValue placeholder="Sin documento" />
               </SelectTrigger>
               <SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
@@ -116,9 +129,13 @@ function CustomerFormSheetContent() {
               </SelectContent>
             </Select>
           </CustomerFormField>
-          <CustomerFormField label="Número de documento">
+          <CustomerFormField
+            htmlFor={documentNumberId}
+            label="Número de documento"
+          >
             <Input
               className="border-zinc-700 bg-black/20"
+              id={documentNumberId}
               onChange={(event) =>
                 setForm((current) => ({
                   ...current,
@@ -129,9 +146,10 @@ function CustomerFormSheetContent() {
               value={form.documentNumber}
             />
           </CustomerFormField>
-          <CustomerFormField label="Teléfono">
+          <CustomerFormField htmlFor={phoneId} label="Teléfono">
             <Input
               className="border-zinc-700 bg-black/20"
+              id={phoneId}
               onChange={(event) =>
                 setForm((current) => ({
                   ...current,
@@ -143,9 +161,10 @@ function CustomerFormSheetContent() {
               value={form.phone}
             />
           </CustomerFormField>
-          <CustomerFormField label="Correo electrónico">
+          <CustomerFormField htmlFor={emailId} label="Correo electrónico">
             <Input
               className="border-zinc-700 bg-black/20"
+              id={emailId}
               onChange={(event) =>
                 setForm((current) => ({
                   ...current,

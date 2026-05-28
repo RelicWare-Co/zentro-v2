@@ -1,5 +1,5 @@
 import { Check, ChevronsUpDown } from "lucide-react";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -39,6 +39,8 @@ export function InventoryDialog() {
   const [productPickerOpen, setProductPickerOpen] = useState(false);
   const open = Boolean(state.inventoryProduct);
   const isPending = mutations.registerInventoryMovementMutation.isPending;
+  const quantityId = useId();
+  const notesId = useId();
 
   return (
     <Dialog
@@ -136,9 +138,10 @@ export function InventoryDialog() {
               </SelectContent>
             </Select>
           </ProductsField>
-          <ProductsField label="Cantidad" required>
+          <ProductsField htmlFor={quantityId} label="Cantidad" required>
             <Input
               className="border-zinc-700 bg-black/20"
+              id={quantityId}
               onChange={(event) =>
                 actions.setInventoryQuantity(event.target.value)
               }
@@ -148,9 +151,10 @@ export function InventoryDialog() {
               value={state.inventoryQuantity}
             />
           </ProductsField>
-          <ProductsField label="Notas">
+          <ProductsField htmlFor={notesId} label="Notas">
             <Textarea
               className="min-h-[80px] border-zinc-700 bg-black/20"
+              id={notesId}
               onChange={(event) =>
                 actions.setInventoryNotes(event.target.value)
               }

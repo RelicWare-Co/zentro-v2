@@ -1,5 +1,5 @@
 import { Search, X } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useId, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { CategoryTabs } from "@/features/pos/components/category-tabs";
 import { ProductCard } from "@/features/pos/components/product-card";
@@ -24,6 +24,7 @@ export function ProductGrid({
     state.isProductsLoading;
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
+  const searchInputId = useId();
   const { clearSearch, handleKeyDown, handleSearchChange, searchInputRef } =
     usePosBarcodeScanner({
       isActiveShift: state.isActiveShift,
@@ -71,6 +72,7 @@ export function ProductGrid({
             <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-zinc-500" />
             <Input
               className="h-10 rounded-lg border-zinc-800 bg-black/40 pr-10 pl-9 text-white transition-all placeholder:text-zinc-600 focus-visible:border-[var(--color-voltage)] focus-visible:ring-1 focus-visible:ring-[var(--color-voltage)]"
+              id={searchInputId}
               onChange={handleSearchChange}
               onKeyDown={handleKeyDown}
               placeholder="Buscar productos, código de barras..."

@@ -1,5 +1,5 @@
 import { Check, Loader2, Pencil, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,6 +31,8 @@ export function GeneralTab() {
   const [editName, setEditName] = useState(data?.organization.name ?? "");
   const [editSlug, setEditSlug] = useState(data?.organization.slug ?? "");
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const orgNameId = useId();
+  const orgSlugId = useId();
 
   const updateMutation = useUpdateOrganizationMutation();
   const deleteMutation = useDeleteOrganizationMutation();
@@ -89,20 +91,22 @@ export function GeneralTab() {
             <form className="space-y-4" onSubmit={handleSave}>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label>Nombre</Label>
+                  <Label htmlFor={orgNameId}>Nombre</Label>
                   <Input
                     className="border-zinc-800 bg-black/30"
                     disabled={updateMutation.isPending}
+                    id={orgNameId}
                     onChange={(e) => setEditName(e.target.value)}
                     placeholder="Ej. Tienda Principal"
                     value={editName}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Slug</Label>
+                  <Label htmlFor={orgSlugId}>Slug</Label>
                   <Input
                     className="border-zinc-800 bg-black/30"
                     disabled={updateMutation.isPending}
+                    id={orgSlugId}
                     onChange={(e) =>
                       setEditSlug(
                         e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "")

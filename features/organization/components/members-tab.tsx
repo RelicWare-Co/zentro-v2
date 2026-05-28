@@ -1,5 +1,5 @@
 import { Check, Pencil, UserX, XCircle } from "lucide-react";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,6 +46,7 @@ export function MembersTab() {
     memberId: string;
     name: string;
   } | null>(null);
+  const roleSelectId = useId();
 
   const updateRoleMutation = useUpdateMemberRoleMutation();
   const removeMutation = useRemoveMemberMutation();
@@ -143,7 +144,10 @@ export function MembersTab() {
                           onValueChange={setPendingRole}
                           value={pendingRole}
                         >
-                          <SelectTrigger className="h-8 w-32 border-zinc-800 bg-black/30 text-xs">
+                          <SelectTrigger
+                            className="h-8 w-32 border-zinc-800 bg-black/30 text-xs"
+                            id={roleSelectId}
+                          >
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>

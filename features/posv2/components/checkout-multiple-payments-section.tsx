@@ -1,4 +1,5 @@
 import { Plus, XIcon } from "lucide-react";
+import { useId } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { usePosPage } from "@/features/pos/pos-page-context";
@@ -11,6 +12,8 @@ import { cn, formatMoneyInput, sanitizeMoneyInput } from "@/lib/utils";
 
 export function MultiplePaymentsSection() {
   const { state, actions, meta } = usePosPage();
+  const methodId = useId();
+  const amountId = useId();
   const paymentMethodById = new Map(
     meta.paymentMethodOptions.map((option) => [option.id, option])
   );
@@ -48,6 +51,7 @@ export function MultiplePaymentsSection() {
                   "h-9 min-w-0 flex-1 rounded-lg px-2 text-white text-xs focus-visible:border-[#dfff06]/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#dfff06]/10",
                   posV2OrderInputClassName
                 )}
+                id={`${methodId}-${index}`}
                 onChange={(event) =>
                   actions.updatePayment(index, "method", event.target.value)
                 }
@@ -67,6 +71,7 @@ export function MultiplePaymentsSection() {
                 <Input
                   autoComplete="off"
                   className={cn("h-9 pl-6", posV2OrderInputClassName)}
+                  id={`${amountId}-${index}`}
                   inputMode="numeric"
                   onChange={(event) =>
                     actions.updatePayment(
@@ -86,6 +91,7 @@ export function MultiplePaymentsSection() {
               <Input
                 autoComplete="off"
                 className={cn("mt-2 h-9", posV2OrderInputClassName)}
+                id={`${amountId}-ref-${index}`}
                 onChange={(event) =>
                   actions.updatePayment(index, "reference", event.target.value)
                 }
