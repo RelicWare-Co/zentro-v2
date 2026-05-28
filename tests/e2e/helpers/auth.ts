@@ -1,28 +1,77 @@
 import { expect, type Page } from "@playwright/test";
+import { ensureE2EBootstrap, invalidateBootstrapCache } from "./bootstrap";
 import { getNewOrgName, requireLoginCredentials, requireOrgName } from "./env";
+
+const invalidCredentialsPattern =
+  /Invalid email or password|Credenciales inválidas/i;
+
+async function isLoggedIn(page: Page): Promise<boolean> {
+  const orgHeading = page.getByRole("heading", {
+    name: "Elige Cómo Quieres Entrar",
+  });
+  const dashboardHeading = page.getByRole("heading", {
+    name: "Panel de control",
+  });
+
+  return (
+    (await orgHeading.isVisible({ timeout: 3000 }).catch(() => false)) ||
+    (await dashboardHeading.isVisible({ timeout: 3000 }).catch(() => false))
+  );
+}
 
 async function submitLoginForm(
   page: Page,
   email: string,
   password: string
 ): Promise<void> {
-  await page.getByRole("button", { name: "Iniciar sesión" }).click();
+  const loginTab = page.getByRole("button", { name: "Iniciar sesión" });
+  if (await loginTab.isVisible({ timeout: 5000 }).catch(() => false)) {
+    await loginTab.click();
+  }
+
   await page.locator('input[name="email"]').fill(email);
   await page.locator('input[name="password"]').fill(password);
   await page.getByRole("button", { name: "Ingresar" }).click();
 }
 
-export async function login(page: Page): Promise<void> {
-  const { email, password } = requireLoginCredentials();
-
-  await page.goto("/login");
-  await submitLoginForm(page, email, password);
+async function waitForPostLogin(page: Page): Promise<void> {
+  const invalidCredentials = page.getByText(invalidCredentialsPattern);
+  if (
+    await invalidCredentials.isVisible({ timeout: 5000 }).catch(() => false)
+  ) {
+    const { email } = requireLoginCredentials();
+    throw new Error(
+      `Login failed for ${email}. If the DB was reset, run FRESH=1 ./scripts/e2e-playwright-run.sh. If using PLAYWRIGHT_* vars, verify the account exists.`
+    );
+  }
 
   await expect(
     page
       .getByRole("heading", { name: "Elige Cómo Quieres Entrar" })
       .or(page.getByRole("heading", { name: "Panel de control" }))
   ).toBeVisible({ timeout: 30_000 });
+}
+
+export async function login(page: Page): Promise<void> {
+  await ensureE2EBootstrap(page.request);
+  invalidateBootstrapCache();
+
+  const { email, password } = requireLoginCredentials();
+
+  await page.goto("/login");
+  await expect(
+    page
+      .locator('input[name="email"]')
+      .or(page.getByRole("heading", { name: "Elige Cómo Quieres Entrar" }))
+      .or(page.getByRole("heading", { name: "Panel de control" }))
+  ).toBeVisible({ timeout: 15_000 });
+
+  if (await isLoggedIn(page)) {
+    return;
+  }
+
+  await submitLoginForm(page, email, password);
+  await waitForPostLogin(page);
 }
 
 export async function selectOrganization(page: Page): Promise<void> {
@@ -53,9 +102,16 @@ export async function loginAndSelectOrganization(page: Page): Promise<void> {
 }
 
 export async function createOrganization(page: Page): Promise<void> {
+  await ensureE2EBootstrap(page.request);
+  invalidateBootstrapCache();
+
   const { email, password } = requireLoginCredentials();
   await page.goto("/login");
-  await submitLoginForm(page, email, password);
+
+  if (!(await isLoggedIn(page))) {
+    await submitLoginForm(page, email, password);
+    await waitForPostLogin(page);
+  }
 
   await expect(
     page.getByRole("heading", { name: "Elige Cómo Quieres Entrar" })

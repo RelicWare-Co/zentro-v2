@@ -1,35 +1,11 @@
-import { existsSync, readFileSync } from "node:fs";
-import path from "node:path";
+import {
+  bootstrapPassword,
+  type E2EBootstrap,
+  readBootstrapCached,
+} from "./bootstrap";
 
-interface E2EBootstrap {
-  loginEmail: string;
-  loginPassword: string;
-  orgName: string;
-  registerPassword: string;
-}
-
-let bootstrapCache: E2EBootstrap | null | undefined;
-
-function getBootstrap(): E2EBootstrap | null {
-  if (bootstrapCache !== undefined) {
-    return bootstrapCache;
-  }
-
-  const bootstrapPath = path.join(
-    process.cwd(),
-    "playwright/.auth/e2e-bootstrap.json"
-  );
-
-  if (!existsSync(bootstrapPath)) {
-    bootstrapCache = null;
-    return null;
-  }
-
-  bootstrapCache = JSON.parse(
-    readFileSync(bootstrapPath, "utf8")
-  ) as E2EBootstrap;
-  return bootstrapCache;
-}
+const PLACEHOLDER_LOGIN_EMAILS = new Set(["you@example.com"]);
+const PLACEHOLDER_LOGIN_PASSWORDS = new Set(["your-password"]);
 
 function readEnv(primary: string, legacy?: string): string | undefined {
   const value =
@@ -37,24 +13,101 @@ function readEnv(primary: string, legacy?: string): string | undefined {
   return value && value.length > 0 ? value : undefined;
 }
 
-export function getLoginEmail(): string | undefined {
-  return (
-    readEnv("PLAYWRIGHT_LOGIN_EMAIL", "MAESTRO_LOGIN_EMAIL") ??
-    getBootstrap()?.loginEmail
+function readLoginEmail(): string | undefined {
+  const email = readEnv("PLAYWRIGHT_LOGIN_EMAIL", "MAESTRO_LOGIN_EMAIL");
+  if (email && PLACEHOLDER_LOGIN_EMAILS.has(email)) {
+    return;
+  }
+  return email;
+}
+
+function readLoginPassword(): string | undefined {
+  const password = readEnv(
+    "PLAYWRIGHT_LOGIN_PASSWORD",
+    "MAESTRO_LOGIN_PASSWORD"
   );
+  if (password && PLACEHOLDER_LOGIN_PASSWORDS.has(password)) {
+    return;
+  }
+  return password;
+}
+
+function usesFixedCredentials(): boolean {
+  return process.env.PLAYWRIGHT_USE_FIXED_CREDENTIALS === "1";
+}
+
+function getExplicitLoginCredentials(): {
+  email: string;
+  password: string;
+} | null {
+  const email = readLoginEmail();
+  const password = readLoginPassword();
+
+  if (email && password) {
+    return { email, password };
+  }
+
+  if (email || password) {
+    throw new Error(
+      "Set both PLAYWRIGHT_LOGIN_EMAIL and PLAYWRIGHT_LOGIN_PASSWORD, or neither to use the auto-created bootstrap account."
+    );
+  }
+
+  return null;
+}
+
+function getBootstrapCredentials(): E2EBootstrap | null {
+  return readBootstrapCached();
+}
+
+function resolveCredentials(): { email: string; password: string } {
+  if (!usesFixedCredentials()) {
+    const bootstrap = getBootstrapCredentials();
+    if (bootstrap) {
+      return {
+        email: bootstrap.loginEmail,
+        password: bootstrap.loginPassword,
+      };
+    }
+  }
+
+  const explicit = getExplicitLoginCredentials();
+  if (explicit) {
+    return explicit;
+  }
+
+  const bootstrap = getBootstrapCredentials();
+  if (bootstrap) {
+    return {
+      email: bootstrap.loginEmail,
+      password: bootstrap.loginPassword,
+    };
+  }
+
+  throw new Error(
+    "No E2E credentials available. Run the full suite (auth.setup runs first) or use FRESH=1 ./scripts/e2e-playwright-run.sh."
+  );
+}
+
+export function getLoginEmail(): string | undefined {
+  return resolveCredentials().email;
 }
 
 export function getLoginPassword(): string | undefined {
-  return (
-    readEnv("PLAYWRIGHT_LOGIN_PASSWORD", "MAESTRO_LOGIN_PASSWORD") ??
-    getBootstrap()?.loginPassword
-  );
+  return resolveCredentials().password;
 }
 
 export function getOrgName(): string | undefined {
+  if (!usesFixedCredentials()) {
+    const bootstrap = getBootstrapCredentials();
+    if (bootstrap) {
+      return bootstrap.orgName;
+    }
+  }
+
   return (
     readEnv("PLAYWRIGHT_ORG_NAME", "MAESTRO_ORG_NAME") ??
-    getBootstrap()?.orgName
+    getBootstrapCredentials()?.orgName
   );
 }
 
@@ -79,45 +132,23 @@ export function getRegisterEmail(): string {
   );
 }
 
-export function getRegisterPassword(): string | undefined {
-  return (
-    readEnv("PLAYWRIGHT_REGISTER_PASSWORD", "MAESTRO_REGISTER_PASSWORD") ??
-    getBootstrap()?.registerPassword
+export function getRegisterPassword(): string {
+  const explicit = readEnv(
+    "PLAYWRIGHT_REGISTER_PASSWORD",
+    "MAESTRO_REGISTER_PASSWORD"
   );
-}
-
-export function requireLoginEmail(): string {
-  const email = getLoginEmail();
-  if (!email) {
-    throw new Error(
-      "Set PLAYWRIGHT_LOGIN_EMAIL (or legacy MAESTRO_LOGIN_EMAIL)."
-    );
+  if (explicit) {
+    return explicit;
   }
-  return email;
-}
 
-export function requireLoginPassword(): string {
-  const password = getLoginPassword();
-  if (!password) {
-    throw new Error(
-      "Set PLAYWRIGHT_LOGIN_PASSWORD (or legacy MAESTRO_LOGIN_PASSWORD)."
-    );
-  }
-  return password;
+  return getBootstrapCredentials()?.registerPassword ?? bootstrapPassword;
 }
 
 export function requireLoginCredentials(): {
   email: string;
   password: string;
 } {
-  const email = getLoginEmail();
-  const password = getLoginPassword();
-  if (!(email && password)) {
-    throw new Error(
-      "Set PLAYWRIGHT_LOGIN_EMAIL and PLAYWRIGHT_LOGIN_PASSWORD (or legacy MAESTRO_* vars)."
-    );
-  }
-  return { email, password };
+  return resolveCredentials();
 }
 
 export function requireOrgName(): string {

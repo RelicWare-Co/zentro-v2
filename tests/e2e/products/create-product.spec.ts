@@ -1,7 +1,7 @@
-import { expect, test } from "@playwright/test";
+import { test } from "@playwright/test";
 import { loginAndSelectOrganization } from "../helpers/auth";
-import { requireLoginCredentials, requireOrgName } from "../helpers/env";
 import {
+  expectProductInTable,
   fillProductForm,
   openCreateProductSheet,
   openProductsPage,
@@ -11,19 +11,16 @@ test.describe("products", () => {
   test("create product @smoke", { tag: ["@smoke", "@products"] }, async ({
     page,
   }) => {
-    requireLoginCredentials();
-    requireOrgName();
+    const productName = `Hola Mundo ${Date.now()}`;
 
     await loginAndSelectOrganization(page);
     await openProductsPage(page);
     await openCreateProductSheet(page);
     await fillProductForm(page, {
-      name: "Hola Mundo",
+      name: productName,
       price: "99000",
     });
 
-    await expect(page.getByText("Hola Mundo")).toBeVisible({
-      timeout: 15_000,
-    });
+    await expectProductInTable(page, productName);
   });
 });

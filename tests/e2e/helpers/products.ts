@@ -33,6 +33,15 @@ export async function fillProductForm(
   ).not.toBeVisible({ timeout: 15_000 });
 }
 
+export async function expectProductInTable(
+  page: Page,
+  name: string
+): Promise<void> {
+  await expect(page.getByRole("row").filter({ hasText: name })).toBeVisible({
+    timeout: 15_000,
+  });
+}
+
 export async function fillRandomProductForm(page: Page): Promise<string> {
   const productName = `Product_${Math.floor(Math.random() * 10_000)}`;
   const randomDigits = (length: number) =>

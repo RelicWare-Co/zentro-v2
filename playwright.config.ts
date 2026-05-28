@@ -16,11 +16,11 @@ const zeroCacheURL =
 
 export default defineConfig({
   testDir: "tests/e2e",
-  globalSetup: "./tests/e2e/global-setup.ts",
-  fullyParallel: true,
+  // One bootstrap account/org shared across specs; parallel logins race on auth cookies.
+  fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  workers: 1,
   reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : "html",
   use: {
     baseURL,
@@ -30,8 +30,13 @@ export default defineConfig({
   },
   projects: [
     {
+      name: "setup",
+      testMatch: /.*\.setup\.ts/,
+    },
+    {
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
+      dependencies: ["setup"],
     },
   ],
   webServer: [

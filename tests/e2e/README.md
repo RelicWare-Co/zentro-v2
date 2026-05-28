@@ -7,6 +7,7 @@ End-to-end browser tests for Zentro via [Playwright](https://playwright.dev).
 1. Postgres: `docker compose up -d`
 2. Playwright browsers: `bunx playwright install chromium` (once after install)
 3. Tests start the app and Zero cache automatically via `playwright.config.ts` when nothing is already listening on ports 3000 and 4848.
+4. A **setup project** (`auth.setup.ts`) runs first (after servers are up) and creates a bootstrap account via API when `PLAYWRIGHT_LOGIN_EMAIL` is not set.
 
 For local iteration you can still run `bun run dev` and `bun run zero:dev` yourself; Playwright reuses existing servers outside CI.
 
@@ -30,9 +31,7 @@ export PLAYWRIGHT_REGISTER_EMAIL=""   # auto-generated if empty
 export PLAYWRIGHT_REGISTER_PASSWORD=your-password
 ```
 
-Legacy `MAESTRO_*` variable names are still read as fallbacks during migration.
-
-See `.env.example` for documented names.
+Without that file, `auth.setup.ts` registers a user + org automatically. Use `FRESH=1` (or `PLAYWRIGHT_E2E_FRESH=1`) to force a new bootstrap account, e.g. after resetting Postgres.
 
 ## Commands
 

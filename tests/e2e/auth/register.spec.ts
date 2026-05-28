@@ -10,17 +10,25 @@ const emailField = /Correo electrónico/;
 const passwordField = /^Contraseña/;
 const confirmPasswordField = /Confirmar contraseña/;
 
+async function openRegisterForm(page: import("@playwright/test").Page) {
+  await page.goto("/login");
+
+  const signOutButton = page.getByRole("button", { name: "Cerrar sesión" });
+  if (await signOutButton.isVisible({ timeout: 3000 }).catch(() => false)) {
+    await signOutButton.click();
+    await page.goto("/login");
+  }
+
+  await page.getByRole("button", { name: "Registrarse" }).click();
+}
+
 test.describe("auth", () => {
   test("register new account @smoke", { tag: ["@smoke", "@auth"] }, async ({
     page,
   }) => {
     const password = getRegisterPassword();
-    if (!password) {
-      throw new Error("Set PLAYWRIGHT_REGISTER_PASSWORD");
-    }
 
-    await page.goto("/login");
-    await page.getByRole("button", { name: "Registrarse" }).click();
+    await openRegisterForm(page);
 
     await expect(
       page.getByRole("heading", { name: createAccountHeading })
