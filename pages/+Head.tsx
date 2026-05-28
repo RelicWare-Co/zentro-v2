@@ -24,6 +24,19 @@ export function Head() {
       <meta content="Zentro" name="apple-mobile-web-app-title" />
       <meta content="telephone=no" name="format-detection" />
       <script>{THEME_INIT_SCRIPT}</script>
+      <script
+        data-website-id="80d4a2ff-81ad-4a76-89ba-a7b683cf2ebf"
+        defer
+        src="https://umami.relicware.co/script.js"
+      />
+      <script
+        data-mask-level="moderate"
+        data-max-duration="300000"
+        data-sample-rate="0.5"
+        data-website-id="80d4a2ff-81ad-4a76-89ba-a7b683cf2ebf"
+        defer
+        src="https://umami.relicware.co/recorder.js"
+      />
     </>
   );
 }
