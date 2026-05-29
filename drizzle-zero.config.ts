@@ -195,6 +195,8 @@ export default drizzleZeroConfig(drizzleSchema, {
       isModifier: true,
       trackInventory: true,
       stock: true,
+      minStock: true,
+      reorderQuantity: true,
       isFavorite: true,
       deletedAt: true,
       createdAt: true,

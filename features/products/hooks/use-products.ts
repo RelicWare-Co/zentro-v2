@@ -1,6 +1,9 @@
 import { useQuery as useZeroQuery } from "@rocicorp/zero/react";
 import { useDeferredValue, useMemo, useRef } from "react";
 import type { z } from "zod";
+import type { StockStatus } from "@/features/inventory/stock-status.shared";
+import { getStockStatus } from "@/features/inventory/stock-status.shared";
+import { sortProductsByCatalogSearch } from "@/features/products/products-search.shared";
 import {
   getZeroQueryError,
   useZeroMutation,
@@ -52,6 +55,8 @@ function normalizeProduct(product: ZeroProductWithCategory): Product {
     cost: product.cost ?? 0,
     taxRate: product.taxRate ?? 0,
     stock: product.stock ?? 0,
+    minStock: product.minStock ?? null,
+    reorderQuantity: product.reorderQuantity ?? null,
     trackInventory: product.trackInventory ?? true,
     isModifier: product.isModifier ?? false,
     isFavorite: product.isFavorite ?? false,
@@ -67,11 +72,15 @@ function normalizeCategory(category: ZeroCategory): Category {
   };
 }
 
+export type ProductStockFilter = "all" | StockStatus;
+
 export function useProductsQueries(options: {
   page: number;
   pageSize: number;
   query: string;
   categoryId: string | null;
+  stockFilter?: ProductStockFilter;
+  lowStockThreshold?: number;
 }) {
   const deferredSearchQuery = useDeferredValue(options.query);
   const [productRows, productsStatus] = useZeroQuery(
@@ -87,10 +96,34 @@ export function useProductsQueries(options: {
 
   const productsError = getZeroQueryError(productsStatus);
   const categoriesError = getZeroQueryError(categoriesStatus);
-  const products = useMemo(
-    () => productRows.map((product) => normalizeProduct(product)),
-    [productRows]
-  );
+  const products = useMemo(() => {
+    const normalized = productRows.map((product) => normalizeProduct(product));
+    const sorted = sortProductsByCatalogSearch(
+      normalized,
+      deferredSearchQuery.trim() || null
+    );
+    if (
+      !options.stockFilter ||
+      options.stockFilter === "all" ||
+      options.lowStockThreshold === undefined
+    ) {
+      return sorted;
+    }
+    return sorted.filter(
+      (product) =>
+        getStockStatus({
+          trackInventory: product.trackInventory,
+          stock: product.stock,
+          minStock: product.minStock,
+          lowStockThreshold: options.lowStockThreshold ?? 5,
+        }) === options.stockFilter
+    );
+  }, [
+    deferredSearchQuery,
+    options.lowStockThreshold,
+    options.stockFilter,
+    productRows,
+  ]);
   const categories = useMemo(
     () => categoryRows.map(normalizeCategory),
     [categoryRows]
@@ -125,6 +158,7 @@ export function useProductsQueries(options: {
 
   return {
     products: displayData.products,
+    catalogProducts: products,
     total: displayData.total,
     categories: displayData.categories,
     isPending: isLoading && !hasLoadedRef.current,

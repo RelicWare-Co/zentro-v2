@@ -1,4 +1,5 @@
 import { type FormEvent, useState } from "react";
+import { Link } from "@/components/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -16,11 +17,15 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { generateEan13Barcode } from "@/features/products/barcode.shared";
 import {
   ProductsField,
   ProductsToggleLine,
 } from "@/features/products/components/products-ui-primitives";
-import { getProductFormInitialValue } from "@/features/products/products-form.shared";
+import {
+  getProductFormInitialValue,
+  parseOptionalStockField,
+} from "@/features/products/products-form.shared";
 import { useProductsPage } from "@/features/products/products-page-context";
 import {
   formatMoneyInput,
@@ -38,6 +43,7 @@ function ProductFormSheetContent({
   error,
   onSave,
   onOpenCategoryDialog,
+  lowStockThreshold,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -47,6 +53,7 @@ function ProductFormSheetContent({
   error: unknown;
   onSave: ReturnType<typeof useProductsPage>["actions"]["saveProduct"];
   onOpenCategoryDialog: () => void;
+  lowStockThreshold: number;
 }) {
   const [form, setForm] = useState(() => getProductFormInitialValue(product));
 
@@ -62,6 +69,8 @@ function ProductFormSheetContent({
       cost: parseMoneyInput(form.cost),
       taxRate: Number(form.taxRate) || 0,
       stock: Number(form.stock) || 0,
+      minStock: parseOptionalStockField(form.minStock),
+      reorderQuantity: parseOptionalStockField(form.reorderQuantity),
       trackInventory: form.trackInventory,
       isModifier: form.isModifier,
     });
@@ -139,18 +148,34 @@ function ProductFormSheetContent({
                 />
               </ProductsField>
               <ProductsField label="Código de barras">
-                <Input
-                  className="border-zinc-700 bg-black/20"
-                  id="product-form-barcode"
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      barcode: event.target.value,
-                    }))
-                  }
-                  placeholder="Ej. 7701234567890"
-                  value={form.barcode}
-                />
+                <div className="flex gap-2">
+                  <Input
+                    className="border-zinc-700 bg-black/20"
+                    id="product-form-barcode"
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        barcode: event.target.value,
+                      }))
+                    }
+                    placeholder="Ej. 7701234567890"
+                    value={form.barcode}
+                  />
+                  <Button
+                    className="shrink-0 border-zinc-700 bg-black/20 text-zinc-200 hover:bg-white/5"
+                    disabled={Boolean(form.barcode.trim())}
+                    onClick={() =>
+                      setForm((current) => ({
+                        ...current,
+                        barcode: generateEan13Barcode(),
+                      }))
+                    }
+                    type="button"
+                    variant="outline"
+                  >
+                    Generar
+                  </Button>
+                </div>
               </ProductsField>
               <ProductsField label="Precio unitario" required>
                 <Input
@@ -202,22 +227,63 @@ function ProductFormSheetContent({
                 />
               </ProductsField>
               {form.trackInventory ? (
-                <ProductsField label="Stock inicial">
-                  <Input
-                    className="border-zinc-700 bg-black/20"
-                    id="product-form-stock"
-                    min={0}
-                    onChange={(event) =>
-                      setForm((current) => ({
-                        ...current,
-                        stock: event.target.value,
-                      }))
-                    }
-                    placeholder="0"
-                    type="number"
-                    value={form.stock}
-                  />
-                </ProductsField>
+                <>
+                  <ProductsField label="Stock inicial">
+                    <Input
+                      className="border-zinc-700 bg-black/20"
+                      id="product-form-stock"
+                      min={0}
+                      onChange={(event) =>
+                        setForm((current) => ({
+                          ...current,
+                          stock: event.target.value,
+                        }))
+                      }
+                      placeholder="0"
+                      type="number"
+                      value={form.stock}
+                    />
+                  </ProductsField>
+                  <ProductsField label="Stock mínimo (alerta)">
+                    <Input
+                      className="border-zinc-700 bg-black/20"
+                      min={0}
+                      onChange={(event) =>
+                        setForm((current) => ({
+                          ...current,
+                          minStock: event.target.value,
+                        }))
+                      }
+                      placeholder={`Vacío = ${lowStockThreshold}`}
+                      type="number"
+                      value={form.minStock}
+                    />
+                    <p className="mt-1 text-xs text-zinc-500">
+                      Vacío usa el umbral global ({lowStockThreshold}).{" "}
+                      <Link
+                        className="text-[var(--color-voltage)] hover:underline"
+                        href="/settings"
+                      >
+                        Editar en configuración
+                      </Link>
+                    </p>
+                  </ProductsField>
+                  <ProductsField label="Cantidad sugerida de reposición">
+                    <Input
+                      className="border-zinc-700 bg-black/20"
+                      min={0}
+                      onChange={(event) =>
+                        setForm((current) => ({
+                          ...current,
+                          reorderQuantity: event.target.value,
+                        }))
+                      }
+                      placeholder="Opcional"
+                      type="number"
+                      value={form.reorderQuantity}
+                    />
+                  </ProductsField>
+                </>
               ) : null}
             </div>
 
@@ -285,6 +351,7 @@ export function ProductFormSheet() {
           ? (state.editingProduct?.id ?? "new")
           : "closed"
       }
+      lowStockThreshold={state.lowStockThreshold}
       onOpenCategoryDialog={actions.openCreateCategory}
       onOpenChange={(open) => {
         if (open) {

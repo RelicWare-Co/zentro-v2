@@ -23,6 +23,7 @@ import {
   resolveAmountRange,
 } from "@/features/sales/sales.shared";
 import { parseDateBoundary as parseShiftDateBoundary } from "@/features/shifts/shifts.shared";
+import { InventoryMovementsListQueryArgsSchema } from "@/schemas/inventory-movements";
 import { SalesListQueryArgsSchema } from "@/schemas/sales";
 import { ShiftsListQueryArgsSchema } from "@/schemas/shifts";
 import type { ZeroContext } from "./context";
@@ -216,6 +217,76 @@ function buildShiftsListQuery(
 
 function normalizeSalesPageLimit(limit?: number) {
   return Math.min(Math.max(limit ?? 50, 1), 100);
+}
+
+function normalizeInventoryMovementsPageLimit(limit?: number) {
+  return Math.min(Math.max(limit ?? 50, 1), 100);
+}
+
+function buildInventoryMovementsListQuery(
+  organizationId: string,
+  args: z.infer<typeof InventoryMovementsListQueryArgsSchema>
+) {
+  const pageSize = normalizeInventoryMovementsPageLimit(args.limit);
+  const fetchLimit = pageSize + 1;
+  const startDateMs = parseSaleDateBoundary(args.startDate);
+  const endDateMs = parseSaleDateBoundary(args.endDate);
+  const endDateExclusiveMs =
+    endDateMs === null ? null : endDateMs + 24 * 60 * 60 * 1000;
+  const normalizedSearch = args.searchQuery?.trim() ?? "";
+  const searchPattern = normalizedSearch ? `%${normalizedSearch}%` : "";
+  const normalizedProductId = args.productId?.trim() ?? "";
+  const normalizedType = args.type?.trim() ?? "";
+
+  let query = zql.inventoryMovement
+    .where("organizationId", organizationId)
+    .related("product")
+    .related("user");
+
+  if (normalizedProductId) {
+    query = query.where("productId", normalizedProductId);
+  }
+  if (normalizedType) {
+    query = query.where("type", normalizedType);
+  }
+  if (startDateMs !== null) {
+    query = query.where("createdAt", ">=", startDateMs);
+  }
+  if (endDateExclusiveMs !== null) {
+    query = query.where("createdAt", "<", endDateExclusiveMs);
+  }
+  if (searchPattern) {
+    query = query.where(({ cmp, or, exists }) =>
+      or(
+        cmp("notes", "ILIKE", searchPattern),
+        exists("product", (productQuery) =>
+          productQuery.where(({ cmp: productCmp, or: productOr }) =>
+            productOr(
+              productCmp("name", "ILIKE", searchPattern),
+              productCmp("sku", "ILIKE", searchPattern),
+              productCmp("barcode", "ILIKE", searchPattern)
+            )
+          )
+        ),
+        exists("user", (userQuery) =>
+          userQuery.where("name", "ILIKE", searchPattern)
+        )
+      )
+    );
+  }
+
+  query = query.orderBy("createdAt", "desc").orderBy("id", "desc");
+
+  const normalizedCursorId = args.cursor?.id.trim() ?? "";
+  if (args.cursor && normalizedCursorId) {
+    query = query.start({
+      createdAt: args.cursor.createdAt,
+      id: normalizedCursorId,
+      organizationId,
+    });
+  }
+
+  return query.limit(fetchLimit);
 }
 
 function buildSalesListQuery(
@@ -449,6 +520,20 @@ export const queries = defineQueries({
 
       return buildPosCatalogQuery(ctx.orgID, args);
     }),
+    movements: {
+      list: defineQuery(
+        InventoryMovementsListQueryArgsSchema,
+        ({ args, ctx }) => {
+          if (!hasOrgContext(ctx)) {
+            return zql.inventoryMovement.where(({ cmpLit }) =>
+              cmpLit(false, "=", true)
+            );
+          }
+
+          return buildInventoryMovementsListQuery(ctx.orgID, args);
+        }
+      ),
+    },
   },
   credit: {
     accounts: defineQuery(({ ctx }) => {

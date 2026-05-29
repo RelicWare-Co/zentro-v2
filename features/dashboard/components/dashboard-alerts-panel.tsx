@@ -1,4 +1,5 @@
 import { AlertTriangle, CreditCard } from "lucide-react";
+import { Link } from "@/components/link";
 import { Badge } from "@/components/ui/badge";
 import {
   DashboardPanelShell,
@@ -52,8 +53,9 @@ export function DashboardAlertsPanel() {
         {lowStockProducts.length > 0 ? (
           <div className="space-y-3 pt-2">
             {lowStockProducts.map((productItem) => (
-              <div
+              <Link
                 className="flex items-center justify-between gap-4 rounded-xl border border-zinc-800 bg-black/10 px-4 py-3 transition-colors hover:bg-white/5"
+                href="/products?stock=low"
                 key={productItem.id}
               >
                 <div className="min-w-0">
@@ -67,7 +69,7 @@ export function DashboardAlertsPanel() {
                 <Badge className="border-0 bg-amber-500/10 text-amber-300">
                   Stock {formatCount(productItem.stock)}
                 </Badge>
-              </div>
+              </Link>
             ))}
           </div>
         ) : (

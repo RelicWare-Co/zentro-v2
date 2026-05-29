@@ -1,7 +1,15 @@
 import type { ReactNode } from "react";
+import { useCallback, useEffect } from "react";
+import { useKeyboardBarcodeScanner } from "@/features/posv2/hooks/use-keyboard-barcode-scanner.client";
+import {
+  buildPosV2BarcodeScanPayload,
+  isPosV2ScannerBlocked,
+} from "@/features/posv2/posv2-barcode.shared";
+import { findCatalogProductByBarcodeScan } from "@/features/products/barcode.shared";
 import { CategoriesTab } from "@/features/products/components/categories-tab";
 import { CategoryDialog } from "@/features/products/components/category-dialog";
 import { InventoryDialog } from "@/features/products/components/inventory-dialog";
+import { KardexTab } from "@/features/products/components/kardex-tab";
 import { ProductDeleteDialog } from "@/features/products/components/product-delete-dialog";
 import { ProductFormSheet } from "@/features/products/components/product-form-sheet";
 import { ProductsPageHeader } from "@/features/products/components/products-page-header";
@@ -11,6 +19,7 @@ import {
 } from "@/features/products/components/products-page-states";
 import {
   ProductsPageCategoriesTabContent,
+  ProductsPageKardexTabContent,
   ProductsPageProductsTabContent,
   ProductsPageTabs,
 } from "@/features/products/components/products-page-tabs";
@@ -29,7 +38,42 @@ function ProductsPageRoot({ children }: { children: ReactNode }) {
 }
 
 function ProductsPageLayout() {
-  const { state } = useProductsPage();
+  const { state, actions } = useProductsPage();
+  const scannerEnabled = !(
+    state.isProductSheetOpen ||
+    state.isCategoryDialogOpen ||
+    state.inventoryProduct ||
+    state.productToDelete
+  );
+
+  const handleBarcodeScan = useCallback(
+    (event: Parameters<typeof buildPosV2BarcodeScanPayload>[0]) => {
+      if (isPosV2ScannerBlocked()) {
+        return;
+      }
+      const payload = buildPosV2BarcodeScanPayload(event);
+      const match = findCatalogProductByBarcodeScan(
+        state.catalogProducts,
+        payload.lookupValues
+      );
+      if (match) {
+        actions.openEditProduct(match);
+        return;
+      }
+      actions.setQuery(payload.value);
+      actions.setActiveTab("products");
+    },
+    [actions, state.catalogProducts]
+  );
+
+  const { isConnected: isBarcodeScannerConnected } = useKeyboardBarcodeScanner({
+    enabled: scannerEnabled,
+    onScan: handleBarcodeScan,
+  });
+
+  useEffect(() => {
+    actions.setIsBarcodeScannerConnected(isBarcodeScannerConnected);
+  }, [actions, isBarcodeScannerConnected]);
 
   if (state.isPending) {
     return <ProductsPageLoading />;
@@ -50,6 +94,9 @@ function ProductsPageLayout() {
           <ProductsPageCategoriesTabContent>
             <CategoriesTab />
           </ProductsPageCategoriesTabContent>
+          <ProductsPageKardexTabContent>
+            <KardexTab />
+          </ProductsPageKardexTabContent>
         </ProductsPageTabs>
       </ProductsPageRoot>
       <ProductFormSheet />

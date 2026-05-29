@@ -78,6 +78,8 @@ describe("Zero products", () => {
           cost: 5000,
           taxRate: 0,
           stock: 50,
+          minStock: 8,
+          reorderQuantity: 12,
           trackInventory: true,
           isModifier: false,
         },
@@ -98,6 +100,8 @@ describe("Zero products", () => {
       name: "Burger",
       organizationId,
       sku: "BUR-001",
+      minStock: 8,
+      reorderQuantity: 12,
     });
 
     await zeroDb.transaction((tx) =>

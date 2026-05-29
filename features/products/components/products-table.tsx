@@ -65,7 +65,12 @@ export function ProductsTable() {
       columnHelper.display({
         id: "stock",
         header: "Stock",
-        cell: ({ row }) => <ProductStockBadge product={row.original} />,
+        cell: ({ row }) => (
+          <ProductStockBadge
+            lowStockThreshold={state.lowStockThreshold}
+            product={row.original}
+          />
+        ),
       }),
       columnHelper.accessor("price", {
         header: "Precio",
@@ -113,7 +118,7 @@ export function ProductsTable() {
         ),
       }),
     ],
-    [actions]
+    [actions, state.lowStockThreshold]
   );
 
   const table = useReactTable({

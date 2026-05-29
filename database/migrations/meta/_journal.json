@@ -22,6 +22,13 @@
       "when": 1779568132173,
       "tag": "0002_living_wolfpack",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1780030945459,
+      "tag": "0003_greedy_thena",
+      "breakpoints": true
     }
   ]
 }

@@ -1,4 +1,4 @@
-import { Package } from "lucide-react";
+import { History, Package } from "lucide-react";
 import type { ReactNode } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -38,6 +38,13 @@ export function ProductsPageTabs({ children }: { children: ReactNode }) {
         >
           Categorías
         </TabsTrigger>
+        <TabsTrigger
+          className="data-[state=active]:!border-zinc-700 h-10 flex-1 gap-2 rounded-xl border border-transparent px-5 font-medium text-sm text-zinc-400 transition-all hover:text-white data-[state=active]:bg-[var(--color-carbon)] data-[state=active]:text-white sm:flex-none"
+          value="kardex"
+        >
+          <History className="size-4" />
+          Kardex
+        </TabsTrigger>
       </TabsList>
       {children}
     </Tabs>
@@ -63,6 +70,18 @@ export function ProductsPageCategoriesTabContent({
 }) {
   return (
     <TabsContent className="space-y-6" value="categories">
+      {children}
+    </TabsContent>
+  );
+}
+
+export function ProductsPageKardexTabContent({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  return (
+    <TabsContent className="space-y-6" value="kardex">
       {children}
     </TabsContent>
   );

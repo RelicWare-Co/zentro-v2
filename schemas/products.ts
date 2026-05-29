@@ -2,6 +2,29 @@ import { z } from "zod";
 
 const NullableStringSchema = z.string().trim().optional().nullable();
 
+const OptionalNonNegativeIntSchema = z
+  .number()
+  .int()
+  .min(0)
+  .nullable()
+  .optional();
+
+const BARCODE_PATTERN = /^[\dA-Za-z-]+$/;
+
+function validateBarcodeValue(
+  barcode: string | null | undefined,
+  ctx: z.RefinementCtx
+) {
+  const trimmed = barcode?.trim() ?? "";
+  if (trimmed && (trimmed.length > 64 || !BARCODE_PATTERN.test(trimmed))) {
+    ctx.addIssue({
+      code: "custom",
+      message: "El código de barras solo puede tener letras, números o guiones",
+      path: ["barcode"],
+    });
+  }
+}
+
 export const ProductSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -13,6 +36,8 @@ export const ProductSchema = z.object({
   cost: z.number(),
   taxRate: z.number(),
   stock: z.number(),
+  minStock: z.number().nullable().optional(),
+  reorderQuantity: z.number().nullable().optional(),
   trackInventory: z.boolean(),
   isModifier: z.boolean(),
   isFavorite: z.boolean(),
@@ -25,18 +50,24 @@ export const CategorySchema = z.object({
   description: z.string().nullable().optional(),
 });
 
-export const CreateProductSchema = z.object({
-  name: z.string().trim().min(1, "El nombre es obligatorio"),
-  categoryId: NullableStringSchema,
-  sku: NullableStringSchema,
-  barcode: NullableStringSchema,
-  price: z.number().min(0),
-  cost: z.number().min(0).optional(),
-  taxRate: z.number().min(0).max(100).optional(),
-  stock: z.number().int().min(0).optional(),
-  trackInventory: z.boolean().optional(),
-  isModifier: z.boolean().optional(),
-});
+export const CreateProductSchema = z
+  .object({
+    name: z.string().trim().min(1, "El nombre es obligatorio"),
+    categoryId: NullableStringSchema,
+    sku: NullableStringSchema,
+    barcode: NullableStringSchema,
+    price: z.number().min(0),
+    cost: z.number().min(0).optional(),
+    taxRate: z.number().min(0).max(100).optional(),
+    stock: z.number().int().min(0).optional(),
+    minStock: OptionalNonNegativeIntSchema,
+    reorderQuantity: OptionalNonNegativeIntSchema,
+    trackInventory: z.boolean().optional(),
+    isModifier: z.boolean().optional(),
+  })
+  .superRefine((input, ctx) => {
+    validateBarcodeValue(input.barcode, ctx);
+  });
 
 export const UpdateProductSchema = z
   .object({
@@ -49,6 +80,8 @@ export const UpdateProductSchema = z
     cost: z.number().min(0).optional(),
     taxRate: z.number().min(0).max(100).optional(),
     stock: z.number().int().min(0).optional(),
+    minStock: OptionalNonNegativeIntSchema,
+    reorderQuantity: OptionalNonNegativeIntSchema,
     trackInventory: z.boolean().optional(),
     isModifier: z.boolean().optional(),
   })
@@ -62,12 +95,20 @@ export const UpdateProductSchema = z
       input.cost !== undefined ||
       input.taxRate !== undefined ||
       input.stock !== undefined ||
+      input.minStock !== undefined ||
+      input.reorderQuantity !== undefined ||
       input.trackInventory !== undefined ||
       input.isModifier !== undefined,
     {
       message: "Debes enviar al menos un campo para actualizar",
     }
-  );
+  )
+  .superRefine((input, ctx) => {
+    if (input.barcode === undefined) {
+      return;
+    }
+    validateBarcodeValue(input.barcode, ctx);
+  });
 
 export const RegisterInventoryMovementSchema = z.object({
   productId: z.string().trim().min(1),
