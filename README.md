@@ -51,13 +51,15 @@ cp .env.example .env
 
 Revisa `DATABASE_URL`, `ZERO_UPSTREAM_DB`, `VITE_ZERO_CACHE_URL` y las URLs de query/mutate. Las cookies de better-auth deben reenviarse a los endpoints Zero (`ZERO_QUERY_FORWARD_COOKIES` / `ZERO_MUTATE_FORWARD_COOKIES`).
 
-### 3. Levantar PostgreSQL
+### 3. Levantar PostgreSQL y zero-cache
 
 ```sh
 docker compose up -d
 ```
 
-El contenedor usa `wal_level=logical`, requerido por Zero.
+Postgres usa `wal_level=logical` (requerido por Zero). El mismo comando levanta **zero-cache** en http://localhost:4848 (réplica en el volumen `zentro_zero_data`). La app sigue en el host con `bun run dev`; zero-cache llama a `/api/zero/*` en `host.docker.internal:3000`.
+
+Si prefieres zero-cache en proceso local en lugar del contenedor, omite el servicio `zero-cache` (`docker compose up -d postgres`) y usa `bun run zero:dev` en el paso 5.
 
 ### 4. Migrar la base de datos
 
@@ -67,12 +69,15 @@ bun run db:migrate
 
 Opcional: `bun run db:seed` para datos de prueba.
 
-### 5. Iniciar la app y zero-cache
-
-En **dos terminales**:
+### 5. Iniciar la app
 
 ```sh
 bun run dev          # Vike + Hono en http://localhost:3000
+```
+
+Con `docker compose up -d`, zero-cache ya corre en el contenedor. Si no lo levantaste ahí, en otra terminal:
+
+```sh
 bun run zero:dev     # zero-cache en http://localhost:4848
 ```
 

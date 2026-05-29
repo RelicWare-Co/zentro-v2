@@ -30,7 +30,7 @@
 - Zero commands (see `MIGRATION_PLAN.md` for the surface-by-surface plan):
   - `bun run zero:schema:gen` regenerates `src/zero/schema.gen.ts` from the Drizzle schema using `drizzle-zero.config.ts`. Run it after **any** change to `database/drizzle/schema/*.schema.ts`.
   - `bun run zero:dev` starts `zero-cache-dev`. Run it in a separate terminal alongside `bun run dev`. It reads `ZERO_QUERY_URL` / `ZERO_MUTATE_URL` from `.env` (defaults point at `http://localhost:3000/api/zero/*`) and requires `ZERO_QUERY_FORWARD_COOKIES=true` / `ZERO_MUTATE_FORWARD_COOKIES=true` for better-auth cookies.
-  - Postgres must be up first (`docker compose up -d`) and configured with `wal_level=logical` — already done in the committed `docker-compose.yml`.
+  - Postgres must be up first (`docker compose up -d`) and configured with `wal_level=logical` — already done in the committed `docker-compose.yml`. That compose file also runs **zero-cache** on port `4848` (réplica en volumen `zentro_zero_data`; callbacks a `host.docker.internal:3000`). Alternativa: `docker compose up -d postgres` + `bun run zero:dev`.
 
 ## Code Quality (Ultracite)
 

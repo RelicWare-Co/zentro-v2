@@ -27,5 +27,33 @@ services:
       timeout: 5s
       retries: 5
 
+  # Rocicorp zero-cache (production image). App stays on the host (`bun run dev`);
+  # query/mutate callbacks use host.docker.internal:3000.
+  zero-cache:
+    build:
+      context: .
+      dockerfile: deploy/zero-cache/Dockerfile
+    container_name: zentro-zero-cache
+    ports:
+      - "4848:4848"
+    volumes:
+      - zentro_zero_data:/data
+    environment:
+      ZERO_UPSTREAM_DB: postgresql://zentro:zentro@postgres:5432/zentro
+      ZERO_CVR_DB: postgresql://zentro:zentro@postgres:5432/zentro
+      ZERO_CHANGE_DB: postgresql://zentro:zentro@postgres:5432/zentro
+      ZERO_REPLICA_FILE: /data/replica.db
+      ZERO_QUERY_URL: http://host.docker.internal:3000/api/zero/query
+      ZERO_MUTATE_URL: http://host.docker.internal:3000/api/zero/mutate
+      ZERO_QUERY_FORWARD_COOKIES: "true"
+      ZERO_MUTATE_FORWARD_COOKIES: "true"
+      ZERO_ADMIN_PASSWORD: local-dev-zero-admin
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
   zentro_postgres_data:
+  zentro_zero_data:
