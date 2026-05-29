@@ -47,6 +47,8 @@ export const product = pgTable(
     isModifier: boolean("is_modifier").default(false).notNull(), // True para adiciones (ej: extra queso)
     trackInventory: boolean("track_inventory").default(true).notNull(),
     stock: integer("stock").default(0).notNull(), // Cache del stock actual
+    minStock: integer("min_stock"),
+    reorderQuantity: integer("reorder_quantity"),
     isFavorite: boolean("is_favorite").default(false).notNull(),
     deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "date" }), // Soft delete: null = activo, fecha = eliminado
     createdAt: timestamp("created_at", {

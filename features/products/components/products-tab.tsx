@@ -1,4 +1,4 @@
-import { Search } from "lucide-react";
+import { Barcode, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -9,15 +9,26 @@ import {
 } from "@/components/ui/select";
 import { ALL_FILTER_VALUE } from "@/features/listing/listing.constants.shared";
 import { ProductsTable } from "@/features/products/components/products-table";
-import { UNCATEGORIZED_FILTER_VALUE } from "@/features/products/products-page.constants.shared";
+import type { ProductStockFilterValue } from "@/features/products/products-page.constants.shared";
+import {
+  PRODUCT_STOCK_FILTER_VALUES,
+  UNCATEGORIZED_FILTER_VALUE,
+} from "@/features/products/products-page.constants.shared";
 import { useProductsPage } from "@/features/products/products-page-context";
+
+const STOCK_FILTER_LABELS: Record<ProductStockFilterValue, string> = {
+  all: "Todos los estados",
+  out: "Sin stock",
+  low: "Stock bajo",
+  ok: "En stock",
+};
 
 export function ProductsTab() {
   const { state, actions } = useProductsPage();
 
   return (
     <>
-      <div className="flex flex-col gap-3 sm:flex-row">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
         <div className="relative w-full sm:max-w-sm">
           <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-zinc-500" />
           <Input
@@ -48,6 +59,29 @@ export function ProductsTab() {
             ))}
           </SelectContent>
         </Select>
+        <Select
+          onValueChange={(value) =>
+            actions.setStockFilter(value as ProductStockFilterValue)
+          }
+          value={state.filters.stockFilter}
+        >
+          <SelectTrigger className="w-full border-zinc-800 bg-black/20 text-white sm:w-[220px]">
+            <SelectValue placeholder="Estado de stock" />
+          </SelectTrigger>
+          <SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
+            {PRODUCT_STOCK_FILTER_VALUES.map((value) => (
+              <SelectItem key={value} value={value}>
+                {STOCK_FILTER_LABELS[value]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {state.isBarcodeScannerConnected ? (
+          <span className="inline-flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-emerald-200 text-xs">
+            <Barcode className="size-3.5" />
+            Escáner listo
+          </span>
+        ) : null}
       </div>
 
       <ProductsTable />

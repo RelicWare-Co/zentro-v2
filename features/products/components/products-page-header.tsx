@@ -1,11 +1,12 @@
 import { PackagePlus, Plus } from "lucide-react";
+import { Link } from "@/components/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useProductsPage } from "@/features/products/products-page-context";
 
 export function ProductsPageHeader() {
   const { state, actions } = useProductsPage();
-  const hasTrackedInventory = state.products.some(
+  const hasTrackedInventory = state.catalogProducts.some(
     (product) => product.trackInventory
   );
 
@@ -20,6 +21,15 @@ export function ProductsPageHeader() {
         </div>
         <p className="text-sm text-zinc-400">
           Catálogo de productos, categorías y ajustes básicos de stock.
+        </p>
+        <p className="text-xs text-zinc-500">
+          Alertas cuando stock ≤ {state.lowStockThreshold}.{" "}
+          <Link
+            className="text-[var(--color-voltage)] hover:underline"
+            href="/settings"
+          >
+            Configurar umbral global
+          </Link>
         </p>
       </div>
       <div className="flex flex-col gap-3 sm:flex-row">

@@ -65,8 +65,10 @@ interface ProductUpdatePatch {
   categoryId?: string | null;
   cost?: number;
   isModifier?: boolean;
+  minStock?: number | null;
   name?: string;
   price?: number;
+  reorderQuantity?: number | null;
   sku?: string | null;
   stock?: number;
   taxRate?: number;
@@ -431,6 +433,18 @@ function buildProductUpdatePatch(
   if (args.stock !== undefined) {
     updates.stock = toNonNegativeInteger(args.stock, "stock");
   }
+  if (args.minStock !== undefined) {
+    updates.minStock =
+      args.minStock === null
+        ? null
+        : toNonNegativeInteger(args.minStock, "minStock");
+  }
+  if (args.reorderQuantity !== undefined) {
+    updates.reorderQuantity =
+      args.reorderQuantity === null
+        ? null
+        : toNonNegativeInteger(args.reorderQuantity, "reorderQuantity");
+  }
   if (args.trackInventory !== undefined) {
     updates.trackInventory = args.trackInventory;
   }
@@ -754,6 +768,14 @@ export const mutators = defineMutators({
           cost: toNonNegativeInteger(args.cost ?? 0, "cost"),
           taxRate: toNonNegativeInteger(args.taxRate ?? 0, "taxRate"),
           stock: toNonNegativeInteger(args.stock ?? 0, "stock"),
+          minStock:
+            args.minStock === undefined || args.minStock === null
+              ? null
+              : toNonNegativeInteger(args.minStock, "minStock"),
+          reorderQuantity:
+            args.reorderQuantity === undefined || args.reorderQuantity === null
+              ? null
+              : toNonNegativeInteger(args.reorderQuantity, "reorderQuantity"),
           trackInventory: args.trackInventory ?? true,
           isModifier: args.isModifier ?? false,
           isFavorite: false,
@@ -853,8 +875,7 @@ export const mutators = defineMutators({
         const currentStock = targetProduct.stock ?? 0;
         if (
           args.type === "restock" &&
-          normalizedRestockMode === "set_as_total" &&
-          currentStock < 0
+          normalizedRestockMode === "set_as_total"
         ) {
           deltaQuantity = baseQuantity - currentStock;
         }

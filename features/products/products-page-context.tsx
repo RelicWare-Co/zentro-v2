@@ -1,12 +1,15 @@
+import { useQuery as useZeroQuery } from "@rocicorp/zero/react";
 import type { PaginationState, Updater } from "@tanstack/react-table";
 import {
   createContext,
   type ReactNode,
   use,
   useCallback,
+  useEffect,
   useMemo,
   useState,
 } from "react";
+import type { StockStatus } from "@/features/inventory/stock-status.shared";
 import { ALL_FILTER_VALUE } from "@/features/listing/listing.constants.shared";
 import {
   type Category,
@@ -16,19 +19,26 @@ import {
 } from "@/features/products/hooks/use-products";
 import {
   DEFAULT_PRODUCTS_PAGE_SIZE,
+  type ProductStockFilterValue,
   type ProductsTab,
   UNCATEGORIZED_FILTER_VALUE,
 } from "@/features/products/products-page.constants.shared";
+import { parseOrganizationSettingsMetadata } from "@/features/settings/settings.shared";
+import { queries } from "@/src/zero/queries";
 
 export type InventoryMovementType = "restock" | "waste" | "adjustment";
+export type InventoryRestockMode = "add_to_stock" | "set_as_total";
 
 interface ProductsPageFilters {
   categoryFilter: string;
   query: string;
+  stockFilter: ProductStockFilterValue;
 }
 
 export interface ProductsPageState {
   activeTab: ProductsTab;
+  barcodeCatalogProducts: Product[];
+  catalogProducts: Product[];
   categories: Category[];
   editingProduct: Product | null;
   error: unknown;
@@ -36,11 +46,14 @@ export interface ProductsPageState {
   inventoryNotes: string;
   inventoryProduct: Product | null;
   inventoryQuantity: string;
+  inventoryRestockMode: InventoryRestockMode;
   inventoryType: InventoryMovementType;
+  isBarcodeScannerConnected: boolean;
   isCategoryDialogOpen: boolean;
   isError: boolean;
   isPending: boolean;
   isProductSheetOpen: boolean;
+  lowStockThreshold: number;
   pagination: PaginationState;
   products: Product[];
   productsWithInventory: Product[];
@@ -77,6 +90,8 @@ export interface ProductsPageActions {
     cost: number;
     taxRate: number;
     stock: number;
+    minStock: number | null;
+    reorderQuantity: number | null;
     trackInventory: boolean;
     isModifier: boolean;
   }) => Promise<void>;
@@ -85,10 +100,13 @@ export interface ProductsPageActions {
   setInventoryNotes: (value: string) => void;
   setInventoryProduct: (product: Product | null) => void;
   setInventoryQuantity: (value: string) => void;
+  setInventoryRestockMode: (value: InventoryRestockMode) => void;
   setInventoryType: (value: InventoryMovementType) => void;
+  setIsBarcodeScannerConnected: (value: boolean) => void;
   setPagination: (updater: Updater<PaginationState>) => void;
   setProductToDelete: (product: Product | null) => void;
   setQuery: (value: string) => void;
+  setStockFilter: (value: ProductStockFilterValue) => void;
 }
 
 export interface ProductsPageMeta {
@@ -140,6 +158,33 @@ export function ProductsPageProvider({ children }: { children: ReactNode }) {
     useState<InventoryMovementType>("restock");
   const [inventoryQuantity, setInventoryQuantity] = useState("");
   const [inventoryNotes, setInventoryNotes] = useState("");
+  const [inventoryRestockMode, setInventoryRestockMode] =
+    useState<InventoryRestockMode>("add_to_stock");
+  const [stockFilter, setStockFilterState] =
+    useState<ProductStockFilterValue>("all");
+  const [isBarcodeScannerConnected, setIsBarcodeScannerConnected] =
+    useState(false);
+
+  const [organizationRows] = useZeroQuery(queries.organization.current());
+  const lowStockThreshold = useMemo(() => {
+    const settings = parseOrganizationSettingsMetadata(
+      typeof organizationRows[0]?.metadata === "string"
+        ? organizationRows[0]?.metadata
+        : null
+    );
+    return settings.inventory.lowStockThreshold;
+  }, [organizationRows]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    const stockParam = new URLSearchParams(window.location.search).get("stock");
+    if (stockParam === "low" || stockParam === "out" || stockParam === "ok") {
+      setStockFilterState(stockParam);
+      setActiveTab("products");
+    }
+  }, []);
 
   const mutations = useProductsMutations({
     onCreateProductSuccess: () => {
@@ -181,17 +226,35 @@ export function ProductsPageProvider({ children }: { children: ReactNode }) {
     return categoryFilter;
   }, [categoryFilter]);
 
-  const { products, total, categories, isPending, isError, error } =
-    useProductsQueries({
-      page: pagination.pageIndex,
-      pageSize: pagination.pageSize,
-      query,
-      categoryId: resolvedCategoryId,
-    });
+  const {
+    products,
+    catalogProducts,
+    total,
+    categories,
+    isPending,
+    isError,
+    error,
+  } = useProductsQueries({
+    page: pagination.pageIndex,
+    pageSize: pagination.pageSize,
+    query,
+    categoryId: resolvedCategoryId,
+    stockFilter:
+      stockFilter === "all" ? undefined : (stockFilter as StockStatus),
+    lowStockThreshold,
+  });
+
+  const { catalogProducts: barcodeCatalogProducts } = useProductsQueries({
+    page: 0,
+    pageSize: DEFAULT_PRODUCTS_PAGE_SIZE,
+    query: "",
+    categoryId: null,
+    lowStockThreshold,
+  });
 
   const productsWithInventory = useMemo(
-    () => products.filter((product) => product.trackInventory),
-    [products]
+    () => catalogProducts.filter((product) => product.trackInventory),
+    [catalogProducts]
   );
 
   const setQuery = useCallback((value: string) => {
@@ -201,6 +264,11 @@ export function ProductsPageProvider({ children }: { children: ReactNode }) {
 
   const setCategoryFilter = useCallback((value: string) => {
     setCategoryFilterState(value);
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  }, []);
+
+  const setStockFilter = useCallback((value: ProductStockFilterValue) => {
+    setStockFilterState(value);
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
   }, []);
 
@@ -276,6 +344,17 @@ export function ProductsPageProvider({ children }: { children: ReactNode }) {
 
   const openInventoryForProduct = useCallback((product: Product) => {
     setInventoryProduct(product);
+    setInventoryType("restock");
+    setInventoryRestockMode("add_to_stock");
+    if (
+      typeof product.reorderQuantity === "number" &&
+      product.reorderQuantity > 0
+    ) {
+      setInventoryQuantity(String(product.reorderQuantity));
+    } else {
+      setInventoryQuantity("");
+    }
+    setInventoryNotes("");
   }, []);
 
   const openInventoryMovement = useCallback(() => {
@@ -290,6 +369,7 @@ export function ProductsPageProvider({ children }: { children: ReactNode }) {
     setInventoryQuantity("");
     setInventoryNotes("");
     setInventoryType("restock");
+    setInventoryRestockMode("add_to_stock");
   }, []);
 
   const saveInventoryMovement = useCallback(async () => {
@@ -300,12 +380,15 @@ export function ProductsPageProvider({ children }: { children: ReactNode }) {
       productId: inventoryProduct.id,
       type: inventoryType,
       quantity: Math.round(Number(inventoryQuantity)),
+      restockMode:
+        inventoryType === "restock" ? inventoryRestockMode : undefined,
       notes: inventoryNotes.trim() || null,
     });
   }, [
     inventoryNotes,
     inventoryProduct,
     inventoryQuantity,
+    inventoryRestockMode,
     inventoryType,
     mutations.registerInventoryMovementMutation,
   ]);
@@ -321,6 +404,8 @@ export function ProductsPageProvider({ children }: { children: ReactNode }) {
       cost: number;
       taxRate: number;
       stock: number;
+      minStock: number | null;
+      reorderQuantity: number | null;
       trackInventory: boolean;
       isModifier: boolean;
     }) => {
@@ -351,12 +436,17 @@ export function ProductsPageProvider({ children }: { children: ReactNode }) {
         filters: {
           query,
           categoryFilter,
+          stockFilter,
         },
         pagination,
         products,
+        barcodeCatalogProducts,
+        catalogProducts,
         categories,
         total,
         productsWithInventory,
+        lowStockThreshold,
+        isBarcodeScannerConnected,
         isPending,
         isError,
         error,
@@ -369,11 +459,13 @@ export function ProductsPageProvider({ children }: { children: ReactNode }) {
         inventoryType,
         inventoryQuantity,
         inventoryNotes,
+        inventoryRestockMode,
       },
       actions: {
         setActiveTab,
         setQuery,
         setCategoryFilter,
+        setStockFilter,
         setPagination,
         openCreateProduct,
         openEditProduct,
@@ -390,9 +482,11 @@ export function ProductsPageProvider({ children }: { children: ReactNode }) {
         closeInventoryDialog,
         saveInventoryMovement,
         setInventoryType,
+        setInventoryRestockMode,
         setInventoryQuantity,
         setInventoryNotes,
         setInventoryProduct,
+        setIsBarcodeScannerConnected,
         saveProduct,
         setProductToDelete,
       },
@@ -407,9 +501,14 @@ export function ProductsPageProvider({ children }: { children: ReactNode }) {
       activeTab,
       query,
       categoryFilter,
+      stockFilter,
       pagination,
       products,
+      barcodeCatalogProducts,
+      catalogProducts,
       categories,
+      lowStockThreshold,
+      isBarcodeScannerConnected,
       total,
       productsWithInventory,
       isPending,
@@ -424,8 +523,10 @@ export function ProductsPageProvider({ children }: { children: ReactNode }) {
       inventoryType,
       inventoryQuantity,
       inventoryNotes,
+      inventoryRestockMode,
       setQuery,
       setCategoryFilter,
+      setStockFilter,
       openCreateProduct,
       openEditProduct,
       closeProductSheet,

@@ -5,8 +5,10 @@ export interface ProductFormState {
   categoryId: string;
   cost: string;
   isModifier: boolean;
+  minStock: string;
   name: string;
   price: string;
+  reorderQuantity: string;
   sku: string;
   stock: string;
   taxRate: string;
@@ -22,9 +24,23 @@ export const EMPTY_PRODUCT_FORM: ProductFormState = {
   cost: "0",
   taxRate: "0",
   stock: "0",
+  minStock: "",
+  reorderQuantity: "",
   trackInventory: true,
   isModifier: false,
 };
+
+export function parseOptionalStockField(value: string): number | null {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+  const parsed = Number(trimmed);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    return null;
+  }
+  return Math.trunc(parsed);
+}
 
 export function getProductFormInitialValue(
   product: Product | null
@@ -42,6 +58,14 @@ export function getProductFormInitialValue(
     cost: String(product.cost ?? 0),
     taxRate: String(product.taxRate ?? 0),
     stock: String(product.stock ?? 0),
+    minStock:
+      product.minStock === null || product.minStock === undefined
+        ? ""
+        : String(product.minStock),
+    reorderQuantity:
+      product.reorderQuantity === null || product.reorderQuantity === undefined
+        ? ""
+        : String(product.reorderQuantity),
     trackInventory: product.trackInventory,
     isModifier: product.isModifier,
   };

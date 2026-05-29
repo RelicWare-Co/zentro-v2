@@ -132,6 +132,12 @@ Zero is the primary API for app data (see `MIGRATION_PLAN.md`).
 3. The query is automatically reachable from `/api/zero/query` because the handler dispatches by name via `mustGetQuery(queries, name)`.
 4. Consume it from React: `const [rows] = useQuery(queries.<name>(args))`.
 
+### Inventory (products + Kardex)
+
+- Paginated movement history uses `queries.products.movements.list` with cursor `{ createdAt, id }`, `limit + 1` fetch, and client helpers in `features/products/inventory-movements.shared.ts` (mirror `features/sales/sales.shared.ts`).
+- Stock alert UI must use `getStockStatus` from `features/inventory/stock-status.shared.ts` with `minStock ?? organization.settings.inventory.lowStockThreshold`.
+- Product fields `minStock` and `reorderQuantity` are optional integers on `product`; regenerate Zero schema after Drizzle changes.
+
 ### Adding a mutator
 
 1. Add an entry to `src/zero/mutators.ts` using `defineMutator(zodSchema, async ({ tx, args, ctx }) => { ... })`.
