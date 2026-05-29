@@ -81,7 +81,7 @@ export function KardexTab() {
           onChange={(patch) =>
             setFilters((current) => ({ ...current, ...patch }))
           }
-          products={state.catalogProducts}
+          products={state.barcodeCatalogProducts}
         />
         <KardexExportButton listParams={exportParams} />
       </div>
@@ -167,7 +167,7 @@ export function KardexTab() {
                     <Button
                       className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5"
                       onClick={() => {
-                        const product = state.catalogProducts.find(
+                        const product = state.barcodeCatalogProducts.find(
                           (item) => item.id === movement.productId
                         );
                         if (product) {

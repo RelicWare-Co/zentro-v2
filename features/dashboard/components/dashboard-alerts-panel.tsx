@@ -12,10 +12,14 @@ import {
 import { useDashboardData } from "@/features/dashboard/dashboard-page-context";
 import { getStockStatus } from "@/features/inventory/stock-status.shared";
 
-function productsPageStockFilterHref(stock: number, lowStockThreshold: number) {
+function productsPageStockFilterHref(
+  product: { minStock: number | null; stock: number },
+  lowStockThreshold: number
+) {
   const status = getStockStatus({
     trackInventory: true,
-    stock,
+    stock: product.stock,
+    minStock: product.minStock,
     lowStockThreshold,
   });
   return status === "out" || status === "low"
@@ -68,7 +72,7 @@ export function DashboardAlertsPanel() {
               <Link
                 className="flex items-center justify-between gap-4 rounded-xl border border-zinc-800 bg-black/10 px-4 py-3 transition-colors hover:bg-white/5"
                 href={productsPageStockFilterHref(
-                  productItem.stock,
+                  productItem,
                   lowStockThreshold
                 )}
                 key={productItem.id}

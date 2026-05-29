@@ -100,6 +100,19 @@ function normalizeSalesMetrics(
   };
 }
 
+/** Matches `getEffectiveStockThreshold` + low/out alert semantics in stock-status.shared. */
+function productAtStockRiskSql(lowStockThreshold: number) {
+  const effectiveThreshold = sql`coalesce(
+    case
+      when ${product.minStock} is not null and ${product.minStock} >= 0
+      then ${product.minStock}
+      else null
+    end,
+    ${lowStockThreshold}
+  )`;
+  return sql`${product.stock} <= ${effectiveThreshold}`;
+}
+
 function buildSalesTrend(
   rows: Array<{ dateKey: string; revenue: number; salesCount: number }>,
   now: Date
@@ -282,7 +295,7 @@ export async function runBuildDashboardOverview(
           isNull(product.deletedAt),
           eq(product.isModifier, false),
           eq(product.trackInventory, true),
-          sql`${product.stock} <= ${lowStockThreshold}`
+          productAtStockRiskSql(lowStockThreshold)
         )
       ),
     db
@@ -388,6 +401,7 @@ export async function runBuildDashboardOverview(
         name: product.name,
         categoryName: category.name,
         stock: product.stock,
+        minStock: product.minStock,
       })
       .from(product)
       .leftJoin(
@@ -403,7 +417,7 @@ export async function runBuildDashboardOverview(
           isNull(product.deletedAt),
           eq(product.isModifier, false),
           eq(product.trackInventory, true),
-          sql`${product.stock} <= ${lowStockThreshold}`
+          productAtStockRiskSql(lowStockThreshold)
         )
       )
       .orderBy(asc(product.stock), asc(product.name))
@@ -491,6 +505,10 @@ export async function runBuildDashboardOverview(
       name: row.name,
       categoryName: row.categoryName,
       stock: normalizeNumber(row.stock),
+      minStock:
+        row.minStock === null || row.minStock === undefined
+          ? null
+          : normalizeNumber(row.minStock),
     })),
     recentSales: recentSalesRows.map((row) => ({
       id: row.id,

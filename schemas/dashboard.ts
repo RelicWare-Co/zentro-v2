@@ -55,6 +55,7 @@ export const DashboardOverviewSchema = z.object({
       name: z.string(),
       categoryName: z.string().nullable(),
       stock: z.number(),
+      minStock: z.number().nullable(),
     })
     .array(),
   recentSales: z
