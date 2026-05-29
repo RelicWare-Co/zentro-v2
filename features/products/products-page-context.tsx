@@ -37,6 +37,7 @@ interface ProductsPageFilters {
 
 export interface ProductsPageState {
   activeTab: ProductsTab;
+  barcodeCatalogProducts: Product[];
   catalogProducts: Product[];
   categories: Category[];
   editingProduct: Product | null;
@@ -243,6 +244,14 @@ export function ProductsPageProvider({ children }: { children: ReactNode }) {
     lowStockThreshold,
   });
 
+  const { catalogProducts: barcodeCatalogProducts } = useProductsQueries({
+    page: 0,
+    pageSize: DEFAULT_PRODUCTS_PAGE_SIZE,
+    query: "",
+    categoryId: null,
+    lowStockThreshold,
+  });
+
   const productsWithInventory = useMemo(
     () => catalogProducts.filter((product) => product.trackInventory),
     [catalogProducts]
@@ -431,6 +440,7 @@ export function ProductsPageProvider({ children }: { children: ReactNode }) {
         },
         pagination,
         products,
+        barcodeCatalogProducts,
         catalogProducts,
         categories,
         total,
@@ -494,6 +504,7 @@ export function ProductsPageProvider({ children }: { children: ReactNode }) {
       stockFilter,
       pagination,
       products,
+      barcodeCatalogProducts,
       catalogProducts,
       categories,
       lowStockThreshold,

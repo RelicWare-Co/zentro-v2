@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { useCallback, useEffect } from "react";
+import { ALL_FILTER_VALUE } from "@/features/listing/listing.constants.shared";
 import { useKeyboardBarcodeScanner } from "@/features/posv2/hooks/use-keyboard-barcode-scanner.client";
 import {
   buildPosV2BarcodeScanPayload,
@@ -53,17 +54,19 @@ function ProductsPageLayout() {
       }
       const payload = buildPosV2BarcodeScanPayload(event);
       const match = findCatalogProductByBarcodeScan(
-        state.catalogProducts,
+        state.barcodeCatalogProducts,
         payload.lookupValues
       );
       if (match) {
         actions.openEditProduct(match);
         return;
       }
+      actions.setCategoryFilter(ALL_FILTER_VALUE);
+      actions.setStockFilter("all");
       actions.setQuery(payload.value);
       actions.setActiveTab("products");
     },
-    [actions, state.catalogProducts]
+    [actions, state.barcodeCatalogProducts]
   );
 
   const { isConnected: isBarcodeScannerConnected } = useKeyboardBarcodeScanner({

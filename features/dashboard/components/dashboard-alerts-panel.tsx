@@ -10,9 +10,21 @@ import {
   formatCurrency,
 } from "@/features/dashboard/dashboard-formatters.shared";
 import { useDashboardData } from "@/features/dashboard/dashboard-page-context";
+import { getStockStatus } from "@/features/inventory/stock-status.shared";
+
+function productsPageStockFilterHref(stock: number, lowStockThreshold: number) {
+  const status = getStockStatus({
+    trackInventory: true,
+    stock,
+    lowStockThreshold,
+  });
+  return status === "out" || status === "low"
+    ? `/products?stock=${status}`
+    : "/products?stock=low";
+}
 
 export function DashboardAlertsPanel() {
-  const { stats, lowStockProducts } = useDashboardData();
+  const { stats, lowStockProducts, lowStockThreshold } = useDashboardData();
 
   return (
     <DashboardPanelShell
@@ -55,7 +67,10 @@ export function DashboardAlertsPanel() {
             {lowStockProducts.map((productItem) => (
               <Link
                 className="flex items-center justify-between gap-4 rounded-xl border border-zinc-800 bg-black/10 px-4 py-3 transition-colors hover:bg-white/5"
-                href="/products?stock=low"
+                href={productsPageStockFilterHref(
+                  productItem.stock,
+                  lowStockThreshold
+                )}
                 key={productItem.id}
               >
                 <div className="min-w-0">
