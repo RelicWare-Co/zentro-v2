@@ -875,8 +875,7 @@ export const mutators = defineMutators({
         const currentStock = targetProduct.stock ?? 0;
         if (
           args.type === "restock" &&
-          normalizedRestockMode === "set_as_total" &&
-          currentStock < 0
+          normalizedRestockMode === "set_as_total"
         ) {
           deltaQuantity = baseQuantity - currentStock;
         }
