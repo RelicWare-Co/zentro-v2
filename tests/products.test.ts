@@ -104,6 +104,18 @@ describe("Zero products", () => {
       reorderQuantity: 12,
     });
 
+    const byIdRows = await zeroDb.run(
+      queries.products.byId.fn({
+        args: { productId },
+        ctx,
+      })
+    );
+    expect(byIdRows).toHaveLength(1);
+    expect(byIdRows[0]).toMatchObject({
+      id: productId,
+      name: "Burger",
+    });
+
     await zeroDb.transaction((tx) =>
       serverMutators.products.update.fn({
         args: {

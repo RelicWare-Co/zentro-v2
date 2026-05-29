@@ -17,7 +17,30 @@ import {
   type KardexFiltersState,
 } from "@/features/products/components/kardex-filters";
 import { useInventoryMovementsList } from "@/features/products/hooks/use-inventory-movements";
+import { useProductById } from "@/features/products/hooks/use-products";
 import { useProductsPage } from "@/features/products/products-page-context";
+
+function KardexOpenInventoryButton({ productId }: { productId: string }) {
+  const { product } = useProductById(productId);
+  const { actions } = useProductsPage();
+
+  return (
+    <Button
+      className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5"
+      disabled={!product?.trackInventory}
+      onClick={() => {
+        if (product) {
+          actions.openInventoryForProduct(product);
+        }
+      }}
+      size="sm"
+      type="button"
+      variant="outline"
+    >
+      Movimiento
+    </Button>
+  );
+}
 
 function getDefaultKardexDateRange() {
   const end = new Date();
@@ -30,7 +53,6 @@ function getDefaultKardexDateRange() {
 }
 
 export function KardexTab() {
-  const { state, actions } = useProductsPage();
   const defaultRange = useMemo(() => getDefaultKardexDateRange(), []);
   const [filters, setFilters] = useState<KardexFiltersState>({
     searchQuery: "",
@@ -76,12 +98,10 @@ export function KardexTab() {
     <div className="space-y-4">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <KardexFilters
-          categories={state.categories}
           filters={filters}
           onChange={(patch) =>
             setFilters((current) => ({ ...current, ...patch }))
           }
-          products={state.barcodeCatalogProducts}
         />
         <KardexExportButton listParams={exportParams} />
       </div>
@@ -164,22 +184,7 @@ export function KardexTab() {
                     {movement.notes ?? "—"}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5"
-                      onClick={() => {
-                        const product = state.barcodeCatalogProducts.find(
-                          (item) => item.id === movement.productId
-                        );
-                        if (product) {
-                          actions.openInventoryForProduct(product);
-                        }
-                      }}
-                      size="sm"
-                      type="button"
-                      variant="outline"
-                    >
-                      Movimiento
-                    </Button>
+                    <KardexOpenInventoryButton productId={movement.productId} />
                   </TableCell>
                 </TableRow>
               ))}

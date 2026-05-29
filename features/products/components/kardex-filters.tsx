@@ -1,5 +1,19 @@
-import { Search } from "lucide-react";
+import { Check, ChevronsUpDown, Search } from "lucide-react";
+import { useId, useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Command,
+  CommandEmpty,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -7,9 +21,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { Category, Product } from "@/features/products/hooks/use-products";
+import { useKardexProductPickerOptions } from "@/features/products/hooks/use-products";
 import type { InventoryMovementType } from "@/features/products/inventory-movements.shared";
 import { INVENTORY_MOVEMENT_TYPE_LABELS } from "@/features/products/inventory-movements.shared";
+import { cn } from "@/lib/utils";
 
 export interface KardexFiltersState {
   endDate: string;
@@ -20,16 +35,25 @@ export interface KardexFiltersState {
 }
 
 export function KardexFilters({
-  categories: _categories,
   filters,
   onChange,
-  products,
 }: {
-  categories: Category[];
   filters: KardexFiltersState;
   onChange: (patch: Partial<KardexFiltersState>) => void;
-  products: Product[];
 }) {
+  const productPickerListId = useId();
+  const [productPickerOpen, setProductPickerOpen] = useState(false);
+  const [productPickerSearch, setProductPickerSearch] = useState("");
+  const { products: productOptions } = useKardexProductPickerOptions({
+    searchQuery: productPickerSearch,
+    selectedProductId: filters.productId,
+  });
+  const selectedProductLabel =
+    filters.productId === "all"
+      ? "Todos los productos"
+      : (productOptions.find((product) => product.id === filters.productId)
+          ?.name ?? "Producto");
+
   return (
     <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-5">
       <div className="relative xl:col-span-2">
@@ -41,22 +65,73 @@ export function KardexFilters({
           value={filters.searchQuery}
         />
       </div>
-      <Select
-        onValueChange={(value) => onChange({ productId: value })}
-        value={filters.productId}
-      >
-        <SelectTrigger className="border-zinc-800 bg-black/20 text-white">
-          <SelectValue placeholder="Producto" />
-        </SelectTrigger>
-        <SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
-          <SelectItem value="all">Todos los productos</SelectItem>
-          {products.map((product) => (
-            <SelectItem key={product.id} value={product.id}>
-              {product.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <Popover onOpenChange={setProductPickerOpen} open={productPickerOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            aria-controls={productPickerListId}
+            aria-expanded={productPickerOpen}
+            className="justify-between border-zinc-800 bg-black/20 text-white hover:bg-white/5"
+            role="combobox"
+            type="button"
+            variant="outline"
+          >
+            <span className="truncate">{selectedProductLabel}</span>
+            <ChevronsUpDown className="ml-2 size-4 shrink-0 text-zinc-500" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[min(360px,calc(100vw-2rem))] border-zinc-800 bg-[var(--color-carbon)] p-0 text-white">
+          <Command className="bg-transparent">
+            <CommandInput
+              className="text-white placeholder:text-zinc-500"
+              onValueChange={setProductPickerSearch}
+              placeholder="Buscar producto..."
+              value={productPickerSearch}
+            />
+            <CommandList className="p-1.5" id={productPickerListId}>
+              <CommandEmpty className="text-zinc-400">
+                No se encontraron productos.
+              </CommandEmpty>
+              <CommandItem
+                className="gap-3 rounded-lg py-2 text-white"
+                onSelect={() => {
+                  onChange({ productId: "all" });
+                  setProductPickerOpen(false);
+                }}
+                value="all-products"
+              >
+                Todos los productos
+                <Check
+                  className={cn(
+                    "ml-auto size-4 shrink-0",
+                    filters.productId === "all" ? "opacity-100" : "opacity-0"
+                  )}
+                />
+              </CommandItem>
+              {productOptions.map((product) => (
+                <CommandItem
+                  className="gap-3 rounded-lg py-2 text-white"
+                  key={product.id}
+                  onSelect={() => {
+                    onChange({ productId: product.id });
+                    setProductPickerOpen(false);
+                  }}
+                  value={`${product.name} ${product.id}`}
+                >
+                  <span className="truncate">{product.name}</span>
+                  <Check
+                    className={cn(
+                      "ml-auto size-4 shrink-0",
+                      filters.productId === product.id
+                        ? "opacity-100"
+                        : "opacity-0"
+                    )}
+                  />
+                </CommandItem>
+              ))}
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
       <Select
         onValueChange={(value) => onChange({ type: value })}
         value={filters.type}

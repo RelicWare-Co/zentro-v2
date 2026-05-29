@@ -40,6 +40,10 @@ const productsSearchArgsSchema = z.object({
   searchQuery: z.string().trim().optional().nullable(),
 });
 
+const productByIdArgsSchema = z.object({
+  productId: z.string().trim().optional().nullable(),
+});
+
 const posCatalogArgsSchema = productsSearchArgsSchema;
 
 const shiftByIdArgsSchema = z.object({
@@ -499,6 +503,19 @@ export const queries = defineQueries({
         .orderBy("name", "asc")
         .orderBy("id", "asc")
         .limit(normalizeProductLimit(args.limit));
+    }),
+    byId: defineQuery(productByIdArgsSchema, ({ args, ctx }) => {
+      const normalizedProductId = args.productId?.trim() ?? "";
+      if (!(hasOrgContext(ctx) && normalizedProductId)) {
+        return zql.product.where(({ cmpLit }) => cmpLit(false, "=", true));
+      }
+
+      return zql.product
+        .where("organizationId", ctx.orgID)
+        .where("id", normalizedProductId)
+        .where("deletedAt", "IS", null)
+        .related("category")
+        .limit(1);
     }),
     modifiers: defineQuery(({ ctx }) => {
       if (!hasOrgContext(ctx)) {

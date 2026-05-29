@@ -74,6 +74,67 @@ function normalizeCategory(category: ZeroCategory): Category {
 
 export type ProductStockFilter = "all" | StockStatus;
 
+const KARDEX_PRODUCT_PICKER_LIMIT = 100;
+
+export function useProductById(productId: string | null | undefined) {
+  const normalizedProductId = productId?.trim() ?? "";
+  const [productRows, productStatus] = useZeroQuery(
+    queries.products.byId({
+      productId: normalizedProductId || null,
+    })
+  );
+  const product = useMemo(() => {
+    const row = productRows[0];
+    return row ? normalizeProduct(row) : null;
+  }, [productRows]);
+
+  return {
+    product,
+    isLoading:
+      Boolean(normalizedProductId) &&
+      productStatus.type === "unknown" &&
+      !product,
+    error: getZeroQueryError(productStatus),
+  };
+}
+
+export function useKardexProductPickerOptions(options: {
+  searchQuery: string;
+  selectedProductId: string;
+}) {
+  const deferredSearchQuery = useDeferredValue(options.searchQuery);
+  const [productRows, productsStatus] = useZeroQuery(
+    queries.products.search({
+      categoryId: null,
+      limit: KARDEX_PRODUCT_PICKER_LIMIT,
+      searchQuery: deferredSearchQuery.trim() || null,
+    })
+  );
+  const { product: selectedProduct } = useProductById(
+    options.selectedProductId === "all" ? null : options.selectedProductId
+  );
+
+  const products = useMemo(() => {
+    const normalized = productRows.map((row) => normalizeProduct(row));
+    const sorted = sortProductsByCatalogSearch(
+      normalized,
+      deferredSearchQuery.trim() || null
+    );
+    if (
+      selectedProduct &&
+      !sorted.some((product) => product.id === selectedProduct.id)
+    ) {
+      return [selectedProduct, ...sorted];
+    }
+    return sorted;
+  }, [deferredSearchQuery, productRows, selectedProduct]);
+
+  return {
+    products,
+    error: getZeroQueryError(productsStatus),
+  };
+}
+
 export function useProductsQueries(options: {
   page: number;
   pageSize: number;
