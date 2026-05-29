@@ -1,106 +1,153 @@
-Generated with [vike.dev/new](https://vike.dev/new) ([version 625](https://www.npmjs.com/package/create-vike/v/0.0.625)) using this command:
+# Zentro
+
+Sistema de gestión comercial con punto de venta (POS), inventario, ventas, clientes, crédito, turnos, restaurantes y cocina. Multi-organización, sincronización en tiempo real con Rocicorp Zero y autenticación con better-auth.
+
+## Características
+
+- **POS** — catálogo, carrito, checkout, descuentos, pagos mixtos, crédito, impresión térmica y escaneo de códigos de barras
+- **Ventas** — historial, filtros avanzados y detalle de transacciones
+- **Inventario** — productos, categorías, Kardex y alertas de stock bajo
+- **Clientes** — CRUD y búsqueda
+- **Crédito** — cuentas por cobrar, ledger y pagos
+- **Turnos** — apertura, cierre y arqueo de caja
+- **Restaurantes** — mesas, planta y configuración del módulo
+- **Cocina** — pantalla de pedidos (KDS)
+- **Organización** — selección de org, miembros, invitaciones y control de acceso por módulo
+- **Dashboard** — resumen operativo con agregaciones REST
+
+## Stack
+
+| Capa | Tecnología |
+| --- | --- |
+| Framework | [Vike](https://vike.dev) + [React 19](https://react.dev) (CSR, routing cliente) |
+| Servidor | [Hono](https://hono.dev) vía `@vikejs/hono` |
+| Datos | [Rocicorp Zero](https://zero.rocicorp.dev) (queries/mutators + `zero-cache`) |
+| Lecturas efímeras | TanStack Query (dashboard, preview de join link) |
+| Base de datos | [Drizzle ORM](https://orm.drizzle.team) sobre PostgreSQL |
+| Auth | [better-auth](https://www.better-auth.com) con soporte multi-organización |
+| UI | Tailwind CSS v4 + shadcn/ui |
+| Runtime | [Bun](https://bun.sh) |
+| Logging | [evlog](https://evlog.dev) |
+| Calidad | Ultracite (Biome) + Lefthook |
+
+## Requisitos
+
+- [Bun](https://bun.sh) (runtime y gestor de paquetes)
+- [Docker](https://www.docker.com) (PostgreSQL local con replicación lógica para Zero)
+
+## Desarrollo local
+
+### 1. Instalar dependencias
 
 ```sh
-bun create vike@latest --react --tailwindcss --shadcn-ui --hono --drizzle --shadcnUi
+bun install
 ```
 
-## About
+### 2. Configurar entorno
 
-Zentro is a full-stack business management app with a POS, sales, inventory, kitchen, customers, credit tracking, and more.
+```sh
+cp .env.example .env
+```
 
-## Deployment
+Revisa `DATABASE_URL`, `ZERO_UPSTREAM_DB`, `VITE_ZERO_CACHE_URL` y las URLs de query/mutate. Las cookies de better-auth deben reenviarse a los endpoints Zero (`ZERO_QUERY_FORWARD_COOKIES` / `ZERO_MUTATE_FORWARD_COOKIES`).
 
-Production deployment uses Docker containers with Bun, Vike/Hono, external managed Postgres, and self-hosted Rocicorp Zero. See [Docker Deployment](docs/deployment/docker.md) for Compose production setup, service topology, variables, volume setup, rollout order, health checks, and operational notes.
+### 3. Levantar PostgreSQL
 
-## Tech Stack
+```sh
+docker compose up -d
+```
 
-- **Framework:** [Vike](https://vike.dev) + [React](https://react.dev)
-- **Server:** [Hono](https://hono.dev)
-- **API:** Zero query/mutate endpoints and authenticated REST helpers
-- **Server state:** Rocicorp Zero + TanStack Query
-- **Database:** Drizzle ORM over PostgreSQL
-- **Auth:** better-auth with organization support
-- **Styling:** Tailwind CSS v4 + shadcn/ui
+El contenedor usa `wal_level=logical`, requerido por Zero.
 
-## Pages
+### 4. Migrar la base de datos
 
-| Route | Description |
-|-------|-------------|
-| `/dashboard` | Main dashboard |
-| `/organization` | Organization management |
-| `/pos` | Point of sale |
-| `/shifts` | Shift tracking |
-| `/sales` | Sales history & reports |
-| `/customers` | Customer management with CRUD |
-| `/credit` | Accounts receivable with ledger and payments |
-| `/products` | Product catalog |
-| `/settings` | App settings |
-| `/restaurants` | Restaurant management |
-| `/kitchen` | Kitchen display |
+```sh
+bun run db:migrate
+```
 
-## Contents
+Opcional: `bun run db:seed` para datos de prueba.
 
-- [Deployment](#deployment)
-- [Vike](#vike)
-  - [Plus files](#plus-files)
-  - [Routing](#routing)
-  - [SSR](#ssr)
-  - [HTML Streaming](#html-streaming)
-- [shadcn/ui](#shadcnui)
-  - [Configuration](#configuration)
-  - [Add Components to Your Project](#add-components-to-your-project)
+### 5. Iniciar la app y zero-cache
 
-## Vike
+En **dos terminales**:
 
-This app is ready to start. It's powered by [Vike](https://vike.dev) and [React](https://react.dev/learn).
+```sh
+bun run dev          # Vike + Hono en http://localhost:3000
+bun run zero:dev     # zero-cache en http://localhost:4848
+```
 
-### Plus files
+Tras cambios al schema de Drizzle (`database/drizzle/schema/*.schema.ts`):
 
-[The + files are the interface](https://vike.dev/config) between Vike and your code.
+```sh
+bun run db:generate
+bun run db:migrate
+bun run zero:schema:gen
+```
 
-- [`+config.ts`](https://vike.dev/settings) — Settings (e.g. `<title>`)
-- [`+Page.tsx`](https://vike.dev/Page) — The `<Page>` component
-- [`+data.ts`](https://vike.dev/data) — Fetching data (for your `<Page>` component)
-- [`+Layout.tsx`](https://vike.dev/Layout) — The `<Layout>` component (wraps your `<Page>` components)
-- [`+Head.tsx`](https://vike.dev/Head) - Sets `<head>` tags
-- [`/pages/_error/+Page.tsx`](https://vike.dev/error-page) — The error page (rendered when an error occurs)
-- [`+onPageTransitionStart.ts`](https://vike.dev/onPageTransitionStart) and `+onPageTransitionEnd.ts` — For page transition animations
+## Rutas
 
-### Routing
+| Ruta | Descripción |
+| --- | --- |
+| `/login` | Inicio de sesión y registro |
+| `/join` | Unirse a una organización vía enlace |
+| `/organization` | Selección y administración de organización |
+| `/dashboard` | Panel principal |
+| `/pos` | Punto de venta |
+| `/posv2` | POS alternativo (v2) |
+| `/shifts` | Turnos de caja |
+| `/sales` | Historial y reportes de ventas |
+| `/customers` | Gestión de clientes |
+| `/credit` | Cuentas por cobrar |
+| `/products` | Catálogo e inventario |
+| `/restaurants` | Gestión de restaurante |
+| `/kitchen` | Pantalla de cocina |
+| `/settings` | Configuración de la organización |
 
-[Vike's built-in router](https://vike.dev/routing) lets you choose between:
+## Comandos
 
-- [Filesystem Routing](https://vike.dev/filesystem-routing) (the URL of a page is determined based on where its `+Page.jsx` file is located on the filesystem)
-- [Route Strings](https://vike.dev/route-string)
-- [Route Functions](https://vike.dev/route-function)
+| Comando | Descripción |
+| --- | --- |
+| `bun run dev` | Servidor de desarrollo |
+| `bun run build` | Build de producción |
+| `bun run start` | Servidor de producción (Bun) |
+| `bun run check` | Lint y formato (Ultracite) |
+| `bun run fix` | Auto-fix de lint/formato |
+| `bun run test` | Tests unitarios (Bun) |
+| `bun run e2e:playwright` | E2E con Playwright |
+| `bun run e2e:playwright:smoke` | E2E solo specs `@smoke` |
+| `bun run db:generate` | Generar migraciones Drizzle |
+| `bun run db:migrate` | Aplicar migraciones |
+| `bun run db:studio` | Drizzle Studio |
+| `bun run zero:schema:gen` | Regenerar schema Zero desde Drizzle |
+| `bun run zero:dev` | zero-cache en desarrollo |
 
-### SSR
+## Tests E2E
 
-SSR is enabled by default. You can [disable it](https://vike.dev/ssr) for all or specific pages.
+Playwright levanta la app y zero-cache automáticamente si no hay nada escuchando en los puertos 3000 y 4848. Ver [tests/e2e/README.md](tests/e2e/README.md).
 
-### HTML Streaming
+```sh
+export PLAYWRIGHT_LOGIN_EMAIL=you@example.com
+export PLAYWRIGHT_LOGIN_PASSWORD=your-password
+export PLAYWRIGHT_ORG_NAME="Your Organization"
 
-You can [enable/disable HTML streaming](https://vike.dev/stream) for all or specific pages.
+bun run e2e:playwright
+```
 
-## shadcn/ui
+## Despliegue
 
-Beautifully designed components that you can copy and paste into your apps. Accessible. Customizable. Open Source.
+Producción con contenedores Docker (app Bun + zero-cache + Postgres externo con `wal_level=logical`). Guía completa en [docs/deployment/docker.md](docs/deployment/docker.md).
 
-### Configuration
+## Estructura del proyecto
 
-see [shadcn/ui theming](https://ui.shadcn.com/docs/theming)
+```
+pages/              Rutas Vike (+Page, +guard, +Layout)
+features/           UI y lógica por dominio (pos, sales, products, …)
+src/zero/           Schema, queries y mutators de Zero
+server/             Hono: auth, Zero handlers, REST auxiliares
+database/drizzle/   Schema y migraciones PostgreSQL
+components/ui/      Componentes shadcn/ui
+tests/e2e/          Playwright E2E
+deploy/             Dockerfiles y Compose de producción
+```
 
-Base Configuration can be found in `components.json` file.
-
-> \[!NOTE]
-> changes to the `components.json` file **will not** be reflected in existing components. Only new components will be affected.
-
-### Add Components to Your Project
-
-**Example:** add a component to your project.
-`bun shadcn add button`
-
-use the `<Button />` component in your project:
-`import { Button } from "@/components/ui/button";`
-
-more [shadcn/ui components](https://ui.shadcn.com/docs/components/accordion)
+Convenciones de arquitectura, Zero, Vike y comandos para contribuidores: [AGENTS.md](AGENTS.md).
