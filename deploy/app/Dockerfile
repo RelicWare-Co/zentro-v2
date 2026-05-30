@@ -16,6 +16,13 @@ COPY . .
 ENV NODE_ENV=production
 RUN bun run build
 
+FROM base AS migrate
+COPY package.json bun.lock ./
+COPY --from=install /app/node_modules node_modules
+COPY database database
+COPY scripts scripts
+CMD ["bun", "run", "db:migrate"]
+
 FROM base AS release
 ENV NODE_ENV=production
 COPY package.json bun.lock ./

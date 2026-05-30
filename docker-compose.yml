@@ -27,6 +27,18 @@ services:
       timeout: 5s
       retries: 5
 
+  db-migrate:
+    build:
+      context: .
+      dockerfile: deploy/app/Dockerfile
+      target: migrate
+    environment:
+      DATABASE_URL: postgresql://zentro:zentro@postgres:5432/zentro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
   # Rocicorp zero-cache (production image). App stays on the host (`bun run dev`);
   # query/mutate callbacks use host.docker.internal:3000.
   zero-cache:
@@ -51,8 +63,8 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
-      postgres:
-        condition: service_healthy
+      db-migrate:
+        condition: service_completed_successfully
 
 volumes:
   zentro_postgres_data:
