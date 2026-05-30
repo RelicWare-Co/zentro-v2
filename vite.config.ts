@@ -10,6 +10,10 @@ import { defineConfig } from "vite";
 export default defineConfig({
   plugins: [vike(), react(), tailwindcss(), evlog({ service: "zentro" })],
 
+  server: {
+    allowedHosts: ["host.docker.internal"],
+  },
+
   resolve: {
     alias: {
       "@": new URL("./", import.meta.url).pathname,
