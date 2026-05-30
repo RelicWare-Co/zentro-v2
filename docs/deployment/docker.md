@@ -26,7 +26,7 @@ Local development uses `docker compose up -d` (Postgres only) or `deploy/docker-
 
 ## Docker Compose (production)
 
-Use `deploy/docker-compose.prod.yml` when the host runs Compose directly. It deploys **app + zero-cache** only; Postgres stays external.
+Use `deploy/docker-compose.prod.yml` for reverse-proxy deployments such as Coolify. It deploys **app + zero-cache** only; Postgres stays external.
 
 ```sh
 cp deploy/.env.production.example deploy/.env.production
@@ -36,18 +36,30 @@ docker compose -f deploy/docker-compose.prod.yml --project-directory . \
   --env-file deploy/.env.production up -d --build
 ```
 
+If you run Compose directly without a reverse proxy and need host ports, add the explicit host-port override:
+
+```sh
+docker compose -f deploy/docker-compose.prod.yml \
+  -f deploy/docker-compose.host-ports.yml \
+  --project-directory . \
+  --env-file deploy/.env.production up -d --build
+```
+
 | File | Purpose |
 | --- | --- |
-| `deploy/docker-compose.prod.yml` | Production Compose stack (app + zero-cache) |
+| `deploy/docker-compose.prod.yml` | Production Compose stack (app + zero-cache, no host port publishing) |
+| `deploy/docker-compose.host-ports.yml` | Optional direct-host-port override for non-Coolify Compose runs |
 | `deploy/.env.production.example` | Template for required production env vars |
 | `deploy/.env.production` | Local secrets file (gitignored) |
 
 Compose behavior:
 
 - **External DB** — `DATABASE_URL` must reach your managed Postgres (`wal_level=logical`).
+- **Optional env file** — `deploy/.env.production` is optional so Coolify can use UI-managed variables; direct Compose runs can still create it from the example.
 - **Internal callbacks** — zero-cache calls `http://app:3000/api/zero/*` on the Compose network.
 - **Public URLs** — `BETTER_AUTH_URL`, `ZERO_CACHE_URL`, and `BETTER_AUTH_TRUSTED_ORIGINS` must match what browsers use (HTTPS + sibling subdomains).
-- **Persistent zero replica** — named volume `zentro_zero_data` mounted at `/data`.
+- **Proxy-facing ports only** — services expose container ports `3000` and `4848` to the Docker network; they do not bind host ports unless `deploy/docker-compose.host-ports.yml` is included.
+- **Persistent zero replica** — named volume mounted at `/data` and scoped by the Compose project/environment.
 - **Fail-fast migrations** — app entrypoint runs `db:migrate` before start; failed migrations stop the container.
 - **Health gates** — zero-cache starts only after the app health check passes.
 
@@ -55,6 +67,15 @@ Update or redeploy:
 
 ```sh
 docker compose -f deploy/docker-compose.prod.yml --project-directory . \
+  --env-file deploy/.env.production up -d --build
+```
+
+With the host-port override:
+
+```sh
+docker compose -f deploy/docker-compose.prod.yml \
+  -f deploy/docker-compose.host-ports.yml \
+  --project-directory . \
   --env-file deploy/.env.production up -d --build
 ```
 
@@ -75,15 +96,19 @@ Coolify treats the compose file as the source of truth. Variables with **literal
 
 Required variables use `${VAR:?}` — deployment is blocked until they are set in Coolify → Environment Variables.
 
+The compose file intentionally uses `expose`, not `ports`. `ports` publishes container ports on the server host and conflicts when production and QA both try to bind `3000` or `4848`. Coolify should route domains through its proxy to the container ports instead. Do not add `deploy/docker-compose.host-ports.yml` to Coolify environments.
+
+For multiple environments on the same Coolify server, create separate Coolify resources and assign separate domains, databases, secrets, and zero-cache storage. Keep the container ports as `3000` and `4848`; only the public domains change. To avoid auth-cookie crossover, give QA its own sibling-domain root when possible, for example `app.qa.example.com` and `zero.qa.example.com` with `BETTER_AUTH_COOKIE_DOMAIN=qa.example.com`.
+
 Magic URLs for sibling domains (service names `app` and `zero-cache`):
 
 1. Assign domains in Coolify to **app** port `3000` and **zero-cache** port `4848`.
 2. Set public URLs from the generated magic vars:
 
 ```txt
-BETTER_AUTH_URL=${SERVICE_URL_APP}
-ZERO_CACHE_URL=${SERVICE_URL_ZERO-CACHE}
-BETTER_AUTH_TRUSTED_ORIGINS=${SERVICE_URL_APP},${SERVICE_URL_ZERO-CACHE}
+BETTER_AUTH_URL=${SERVICE_URL_APP_3000}
+ZERO_CACHE_URL=${SERVICE_URL_ZERO-CACHE_4848}
+BETTER_AUTH_TRUSTED_ORIGINS=${SERVICE_URL_APP_3000},${SERVICE_URL_ZERO-CACHE_4848}
 BETTER_AUTH_COOKIE_DOMAIN=example.com
 ```
 
@@ -98,6 +123,7 @@ Variables derived from `DATABASE_URL` (`ZERO_UPSTREAM_DB`, etc.) are wired in co
 | `deploy/app/Dockerfile` | Production app image (Bun build + runtime) |
 | `deploy/zero-cache/Dockerfile` | Thin wrapper around `rocicorp/zero:1.5.0` |
 | `deploy/docker-compose.prod.yml` | Production Compose (app + zero-cache, external Postgres) |
+| `deploy/docker-compose.host-ports.yml` | Optional host port mappings for direct Compose runs |
 | `deploy/docker-compose.local.yml` | Local full-stack smoke test (Postgres + app + zero-cache) |
 | `scripts/docker-entrypoint.sh` | Runs migrations, then starts the app |
 | `.dockerignore` | Keeps build context small and excludes secrets |

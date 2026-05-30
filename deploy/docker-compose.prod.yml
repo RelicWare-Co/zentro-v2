@@ -2,18 +2,18 @@
 #
 # Coolify: the compose file is the source of truth. Use ${VAR} references below —
 # literals like `NODE_ENV=production` show as locked "Hardcoded env" in the UI.
-# Set values in Coolify → Environment Variables (or copy deploy/.env.production.example
-# to deploy/.env.production for plain docker compose).
+# Set values in Coolify → Environment Variables. For plain docker compose, copy
+# deploy/.env.production.example to deploy/.env.production.
 #
-# Setup (plain docker compose — run from repo root):
+# Setup (reverse-proxy compose — run from repo root):
 #   cp deploy/.env.production.example deploy/.env.production
 #   docker compose -f deploy/docker-compose.prod.yml --project-directory . \
 #     --env-file deploy/.env.production up -d --build
+# Add -f deploy/docker-compose.host-ports.yml only when you intentionally need
+# direct host port bindings outside Coolify.
 #
 # Build context is "." (repo root). Coolify sets --project-directory to the repo root;
 # do not use context ".." here — it resolves to the parent dir and breaks the build.
-
-name: zentro
 
 services:
   app:
@@ -22,10 +22,11 @@ services:
       dockerfile: deploy/app/Dockerfile
     image: zentro-app:prod
     restart: unless-stopped
-    ports:
-      - "${APP_PORT:-3000}:3000"
+    expose:
+      - "3000"
     env_file:
-      - deploy/.env.production
+      - path: deploy/.env.production
+        required: false
     environment:
       # Coolify magic URLs — assign domains to app:3000 and zero-cache:4848 in the UI
       - SERVICE_URL_APP_3000
@@ -56,10 +57,11 @@ services:
       dockerfile: deploy/zero-cache/Dockerfile
     image: zentro-zero:prod
     restart: unless-stopped
-    ports:
-      - "${ZERO_PORT:-4848}:4848"
+    expose:
+      - "4848"
     env_file:
-      - deploy/.env.production
+      - path: deploy/.env.production
+        required: false
     volumes:
       - zentro_zero_data:/data
     environment:
