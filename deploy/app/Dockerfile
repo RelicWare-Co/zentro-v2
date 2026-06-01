@@ -8,6 +8,7 @@ WORKDIR /app
 
 FROM base AS install
 COPY package.json bun.lock ./
+COPY desktop/package.json ./desktop/package.json
 RUN bun install --frozen-lockfile --ignore-scripts
 
 FROM base AS build
