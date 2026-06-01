@@ -159,6 +159,7 @@ Zero is the primary API for app data (see `MIGRATION_PLAN.md`).
 
 - Full production deployment documentation lives in `docs/deployment/docker.md`. Update that document when service topology, variables, domains, build commands, rollout order, or Zero operating procedures change.
 - Production topology: one app/API container (`deploy/app/Dockerfile`), one zero-cache container (`deploy/zero-cache/Dockerfile`), and external managed Postgres with `wal_level=logical`. Compose deploy: `deploy/docker-compose.prod.yml` + `deploy/.env.production` (see `deploy/.env.production.example`).
+- QA on Coolify uses `deploy/docker-compose.qa.yml`, which includes its own Postgres service and separate Postgres/Zero volumes. Use `deploy/.env.qa.example` as the QA variable template.
 - Build from Git or CI with dockerfile path `deploy/app/Dockerfile` or `deploy/zero-cache/Dockerfile` and build context at the repository root.
 - Database migrations run in `scripts/docker-entrypoint.sh` before `bun run start` when `RUN_MIGRATIONS=true` (default). The entrypoint uses `set -euo pipefail` so migration failures stop the container and block health-check promotion.
 - Attach persistent storage at `/data` on the zero-cache service (`ZERO_REPLICA_FILE=/data/replica.db`). Configure the volume in the platform, not via a `VOLUME` instruction in the Dockerfile.
