@@ -15,5 +15,5 @@
       "@/*": ["./*"]
     }
   },
-  "exclude": ["dist"]
+  "exclude": ["dist", "desktop"]
 }

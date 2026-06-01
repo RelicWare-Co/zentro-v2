@@ -1,4 +1,7 @@
 {
+  "workspaces": [
+    "desktop"
+  ],
   "dependencies": {
     "@base-ui/react": "^1.5.0",
     "@point-of-sale/keyboard-barcode-scanner": "^1.1.4",
@@ -11,6 +14,7 @@
     "@tanstack/react-query": "^5.100.13",
     "@tanstack/react-table": "^8.21.3",
     "@tanstack/react-virtual": "^3.13.25",
+    "@universal-middleware/core": "^0.4.17",
     "@vikejs/hono": "^0.2.0",
     "better-auth": "^1.6.11",
     "class-variance-authority": "^0.7.1",
@@ -23,6 +27,7 @@
     "drizzle-seed": "^0.3.1",
     "embla-carousel-react": "^8.6.0",
     "evlog": "^2.17.0",
+    "hono": "^4.12.5",
     "input-otp": "^1.4.2",
     "lucide-react": "^1.16.0",
     "postgres": "^3.4.9",
@@ -62,6 +67,11 @@
     "build": "vike build",
     "start": "bun ./dist/server/index.mjs",
     "preview": "vike build && vike preview",
+    "desktop:dev": "bun run --cwd desktop dev",
+    "desktop:package": "bun run --cwd desktop package",
+    "desktop:make": "bun run --cwd desktop make",
+    "desktop:check": "bun run --cwd desktop check",
+    "desktop:fix": "bun run --cwd desktop fix",
     "test": "bun test",
     "e2e:playwright": "playwright test",
     "e2e:playwright:smoke": "playwright test --grep @smoke",

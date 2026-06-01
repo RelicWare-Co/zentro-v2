@@ -1,8 +1,9 @@
 # QA stack: app + zero-cache + dedicated Postgres.
 #
 # Coolify: use this compose file for the QA resource and assign domains to
-# app:3000 and zero-cache:4848. The services use `expose`, not `ports`, so QA can
-# run next to production on the same host without binding 3000/4848 globally.
+# app:3000 and zero-cache:4848. App and zero-cache use `expose`, not `ports`, so
+# QA can run next to production without binding 3000/4848 globally. Postgres is
+# intentionally published on QA_POSTGRES_PORT for external QA database access.
 
 services:
   postgres:
@@ -20,6 +21,8 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-zentro}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
       POSTGRES_DB: ${POSTGRES_DB:-zentro_qa}
+    ports:
+      - "${QA_POSTGRES_PORT:-5433}:5432"
     volumes:
       - zentro_qa_postgres_data:/var/lib/postgresql/data
     healthcheck:

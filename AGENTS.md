@@ -18,6 +18,10 @@
 - Run a built production server with `bun run start`; production startup must use Bun, not Node.
 - Type-check with `bunx tsc --noEmit`.
 - Run tests with `bun test`.
+- Desktop Electron wrapper commands:
+  - `bun run desktop:dev` — open Electron against `ZENTRO_DESKTOP_WEB_URL` or `http://localhost:3000` by default; run `bun run dev` separately first.
+  - `bun run desktop:make` — package desktop installers with Electron Forge; set `ZENTRO_DESKTOP_WEB_URL` in `desktop/.env` or the shell before packaging.
+  - `bun run desktop:check` — type-check and Ultracite-check the Electron workspace.
 - Playwright E2E (web; specs in `tests/e2e/`, see `tests/e2e/README.md`):
   - `bun run e2e:playwright` — run all flows (starts app + zero-cache via config when not already running; requires Postgres).
   - `bun run e2e:playwright:smoke` — specs tagged `@smoke` only.
@@ -61,6 +65,7 @@
 - Database: Drizzle ORM over PostgreSQL (`drizzle-orm/postgres-js`). Postgres runs locally with `wal_level=logical` (see `docker-compose.yml`) so Zero can mirror it via logical replication.
 - Server state: Zero (`@rocicorp/zero`) for replicated reads/writes + TanStack Query for ephemeral server fetches (dashboard overview).
 - API: Zero query/mutate endpoints (`/api/zero/*`) and authenticated REST helpers (`/api/dashboard/*`, `/api/auth/*`).
+- Desktop: Electron Forge + Vite workspace under `desktop/`; currently a hardened wrapper around the configured web URL, not an embedded offline server.
 - Logging: **evlog** with `evlog/vite` plugin and `evlog/hono` middleware.
 
 ## Logging (evlog)
@@ -159,13 +164,21 @@ Zero is the primary API for app data (see `MIGRATION_PLAN.md`).
 
 - Full production deployment documentation lives in `docs/deployment/docker.md`. Update that document when service topology, variables, domains, build commands, rollout order, or Zero operating procedures change.
 - Production topology: one app/API container (`deploy/app/Dockerfile`), one zero-cache container (`deploy/zero-cache/Dockerfile`), and external managed Postgres with `wal_level=logical`. Compose deploy: `deploy/docker-compose.prod.yml` + `deploy/.env.production` (see `deploy/.env.production.example`).
-- QA on Coolify uses `deploy/docker-compose.qa.yml`, which includes its own Postgres service and separate Postgres/Zero volumes. Use `deploy/.env.qa.example` as the QA variable template.
+- QA on Coolify uses `deploy/docker-compose.qa.yml`, which includes its own Postgres service, separate Postgres/Zero volumes, and a public Postgres host-port mapping controlled by `QA_POSTGRES_PORT`. Use `deploy/.env.qa.example` as the QA variable template.
 - Build from Git or CI with dockerfile path `deploy/app/Dockerfile` or `deploy/zero-cache/Dockerfile` and build context at the repository root.
 - Database migrations run in `scripts/docker-entrypoint.sh` before `bun run start` when `RUN_MIGRATIONS=true` (default). The entrypoint uses `set -euo pipefail` so migration failures stop the container and block health-check promotion.
 - Attach persistent storage at `/data` on the zero-cache service (`ZERO_REPLICA_FILE=/data/replica.db`). Configure the volume in the platform, not via a `VOLUME` instruction in the Dockerfile.
 - Use sibling custom domains for cookie auth, for example `app.example.com` and `zero.example.com`. Configure the app with `BETTER_AUTH_COOKIE_DOMAIN=example.com`, `BETTER_AUTH_TRUSTED_ORIGINS=https://app.example.com,https://zero.example.com`, and `ZERO_CACHE_URL=https://zero.example.com`.
 - Configure zero-cache with `ZERO_QUERY_FORWARD_COOKIES=true` and `ZERO_MUTATE_FORWARD_COOKIES=true`. `ZERO_QUERY_URL` and `ZERO_MUTATE_URL` should point to the app's `/api/zero/query` and `/api/zero/mutate` endpoints.
 - `ZERO_ADMIN_PASSWORD` is **required** on zero-cache in production; without it the container exits before serving traffic.
+
+## Desktop (Electron)
+
+- Keep Electron code inside `desktop/`; the web app remains the source of truth for product behavior.
+- `desktop/src/main.ts` loads `ZENTRO_DESKTOP_WEB_URL` when set. In development, it falls back to `http://localhost:3000`; packaged builds must bake a real web URL through `desktop/.env` or the shell.
+- The desktop app must keep `nodeIntegration: false`, `contextIsolation: true`, `sandbox: true`, and same-origin navigation guards unless there is a reviewed reason to change them.
+- Use `desktop/src/preload.ts` for minimal desktop affordances only. Mirror any browser-visible shape in `types/zentro-desktop.d.ts`. Do not expose broad Node/Electron APIs to the remote web surface; sandboxed preload code cannot import arbitrary Node built-ins.
+- `desktop/src/main.ts` injects a baseline CSP for the configured web origin only when the server response does not already provide one.
 
 ## UI
 

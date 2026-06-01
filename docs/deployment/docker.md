@@ -115,7 +115,7 @@ docker build -f deploy/zero-cache/Dockerfile -t zentro-zero:latest .
 
 Use `deploy/docker-compose.qa.yml` for a QA environment that owns its own Postgres database. The QA stack includes:
 
-- `postgres` — dedicated PostgreSQL 17 with `wal_level=logical` for Zero replication.
+- `postgres` — dedicated PostgreSQL 17 with `wal_level=logical` for Zero replication, published on `QA_POSTGRES_PORT` for external QA access.
 - `app` — same production app image, with migrations enabled by default.
 - `zero-cache` — its own Zero replica volume at `/data`.
 
@@ -136,13 +136,17 @@ Coolify setup:
 3. Assign domains to **app** port `3000` and **zero-cache** port `4848`.
 4. Set QA-only secrets in the resource Environment Variables UI, using `deploy/.env.qa.example` as the template.
 5. Set `DATABASE_URL` to the internal `postgres` service unless you intentionally want an external QA database.
+6. Set `QA_POSTGRES_PORT` to an unused public TCP port on the Coolify host, for example `5433`.
+7. Set `DATABASE_PUBLIC_URL` to the host/IP and `QA_POSTGRES_PORT` that external QA tools should use.
 
 Required QA variables:
 
 | Variable | Notes |
 | --- | --- |
 | `POSTGRES_PASSWORD` | Password for the internal QA Postgres service |
+| `QA_POSTGRES_PORT` | Public host port mapped to Postgres `5432`; default `5433` |
 | `DATABASE_URL` | Internal QA DB URL, e.g. `postgresql://zentro:<password>@postgres:5432/zentro_qa` |
+| `DATABASE_PUBLIC_URL` | Public QA DB URL, e.g. `postgresql://zentro:<password>@qa-db.example.com:5433/zentro_qa` |
 | `BETTER_AUTH_SECRET` | QA auth secret; do not reuse production |
 | `BETTER_AUTH_URL` | Public QA app origin |
 | `BETTER_AUTH_COOKIE_DOMAIN` | QA cookie domain |
@@ -166,7 +170,9 @@ BETTER_AUTH_TRUSTED_ORIGINS=${SERVICE_URL_APP_3000},${SERVICE_URL_ZERO-CACHE_484
 BETTER_AUTH_COOKIE_DOMAIN=qa.example.com
 ```
 
-Do not publish host ports for QA. `deploy/docker-compose.qa.yml` uses `expose`, so Coolify's proxy can route to the container ports without colliding with production.
+Do not publish host ports for the QA app or zero-cache. `deploy/docker-compose.qa.yml` uses `expose` for those services, so Coolify's proxy can route to the container ports without colliding with production.
+
+Only the QA database publishes a host port. Keep that port unique per environment and restrict it with firewall/IP allowlists when possible. App internals should continue using `DATABASE_URL` with host `postgres`; external tools should use `DATABASE_PUBLIC_URL`.
 
 ## Prerequisites
 
