@@ -327,7 +327,7 @@ const createWindow = async () => {
   mainWindow = new BrowserWindow({
     backgroundColor: "#09090b",
     height: 900,
-    icon: path.join(import.meta.dirname, "assets", "icon.png"),
+    icon: path.join(electronMainDir, "assets", "icon.png"),
     minHeight: 720,
     minWidth: 1024,
     show: false,
