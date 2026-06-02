@@ -9,6 +9,7 @@ import { StrictMode, useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 
 import type { DesktopConnectionStatus } from "../desktop-api";
+import { ZentroAppIcon, ZentroBrandHeader } from "./zentro-brand";
 import "./styles.css";
 
 const initialStatus: DesktopConnectionStatus = {
@@ -23,9 +24,7 @@ const statusContent = (status: DesktopConnectionStatus) => {
       action: "retry" as const,
       description: status.message,
       eyebrow: "Aplicación no disponible",
-      icon: WifiOff,
-      iconClass:
-        "border border-amber-400/20 bg-amber-400/10 text-amber-200" as const,
+      overlay: <WifiOff aria-hidden className="size-5 text-amber-200" />,
       title: "No se pudo conectar a la aplicación",
     };
   }
@@ -36,8 +35,7 @@ const statusContent = (status: DesktopConnectionStatus) => {
       description: status.message,
       eyebrow: "Configuración pendiente",
       hint: "Cierra la app, define la URL en desktop/.env o en el entorno, y vuelve a abrir Zentro Desktop.",
-      icon: Settings,
-      iconClass: "border border-zinc-800 bg-zinc-900 text-zinc-400" as const,
+      overlay: <Settings aria-hidden className="size-5 text-zinc-300" />,
       title: "Configura la URL web de Zentro",
     };
   }
@@ -47,8 +45,12 @@ const statusContent = (status: DesktopConnectionStatus) => {
     description: status.message,
     eyebrow: "Verificando conexión",
     hint: "La app principal se abrirá automáticamente cuando responda.",
-    icon: LoaderCircle,
-    iconClass: "border border-zinc-800 bg-zinc-900 text-zinc-400" as const,
+    overlay: (
+      <LoaderCircle
+        aria-hidden
+        className="size-5 animate-spin text-[var(--color-voltage)]"
+      />
+    ),
     title: "Conectando con Zentro",
   };
 };
@@ -57,7 +59,6 @@ function DesktopShell() {
   const [status, setStatus] = useState<DesktopConnectionStatus>(initialStatus);
   const [isRetrying, setIsRetrying] = useState(false);
   const content = useMemo(() => statusContent(status), [status]);
-  const Icon = content.icon;
   const isChecking = status.state === "checking" || isRetrying;
 
   useEffect(() => {
@@ -98,19 +99,13 @@ function DesktopShell() {
     <main className="flex min-h-dvh items-center justify-center bg-[var(--color-void)] p-4 text-[var(--color-photon)]">
       <div className="w-full max-w-md rounded-lg border border-zinc-800 bg-[var(--color-carbon)] p-5">
         <div className="flex items-start gap-3">
-          <div
-            className={`flex size-9 shrink-0 items-center justify-center rounded-lg ${content.iconClass}`}
-          >
-            <Icon
-              aria-hidden="true"
-              className={isChecking ? "size-4 animate-spin" : "size-4"}
+          <ZentroAppIcon overlay={content.overlay} />
+          <div className="min-w-0">
+            <ZentroBrandHeader
+              subtitle={content.eyebrow}
+              title={content.title}
             />
-          </div>
-          <div className="min-w-0 space-y-1">
-            <h1 className="font-semibold text-base text-white">
-              {content.title}
-            </h1>
-            <p className="text-sm text-zinc-400">{content.description}</p>
+            <p className="mt-1 text-sm text-zinc-400">{content.description}</p>
           </div>
         </div>
 

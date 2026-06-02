@@ -22,6 +22,16 @@ Si `ZENTRO_DESKTOP_WEB_URL` no está definido, desarrollo carga `http://localhos
 
 Electron carga primero un renderer local en `desktop/src/renderer/` con los estilos/componentes compartidos de la app. Ese splash verifica que la URL web responda antes de navegar a Zentro. Si la app web no está disponible, se mantiene una pantalla desktop local con botón para reintentar en lugar de dejar la ventana en blanco.
 
+## Iconos
+
+Los iconos de la app (dock, `.icns`, `.ico`, PNG) se generan desde `desktop/assets/logo-icon.svg`, un tile cuadrado sin esquinas blancas. Si cambias la marca, edita ese SVG y ejecuta:
+
+```sh
+bun run --cwd desktop icons
+```
+
+Requiere ImageMagick (`magick`). En macOS también genera `icon.icns` con `iconutil`.
+
 ## Empaquetar
 
 Copia la configuración de ejemplo y define la URL pública de la app web antes de empaquetar:

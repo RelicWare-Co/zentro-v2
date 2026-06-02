@@ -22,6 +22,7 @@
   - `bun run desktop:dev` — open Electron against `ZENTRO_DESKTOP_WEB_URL` or `http://localhost:3000` by default; run `bun run dev` separately first.
   - `bun run desktop:make` — package desktop installers with Electron Forge; set `ZENTRO_DESKTOP_WEB_URL` in `desktop/.env` or the shell before packaging.
   - `bun run desktop:check` — type-check and Ultracite-check the Electron workspace.
+ - `bun run --cwd desktop icons` — regenerate `desktop/assets/icon.*` from `desktop/assets/logo-icon.svg` (requires ImageMagick).
 - Playwright E2E (web; specs in `tests/e2e/`, see `tests/e2e/README.md`):
   - `bun run e2e:playwright` — run all flows (starts app + zero-cache via config when not already running; requires Postgres).
   - `bun run e2e:playwright:smoke` — specs tagged `@smoke` only.

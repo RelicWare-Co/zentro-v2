@@ -10,7 +10,8 @@
     "package": "electron-forge package",
     "make": "electron-forge make",
     "check": "tsc --noEmit && ultracite check .",
-    "fix": "ultracite fix ."
+    "fix": "ultracite fix .",
+    "icons": "node scripts/generate-icons.mjs"
   },
   "keywords": [
     "zentro",
