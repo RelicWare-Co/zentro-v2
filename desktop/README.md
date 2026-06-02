@@ -93,7 +93,7 @@ Documentación de referencia: [Electron Forge MSIX](https://www.electronforge.io
 
 ### CI (GitHub Actions)
 
-El workflow `.github/workflows/desktop-msix.yml` compila en `windows-latest`. Configura en el repositorio:
+El workflow `.github/workflows/desktop-msix.yml` compila en `windows-latest` y solo se dispara manualmente (Actions → Desktop MSIX → Run workflow). Configura en el repositorio:
 
 | Tipo | Nombre | Uso |
 |------|--------|-----|
