@@ -47,6 +47,12 @@ if (started) {
   app.quit();
 }
 
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+  app.quit();
+}
+
 app.setName("Zentro");
 nativeTheme.themeSource = "system";
 
@@ -431,30 +437,59 @@ const createWindow = async () => {
   await retryConnection();
 };
 
-ipcMain.handle(desktopIpc.getConnectionStatus, () => currentStatus);
-ipcMain.handle(desktopIpc.retryConnection, retryConnection);
+const focusMainWindow = () => {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    return;
+  }
 
-app
-  .whenReady()
-  .then(createWindow)
-  .catch((error: unknown) => {
-    dialog.showErrorBox(
-      "No se pudo abrir Zentro",
-      error instanceof Error
-        ? error.message
-        : "Error desconocido al crear la ventana."
-    );
-    app.quit();
+  if (mainWindow.isMinimized()) {
+    mainWindow.restore();
+  }
+
+  if (!mainWindow.isVisible()) {
+    mainWindow.show();
+  }
+
+  mainWindow.focus();
+};
+
+if (gotTheLock) {
+  app.on("second-instance", () => {
+    if (mainWindow) {
+      focusMainWindow();
+      return;
+    }
+
+    createWindow().catch(() => undefined);
   });
 
-app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") {
-    app.quit();
-  }
-});
+  ipcMain.handle(desktopIpc.getConnectionStatus, () => currentStatus);
+  ipcMain.handle(desktopIpc.retryConnection, retryConnection);
 
-app.on("activate", () => {
-  if (BrowserWindow.getAllWindows().length === 0) {
-    createWindow().catch(() => undefined);
-  }
-});
+  app
+    .whenReady()
+    .then(createWindow)
+    .catch((error: unknown) => {
+      dialog.showErrorBox(
+        "No se pudo abrir Zentro",
+        error instanceof Error
+          ? error.message
+          : "Error desconocido al crear la ventana."
+      );
+      app.quit();
+    });
+
+  app.on("window-all-closed", () => {
+    if (process.platform !== "darwin") {
+      app.quit();
+    }
+  });
+
+  app.on("activate", () => {
+    if (BrowserWindow.getAllWindows().length === 0) {
+      createWindow().catch(() => undefined);
+    } else {
+      focusMainWindow();
+    }
+  });
+}
