@@ -19,6 +19,8 @@ declare const DESKTOP_SHELL_VITE_NAME: string;
 
 const developmentWebUrl = "http://localhost:3000";
 const connectionTimeoutMs = 8000;
+const maxConnectionAttempts = 5;
+const connectionRetryBaseDelayMs = 1000;
 const desktopShellDevPath = "/src/renderer/index.html";
 const allowedPermissions = new Set([
   "bluetooth",
@@ -208,20 +210,13 @@ const checkWebAppConnection = async (webAppUrl: string) => {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), connectionTimeoutMs);
 
-  const request = (method: "GET" | "HEAD") =>
-    fetch(webAppUrl, {
+  try {
+    const response = await fetch(webAppUrl, {
       cache: "no-store",
-      method,
+      method: "GET",
       redirect: "follow",
       signal: controller.signal,
     });
-
-  try {
-    let response = await request("HEAD");
-
-    if (response.status === 405 || response.status === 501) {
-      response = await request("GET");
-    }
 
     return response.status < 500 && hasSameOrigin(response.url, webAppUrl);
   } catch {
@@ -265,28 +260,50 @@ const connectToWebApp = async () => {
     return;
   }
 
-  sendConnectionStatus(browserWindow, {
-    message: `Estamos verificando que ${webAppUrl} responda antes de abrir Zentro.`,
-    state: "checking",
-    webAppUrl,
-  });
+  for (let attempt = 1; attempt <= maxConnectionAttempts; attempt++) {
+    if (browserWindow.isDestroyed()) {
+      return;
+    }
 
-  const hasConnection = await checkWebAppConnection(webAppUrl);
-
-  if (!hasConnection) {
-    await showOfflineStatus(browserWindow, webAppUrl);
-    return;
-  }
-
-  try {
-    await browserWindow.loadURL(webAppUrl);
-  } catch {
-    await showOfflineStatus(
-      browserWindow,
+    sendConnectionStatus(browserWindow, {
+      message:
+        attempt === 1
+          ? `Estamos verificando que ${webAppUrl} responda antes de abrir Zentro.`
+          : `Reintentando conexión con ${webAppUrl} (intento ${attempt} de ${maxConnectionAttempts}).`,
+      state: "checking",
       webAppUrl,
-      `La conexión respondió, pero Electron no pudo cargar ${webAppUrl}. Intenta de nuevo en unos segundos.`
-    );
+    });
+
+    const hasConnection = await checkWebAppConnection(webAppUrl);
+
+    if (hasConnection) {
+      try {
+        await browserWindow.loadURL(webAppUrl);
+        return;
+      } catch {
+        if (attempt < maxConnectionAttempts) {
+          await new Promise((resolve) =>
+            setTimeout(resolve, connectionRetryBaseDelayMs * 2 ** (attempt - 1))
+          );
+          continue;
+        }
+        await showOfflineStatus(
+          browserWindow,
+          webAppUrl,
+          `La conexión respondió, pero Electron no pudo cargar ${webAppUrl}. Intenta de nuevo en unos segundos.`
+        );
+        return;
+      }
+    }
+
+    if (attempt < maxConnectionAttempts) {
+      await new Promise((resolve) =>
+        setTimeout(resolve, connectionRetryBaseDelayMs * 2 ** (attempt - 1))
+      );
+    }
   }
+
+  await showOfflineStatus(browserWindow, webAppUrl);
 };
 
 const retryConnection = () => {
@@ -432,6 +449,36 @@ const createWindow = async () => {
       ).catch(() => undefined);
     }
   });
+
+  browserWindow.webContents.on(
+    "did-fail-load",
+    (_event, errorCode, errorDescription, validatedURL) => {
+      if (
+        !(
+          configuredWebAppUrl &&
+          hasSameOrigin(validatedURL, configuredWebAppUrl)
+        )
+      ) {
+        return;
+      }
+
+      if (browserWindow.isDestroyed()) {
+        return;
+      }
+
+      const webAppUrl = configuredWebAppUrl;
+
+      console.warn(
+        `[desktop] Failed to load ${validatedURL}: ${errorCode} ${errorDescription}. Retrying...`
+      );
+
+      setTimeout(() => {
+        if (!browserWindow.isDestroyed()) {
+          browserWindow.loadURL(webAppUrl).catch(() => undefined);
+        }
+      }, 2000);
+    }
+  );
 
   await loadDesktopShell(browserWindow);
   await retryConnection();
