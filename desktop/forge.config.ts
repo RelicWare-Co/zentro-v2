@@ -1,3 +1,4 @@
+import path from "node:path";
 import { FuseV1Options, FuseVersion } from "@electron/fuses";
 import { MakerDeb } from "@electron-forge/maker-deb";
 import { MakerRpm } from "@electron-forge/maker-rpm";
@@ -13,6 +14,7 @@ const config: ForgeConfig = {
     appCategoryType: "public.app-category.business",
     asar: true,
     executableName: "zentro",
+    icon: path.join(import.meta.dirname, "assets", "icon"),
     name: "Zentro",
   },
   rebuildConfig: {},

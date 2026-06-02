@@ -41,4 +41,5 @@ export default {
   define: {
     "import.meta.env.ZENTRO_DESKTOP_WEB_URL": JSON.stringify(webUrl.trim()),
   },
+  publicDir: "assets",
 };
