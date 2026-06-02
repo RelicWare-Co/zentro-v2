@@ -92,10 +92,6 @@ const main = () => {
   fs.rmSync(iconsetDir, { force: true, recursive: true });
   writeIconSet(iconsetDir);
 
-  const legacyIconsetDir = path.join(assetsDir, "icons", "iconset");
-  fs.rmSync(legacyIconsetDir, { force: true, recursive: true });
-  writeIconSet(legacyIconsetDir);
-
   writeIco(path.join(assetsDir, "icon.ico"));
 
   if (process.platform === "darwin") {
