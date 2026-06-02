@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import {
@@ -86,6 +87,34 @@ const getWebAppUrl = () =>
 // Electron main process must use the CommonJS dirname for renderer files.
 // biome-ignore lint/correctness/noGlobalDirnameFilename: Electron Forge main output is CommonJS.
 const electronMainDir = __dirname;
+
+const resolveIconPath = () => {
+  const candidates = [
+    path.join(electronMainDir, "assets", "icon.png"),
+    path.join(electronMainDir, "..", "assets", "icon.png"),
+    path.join(electronMainDir, "..", "..", "assets", "icon.png"),
+  ];
+
+  for (const candidate of candidates) {
+    if (existsSync(candidate)) {
+      return candidate;
+    }
+  }
+
+  return null;
+};
+
+const setAppIcon = () => {
+  const iconPath = resolveIconPath();
+
+  if (!iconPath) {
+    return;
+  }
+
+  if (process.platform === "darwin" && app.dock) {
+    app.dock.setIcon(iconPath);
+  }
+};
 
 const getDesktopShellHtmlPath = () =>
   // Forge/Vite preserves the renderer input path under `.vite/renderer`.
@@ -313,6 +342,7 @@ const configureSessionSecurity = (webAppUrl: string | null) => {
 };
 
 const createWindow = async () => {
+  setAppIcon();
   configuredWebAppUrl = getWebAppUrl();
   currentStatus = {
     message: configuredWebAppUrl
