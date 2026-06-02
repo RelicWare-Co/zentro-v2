@@ -9,7 +9,7 @@ const repoRoot = fileURLToPath(new URL("../", import.meta.url));
 
 export default defineConfig({
   build: {
-    rollupOptions: {
+    rolldownOptions: {
       input: path.join(desktopRoot, "src/renderer/index.html"),
     },
   },
