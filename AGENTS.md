@@ -178,6 +178,7 @@ Zero is the primary API for app data (see `MIGRATION_PLAN.md`).
 - `desktop/src/main.ts` loads `ZENTRO_DESKTOP_WEB_URL` when set. In development, it falls back to `http://localhost:3000`; packaged builds must bake a real web URL through `desktop/.env` or the shell.
 - The desktop app must keep `nodeIntegration: false`, `contextIsolation: true`, `sandbox: true`, and same-origin navigation guards unless there is a reviewed reason to change them.
 - Use `desktop/src/preload.ts` for minimal desktop affordances only. Mirror any browser-visible shape in `types/zentro-desktop.d.ts`. Do not expose broad Node/Electron APIs to the remote web surface; sandboxed preload code cannot import arbitrary Node built-ins.
+- The desktop splash/offline shell lives under `desktop/src/renderer/`, loads before the remote web app, and may reuse root UI primitives/styles (`components/ui`, `pages/tailwind.css`) without adding web app routes.
 - `desktop/src/main.ts` injects a baseline CSP for the configured web origin only when the server response does not already provide one.
 
 ## UI

@@ -1,6 +1,30 @@
-import { contextBridge } from "electron";
+import { contextBridge, ipcRenderer } from "electron";
 
-contextBridge.exposeInMainWorld("zentroDesktop", {
+import { type DesktopConnectionStatus, desktopIpc } from "./desktop-api";
+
+const desktopApi = {
+  getConnectionStatus: () =>
+    ipcRenderer.invoke(
+      desktopIpc.getConnectionStatus
+    ) as Promise<DesktopConnectionStatus>,
   isDesktop: true,
+  onConnectionStatus: (listener: (status: DesktopConnectionStatus) => void) => {
+    const subscription = (
+      _event: Electron.IpcRendererEvent,
+      status: unknown
+    ) => {
+      listener(status as DesktopConnectionStatus);
+    };
+
+    ipcRenderer.on(desktopIpc.connectionStatus, subscription);
+
+    return () => {
+      ipcRenderer.removeListener(desktopIpc.connectionStatus, subscription);
+    };
+  },
   platform: process.platform,
-} as const);
+  retryConnection: () =>
+    ipcRenderer.invoke(desktopIpc.retryConnection) as Promise<void>,
+} as const;
+
+contextBridge.exposeInMainWorld("zentroDesktop", desktopApi);

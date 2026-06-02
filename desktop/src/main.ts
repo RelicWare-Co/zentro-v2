@@ -1,15 +1,24 @@
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import {
   app,
   BrowserWindow,
   dialog,
+  ipcMain,
   nativeTheme,
   session,
   shell,
 } from "electron";
 import started from "electron-squirrel-startup";
 
+import { type DesktopConnectionStatus, desktopIpc } from "./desktop-api";
+
+declare const DESKTOP_SHELL_VITE_DEV_SERVER_URL: string | undefined;
+declare const DESKTOP_SHELL_VITE_NAME: string;
+
 const developmentWebUrl = "http://localhost:3000";
+const connectionTimeoutMs = 8000;
+const desktopShellDevPath = "/src/renderer/index.html";
 const allowedPermissions = new Set([
   "bluetooth",
   "clipboard-read",
@@ -40,6 +49,15 @@ if (started) {
 app.setName("Zentro");
 nativeTheme.themeSource = "system";
 
+let mainWindow: BrowserWindow | null = null;
+let configuredWebAppUrl: string | null = null;
+let connectionAttempt: Promise<void> | null = null;
+let currentStatus: DesktopConnectionStatus = {
+  message: "Estamos verificando la conexión con la aplicación web de Zentro.",
+  state: "checking",
+  webAppUrl: null,
+};
+
 const parseWebUrl = (rawUrl: string | undefined) => {
   if (!rawUrl?.trim()) {
     return null;
@@ -63,75 +81,189 @@ const getWebAppUrl = () =>
   parseWebUrl(import.meta.env.ZENTRO_DESKTOP_WEB_URL) ??
   (app.isPackaged ? null : developmentWebUrl);
 
+// Electron Forge emits the main bundle as CommonJS. Rolldown currently
+// rewrites `import.meta.dirname` to an undefined placeholder there, so the
+// Electron main process must use the CommonJS dirname for renderer files.
+// biome-ignore lint/correctness/noGlobalDirnameFilename: Electron Forge main output is CommonJS.
+const electronMainDir = __dirname;
+
+const getDesktopShellHtmlPath = () =>
+  // Forge/Vite preserves the renderer input path under `.vite/renderer`.
+  path.join(
+    electronMainDir,
+    `../renderer/${DESKTOP_SHELL_VITE_NAME}${desktopShellDevPath}`
+  );
+
+const getDesktopShellDevUrl = () => {
+  if (!DESKTOP_SHELL_VITE_DEV_SERVER_URL) {
+    return null;
+  }
+
+  return new URL(
+    desktopShellDevPath,
+    DESKTOP_SHELL_VITE_DEV_SERVER_URL
+  ).toString();
+};
+
+const getDesktopShellUrl = () =>
+  getDesktopShellDevUrl() ??
+  pathToFileURL(getDesktopShellHtmlPath()).toString();
+
 const hasSameOrigin = (targetUrl: string, appUrl: string) => {
   try {
-    return new URL(targetUrl).origin === new URL(appUrl).origin;
+    const target = new URL(targetUrl);
+    const appOrigin = new URL(appUrl);
+
+    if (target.protocol === "file:" || appOrigin.protocol === "file:") {
+      return target.href === appOrigin.href;
+    }
+
+    return target.origin === appOrigin.origin;
   } catch {
     return false;
   }
 };
 
-const escapeHtml = (value: string) =>
-  value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+const isDesktopShellUrl = (targetUrl: string) => {
+  const desktopShellUrl = getDesktopShellUrl();
 
-const loadStatusPage = async (
-  mainWindow: BrowserWindow,
-  title: string,
-  description: string
-) => {
-  const html = `<!doctype html>
-<html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>${escapeHtml(title)}</title>
-    <style>
-      :root { color-scheme: dark; }
-      body {
-        align-items: center;
-        background: #09090b;
-        color: #fafafa;
-        display: flex;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        justify-content: center;
-        margin: 0;
-        min-height: 100vh;
-      }
-      main {
-        background: #18181b;
-        border: 1px solid #27272a;
-        border-radius: 18px;
-        box-shadow: 0 24px 80px rgb(0 0 0 / 0.35);
-        max-width: 480px;
-        padding: 32px;
-      }
-      h1 { font-size: 22px; margin: 0 0 12px; }
-      p { color: #d4d4d8; line-height: 1.6; margin: 0; }
-      code {
-        background: #27272a;
-        border-radius: 6px;
-        color: #f4f4f5;
-        padding: 2px 6px;
-      }
-    </style>
-  </head>
-  <body>
-    <main>
-      <h1>${escapeHtml(title)}</h1>
-      <p>${escapeHtml(description)}</p>
-    </main>
-  </body>
-</html>`;
-
-  await mainWindow.loadURL(
-    `data:text/html;charset=utf-8,${encodeURIComponent(html)}`
+  return (
+    targetUrl === desktopShellUrl ||
+    targetUrl.startsWith(`${desktopShellUrl}#`) ||
+    (desktopShellUrl.startsWith("http") &&
+      hasSameOrigin(targetUrl, desktopShellUrl))
   );
+};
+
+const isAllowedAppNavigation = (targetUrl: string, appUrl: string | null) =>
+  isDesktopShellUrl(targetUrl) ||
+  Boolean(appUrl && hasSameOrigin(targetUrl, appUrl));
+
+const canOpenExternalUrl = (targetUrl: string) => {
+  try {
+    const { protocol } = new URL(targetUrl);
+    return protocol === "http:" || protocol === "https:";
+  } catch {
+    return false;
+  }
+};
+
+const sendConnectionStatus = (
+  browserWindow: BrowserWindow,
+  status: DesktopConnectionStatus
+) => {
+  currentStatus = status;
+
+  if (!browserWindow.isDestroyed()) {
+    browserWindow.webContents.send(desktopIpc.connectionStatus, status);
+  }
+};
+
+const loadDesktopShell = async (browserWindow: BrowserWindow) => {
+  if (DESKTOP_SHELL_VITE_DEV_SERVER_URL) {
+    await browserWindow.loadURL(getDesktopShellUrl());
+  } else {
+    await browserWindow.loadFile(getDesktopShellHtmlPath());
+  }
+
+  sendConnectionStatus(browserWindow, currentStatus);
+};
+
+const checkWebAppConnection = async (webAppUrl: string) => {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), connectionTimeoutMs);
+
+  const request = (method: "GET" | "HEAD") =>
+    fetch(webAppUrl, {
+      cache: "no-store",
+      method,
+      redirect: "follow",
+      signal: controller.signal,
+    });
+
+  try {
+    let response = await request("HEAD");
+
+    if (response.status === 405 || response.status === 501) {
+      response = await request("GET");
+    }
+
+    return response.status < 500 && hasSameOrigin(response.url, webAppUrl);
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timeout);
+  }
+};
+
+const showOfflineStatus = async (
+  browserWindow: BrowserWindow,
+  webAppUrl: string,
+  message = `No pudimos conectar con ${webAppUrl}. Verifica tu conexión o que la aplicación web esté disponible.`
+) => {
+  sendConnectionStatus(browserWindow, {
+    message,
+    state: "offline",
+    webAppUrl,
+  });
+
+  if (!isDesktopShellUrl(browserWindow.webContents.getURL())) {
+    await loadDesktopShell(browserWindow);
+  }
+};
+
+const connectToWebApp = async () => {
+  const browserWindow = mainWindow;
+  const webAppUrl = configuredWebAppUrl;
+
+  if (!browserWindow || browserWindow.isDestroyed()) {
+    return;
+  }
+
+  if (!webAppUrl) {
+    sendConnectionStatus(browserWindow, {
+      message:
+        "Define ZENTRO_DESKTOP_WEB_URL antes de empaquetar la app desktop para indicar qué versión web debe cargar.",
+      state: "configuration-error",
+      webAppUrl: null,
+    });
+    return;
+  }
+
+  sendConnectionStatus(browserWindow, {
+    message: `Estamos verificando que ${webAppUrl} responda antes de abrir Zentro.`,
+    state: "checking",
+    webAppUrl,
+  });
+
+  const hasConnection = await checkWebAppConnection(webAppUrl);
+
+  if (!hasConnection) {
+    await showOfflineStatus(browserWindow, webAppUrl);
+    return;
+  }
+
+  try {
+    await browserWindow.loadURL(webAppUrl);
+  } catch {
+    await showOfflineStatus(
+      browserWindow,
+      webAppUrl,
+      `La conexión respondió, pero Electron no pudo cargar ${webAppUrl}. Intenta de nuevo en unos segundos.`
+    );
+  }
+};
+
+const retryConnection = () => {
+  if (connectionAttempt) {
+    return connectionAttempt;
+  }
+
+  connectionAttempt = connectToWebApp().finally(() => {
+    connectionAttempt = null;
+  });
+
+  return connectionAttempt;
 };
 
 const hasResponseHeader = (
@@ -181,11 +313,18 @@ const configureSessionSecurity = (webAppUrl: string | null) => {
 };
 
 const createWindow = async () => {
-  const webAppUrl = getWebAppUrl();
+  configuredWebAppUrl = getWebAppUrl();
+  currentStatus = {
+    message: configuredWebAppUrl
+      ? `Estamos verificando que ${configuredWebAppUrl} responda antes de abrir Zentro.`
+      : "Estamos verificando la configuración de la app desktop de Zentro.",
+    state: "checking",
+    webAppUrl: configuredWebAppUrl,
+  };
 
-  configureSessionSecurity(webAppUrl);
+  configureSessionSecurity(configuredWebAppUrl);
 
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     backgroundColor: "#09090b",
     height: 900,
     minHeight: 720,
@@ -206,48 +345,63 @@ const createWindow = async () => {
     width: 1440,
   });
 
-  mainWindow.once("ready-to-show", () => {
-    mainWindow.show();
+  const browserWindow = mainWindow;
+
+  browserWindow.once("ready-to-show", () => {
+    browserWindow.show();
   });
 
-  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    if (webAppUrl && hasSameOrigin(url, webAppUrl)) {
-      mainWindow.loadURL(url).catch(() => undefined);
-    } else {
+  browserWindow.on("closed", () => {
+    if (mainWindow === browserWindow) {
+      mainWindow = null;
+      connectionAttempt = null;
+    }
+  });
+
+  browserWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (configuredWebAppUrl && hasSameOrigin(url, configuredWebAppUrl)) {
+      browserWindow.loadURL(url).catch(() => undefined);
+    } else if (!isDesktopShellUrl(url) && canOpenExternalUrl(url)) {
       shell.openExternal(url).catch(() => undefined);
     }
 
     return { action: "deny" };
   });
 
-  mainWindow.webContents.on("will-navigate", (event, url) => {
-    if (!webAppUrl || hasSameOrigin(url, webAppUrl)) {
+  browserWindow.webContents.on("will-navigate", (event, url) => {
+    if (isAllowedAppNavigation(url, configuredWebAppUrl)) {
       return;
     }
 
     event.preventDefault();
-    shell.openExternal(url).catch(() => undefined);
+
+    if (canOpenExternalUrl(url)) {
+      shell.openExternal(url).catch(() => undefined);
+    }
   });
 
-  if (!webAppUrl) {
-    await loadStatusPage(
-      mainWindow,
-      "Configura la URL web de Zentro",
-      "Define ZENTRO_DESKTOP_WEB_URL antes de empaquetar la app desktop para indicar qué versión web debe cargar. En desarrollo se usa http://localhost:3000 por defecto."
-    );
-    return;
-  }
+  browserWindow.webContents.on("will-redirect", (event, url) => {
+    if (isAllowedAppNavigation(url, configuredWebAppUrl)) {
+      return;
+    }
 
-  try {
-    await mainWindow.loadURL(webAppUrl);
-  } catch {
-    await loadStatusPage(
-      mainWindow,
-      "No se pudo cargar Zentro",
-      `Revisa que la aplicación web esté disponible en ${webAppUrl}. En desarrollo ejecuta bun run dev antes de abrir Electron.`
-    );
-  }
+    event.preventDefault();
+
+    if (configuredWebAppUrl) {
+      showOfflineStatus(
+        browserWindow,
+        configuredWebAppUrl,
+        `Zentro intentó redirigir a ${url}, que no pertenece al origen configurado. Revisa la URL de la aplicación e intenta de nuevo.`
+      ).catch(() => undefined);
+    }
+  });
+
+  await loadDesktopShell(browserWindow);
+  await retryConnection();
 };
+
+ipcMain.handle(desktopIpc.getConnectionStatus, () => currentStatus);
+ipcMain.handle(desktopIpc.retryConnection, retryConnection);
 
 app
   .whenReady()

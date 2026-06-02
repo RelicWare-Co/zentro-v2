@@ -36,7 +36,12 @@ const config: ForgeConfig = {
           target: "preload",
         },
       ],
-      renderer: [],
+      renderer: [
+        {
+          config: "vite.renderer.config.ts",
+          name: "desktop_shell",
+        },
+      ],
     }),
     new FusesPlugin({
       version: FuseVersion.V1,

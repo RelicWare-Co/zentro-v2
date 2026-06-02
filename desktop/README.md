@@ -18,6 +18,10 @@ Wrapper Electron de la aplicación web de Zentro. Esta app no embebe el servidor
 
 Si `ZENTRO_DESKTOP_WEB_URL` no está definido, desarrollo carga `http://localhost:3000`.
 
+## Splash y conexión
+
+Electron carga primero un renderer local en `desktop/src/renderer/` con los estilos/componentes compartidos de la app. Ese splash verifica que la URL web responda antes de navegar a Zentro. Si la app web no está disponible, se mantiene una pantalla desktop local con botón para reintentar en lugar de dejar la ventana en blanco.
+
 ## Empaquetar
 
 Copia la configuración de ejemplo y define la URL pública de la app web antes de empaquetar:
@@ -38,7 +42,7 @@ ZENTRO_DESKTOP_WEB_URL="https://app.tu-dominio.com" bun run desktop:make
 
 - `nodeIntegration` está deshabilitado.
 - `contextIsolation`, `sandbox` y `webSecurity` están activos.
-- El preload solo expone `window.zentroDesktop` con metadatos mínimos.
+- El preload solo expone `window.zentroDesktop` con metadatos mínimos y acciones acotadas para el splash (`getConnectionStatus`, `onConnectionStatus`, `retryConnection`).
 - La navegación interna queda limitada al origen configurado; enlaces externos se abren en el navegador del sistema.
 - Permisos sensibles se conceden solo al origen de Zentro.
 - Electron inyecta una CSP básica cuando la respuesta web no trae una propia, evitando `unsafe-eval` en el wrapper desktop.
