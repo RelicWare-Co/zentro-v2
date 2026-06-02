@@ -103,6 +103,24 @@ const main = () => {
     console.warn("Skipping icon.icns generation (iconutil is macOS-only).");
   }
 
+  const msixAssetsDir = path.join(desktopRoot, "msix", "assets");
+  const msixTiles = [
+    ["StoreLogo.png", 50],
+    ["Square44x44Logo.png", 44],
+    ["Square150x150Logo.png", 150],
+    ["icon.png", 256],
+  ];
+  for (const [filename, size] of msixTiles) {
+    renderPng(size, path.join(msixAssetsDir, filename));
+  }
+
+  const wideLogo = path.join(msixAssetsDir, "Wide310x150Logo.png");
+  fs.mkdirSync(path.dirname(wideLogo), { recursive: true });
+  execSync(
+    `magick -density 512 "${sourceSvg}" -resize 310x150^ -gravity center -extent 310x150 -filter Lanczos PNG32:"${wideLogo}"`,
+    { stdio: "inherit" }
+  );
+
   console.log("Desktop icons generated from logo-icon.svg");
 };
 

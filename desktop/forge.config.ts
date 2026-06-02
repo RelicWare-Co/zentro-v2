@@ -7,6 +7,7 @@ import { MakerZIP } from "@electron-forge/maker-zip";
 import { FusesPlugin } from "@electron-forge/plugin-fuses";
 import { VitePlugin } from "@electron-forge/plugin-vite";
 import type { ForgeConfig } from "@electron-forge/shared-types";
+import { createMsixMaker } from "./forge.msix";
 
 const config: ForgeConfig = {
   packagerConfig: {
@@ -16,10 +17,17 @@ const config: ForgeConfig = {
     executableName: "zentro",
     icon: path.join(import.meta.dirname, "assets", "icon"),
     name: "Zentro",
+    ignore: [
+      /^\/msix\/Package\.appxmanifest\.example$/,
+      /^\/msix\/\.env\.example$/,
+      /\.pfx$/,
+      /\.msix$/,
+    ],
   },
   rebuildConfig: {},
   makers: [
     new MakerSquirrel({}),
+    createMsixMaker(),
     new MakerZIP({}, ["darwin"]),
     new MakerRpm({}),
     new MakerDeb({}),

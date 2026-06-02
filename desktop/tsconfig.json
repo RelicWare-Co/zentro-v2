@@ -19,6 +19,7 @@
   },
   "include": [
     "forge.config.ts",
+    "forge.msix.ts",
     "forge.env.d.ts",
     "vite.*.config.ts",
     "src/**/*.ts",

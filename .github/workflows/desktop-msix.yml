@@ -1,0 +1,49 @@
+# Empaqueta Zentro Desktop como MSIX en Windows (requerido por @electron-forge/maker-msix).
+# Para Microsoft Store: sube el artefacto desde Partner Center tras configurar identidad en desktop/msix/.
+name: Desktop MSIX
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "desktop/**"
+      - ".github/workflows/desktop-msix.yml"
+
+jobs:
+  msix:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: desktop
+    env:
+      ZENTRO_DESKTOP_WEB_URL: ${{ vars.ZENTRO_DESKTOP_WEB_URL }}
+      ZENTRO_MSIX_PUBLISHER: ${{ vars.ZENTRO_MSIX_PUBLISHER }}
+      ZENTRO_MSIX_PACKAGE_IDENTITY: ${{ vars.ZENTRO_MSIX_PACKAGE_IDENTITY }}
+      ZENTRO_MSIX_SIGN: ${{ vars.ZENTRO_MSIX_SIGN }}
+      ZENTRO_MSIX_CERT_FILE: ${{ secrets.ZENTRO_MSIX_CERT_FILE }}
+      ZENTRO_MSIX_CERT_PASSWORD: ${{ secrets.ZENTRO_MSIX_CERT_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+        working-directory: ${{ github.workspace }}
+
+      - name: Generate MSIX tile assets
+        run: bun run icons
+        continue-on-error: true
+
+      - name: Build MSIX (x64)
+        run: bun run make:msix
+
+      - name: Upload MSIX artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: zentro-desktop-msix-x64
+          path: desktop/out/make/msix/**/*.msix
+          if-no-files-found: error

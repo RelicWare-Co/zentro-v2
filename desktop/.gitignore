@@ -60,6 +60,15 @@ typings/
 # dotenv environment variables file
 .env
 .env.test
+msix/.env
+
+# MSIX signing (never commit certificates)
+*.pfx
+*.cer
+devcert.pfx
+
+# Store manifest copy (use Package.appxmanifest.example as template)
+msix/Package.appxmanifest
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache

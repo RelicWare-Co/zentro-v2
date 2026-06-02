@@ -21,6 +21,8 @@
 - Desktop Electron wrapper commands:
   - `bun run desktop:dev` — open Electron against `ZENTRO_DESKTOP_WEB_URL` or `http://localhost:3000` by default; run `bun run dev` separately first.
   - `bun run desktop:make` — package desktop installers with Electron Forge; set `ZENTRO_DESKTOP_WEB_URL` in `desktop/.env` or the shell before packaging.
+  - `bun run desktop:make:msix` — build a Windows MSIX only (must run on Windows 10/11 with Windows SDK; output under `desktop/out/make/msix/`). Configure Store identity via `desktop/msix/.env.example` and see `desktop/README.md`.
+  - `bun run desktop:make:win` — Windows Squirrel + MSIX makers for x64.
   - `bun run desktop:check` — type-check and Ultracite-check the Electron workspace.
  - `bun run --cwd desktop icons` — regenerate `desktop/assets/icon.*` from `desktop/assets/logo-icon.svg` (requires ImageMagick).
 - Playwright E2E (web; specs in `tests/e2e/`, see `tests/e2e/README.md`):
@@ -181,6 +183,7 @@ Zero is the primary API for app data (see `MIGRATION_PLAN.md`).
 - Use `desktop/src/preload.ts` for minimal desktop affordances only. Mirror any browser-visible shape in `types/zentro-desktop.d.ts`. Do not expose broad Node/Electron APIs to the remote web surface; sandboxed preload code cannot import arbitrary Node built-ins.
 - The desktop splash/offline shell lives under `desktop/src/renderer/`, loads before the remote web app, and may reuse root UI primitives/styles (`components/ui`, `pages/tailwind.css`) without adding web app routes.
 - `desktop/src/main.ts` injects a baseline CSP for the configured web origin only when the server response does not already provide one.
+- MSIX / Microsoft Store: `@electron-forge/maker-msix` (experimental) is configured in `desktop/forge.config.ts` via `desktop/forge.msix.ts`. Builds require Windows + Windows SDK. Store publisher/package identity come from Partner Center (`ZENTRO_MSIX_PUBLISHER`, `ZENTRO_MSIX_PACKAGE_IDENTITY`). Optional custom manifest: copy `desktop/msix/Package.appxmanifest.example` → `Package.appxmanifest`. CI: `.github/workflows/desktop-msix.yml`.
 
 ## UI
 

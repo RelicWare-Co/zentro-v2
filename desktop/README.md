@@ -48,6 +48,60 @@ bun run desktop:make
 ZENTRO_DESKTOP_WEB_URL="https://app.tu-dominio.com" bun run desktop:make
 ```
 
+## Windows (MSIX y Microsoft Store)
+
+El empaquetado MSIX **solo puede ejecutarse en Windows 10/11** con el [Windows SDK](https://developer.microsoft.com/en-us/windows/downloads/windows-sdk/) instalado. En macOS/Linux puedes seguir usando `desktop:make` para `.zip` / `.deb`; para Store usa una máquina Windows o el workflow de GitHub Actions.
+
+### Requisitos en la PC de build
+
+1. Windows 10 u 11 (64-bit).
+2. Windows SDK (incluye `makeappx.exe`, `makepri.exe`, `signtool.exe`).
+3. Bun y dependencias del monorepo (`bun install` en la raíz).
+4. ImageMagick (`magick`) para regenerar iconos/tiles MSIX: `bun run --cwd desktop icons`.
+
+### Configuración
+
+1. URL de producción en `desktop/.env` (`ZENTRO_DESKTOP_WEB_URL`).
+2. Copia `desktop/msix/.env.example` → `desktop/msix/.env` y rellena identidad de Partner Center cuando vayas a publicar en Store:
+   - `ZENTRO_MSIX_PUBLISHER` — debe coincidir con el certificado de publicación (`CN=...`).
+   - `ZENTRO_MSIX_PACKAGE_IDENTITY` — Package/Store identity (suele ser un GUID).
+3. (Opcional) Para control total del manifest, copia `desktop/msix/Package.appxmanifest.example` → `desktop/msix/Package.appxmanifest` y edita `Identity`, `Publisher` y versión. El ejecutable debe ser `app\zentro.exe` (Forge coloca la app en la carpeta `app\`).
+
+### Comandos
+
+```powershell
+# Solo MSIX x64 (salida: desktop\out\make\msix\x64\*.msix)
+bun run desktop:make:msix
+
+# Instaladores Windows (Squirrel + MSIX si estás en win32)
+bun run desktop:make:win
+```
+
+Firma local (sideload o pruebas): define `ZENTRO_MSIX_SIGN=true` y certificado en `ZENTRO_MSIX_CERT_FILE` / `ZENTRO_MSIX_CERT_PASSWORD`. Para **Microsoft Store** no hace falta firmar el `.msix` antes de subirlo; Partner Center firma al publicar.
+
+Depuración: `set DEBUG=electron-windows-msix*` (PowerShell) o `logLevel: debug` en `desktop/forge.msix.ts`.
+
+### Microsoft Store (resumen)
+
+1. Cuenta en [Microsoft Partner Center](https://partner.microsoft.com/dashboard).
+2. Reserva el nombre de la app y anota **Package identity** y **Publisher**.
+3. Alinea `Package.appxmanifest` (o las variables `ZENTRO_MSIX_*`) con esos valores.
+4. Genera el `.msix` en Windows y súbelo en Partner Center → **Packages**.
+5. Completa listado, políticas de privacidad y envía a certificación.
+
+Documentación de referencia: [Electron Forge MSIX](https://www.electronforge.io/config/makers/msix), [Empaquetar Electron para Windows (Microsoft)](https://learn.microsoft.com/en-us/windows/apps/dev-tools/winapp-cli/guides/electron-packaging).
+
+### CI (GitHub Actions)
+
+El workflow `.github/workflows/desktop-msix.yml` compila en `windows-latest`. Configura en el repositorio:
+
+| Tipo | Nombre | Uso |
+|------|--------|-----|
+| Variable | `ZENTRO_DESKTOP_WEB_URL` | URL web embebida en el build |
+| Variable | `ZENTRO_MSIX_PUBLISHER` | Publisher de Store |
+| Variable | `ZENTRO_MSIX_PACKAGE_IDENTITY` | Identity del paquete |
+| Secreto | `ZENTRO_MSIX_CERT_*` | Solo si `ZENTRO_MSIX_SIGN=true` |
+
 ## Seguridad
 
 - `nodeIntegration` está deshabilitado.
