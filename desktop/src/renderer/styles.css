@@ -8,4 +8,6 @@ body,
 
 body {
   overflow: hidden;
+  color: var(--color-photon);
+  background-color: var(--color-void);
 }

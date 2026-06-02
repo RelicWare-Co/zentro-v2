@@ -8,15 +8,6 @@ import {
 import { StrictMode, useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-
 import type { DesktopConnectionStatus } from "../desktop-api";
 import "./styles.css";
 
@@ -33,6 +24,8 @@ const statusContent = (status: DesktopConnectionStatus) => {
       description: status.message,
       eyebrow: "Aplicación no disponible",
       icon: WifiOff,
+      iconClass:
+        "border border-amber-400/20 bg-amber-400/10 text-amber-200" as const,
       title: "No se pudo conectar a la aplicación",
     };
   }
@@ -44,6 +37,7 @@ const statusContent = (status: DesktopConnectionStatus) => {
       eyebrow: "Configuración pendiente",
       hint: "Cierra la app, define la URL en desktop/.env o en el entorno, y vuelve a abrir Zentro Desktop.",
       icon: Settings,
+      iconClass: "border border-zinc-800 bg-zinc-900 text-zinc-400" as const,
       title: "Configura la URL web de Zentro",
     };
   }
@@ -54,6 +48,7 @@ const statusContent = (status: DesktopConnectionStatus) => {
     eyebrow: "Verificando conexión",
     hint: "La app principal se abrirá automáticamente cuando responda.",
     icon: LoaderCircle,
+    iconClass: "border border-zinc-800 bg-zinc-900 text-zinc-400" as const,
     title: "Conectando con Zentro",
   };
 };
@@ -100,56 +95,51 @@ function DesktopShell() {
   };
 
   return (
-    <main className="min-h-dvh overflow-hidden bg-background text-foreground">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_color-mix(in_oklch,_var(--primary)_18%,_transparent),_transparent_38%),linear-gradient(135deg,_color-mix(in_oklch,_var(--card)_82%,_transparent),_var(--background))]" />
-      <section className="relative flex min-h-dvh items-center justify-center p-6">
-        <Card className="w-full max-w-[520px] border border-border/60 bg-card/95 shadow-2xl shadow-black/25 backdrop-blur">
-          <CardHeader className="gap-3 text-center">
-            <div className="mx-auto flex size-14 items-center justify-center rounded-2xl border border-border bg-muted/60 text-primary">
-              <Icon
-                aria-hidden="true"
-                className={isChecking ? "size-7 animate-spin" : "size-7"}
-              />
-            </div>
-            <div className="space-y-2">
-              <p className="font-medium text-muted-foreground text-xs uppercase tracking-[0.28em]">
-                {content.eyebrow}
-              </p>
-              <CardTitle className="text-2xl">{content.title}</CardTitle>
-              <CardDescription className="mx-auto max-w-[420px] leading-6">
-                {content.description}
-              </CardDescription>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4 text-center">
-            {status.webAppUrl ? (
-              <div className="rounded-lg border bg-muted/40 px-3 py-2 font-mono text-muted-foreground text-xs">
-                {status.webAppUrl}
-              </div>
-            ) : null}
-            {content.action === "retry" ? (
-              <Button
-                className="w-full sm:w-auto"
-                disabled={isChecking}
-                onClick={handleRetry}
-                size="lg"
-                type="button"
-              >
-                <RefreshCw
-                  aria-hidden="true"
-                  className={isChecking ? "animate-spin" : undefined}
-                />
-                {isChecking ? "Reintentando..." : "Reintentar conexión"}
-              </Button>
-            ) : (
-              <div className="inline-flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-2 text-muted-foreground text-sm">
-                <MonitorCheck aria-hidden="true" className="size-4" />
-                {content.hint}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </section>
+    <main className="flex min-h-dvh items-center justify-center bg-[var(--color-void)] p-4 text-[var(--color-photon)]">
+      <div className="w-full max-w-md rounded-lg border border-zinc-800 bg-[var(--color-carbon)] p-5">
+        <div className="flex items-start gap-3">
+          <div
+            className={`flex size-9 shrink-0 items-center justify-center rounded-lg ${content.iconClass}`}
+          >
+            <Icon
+              aria-hidden="true"
+              className={isChecking ? "size-4 animate-spin" : "size-4"}
+            />
+          </div>
+          <div className="min-w-0 space-y-1">
+            <h1 className="font-semibold text-base text-white">
+              {content.title}
+            </h1>
+            <p className="text-sm text-zinc-400">{content.description}</p>
+          </div>
+        </div>
+
+        {status.webAppUrl ? (
+          <div className="mt-4 rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2 font-mono text-xs text-zinc-500">
+            {status.webAppUrl}
+          </div>
+        ) : null}
+
+        {content.action === "retry" ? (
+          <button
+            className="mt-5 inline-flex h-9 w-full items-center justify-center gap-2 rounded-lg border border-zinc-700 bg-zinc-900 px-3 font-medium text-sm text-white transition-colors hover:bg-zinc-800 disabled:opacity-50"
+            disabled={isChecking}
+            onClick={handleRetry}
+            type="button"
+          >
+            <RefreshCw
+              aria-hidden="true"
+              className={isChecking ? "size-4 animate-spin" : "size-4"}
+            />
+            {isChecking ? "Reintentando..." : "Reintentar conexión"}
+          </button>
+        ) : (
+          <div className="mt-5 inline-flex w-full items-center gap-2 rounded-lg bg-zinc-900/50 px-3 py-2 text-sm text-zinc-400">
+            <MonitorCheck aria-hidden="true" className="size-4" />
+            {content.hint}
+          </div>
+        )}
+      </div>
     </main>
   );
 }
