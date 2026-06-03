@@ -9,11 +9,12 @@
     "dev": "electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make",
-    "make:msix": "electron-forge make --targets msix --arch x64",
+    "make:msix": "bun run msix:assets && electron-forge make --targets msix --arch x64",
     "make:win": "electron-forge make --platform win32 --arch x64",
     "check": "tsc --noEmit && ultracite check .",
     "fix": "ultracite fix .",
-    "icons": "node scripts/generate-icons.mjs"
+    "icons": "node scripts/generate-icons.mjs",
+    "msix:assets": "node scripts/generate-msix-assets.mjs"
   },
   "keywords": [
     "zentro",
