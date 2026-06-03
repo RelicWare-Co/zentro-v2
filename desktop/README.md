@@ -65,6 +65,7 @@ El empaquetado MSIX **solo puede ejecutarse en Windows 10/11** con el [Windows S
 2. Copia `desktop/msix/.env.example` → `desktop/msix/.env` y rellena identidad de Partner Center cuando vayas a publicar en Store:
    - `ZENTRO_MSIX_PUBLISHER` — debe coincidir con el certificado de publicación (`CN=...`).
    - `ZENTRO_MSIX_PACKAGE_IDENTITY` — Package/Store identity (suele ser un GUID).
+   - `ZENTRO_MSIX_WINDOWS_KIT_VERSION` — versión instalada bajo `C:\Program Files (x86)\Windows Kits\10\bin\`.
 3. (Opcional) Para control total del manifest, copia `desktop/msix/Package.appxmanifest.example` → `desktop/msix/Package.appxmanifest` y edita `Identity`, `Publisher` y versión. El ejecutable debe ser `app\zentro.exe` (Forge coloca la app en la carpeta `app\`).
 
 ### Comandos

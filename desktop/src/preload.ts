@@ -22,6 +22,8 @@ const desktopApi = {
       ipcRenderer.removeListener(desktopIpc.connectionStatus, subscription);
     };
   },
+  openDevTools: () =>
+    ipcRenderer.invoke(desktopIpc.openDevTools) as Promise<void>,
   platform: process.platform,
   retryConnection: () =>
     ipcRenderer.invoke(desktopIpc.retryConnection) as Promise<void>,

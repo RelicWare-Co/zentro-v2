@@ -1,3 +1,4 @@
+import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -6,11 +7,11 @@ import {
   BrowserWindow,
   dialog,
   ipcMain,
+  Menu,
   nativeTheme,
   session,
   shell,
 } from "electron";
-import started from "electron-squirrel-startup";
 
 import { type DesktopConnectionStatus, desktopIpc } from "./desktop-api";
 
@@ -45,7 +46,47 @@ const desktopContentSecurityPolicy = [
   "connect-src 'self' http: https: ws: wss:",
 ].join("; ");
 
-if (started) {
+const handleSquirrelStartupEvent = () => {
+  if (process.platform !== "win32") {
+    return false;
+  }
+
+  const squirrelCommand = process.argv[1];
+  const target = path.basename(process.execPath);
+  const updateExe = path.resolve(
+    path.dirname(process.execPath),
+    "..",
+    "Update.exe"
+  );
+
+  if (
+    squirrelCommand === "--squirrel-install" ||
+    squirrelCommand === "--squirrel-updated"
+  ) {
+    spawn(updateExe, [`--createShortcut=${target}`], { detached: true }).on(
+      "close",
+      () => app.quit()
+    );
+    return true;
+  }
+
+  if (squirrelCommand === "--squirrel-uninstall") {
+    spawn(updateExe, [`--removeShortcut=${target}`], { detached: true }).on(
+      "close",
+      () => app.quit()
+    );
+    return true;
+  }
+
+  if (squirrelCommand === "--squirrel-obsolete") {
+    app.quit();
+    return true;
+  }
+
+  return false;
+};
+
+if (handleSquirrelStartupEvent()) {
   app.quit();
 }
 
@@ -378,6 +419,7 @@ const createWindow = async () => {
   configureSessionSecurity(configuredWebAppUrl);
 
   mainWindow = new BrowserWindow({
+    autoHideMenuBar: true,
     backgroundColor: "#09090b",
     height: 900,
     icon: path.join(electronMainDir, "assets", "icon.png"),
@@ -512,10 +554,20 @@ if (gotTheLock) {
 
   ipcMain.handle(desktopIpc.getConnectionStatus, () => currentStatus);
   ipcMain.handle(desktopIpc.retryConnection, retryConnection);
+  ipcMain.handle(desktopIpc.openDevTools, () => {
+    if (!mainWindow || mainWindow.isDestroyed()) {
+      return;
+    }
+
+    mainWindow.webContents.openDevTools({ mode: "detach" });
+  });
 
   app
     .whenReady()
-    .then(createWindow)
+    .then(() => {
+      Menu.setApplicationMenu(null);
+      return createWindow();
+    })
     .catch((error: unknown) => {
       dialog.showErrorBox(
         "No se pudo abrir Zentro",

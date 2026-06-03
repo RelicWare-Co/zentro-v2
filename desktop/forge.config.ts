@@ -18,6 +18,7 @@ const config: ForgeConfig = {
     icon: path.join(import.meta.dirname, "assets", "icon"),
     name: "Zentro",
     ignore: [
+      /^\/node_modules(\/|$)/,
       /^\/msix\/Package\.appxmanifest\.example$/,
       /^\/msix\/\.env\.example$/,
       /\.pfx$/,

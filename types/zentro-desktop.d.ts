@@ -22,6 +22,7 @@ interface Window {
     readonly onConnectionStatus: (
       listener: (status: ZentroDesktopConnectionStatus) => void
     ) => () => void;
+    readonly openDevTools: () => Promise<void>;
     readonly platform: string;
     readonly retryConnection: () => Promise<void>;
   };

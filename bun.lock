@@ -38,6 +38,7 @@
         "react-dom": "^19.2.7",
         "react-resizable-panels": "^4.11.2",
         "recharts": "^3.8.1",
+        "scheduler": "^0.27.0",
         "shadcn": "^4.10.0",
         "sonner": "^2.0.7",
         "tailwind-merge": "^3.6.0",
@@ -67,9 +68,6 @@
     "desktop": {
       "name": "@zentro/desktop",
       "version": "0.1.0",
-      "dependencies": {
-        "electron-squirrel-startup": "^1.0.1",
-      },
       "devDependencies": {
         "@electron-forge/cli": "^7.11.2",
         "@electron-forge/maker-deb": "^7.11.2",
@@ -83,7 +81,6 @@
         "@electron-forge/shared-types": "^7.11.2",
         "@electron/fuses": "^1.8.0",
         "@tailwindcss/vite": "^4.3.0",
-        "@types/electron-squirrel-startup": "^1.0.2",
         "@types/node": "^25.9.1",
         "@vitejs/plugin-react": "^6.0.2",
         "electron": "42.3.0",
@@ -1037,8 +1034,6 @@
 
     "@types/d3-timer": ["@types/d3-timer@3.0.2", "", {}, "sha512-Ps3T8E8dZDam6fUyNiMkekK3XUsaUEik+idO9/YjPtfj2qruF8tFBXS7XhtE4iIXBLxhmLjP3SXpLhVf21I9Lw=="],
 
-    "@types/electron-squirrel-startup": ["@types/electron-squirrel-startup@1.0.2", "", {}, "sha512-AzxnvBzNh8K/0SmxMmZtpJf1/IWoGXLP+pQDuUaVkPyotI8ryvAtBSqgxR/qOSvxWHYWrxkeNsJ+Ca5xOuUxJQ=="],
-
     "@types/estree": ["@types/estree@1.0.9", "", {}, "sha512-GhdPgy1el4/ImP05X05Uw4cw2/M93BCUmnEvWZNStlCzEKME4Fkk+YpoA5OiHNQmoS7Cafb8Xa3Pya8m1Qrzeg=="],
 
     "@types/fs-extra": ["@types/fs-extra@9.0.13", "", { "dependencies": { "@types/node": "*" } }, "sha512-nEnwB++1u5lVDM2UI4c1+5R+FYaKfaAzS4OococimjVm3nQw3TuzH5UNsocrcTBbhnerblyHj4A49qXbIiZdpA=="],
@@ -1446,8 +1441,6 @@
     "electron-installer-debian": ["electron-installer-debian@3.2.0", "", { "dependencies": { "@malept/cross-spawn-promise": "^1.0.0", "debug": "^4.1.1", "electron-installer-common": "^0.10.2", "fs-extra": "^9.0.0", "get-folder-size": "^2.0.1", "lodash": "^4.17.4", "word-wrap": "^1.2.3", "yargs": "^16.0.2" }, "os": [ "linux", "darwin", ], "bin": { "electron-installer-debian": "src/cli.js" } }, "sha512-58ZrlJ1HQY80VucsEIG9tQ//HrTlG6sfofA3nRGr6TmkX661uJyu4cMPPh6kXW+aHdq/7+q25KyQhDrXvRL7jw=="],
 
     "electron-installer-redhat": ["electron-installer-redhat@3.4.0", "", { "dependencies": { "@malept/cross-spawn-promise": "^1.0.0", "debug": "^4.1.1", "electron-installer-common": "^0.10.2", "fs-extra": "^9.0.0", "lodash": "^4.17.15", "word-wrap": "^1.2.3", "yargs": "^16.0.2" }, "os": [ "linux", "darwin", ], "bin": { "electron-installer-redhat": "src/cli.js" } }, "sha512-gEISr3U32Sgtj+fjxUAlSDo3wyGGq6OBx7rF5UdpIgbnpUvMN4W5uYb0ThpnAZ42VEJh/3aODQXHbFS4f5J3Iw=="],
-
-    "electron-squirrel-startup": ["electron-squirrel-startup@1.0.1", "", { "dependencies": { "debug": "^2.2.0" } }, "sha512-sTfFIHGku+7PsHLJ7v0dRcZNkALrV+YEozINTW8X1nM//e5O3L+rfYuvSW00lmGHnYmUjARZulD8F2V8ISI9RA=="],
 
     "electron-to-chromium": ["electron-to-chromium@1.5.352", "", {}, "sha512-9wHk8x6dyuimoe18EdiDPWKExNdxYqo4fn4FwOVVper6RxT3cmpBwBkWWfSOCYJjQdIco/nPhJhNLmn4Ufg1Yg=="],
 
@@ -3017,8 +3010,6 @@
 
     "electron-installer-redhat/yargs": ["yargs@16.2.0", "", { "dependencies": { "cliui": "^7.0.2", "escalade": "^3.1.1", "get-caller-file": "^2.0.5", "require-directory": "^2.1.1", "string-width": "^4.2.0", "y18n": "^5.0.5", "yargs-parser": "^20.2.2" } }, "sha512-D1mvvtDG0L5ft/jGWkLpG1+m0eQxOfaBvTNELraWj22wSVUMWxZUvYgJYcKh6jGGIkJFhH4IZPQhR4TKpc8mBw=="],
 
-    "electron-squirrel-startup/debug": ["debug@2.6.9", "", { "dependencies": { "ms": "2.0.0" } }, "sha512-bC7ElrdJaJnPbAP+1EotYvqZsb3ecl5wi6Bfi6BJTUcNowp6cvspg0jXznRTKDjm/E7AdgFBVeAPVMNcKGsHMA=="],
-
     "electron-windows-msix/chalk": ["chalk@3.0.0", "", { "dependencies": { "ansi-styles": "^4.1.0", "supports-color": "^7.1.0" } }, "sha512-4D3B6Wf41KOYRFdszmDqMCGq5VV/uMAB273JILmO+3jAlh8X4qDtdtgCR3fxtbLEMzSx22QdhnDcJvu2u1fVwg=="],
 
     "electron-winstaller/fs-extra": ["fs-extra@7.0.1", "", { "dependencies": { "graceful-fs": "^4.1.2", "jsonfile": "^4.0.0", "universalify": "^0.1.0" } }, "sha512-YJDaCJZEnBmcbw13fvdAM9AwNOJwOzrE4pqMqBq5nFiEqXUqHwlK4B+3pUw6JNvfSPtX05xFHtYy/1ni01eGCw=="],
@@ -3358,8 +3349,6 @@
     "electron-installer-redhat/yargs/string-width": ["string-width@4.2.3", "", { "dependencies": { "emoji-regex": "^8.0.0", "is-fullwidth-code-point": "^3.0.0", "strip-ansi": "^6.0.1" } }, "sha512-wKyQRQpjJ0sIp62ErSZdGsjMJWsap5oRNihHhu6G7JVO/9jIB6UyevL+tXuOqrng8j/cxKTWyWUwvSTriiZz/g=="],
 
     "electron-installer-redhat/yargs/yargs-parser": ["yargs-parser@20.2.9", "", {}, "sha512-y11nGElTIV+CT3Zv9t7VKl+Q3hTQoT9a1Qzezhhl6Rp21gJ/IVTW7Z3y9EWXhuUBC2Shnf+DX0antecpAwSP8w=="],
-
-    "electron-squirrel-startup/debug/ms": ["ms@2.0.0", "", {}, "sha512-Tpp60P6IUJDTuOq/5Z8cdskzJujfwqfOTkrwIwj7IRISpnkJnT6SyJ4PCPnGMoFjC9ddhal5KVIYtAt97ix05A=="],
 
     "electron-winstaller/fs-extra/jsonfile": ["jsonfile@4.0.0", "", { "optionalDependencies": { "graceful-fs": "^4.1.6" } }, "sha512-m6F1R3z8jjlf2imQHS2Qez5sjKWQzbuuhuJ/FKYFRZvPE3PuHcSMVZzfsLhGVOkfd20obL5SWEBew5ShlquNxg=="],
 

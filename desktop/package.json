@@ -9,7 +9,7 @@
     "dev": "electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make",
-    "make:msix": "electron-forge make --targets @electron-forge/maker-msix --arch x64",
+    "make:msix": "electron-forge make --targets msix --arch x64",
     "make:win": "electron-forge make --platform win32 --arch x64",
     "check": "tsc --noEmit && ultracite check .",
     "fix": "ultracite fix .",
@@ -38,7 +38,6 @@
     "@electron-forge/shared-types": "^7.11.2",
     "@electron/fuses": "^1.8.0",
     "@tailwindcss/vite": "^4.3.0",
-    "@types/electron-squirrel-startup": "^1.0.2",
     "@types/node": "^25.9.1",
     "@vitejs/plugin-react": "^6.0.2",
     "electron": "42.3.0",
@@ -46,7 +45,5 @@
     "ultracite": "7.8.1",
     "vite": "^8.0.16"
   },
-  "dependencies": {
-    "electron-squirrel-startup": "^1.0.1"
-  }
+  "dependencies": {}
 }

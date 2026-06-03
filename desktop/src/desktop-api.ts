@@ -1,6 +1,7 @@
 export const desktopIpc = {
   connectionStatus: "zentro:connection-status",
   getConnectionStatus: "zentro:get-connection-status",
+  openDevTools: "zentro:open-dev-tools",
   retryConnection: "zentro:retry-connection",
 } as const;
 

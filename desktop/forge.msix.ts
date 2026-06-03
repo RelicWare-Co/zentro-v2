@@ -2,10 +2,13 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import type { MakerMSIXConfig } from "@electron-forge/maker-msix";
 import { MakerMSIX } from "@electron-forge/maker-msix";
+import { config as loadEnv } from "dotenv";
 
 const desktopRoot = import.meta.dirname;
 const msixDir = path.join(desktopRoot, "msix");
 const msixAssetsDir = path.join(msixDir, "assets");
+
+loadEnv({ path: path.join(msixDir, ".env"), quiet: true });
 
 const packageJson = JSON.parse(
   readFileSync(path.join(desktopRoot, "package.json"), "utf8")
@@ -40,6 +43,8 @@ export const createMsixMaker = (): MakerMSIX => {
   const config: MakerMSIXConfig = {
     packageAssets: msixAssetsDir,
     sign: signEnabled,
+    windowsKitVersion:
+      process.env.ZENTRO_MSIX_WINDOWS_KIT_VERSION?.trim() ?? "10.0.26100.0",
     manifestVariables: {
       publisher:
         process.env.ZENTRO_MSIX_PUBLISHER?.trim() ?? publisherFromAuthor(),
