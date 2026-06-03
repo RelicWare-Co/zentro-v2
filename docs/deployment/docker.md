@@ -124,6 +124,8 @@ Variables derived from `DATABASE_URL` (`ZERO_UPSTREAM_DB`, etc.) are wired in co
 | `deploy/zero-cache/Dockerfile` | Thin wrapper around `rocicorp/zero:1.5.0` |
 | `deploy/docker-compose.prod.yml` | Production Compose (app + zero-cache, external Postgres) |
 | `deploy/docker-compose.host-ports.yml` | Optional host port mappings for direct Compose runs |
+| `deploy/docker-compose.qa.yml` | QA Compose (app + zero-cache + dedicated Postgres) |
+| `deploy/.env.qa.example` | Template for QA-specific env vars and secrets |
 | `deploy/docker-compose.local.yml` | Local full-stack smoke test (Postgres + app + zero-cache) |
 | `scripts/docker-entrypoint.sh` | Runs migrations, then starts the app |
 | `.dockerignore` | Keeps build context small and excludes secrets |
@@ -134,6 +136,69 @@ Build images locally from the repository root:
 docker build -f deploy/app/Dockerfile -t zentro-app:latest .
 docker build -f deploy/zero-cache/Dockerfile -t zentro-zero:latest .
 ```
+
+## QA on Coolify
+
+Use `deploy/docker-compose.qa.yml` for a QA environment that owns its own Postgres database. The QA stack includes:
+
+- `postgres` — dedicated PostgreSQL 17 with `wal_level=logical` for Zero replication, published on `QA_POSTGRES_PORT` for external QA access.
+- `app` — same production app image, with migrations enabled by default.
+- `zero-cache` — its own Zero replica volume at `/data`.
+
+For a plain Docker Compose QA run outside Coolify:
+
+```sh
+cp deploy/.env.qa.example deploy/.env.qa
+# edit deploy/.env.qa — passwords, domains, secrets
+
+docker compose -f deploy/docker-compose.qa.yml --project-directory . \
+  --env-file deploy/.env.qa up -d --build
+```
+
+Coolify setup:
+
+1. Create a separate Coolify resource for QA.
+2. Set Compose file path to `deploy/docker-compose.qa.yml`.
+3. Assign domains to **app** port `3000` and **zero-cache** port `4848`.
+4. Set QA-only secrets in the resource Environment Variables UI, using `deploy/.env.qa.example` as the template.
+5. Set `DATABASE_URL` to the internal `postgres` service unless you intentionally want an external QA database.
+6. Set `QA_POSTGRES_PORT` to an unused public TCP port on the Coolify host, for example `5433`.
+7. Set `DATABASE_PUBLIC_URL` to the host/IP and `QA_POSTGRES_PORT` that external QA tools should use.
+
+Required QA variables:
+
+| Variable | Notes |
+| --- | --- |
+| `POSTGRES_PASSWORD` | Password for the internal QA Postgres service |
+| `QA_POSTGRES_PORT` | Public host port mapped to Postgres `5432`; default `5433` |
+| `DATABASE_URL` | Internal QA DB URL, e.g. `postgresql://zentro:<password>@postgres:5432/zentro_qa` |
+| `DATABASE_PUBLIC_URL` | Public QA DB URL, e.g. `postgresql://zentro:<password>@qa-db.example.com:5433/zentro_qa` |
+| `BETTER_AUTH_SECRET` | QA auth secret; do not reuse production |
+| `BETTER_AUTH_URL` | Public QA app origin |
+| `BETTER_AUTH_COOKIE_DOMAIN` | QA cookie domain |
+| `BETTER_AUTH_TRUSTED_ORIGINS` | QA app + QA zero-cache origins |
+| `ZERO_CACHE_URL` | Public QA zero-cache origin |
+| `ZERO_ADMIN_PASSWORD` | Required by zero-cache |
+
+Recommended QA domain shape:
+
+```txt
+app.qa.example.com   → app:3000
+zero.qa.example.com  → zero-cache:4848
+```
+
+Then set:
+
+```txt
+BETTER_AUTH_URL=${SERVICE_URL_APP_3000}
+ZERO_CACHE_URL=${SERVICE_URL_ZERO-CACHE_4848}
+BETTER_AUTH_TRUSTED_ORIGINS=${SERVICE_URL_APP_3000},${SERVICE_URL_ZERO-CACHE_4848}
+BETTER_AUTH_COOKIE_DOMAIN=qa.example.com
+```
+
+Do not publish host ports for the QA app or zero-cache. `deploy/docker-compose.qa.yml` uses `expose` for those services, so Coolify's proxy can route to the container ports without colliding with production.
+
+Only the QA database publishes a host port. Keep that port unique per environment and restrict it with firewall/IP allowlists when possible. App internals should continue using `DATABASE_URL` with host `postgres`; external tools should use `DATABASE_PUBLIC_URL`.
 
 ## Prerequisites
 

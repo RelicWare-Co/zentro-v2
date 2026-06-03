@@ -27,6 +27,7 @@ Sistema de gestión comercial con punto de venta (POS), inventario, ventas, clie
 | Auth | [better-auth](https://www.better-auth.com) con soporte multi-organización |
 | UI | Tailwind CSS v4 + shadcn/ui |
 | Runtime | [Bun](https://bun.sh) |
+| Desktop | Electron Forge + Vite (wrapper de la web) |
 | Logging | [evlog](https://evlog.dev) |
 | Calidad | Ultracite (Biome) + Lefthook |
 
@@ -81,6 +82,22 @@ Con `docker compose up -d`, zero-cache ya corre en el contenedor. Si no lo levan
 bun run zero:dev     # zero-cache en http://localhost:4848
 ```
 
+### 6. App desktop (opcional)
+
+Con la app web corriendo en `http://localhost:3000`, abre el wrapper Electron en otra terminal:
+
+```sh
+bun run desktop:dev
+```
+
+Para empaquetar, define `ZENTRO_DESKTOP_WEB_URL` con la URL pública de la web en `desktop/.env` o en el shell y ejecuta:
+
+```sh
+bun run desktop:make
+```
+
+Ver [desktop/README.md](desktop/README.md) para detalles de seguridad y configuración.
+
 Tras cambios al schema de Drizzle (`database/drizzle/schema/*.schema.ts`):
 
 ```sh
@@ -117,6 +134,8 @@ bun run zero:schema:gen
 | `bun run start` | Servidor de producción (Bun) |
 | `bun run check` | Lint y formato (Ultracite) |
 | `bun run fix` | Auto-fix de lint/formato |
+| `bun run desktop:dev` | Abrir el wrapper Electron contra la web local/configurada |
+| `bun run desktop:make` | Generar instalables desktop con Electron Forge |
 | `bun run test` | Tests unitarios (Bun) |
 | `bun run e2e:playwright` | E2E con Playwright |
 | `bun run e2e:playwright:smoke` | E2E solo specs `@smoke` |
@@ -153,6 +172,7 @@ database/drizzle/   Schema y migraciones PostgreSQL
 components/ui/      Componentes shadcn/ui
 tests/e2e/          Playwright E2E
 deploy/             Dockerfiles y Compose de producción
+desktop/            App Electron Forge que envuelve la versión web
 ```
 
 Convenciones de arquitectura, Zero, Vike y comandos para contribuidores: [AGENTS.md](AGENTS.md).

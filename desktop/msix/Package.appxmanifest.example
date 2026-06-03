@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Plantilla para Microsoft Store / sideload con manifest propio.
+
+  1. Copia a Package.appxmanifest (junto a este archivo).
+  2. Sustituye los placeholders con los valores de Partner Center:
+     - Identity/@Name → Package/Store identity
+     - Identity/@Publisher → certificado de publicación (CN=...)
+  3. En forge.config.ts, apunta appManifest a este archivo o define
+     ZENTRO_MSIX_APP_MANIFEST=./msix/Package.appxmanifest
+
+  El maker de Forge coloca el binario en app\; Executable debe usar app\zentro.exe
+-->
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10"
+  IgnorableNamespaces="uap rescap desktop">
+  <Identity
+    Name="00000000-0000-0000-0000-000000000000"
+    Publisher="CN=YOUR_PUBLISHER_FROM_PARTNER_CENTER"
+    Version="0.1.0.0"
+    ProcessorArchitecture="x64" />
+  <Properties>
+    <DisplayName>Zentro</DisplayName>
+    <PublisherDisplayName>YOUR_PUBLISHER_DISPLAY_NAME</PublisherDisplayName>
+    <Logo>assets\StoreLogo.png</Logo>
+  </Properties>
+  <Dependencies>
+    <TargetDeviceFamily
+      Name="Windows.Desktop"
+      MinVersion="10.0.19041.0"
+      MaxVersionTested="10.0.22621.0" />
+  </Dependencies>
+  <Resources>
+    <Resource Language="en-US" />
+    <Resource Language="es-MX" />
+  </Resources>
+  <Capabilities>
+    <rescap:Capability Name="runFullTrust" />
+    <Capability Name="internetClient" />
+  </Capabilities>
+  <Applications>
+    <Application
+      Id="Zentro"
+      Executable="app\zentro.exe"
+      EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements
+        DisplayName="Zentro"
+        Description="Desktop wrapper for Zentro"
+        BackgroundColor="#0a0a0a"
+        Square150x150Logo="assets\Square150x150Logo.png"
+        Square44x44Logo="assets\Square44x44Logo.png" />
+    </Application>
+  </Applications>
+</Package>

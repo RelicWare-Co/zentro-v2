@@ -1,0 +1,20 @@
+# Keep LF in the repository so macOS, Linux, and Windows clones stay consistent.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.pdf binary
+*.zip binary
+*.msix binary
+*.pfx binary
+*.exe binary
+*.dll binary
+*.node binary

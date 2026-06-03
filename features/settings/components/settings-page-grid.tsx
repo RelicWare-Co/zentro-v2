@@ -1,4 +1,5 @@
 import { CreditSettingsCard } from "@/features/settings/components/credit-settings-card";
+import { DesktopDevtoolsSettingsCard } from "@/features/settings/components/desktop-devtools-settings-card.client";
 import { InventorySettingsCard } from "@/features/settings/components/inventory-settings-card";
 import { LocalPrinterSettingsSection } from "@/features/settings/components/local-printer-settings-section";
 import { PosSettingsCard } from "@/features/settings/components/pos-settings-card";
@@ -18,6 +19,7 @@ export function SettingsPageGrid() {
     <section className="grid gap-6 xl:grid-cols-[1.1fr_1fr]">
       <div className="space-y-6">
         <ThemeSettingsCard />
+        <DesktopDevtoolsSettingsCard />
         <PosSettingsCard />
         <LocalPrinterSettingsSection organizationId={data.organization.id} />
       </div>

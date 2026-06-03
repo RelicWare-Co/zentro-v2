@@ -1,0 +1,111 @@
+# QA stack: app + zero-cache + dedicated Postgres.
+#
+# Coolify: use this compose file for the QA resource and assign domains to
+# app:3000 and zero-cache:4848. App and zero-cache use `expose`, not `ports`, so
+# QA can run next to production without binding 3000/4848 globally. Postgres is
+# intentionally published on QA_POSTGRES_PORT for external QA database access.
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    command:
+      - postgres
+      - -c
+      - wal_level=logical
+      - -c
+      - max_wal_senders=10
+      - -c
+      - max_replication_slots=10
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-zentro}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
+      POSTGRES_DB: ${POSTGRES_DB:-zentro_qa}
+    ports:
+      - "${QA_POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - zentro_qa_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-zentro} -d ${POSTGRES_DB:-zentro_qa}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  app:
+    build:
+      context: .
+      dockerfile: deploy/app/Dockerfile
+    image: zentro-app:qa
+    restart: unless-stopped
+    expose:
+      - "3000"
+    environment:
+      # Coolify magic URLs — assign domains to app:3000 and zero-cache:4848 in the UI.
+      - SERVICE_URL_APP_3000
+      - SERVICE_URL_ZERO-CACHE_4848
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=${PORT:-3000}
+      - RUN_MIGRATIONS=${RUN_MIGRATIONS:-true}
+      - DATABASE_URL=${DATABASE_URL:?}
+      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET:?}
+      - BETTER_AUTH_COOKIE_DOMAIN=${BETTER_AUTH_COOKIE_DOMAIN:?}
+      - BETTER_AUTH_URL=${BETTER_AUTH_URL:?}
+      - BETTER_AUTH_TRUSTED_ORIGINS=${BETTER_AUTH_TRUSTED_ORIGINS:?}
+      - ZERO_CACHE_URL=${ZERO_CACHE_URL:?}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'bun -e "const r=await fetch(''http://127.0.0.1:3000/''); process.exit(r.ok || r.status===302 ? 0 : 1)"',
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 90s
+
+  zero-cache:
+    build:
+      context: .
+      dockerfile: deploy/zero-cache/Dockerfile
+    image: zentro-zero:qa
+    restart: unless-stopped
+    expose:
+      - "4848"
+    volumes:
+      - zentro_qa_zero_data:/data
+    environment:
+      - ZERO_UPSTREAM_DB=${DATABASE_URL:?}
+      - ZERO_CVR_DB=${DATABASE_URL:?}
+      - ZERO_CHANGE_DB=${DATABASE_URL:?}
+      - ZERO_REPLICA_FILE=${ZERO_REPLICA_FILE:-/data/replica.db}
+      - ZERO_QUERY_URL=${ZERO_QUERY_URL:-http://app:3000/api/zero/query}
+      - ZERO_MUTATE_URL=${ZERO_MUTATE_URL:-http://app:3000/api/zero/mutate}
+      - ZERO_QUERY_FORWARD_COOKIES=${ZERO_QUERY_FORWARD_COOKIES:-true}
+      - ZERO_MUTATE_FORWARD_COOKIES=${ZERO_MUTATE_FORWARD_COOKIES:-true}
+      - ZERO_ENABLE_CRUD_MUTATIONS=${ZERO_ENABLE_CRUD_MUTATIONS:-false}
+      - ZERO_APP_ID=${ZERO_APP_ID:-zentro-qa}
+      - ZERO_ADMIN_PASSWORD=${ZERO_ADMIN_PASSWORD:?}
+      - ZERO_LOG_LEVEL=${ZERO_LOG_LEVEL:-info}
+    depends_on:
+      app:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:4848/keepalive || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 8
+      start_period: 600s
+
+volumes:
+  zentro_qa_postgres_data:
+  zentro_qa_zero_data:
