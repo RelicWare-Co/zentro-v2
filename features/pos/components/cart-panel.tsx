@@ -9,7 +9,6 @@ import { CartItemCard } from "./cart-item-card";
 interface CartPanelProps {
   cart: CartItem[];
   className?: string;
-  isActiveShift: boolean;
   onCheckout: () => void;
   onClearCart: () => void;
   onRemoveItem: (cartItemId: string) => void;
@@ -23,7 +22,6 @@ export function CartPanel({
   cart,
   totalItems,
   totals,
-  isActiveShift,
   onUpdateQuantity,
   onRemoveItem,
   onUpdateItemDiscount,
@@ -120,7 +118,7 @@ export function CartPanel({
 
           <Button
             className="mt-2 h-12 w-full rounded-xl bg-[var(--color-voltage)] font-bold text-base text-black shadow-[0_4px_14px_rgba(201,230,5,0.2)] transition-all hover:bg-[#c9e605] hover:shadow-[0_6px_20px_rgba(201,230,5,0.3)]"
-            disabled={cart.length === 0 || !isActiveShift}
+            disabled={cart.length === 0}
             onClick={onCheckout}
           >
             Cobrar

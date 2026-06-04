@@ -99,7 +99,6 @@ export function PosHeader({
           </Button>
           <Button
             className="h-9 whitespace-nowrap border-zinc-700 bg-zinc-900/50 text-zinc-300 transition-all hover:border-zinc-600 hover:bg-zinc-800 hover:text-white"
-            disabled={!activeShift}
             onClick={onOpenDrawer}
             size="sm"
             variant="outline"

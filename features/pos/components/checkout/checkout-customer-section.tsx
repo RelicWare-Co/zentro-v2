@@ -22,7 +22,7 @@ export function CheckoutCustomerSection({
   return (
     <div
       className={cn(
-        "rounded-lg border border-zinc-800 bg-[#0a0a0a] p-3",
+        "rounded-lg border border-zinc-800 bg-[#0F0F0F] p-3",
         className
       )}
     >
