@@ -72,20 +72,12 @@ function SalesPageViewTabs({ children }: { children: ReactNode }) {
       }}
       value={state.activeView}
     >
-      <TabsList className="!h-auto mb-6 inline-flex rounded-full border border-zinc-800 bg-black/20 p-1">
-        <TabsTrigger
-          className="!rounded-full data-[state=active]:!bg-zinc-800/80 data-[state=active]:!text-white data-[state=active]:!shadow-sm data-[state=active]:!border-transparent !border-transparent !h-auto inline-flex min-h-[40px] items-center justify-center bg-transparent px-6 py-1.5 font-medium text-sm text-zinc-400 outline-none transition-all duration-200 ease-in-out hover:text-zinc-200"
-          value="today"
-        >
-          Ventas de hoy
-        </TabsTrigger>
-        <TabsTrigger
-          className="!rounded-full data-[state=active]:!bg-zinc-800/80 data-[state=active]:!text-white data-[state=active]:!shadow-sm data-[state=active]:!border-transparent !border-transparent !h-auto inline-flex min-h-[40px] items-center justify-center bg-transparent px-6 py-1.5 font-medium text-sm text-zinc-400 outline-none transition-all duration-200 ease-in-out hover:text-zinc-200"
-          value="history"
-        >
-          Historial de ventas
-        </TabsTrigger>
-      </TabsList>
+      <div className="mb-6 flex w-full justify-center">
+        <TabsList>
+          <TabsTrigger value="today">Ventas de hoy</TabsTrigger>
+          <TabsTrigger value="history">Historial de ventas</TabsTrigger>
+        </TabsList>
+      </div>
       {children}
     </Tabs>
   );
