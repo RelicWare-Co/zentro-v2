@@ -23,6 +23,10 @@ export function PosV1Layout() {
     if (isMobile) {
       actions.setIsMobileCartOpen(false);
     }
+    if (state.isQuickSaleMode) {
+      actions.handleQuickSale();
+      return;
+    }
     actions.openCheckout();
   };
 
@@ -40,12 +44,14 @@ export function PosV1Layout() {
         activeShift={state.activeShift}
         customers={state.customers}
         defaultTerminalName={meta.defaultTerminalName}
+        isQuickSaleMode={state.isQuickSaleMode}
         onCashMovement={actions.openCashMovementModal}
         onCloseShift={actions.openCloseShiftModal}
         onCreateCustomer={actions.openCreateCustomerModal}
         onCustomerChange={actions.setSelectedCustomerId}
         onOpenDrawer={handleOpenDrawer}
         onOpenShift={actions.openShiftModal}
+        onToggleQuickSaleMode={actions.toggleQuickSaleMode}
         selectedCustomerId={state.selectedCustomerId}
       />
 
@@ -58,6 +64,7 @@ export function PosV1Layout() {
         {!isMobile && (
           <CartPanel
             cart={state.cart}
+            isQuickSaleMode={state.isQuickSaleMode}
             onCheckout={handleCheckout}
             onClearCart={actions.clearCart}
             onRemoveItem={actions.removeFromCart}
@@ -95,6 +102,7 @@ export function PosV1Layout() {
               <CartPanel
                 cart={state.cart}
                 className="w-full flex-1 border-l-0"
+                isQuickSaleMode={state.isQuickSaleMode}
                 onCheckout={handleCheckout}
                 onClearCart={actions.clearCart}
                 onRemoveItem={actions.removeFromCart}

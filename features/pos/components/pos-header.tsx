@@ -1,4 +1,4 @@
-import { ArrowLeftRight, Lock, Plus, Printer, Unlock } from "lucide-react";
+import { ArrowLeftRight, Lock, Plus, Printer, Unlock, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
@@ -9,12 +9,14 @@ interface PosHeaderProps {
   activeShift: ActiveShift | null;
   customers: PosCustomer[];
   defaultTerminalName: string;
+  isQuickSaleMode?: boolean;
   onCashMovement: () => void;
   onCloseShift: () => void;
   onCreateCustomer: () => void;
   onCustomerChange: (customerId: string) => void;
   onOpenDrawer: () => void;
   onOpenShift: () => void;
+  onToggleQuickSaleMode?: () => void;
   selectedCustomerId: string;
 }
 
@@ -29,6 +31,8 @@ export function PosHeader({
   onOpenDrawer,
   onCloseShift,
   onCreateCustomer,
+  isQuickSaleMode,
+  onToggleQuickSaleMode,
 }: PosHeaderProps) {
   return (
     <header className="z-10 shrink-0 border-zinc-800 border-b bg-[var(--color-carbon)] px-3 py-3 md:px-4 md:py-2">
@@ -77,6 +81,24 @@ export function PosHeader({
         </div>
 
         <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-end lg:w-auto">
+          <Button
+            className={cn(
+              "h-9 w-9 shrink-0 p-0 transition-all",
+              isQuickSaleMode
+                ? "border-[var(--color-voltage)]/40 bg-[var(--color-voltage)]/15 text-[var(--color-voltage)] hover:bg-[var(--color-voltage)]/25"
+                : "border-zinc-700 bg-zinc-900/50 text-zinc-500 hover:border-zinc-600 hover:bg-zinc-800 hover:text-zinc-300"
+            )}
+            onClick={onToggleQuickSaleMode}
+            size="sm"
+            title={
+              isQuickSaleMode
+                ? "Desactivar venta rápida"
+                : "Activar venta rápida"
+            }
+            variant="outline"
+          >
+            <Zap className="size-4" />
+          </Button>
           <Button
             className="h-9 whitespace-nowrap border-zinc-700 bg-zinc-900/50 text-zinc-300 transition-all hover:border-zinc-600 hover:bg-zinc-800 hover:text-white"
             disabled={!activeShift}

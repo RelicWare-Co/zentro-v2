@@ -1,4 +1,4 @@
-import { Search, Trash2 } from "lucide-react";
+import { Search, Trash2, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 import { cn } from "@/lib/utils";
@@ -9,6 +9,7 @@ import { CartItemCard } from "./cart-item-card";
 interface CartPanelProps {
   cart: CartItem[];
   className?: string;
+  isQuickSaleMode?: boolean;
   onCheckout: () => void;
   onClearCart: () => void;
   onRemoveItem: (cartItemId: string) => void;
@@ -27,6 +28,7 @@ export function CartPanel({
   onUpdateItemDiscount,
   onClearCart,
   onCheckout,
+  isQuickSaleMode,
   className,
 }: CartPanelProps) {
   const { subTotal, tax, discountAmount, totalAmount } = totals;
@@ -121,7 +123,14 @@ export function CartPanel({
             disabled={cart.length === 0}
             onClick={onCheckout}
           >
-            Cobrar
+            {isQuickSaleMode ? (
+              <span className="flex items-center gap-1.5">
+                <Zap className="size-4" />
+                Cobrar
+              </span>
+            ) : (
+              "Cobrar"
+            )}
           </Button>
         </div>
       </div>
