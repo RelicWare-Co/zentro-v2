@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { usePosPage } from "@/features/pos/pos-page-context";
-import { formatMoneyInput, sanitizeMoneyInput } from "@/lib/utils";
+import { cn, formatMoneyInput, sanitizeMoneyInput } from "@/lib/utils";
 
 const paymentFieldClassName =
   "h-10 touch-manipulation rounded-lg border-zinc-700 bg-[#151515] py-0 text-base text-white md:text-sm";
@@ -19,11 +19,13 @@ const paymentSelectFieldClassName =
 
 interface CheckoutPaymentsSectionProps {
   autoFocusFirstAmount?: boolean;
+  compactMode?: boolean;
   paymentAmountInputRef?: React.RefObject<HTMLInputElement | null>;
 }
 
 export function CheckoutPaymentsSection({
   autoFocusFirstAmount = false,
+  compactMode = false,
   paymentAmountInputRef: externalRef,
 }: CheckoutPaymentsSectionProps) {
   const { state, actions, meta } = usePosPage();
@@ -43,10 +45,17 @@ export function CheckoutPaymentsSection({
     <div className="space-y-3">
       {state.payments.map((payment, index) => {
         const selectedPaymentMethod = paymentMethodById.get(payment.method);
+        const isFirstPayment = index === 0;
+        const isSinglePayment = state.payments.length === 1;
+        const showCompact = compactMode && isSinglePayment && isFirstPayment;
 
         return (
           <div
-            className="relative flex flex-col gap-2 rounded-lg border border-zinc-800 bg-[#0a0a0a] p-3"
+            className={cn(
+              "relative flex flex-col gap-2",
+              !showCompact &&
+                "rounded-lg border border-zinc-800 bg-[#0a0a0a] p-3"
+            )}
             key={payment.id}
           >
             {state.payments.length > 1 && (
@@ -66,39 +75,15 @@ export function CheckoutPaymentsSection({
               </div>
             )}
 
-            <div className="flex gap-2">
-              <Select
-                onValueChange={(value) =>
-                  actions.updatePayment(index, "method", value)
-                }
-                value={payment.method}
-              >
-                <SelectTrigger
-                  className={`${paymentFieldClassName} ${paymentSelectFieldClassName} flex-1 px-3 [&_[data-slot=select-value]]:leading-none`}
-                  id={`${methodId}-${index}`}
-                >
-                  <SelectValue placeholder="Método" />
-                </SelectTrigger>
-                <SelectContent className="border-zinc-700 bg-[#151515] text-white">
-                  {meta.paymentMethodOptions.map((paymentMethodOption) => (
-                    <SelectItem
-                      key={paymentMethodOption.id}
-                      value={paymentMethodOption.id}
-                    >
-                      {paymentMethodOption.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <div className="relative flex-1">
+            {showCompact ? (
+              <div className="relative">
                 <span className="absolute top-1/2 left-3 -translate-y-1/2 text-zinc-500">
                   $
                 </span>
                 <Input
                   autoComplete="off"
-                  autoFocus={autoFocusFirstAmount && index === 0}
-                  className={`${paymentFieldClassName} pl-7`}
+                  autoFocus={autoFocusFirstAmount && isFirstPayment}
+                  className={`${paymentFieldClassName} w-full pl-7`}
                   id={`${amountId}-${index}`}
                   inputMode="numeric"
                   onChange={(e) =>
@@ -109,12 +94,62 @@ export function CheckoutPaymentsSection({
                     )
                   }
                   placeholder="Monto"
-                  ref={index === 0 ? paymentAmountInputRef : undefined}
+                  ref={isFirstPayment ? paymentAmountInputRef : undefined}
                   type="text"
                   value={formatMoneyInput(payment.amount)}
                 />
               </div>
-            </div>
+            ) : (
+              <div className="flex gap-2">
+                <Select
+                  onValueChange={(value) =>
+                    actions.updatePayment(index, "method", value)
+                  }
+                  value={payment.method}
+                >
+                  <SelectTrigger
+                    className={`${paymentFieldClassName} ${paymentSelectFieldClassName} flex-1 px-3 [&_[data-slot=select-value]]:leading-none`}
+                    id={`${methodId}-${index}`}
+                  >
+                    <SelectValue placeholder="Método" />
+                  </SelectTrigger>
+                  <SelectContent className="border-zinc-700 bg-[#151515] text-white">
+                    {meta.paymentMethodOptions.map((paymentMethodOption) => (
+                      <SelectItem
+                        key={paymentMethodOption.id}
+                        value={paymentMethodOption.id}
+                      >
+                        {paymentMethodOption.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <div className="relative flex-1">
+                  <span className="absolute top-1/2 left-3 -translate-y-1/2 text-zinc-500">
+                    $
+                  </span>
+                  <Input
+                    autoComplete="off"
+                    autoFocus={autoFocusFirstAmount && isFirstPayment}
+                    className={`${paymentFieldClassName} pl-7`}
+                    id={`${amountId}-${index}`}
+                    inputMode="numeric"
+                    onChange={(e) =>
+                      actions.updatePayment(
+                        index,
+                        "amount",
+                        sanitizeMoneyInput(e.target.value)
+                      )
+                    }
+                    placeholder="Monto"
+                    ref={isFirstPayment ? paymentAmountInputRef : undefined}
+                    type="text"
+                    value={formatMoneyInput(payment.amount)}
+                  />
+                </div>
+              </div>
+            )}
 
             {selectedPaymentMethod?.requiresReference ? (
               <Input

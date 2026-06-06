@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef } from "react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -11,6 +12,7 @@ import { CheckoutCreditSection } from "@/features/pos/components/checkout/checko
 import { CheckoutCustomerSection } from "@/features/pos/components/checkout/checkout-customer-section";
 import { CheckoutDiscountSection } from "@/features/pos/components/checkout/checkout-discount-section";
 import { getConfirmButtonText } from "@/features/pos/components/checkout/checkout-footer.helpers";
+import { PaymentMethodGrid } from "@/features/pos/components/checkout/checkout-payment-method-grid";
 import { CheckoutPaymentsSection } from "@/features/pos/components/checkout/checkout-payments-section";
 import { CheckoutSummaryFooter } from "@/features/pos/components/checkout/checkout-summary-footer";
 import { usePosPage } from "@/features/pos/pos-page-context";
@@ -39,6 +41,12 @@ export function CheckoutModal() {
 
   const isOpen = isPosModalOpen(state.activeModal, "checkout");
 
+  const firstPaymentMethod = state.payments[0]?.method ?? "";
+
+  const handleMethodSelect = (methodId: string) => {
+    actions.updatePayment(0, "method", methodId);
+  };
+
   return (
     <Dialog
       onOpenChange={(open) => {
@@ -48,38 +56,38 @@ export function CheckoutModal() {
       }}
       open={isOpen}
     >
-      <DialogContent className="border-zinc-800 bg-[#151515] text-white sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle className="text-xl">Cobrar Orden</DialogTitle>
+      <DialogContent className="border-zinc-800 bg-[#151515] text-white sm:max-w-[480px]">
+        <DialogHeader className="pb-2">
+          <DialogTitle className="font-bold text-xl">Cobrar Orden</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
-          <div className="flex items-center justify-between rounded-lg border border-zinc-800 bg-[#0a0a0a] p-4">
-            <span className="font-medium text-zinc-400">Total a Pagar</span>
-            <span className="font-bold text-3xl text-[var(--color-voltage)]">
+        <div className="space-y-5 py-2">
+          {/* Total a Pagar */}
+          <div className="flex flex-col items-center justify-center rounded-xl border border-zinc-800 bg-[#0F0F0F] p-5">
+            <span className="text-sm text-zinc-500">Total a Pagar</span>
+            <span className="font-bold text-4xl text-[var(--color-voltage)]">
               {formatCurrency(state.totals.totalAmount)}
             </span>
           </div>
 
-          <div className="space-y-4">
-            <CheckoutCustomerSection />
+          {/* Cliente */}
+          <CheckoutCustomerSection />
 
-            <CheckoutDiscountSection />
-
+          {/* Método de Pago + Checkbox */}
+          <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h4 className="font-semibold text-sm text-zinc-300">
-                Métodos de Pago
+              <h4 className="font-semibold text-sm text-white">
+                Método de Pago
               </h4>
               {meta.allowCreditSales ? (
                 <div className="flex items-center gap-2">
-                  <input
+                  <Checkbox
                     checked={state.isCreditSale}
-                    className="size-4 rounded border-zinc-700 bg-[#0a0a0a] text-[var(--color-voltage)] focus:ring-[var(--color-voltage)]"
+                    className="border-zinc-600 data-[state=checked]:border-[var(--color-voltage)] data-[state=checked]:bg-[var(--color-voltage)] data-[state=checked]:text-black"
                     id={creditSaleId}
-                    onChange={(event) =>
-                      actions.setIsCreditSale(event.target.checked)
+                    onCheckedChange={(checked) =>
+                      actions.setIsCreditSale(checked === true)
                     }
-                    type="checkbox"
                   />
                   <label
                     className="cursor-pointer text-sm text-zinc-400"
@@ -95,26 +103,40 @@ export function CheckoutModal() {
               )}
             </div>
 
+            {/* Grid de métodos de pago */}
+            <PaymentMethodGrid
+              onSelect={handleMethodSelect}
+              paymentMethodOptions={meta.paymentMethodOptions}
+              selectedMethodId={firstPaymentMethod}
+            />
+
+            {/* Credit warnings */}
             <CheckoutCreditSection showToggle={false} />
 
+            {/* Payments section */}
             <CheckoutPaymentsSection
+              compactMode
               paymentAmountInputRef={paymentAmountInputRef}
             />
           </div>
 
+          {/* Descuento */}
+          <CheckoutDiscountSection />
+
+          {/* Footer */}
           <CheckoutSummaryFooter />
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="border-zinc-800 bg-transparent sm:justify-between">
           <Button
-            className="text-zinc-400 hover:text-white"
+            className="h-11 flex-1 border-zinc-700 bg-transparent text-white hover:bg-zinc-800 hover:text-white"
             onClick={actions.closeActiveModal}
-            variant="ghost"
+            variant="outline"
           >
             Cancelar
           </Button>
           <Button
-            className="bg-[var(--color-voltage)] text-black hover:bg-[#c9e605]"
+            className="h-11 flex-1 bg-[var(--color-voltage)] text-black hover:bg-[#c9e605]"
             disabled={!state.canFinalizeSale || state.isProcessingCheckout}
             onClick={actions.finalizeSale}
           >

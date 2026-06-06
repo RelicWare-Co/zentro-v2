@@ -53,6 +53,7 @@ export interface ProductsPageState {
   isError: boolean;
   isPending: boolean;
   isProductSheetOpen: boolean;
+  lastCreatedCategoryId: string | null;
   lowStockThreshold: number;
   pagination: PaginationState;
   products: Product[];
@@ -151,6 +152,9 @@ export function ProductsPageProvider({ children }: { children: ReactNode }) {
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(
     null
   );
+  const [lastCreatedCategoryId, setLastCreatedCategoryId] = useState<
+    string | null
+  >(null);
   const [inventoryProduct, setInventoryProduct] = useState<Product | null>(
     null
   );
@@ -273,11 +277,13 @@ export function ProductsPageProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const openCreateProduct = useCallback(() => {
+    setLastCreatedCategoryId(null);
     setEditingProduct(null);
     setIsProductSheetOpen(true);
   }, []);
 
   const openEditProduct = useCallback((product: Product) => {
+    setLastCreatedCategoryId(null);
     setEditingProduct(product);
     setIsProductSheetOpen(true);
   }, []);
@@ -324,7 +330,9 @@ export function ProductsPageProvider({ children }: { children: ReactNode }) {
         });
         return;
       }
-      await mutations.createCategoryMutation.mutateAsync(payload);
+      const created =
+        await mutations.createCategoryMutation.mutateAsync(payload);
+      setLastCreatedCategoryId(created.id);
     },
     [
       mutations.createCategoryMutation,
@@ -452,6 +460,7 @@ export function ProductsPageProvider({ children }: { children: ReactNode }) {
         error,
         isProductSheetOpen,
         editingProduct,
+        lastCreatedCategoryId,
         productToDelete,
         isCategoryDialogOpen,
         selectedCategory,
@@ -516,6 +525,7 @@ export function ProductsPageProvider({ children }: { children: ReactNode }) {
       error,
       isProductSheetOpen,
       editingProduct,
+      lastCreatedCategoryId,
       productToDelete,
       isCategoryDialogOpen,
       selectedCategory,

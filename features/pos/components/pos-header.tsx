@@ -1,6 +1,7 @@
-import { ArrowLeftRight, Lock, Plus, Printer } from "lucide-react";
+import { ArrowLeftRight, Lock, Plus, Printer, Unlock, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 import type { ActiveShift, PosCustomer } from "../types";
 import { CustomerPicker } from "./customer-picker";
 
@@ -8,12 +9,14 @@ interface PosHeaderProps {
   activeShift: ActiveShift | null;
   customers: PosCustomer[];
   defaultTerminalName: string;
+  isQuickSaleMode?: boolean;
   onCashMovement: () => void;
   onCloseShift: () => void;
   onCreateCustomer: () => void;
   onCustomerChange: (customerId: string) => void;
   onOpenDrawer: () => void;
   onOpenShift: () => void;
+  onToggleQuickSaleMode?: () => void;
   selectedCustomerId: string;
 }
 
@@ -28,6 +31,8 @@ export function PosHeader({
   onOpenDrawer,
   onCloseShift,
   onCreateCustomer,
+  isQuickSaleMode,
+  onToggleQuickSaleMode,
 }: PosHeaderProps) {
   return (
     <header className="z-10 shrink-0 border-zinc-800 border-b bg-[var(--color-carbon)] px-3 py-3 md:px-4 md:py-2">
@@ -76,16 +81,24 @@ export function PosHeader({
         </div>
 
         <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-end lg:w-auto">
-          {!activeShift && (
-            <Button
-              className="col-span-2 h-9 whitespace-nowrap border-[var(--color-voltage)]/40 bg-[var(--color-voltage)]/10 text-[var(--color-voltage)] transition-all hover:bg-[var(--color-voltage)]/20 sm:col-span-1"
-              onClick={onOpenShift}
-              size="sm"
-              variant="outline"
-            >
-              Abrir Turno
-            </Button>
-          )}
+          <Button
+            className={cn(
+              "h-9 w-9 shrink-0 p-0 transition-all",
+              isQuickSaleMode
+                ? "border-[var(--color-voltage)]/40 bg-[var(--color-voltage)]/15 text-[var(--color-voltage)] hover:bg-[var(--color-voltage)]/25"
+                : "border-zinc-700 bg-zinc-900/50 text-zinc-500 hover:border-zinc-600 hover:bg-zinc-800 hover:text-zinc-300"
+            )}
+            onClick={onToggleQuickSaleMode}
+            size="sm"
+            title={
+              isQuickSaleMode
+                ? "Desactivar venta rápida"
+                : "Activar venta rápida"
+            }
+            variant="outline"
+          >
+            <Zap className="size-4" />
+          </Button>
           <Button
             className="h-9 whitespace-nowrap border-zinc-700 bg-zinc-900/50 text-zinc-300 transition-all hover:border-zinc-600 hover:bg-zinc-800 hover:text-white"
             disabled={!activeShift}
@@ -99,7 +112,6 @@ export function PosHeader({
           </Button>
           <Button
             className="h-9 whitespace-nowrap border-zinc-700 bg-zinc-900/50 text-zinc-300 transition-all hover:border-zinc-600 hover:bg-zinc-800 hover:text-white"
-            disabled={!activeShift}
             onClick={onOpenDrawer}
             size="sm"
             variant="outline"
@@ -109,15 +121,25 @@ export function PosHeader({
             <span className="hidden sm:inline">Abrir Caja</span>
           </Button>
           <Button
-            className="h-9 whitespace-nowrap border-red-900/30 bg-red-900/10 text-red-400 transition-all hover:border-red-900/50 hover:bg-red-900/30 hover:text-red-300"
-            disabled={!activeShift}
-            onClick={onCloseShift}
+            className={cn(
+              "h-9 whitespace-nowrap transition-all",
+              activeShift
+                ? "border-red-900/30 bg-red-900/10 text-red-400 hover:border-red-900/50 hover:bg-red-900/30 hover:text-red-300"
+                : "border-[var(--color-voltage)]/40 bg-[var(--color-voltage)]/10 text-[var(--color-voltage)] hover:bg-[var(--color-voltage)]/20"
+            )}
+            onClick={activeShift ? onCloseShift : onOpenShift}
             size="sm"
             variant="outline"
           >
-            <Lock className="size-4 sm:mr-2" />
+            {activeShift ? (
+              <Lock className="size-4 sm:mr-2" />
+            ) : (
+              <Unlock className="size-4 sm:mr-2" />
+            )}
             <span className="sm:hidden">Turno</span>
-            <span className="hidden sm:inline">Cerrar Turno</span>
+            <span className="hidden sm:inline">
+              {activeShift ? "Cerrar Turno" : "Abrir Turno"}
+            </span>
           </Button>
         </div>
       </div>

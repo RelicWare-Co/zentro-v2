@@ -42,7 +42,7 @@ export function getFooterValueClassName(
     return "text-[var(--color-voltage)]";
   }
   if (paymentDifference === 0) {
-    return "text-green-400";
+    return "text-[var(--color-voltage)]";
   }
   if (paymentDifference > 0) {
     return "text-red-400";

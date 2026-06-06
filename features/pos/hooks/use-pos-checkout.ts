@@ -166,43 +166,25 @@ export function usePosCheckout(
     setIsCreditSale(false);
   }, [paymentMethodOptions]);
 
-  const handleFinalizeSale = useCallback(() => {
-    if (!activeShiftId || cart.length === 0) {
-      return;
-    }
+  const buildSalePayload = useCallback(
+    (
+      shiftId: string,
+      salePayments: Array<{
+        method: string;
+        amount: number;
+        reference: string | null;
+      }>,
+      isCreditSaleFlag: boolean
+    ) => {
+      const saleDiscountAmount = parseMoneyInput(discountInput);
+      const shouldRegisterAsCreditSale =
+        isCreditSaleFlag &&
+        cartTotals.totalAmount -
+          salePayments.reduce((sum, payment) => sum + payment.amount, 0) >
+          0;
 
-    const saleDiscountAmount = parseMoneyInput(discountInput);
-
-    const salePayments = payments.reduce<
-      Array<{ method: string; amount: number; reference: string | null }>
-    >((acc, paymentMethod) => {
-      const amount = parseMoneyInput(paymentMethod.amount);
-      if (amount > 0) {
-        acc.push({
-          method: paymentMethod.method,
-          amount,
-          reference: paymentMethod.reference.trim() || null,
-        });
-      }
-      return acc;
-    }, []);
-    const shouldRegisterAsCreditSale =
-      isCreditSale &&
-      cartTotals.totalAmount -
-        salePayments.reduce((sum, payment) => sum + payment.amount, 0) >
-        0;
-    const receiptSnapshot = {
-      cart: cart.map((item) => ({
-        ...item,
-        modifiers: item.modifiers.map((modifier) => ({ ...modifier })),
-      })),
-      payments: salePayments.map((payment) => ({ ...payment })),
-      totals: { ...cartTotals },
-    };
-
-    createSaleMutation.mutate(
-      {
-        shiftId: activeShiftId,
+      return {
+        shiftId,
         customerId: selectedCustomerId || null,
         discountAmount: saleDiscountAmount,
         items: cart.map((item) => ({
@@ -225,25 +207,110 @@ export function usePosCheckout(
           discountAmount: cartTotals.discountAmount,
           totalAmount: cartTotals.totalAmount,
         },
-      },
-      {
-        onSuccess: (result) => {
-          Promise.resolve(
-            onSaleCreated?.({
-              result,
-              snapshot: receiptSnapshot,
-            })
-          ).catch((error) => {
-            console.error("No se pudo imprimir el ticket de venta", error);
-          });
+      };
+    },
+    [cart, cartTotals, discountInput, selectedCustomerId]
+  );
 
-          closeCheckoutModal();
-          clearCart();
-          resetDiscount();
-          resetPayments();
-        },
+  const handleQuickSale = useCallback(() => {
+    if (!activeShiftId || cart.length === 0) {
+      return;
+    }
+    const shiftId = activeShiftId;
+
+    const quickSalePayment = {
+      method: "cash",
+      amount: cartTotals.totalAmount,
+      reference: null,
+    };
+
+    const receiptSnapshot = {
+      cart: cart.map((item) => ({
+        ...item,
+        modifiers: item.modifiers.map((modifier) => ({ ...modifier })),
+      })),
+      payments: [quickSalePayment],
+      totals: { ...cartTotals },
+    };
+
+    const payload = buildSalePayload(shiftId, [quickSalePayment], false);
+
+    createSaleMutation.mutate(payload, {
+      onSuccess: (result) => {
+        Promise.resolve(
+          onSaleCreated?.({
+            result,
+            snapshot: receiptSnapshot,
+          })
+        ).catch((error) => {
+          console.error("No se pudo imprimir el ticket de venta", error);
+        });
+
+        clearCart();
+        resetDiscount();
+        resetPayments();
+      },
+    });
+  }, [
+    activeShiftId,
+    cart,
+    createSaleMutation,
+    cartTotals,
+    clearCart,
+    resetDiscount,
+    resetPayments,
+    onSaleCreated,
+    buildSalePayload,
+  ]);
+
+  const handleFinalizeSale = useCallback(() => {
+    if (!activeShiftId || cart.length === 0) {
+      return;
+    }
+    const shiftId = activeShiftId;
+
+    const salePayments = payments.reduce<
+      Array<{ method: string; amount: number; reference: string | null }>
+    >((acc, paymentMethod) => {
+      const amount = parseMoneyInput(paymentMethod.amount);
+      if (amount > 0) {
+        acc.push({
+          method: paymentMethod.method,
+          amount,
+          reference: paymentMethod.reference.trim() || null,
+        });
       }
-    );
+      return acc;
+    }, []);
+
+    const receiptSnapshot = {
+      cart: cart.map((item) => ({
+        ...item,
+        modifiers: item.modifiers.map((modifier) => ({ ...modifier })),
+      })),
+      payments: salePayments.map((payment) => ({ ...payment })),
+      totals: { ...cartTotals },
+    };
+
+    const payload = buildSalePayload(shiftId, salePayments, isCreditSale);
+
+    createSaleMutation.mutate(payload, {
+      onSuccess: (result) => {
+        Promise.resolve(
+          onSaleCreated?.({
+            result,
+            snapshot: receiptSnapshot,
+          })
+        ).catch((error) => {
+          console.error("No se pudo imprimir el ticket de venta", error);
+        });
+
+        closeCheckoutModal();
+        clearCart();
+        resetDiscount();
+        resetPayments();
+      },
+    });
   }, [
     activeShiftId,
     cart,
@@ -251,13 +318,12 @@ export function usePosCheckout(
     isCreditSale,
     payments,
     cartTotals,
-    discountInput,
-    selectedCustomerId,
     clearCart,
     resetDiscount,
     resetPayments,
     onSaleCreated,
     closeCheckoutModal,
+    buildSalePayload,
   ]);
 
   // Computed values
@@ -329,6 +395,7 @@ export function usePosCheckout(
     addPaymentMethod,
     removePaymentMethod,
     updatePayment,
+    handleQuickSale,
     handleFinalizeSale,
 
     // Computed

@@ -1,4 +1,4 @@
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 import { Link } from "@/components/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,6 +44,7 @@ function ProductFormSheetContent({
   onSave,
   onOpenCategoryDialog,
   lowStockThreshold,
+  lastCreatedCategoryId,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -54,8 +55,15 @@ function ProductFormSheetContent({
   onSave: ReturnType<typeof useProductsPage>["actions"]["saveProduct"];
   onOpenCategoryDialog: () => void;
   lowStockThreshold: number;
+  lastCreatedCategoryId: string | null;
 }) {
   const [form, setForm] = useState(() => getProductFormInitialValue(product));
+
+  useEffect(() => {
+    if (lastCreatedCategoryId) {
+      setForm((current) => ({ ...current, categoryId: lastCreatedCategoryId }));
+    }
+  }, [lastCreatedCategoryId]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -351,6 +359,7 @@ export function ProductFormSheet() {
           ? (state.editingProduct?.id ?? "new")
           : "closed"
       }
+      lastCreatedCategoryId={state.lastCreatedCategoryId}
       lowStockThreshold={state.lowStockThreshold}
       onOpenCategoryDialog={actions.openCreateCategory}
       onOpenChange={(open) => {
