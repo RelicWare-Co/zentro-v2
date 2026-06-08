@@ -13,10 +13,11 @@ export function CategoryTabs({
   activeCategoryId,
   onCategoryChange,
 }: CategoryTabsProps) {
+  const allCategories = [{ id: "all", name: "Todos" }, ...categories];
   return (
     <ScrollArea className="w-full whitespace-nowrap">
       <div className="flex w-max gap-x-1.5 pb-2">
-        {categories.map((category) => (
+        {allCategories.map((category) => (
           <Button
             className={`h-8 rounded-lg px-4 font-medium text-sm transition-all ${
               activeCategoryId === category.id

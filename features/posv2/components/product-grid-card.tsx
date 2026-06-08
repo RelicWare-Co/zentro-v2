@@ -55,6 +55,10 @@ export function ProductGridCard({
           {product.name}
         </h3>
 
+        <p className="mt-1 text-center font-medium text-[#6b6b6b] text-[10px] md:text-[11px]">
+          {product.categoryName}
+        </p>
+
         <p className="mt-auto pt-2 font-bold text-sm text-white tabular-nums md:text-[15px]">
           {formatCurrency(calculatePriceWithTax(product))}
         </p>
