@@ -16,6 +16,7 @@ export const POS_PRINTER_CONNECTION_TYPES = [
   "usb",
   "serial",
   "bluetooth",
+  "qz",
 ] as const;
 export type PosPrinterConnectionType =
   (typeof POS_PRINTER_CONNECTION_TYPES)[number];
@@ -58,10 +59,18 @@ export interface PosSavedBluetoothPrinterDevice {
   type: "bluetooth";
 }
 
+export interface PosSavedQzPrinterDevice {
+  codepageMapping: string | null;
+  language: PosPrinterLanguage | null;
+  printerName: string;
+  type: "qz";
+}
+
 export type PosSavedPrinterDevice =
   | PosSavedUsbPrinterDevice
   | PosSavedSerialPrinterDevice
-  | PosSavedBluetoothPrinterDevice;
+  | PosSavedBluetoothPrinterDevice
+  | PosSavedQzPrinterDevice;
 
 interface PosPrinterSerialConfig {
   baudRate: number;
@@ -72,6 +81,12 @@ interface PosPrinterSerialConfig {
   stopBits: 1 | 2;
 }
 
+export interface PosPrinterQzConfig {
+  host: string;
+  printerName: string | null;
+  usingSecure: boolean;
+}
+
 export interface PosLocalPrinterSettings {
   autoReconnect: boolean;
   codepageMapping: string;
@@ -79,12 +94,14 @@ export interface PosLocalPrinterSettings {
   language: PosPrinterLanguage;
   openDrawerAfterPrint: boolean;
   outputMode: PosPrinterOutputMode;
+  qz: PosPrinterQzConfig;
   receiptFontScale: PosReceiptFontScale;
   receiptPaperWidth: PosReceiptPaperWidth;
   savedDevices: {
     usb: PosSavedUsbPrinterDevice | null;
     serial: PosSavedSerialPrinterDevice | null;
     bluetooth: PosSavedBluetoothPrinterDevice | null;
+    qz: PosSavedQzPrinterDevice | null;
   };
   serial: PosPrinterSerialConfig;
 }
@@ -106,10 +123,16 @@ const DEFAULT_POS_LOCAL_PRINTER_SETTINGS: PosLocalPrinterSettings = {
     parity: "none",
     stopBits: 1,
   },
+  qz: {
+    host: "",
+    usingSecure: false,
+    printerName: null,
+  },
   savedDevices: {
     usb: null,
     serial: null,
     bluetooth: null,
+    qz: null,
   },
 };
 
@@ -249,6 +272,41 @@ function normalizeSavedBluetoothDevice(
   };
 }
 
+function normalizeSavedQzDevice(
+  value: unknown
+): PosSavedQzPrinterDevice | null {
+  if (!isRecord(value) || value.type !== "qz") {
+    return null;
+  }
+
+  const printerName = toNullableString(value.printerName);
+  if (!printerName) {
+    return null;
+  }
+
+  return {
+    type: "qz",
+    printerName,
+    language: isPosPrinterLanguage(value.language) ? value.language : null,
+    codepageMapping: toNullableString(value.codepageMapping),
+  };
+}
+
+function normalizeQzConfig(
+  value: unknown,
+  fallback: PosPrinterQzConfig
+): PosPrinterQzConfig {
+  if (!isRecord(value)) {
+    return fallback;
+  }
+
+  return {
+    host: toSafeString(value.host, fallback.host).trim(),
+    usingSecure: toBoolean(value.usingSecure, fallback.usingSecure),
+    printerName: toNullableString(value.printerName),
+  };
+}
+
 function normalizeSerialConfig(
   value: unknown,
   fallback: PosPrinterSerialConfig
@@ -322,10 +380,12 @@ function normalizePosLocalPrinterSettings(
       fallback.openDrawerAfterPrint
     ),
     serial: normalizeSerialConfig(value.serial, fallback.serial),
+    qz: normalizeQzConfig(value.qz, fallback.qz),
     savedDevices: {
       usb: normalizeSavedUsbDevice(savedDevices.usb),
       serial: normalizeSavedSerialDevice(savedDevices.serial),
       bluetooth: normalizeSavedBluetoothDevice(savedDevices.bluetooth),
+      qz: normalizeSavedQzDevice(savedDevices.qz),
     },
   };
 }
@@ -514,6 +574,10 @@ export function isPosPrinterConnectionTypeSupported(
       return "serial" in navigator;
     case "bluetooth":
       return "bluetooth" in navigator;
+    case "qz":
+      // QZ Tray runs as a local companion app reached over a websocket, so it
+      // does not depend on any browser device API. Available in any browser.
+      return true;
     default:
       return false;
   }
@@ -537,6 +601,10 @@ export function formatPosSavedPrinterDeviceLabel(
 
   if (device.type === "bluetooth") {
     return `${device.name ?? "Impresora Bluetooth"} (${device.id})`;
+  }
+
+  if (device.type === "qz") {
+    return `QZ Tray · ${device.printerName}`;
   }
 
   if (device.vendorId && device.productId) {

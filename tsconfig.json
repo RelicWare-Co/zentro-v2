@@ -15,5 +15,5 @@
       "@/*": ["./*"]
     }
   },
-  "exclude": ["dist", "desktop"]
+  "exclude": ["dist", "desktop", "qz/demo"]
 }

@@ -1,12 +1,14 @@
 import {
+  Loader2,
   Printer,
   RefreshCcw,
   ScanLine,
+  Search,
   Settings2,
   TestTube2,
   Usb,
 } from "lucide-react";
-import { useId } from "react";
+import { useId, useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -530,6 +532,162 @@ function SerialParametersSection({
   );
 }
 
+function QzParametersSection({
+  settings,
+  setConnectionSettings,
+}: {
+  settings: PosLocalPrinterSettings;
+  setConnectionSettings: (
+    updater: (currentValue: PosLocalPrinterSettings) => PosLocalPrinterSettings
+  ) => void;
+}) {
+  const hostId = useId();
+  const printerNameId = useId();
+  const [printers, setPrinters] = useState<string[]>([]);
+  const [isLoadingPrinters, setIsLoadingPrinters] = useState(false);
+  const [lookupError, setLookupError] = useState<string | null>(null);
+
+  if (settings.connectionType !== "qz") {
+    return null;
+  }
+
+  const handleSearchPrinters = async () => {
+    setIsLoadingPrinters(true);
+    setLookupError(null);
+    try {
+      const { listQzPrinters } = await import(
+        "@/features/pos/printing/qz-tray-receipt-printer.client"
+      );
+      const foundPrinters = await listQzPrinters(settings.qz);
+      setPrinters(foundPrinters);
+      if (foundPrinters.length === 0) {
+        setLookupError("QZ Tray no reportó impresoras disponibles.");
+      }
+    } catch (error) {
+      setLookupError(
+        error instanceof Error
+          ? error.message
+          : "No se pudo conectar con QZ Tray. ¿Está abierto?"
+      );
+    } finally {
+      setIsLoadingPrinters(false);
+    }
+  };
+
+  const selectablePrinters =
+    settings.qz.printerName && !printers.includes(settings.qz.printerName)
+      ? [settings.qz.printerName, ...printers]
+      : printers;
+
+  return (
+    <>
+      <Separator className="border-zinc-800" />
+      <div className="space-y-3 rounded-2xl border border-zinc-800 bg-black/20 p-4">
+        <div className="flex items-center gap-2 font-medium text-sm text-zinc-200">
+          <Printer className="size-4 text-[var(--color-voltage)]" />
+          Parámetros QZ Tray
+        </div>
+        <p className="text-xs text-zinc-400">
+          Requiere la app QZ Tray instalada y abierta en este equipo. La primera
+          vez QZ pedirá permiso para imprimir desde el navegador.
+        </p>
+        <div className="grid gap-3 md:grid-cols-2">
+          <div className="grid gap-2">
+            <Label htmlFor={hostId}>Host (opcional)</Label>
+            <Input
+              className="border-zinc-700 bg-black/20"
+              id={hostId}
+              onChange={(event) =>
+                setConnectionSettings((currentValue) => ({
+                  ...currentValue,
+                  qz: {
+                    ...currentValue.qz,
+                    host: event.target.value,
+                  },
+                }))
+              }
+              placeholder="localhost"
+              value={settings.qz.host}
+            />
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor={printerNameId}>Impresora</Label>
+            <div className="flex gap-2">
+              <Select
+                disabled={selectablePrinters.length === 0}
+                onValueChange={(value) =>
+                  setConnectionSettings((currentValue) => ({
+                    ...currentValue,
+                    qz: {
+                      ...currentValue.qz,
+                      printerName: value,
+                    },
+                  }))
+                }
+                value={settings.qz.printerName ?? ""}
+              >
+                <SelectTrigger
+                  className={settingsSelectTriggerClassName}
+                  id={printerNameId}
+                >
+                  <SelectValue placeholder="Predeterminada de QZ" />
+                </SelectTrigger>
+                <SelectContent className={settingsSelectContentClassName}>
+                  {selectablePrinters.map((printerName) => (
+                    <SelectItem key={printerName} value={printerName}>
+                      {printerName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                className="shrink-0 border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5 hover:text-white"
+                disabled={isLoadingPrinters}
+                onClick={handleSearchPrinters}
+                type="button"
+                variant="outline"
+              >
+                {isLoadingPrinters ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Search className="size-4" />
+                )}
+                Buscar
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        <ToggleRow
+          checked={settings.qz.usingSecure}
+          description="Usa conexión segura (wss). Desactívalo si QZ Tray no tiene certificado SSL configurado."
+          onCheckedChange={(checked) =>
+            setConnectionSettings((currentValue) => ({
+              ...currentValue,
+              qz: {
+                ...currentValue.qz,
+                usingSecure: checked,
+              },
+            }))
+          }
+          title="Conexión segura (wss)"
+        />
+
+        {lookupError ? (
+          <Alert
+            className="border-red-500/20 bg-red-500/10 text-red-100"
+            variant="destructive"
+          >
+            <AlertTitle>QZ Tray</AlertTitle>
+            <AlertDescription>{lookupError}</AlertDescription>
+          </Alert>
+        ) : null}
+      </div>
+    </>
+  );
+}
+
 function ActionButtonsGrid() {
   const { actions, meta, state } = usePrinterSettings();
 
@@ -629,7 +787,8 @@ export function LocalPrinterSettingsCard() {
           Impresión local
         </CardTitle>
         <CardDescription className="text-zinc-400">
-          Configura impresión por USB, Bluetooth o Serial en este dispositivo.
+          Configura impresión por USB, Bluetooth, Serial o QZ Tray en este
+          dispositivo.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">
@@ -700,6 +859,11 @@ export function LocalPrinterSettingsCard() {
         />
 
         <SerialParametersSection
+          setConnectionSettings={setConnectionSettings}
+          settings={settings}
+        />
+
+        <QzParametersSection
           setConnectionSettings={setConnectionSettings}
           settings={settings}
         />

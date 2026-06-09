@@ -12,6 +12,7 @@ import {
   type PosPrinterLanguage,
   type PosSavedBluetoothPrinterDevice,
   type PosSavedPrinterDevice,
+  type PosSavedQzPrinterDevice,
   type PosSavedSerialPrinterDevice,
   type PosSavedUsbPrinterDevice,
   patchPosLocalPrinterSettings,
@@ -171,6 +172,19 @@ function toSavedPrinterDevice(
     return device;
   }
 
+  if (connectionType === "qz") {
+    const device: PosSavedQzPrinterDevice = {
+      type: "qz",
+      printerName: toNullableString(payload.name) ?? "",
+      language: isPosEncodablePrinterLanguage(payload.language)
+        ? payload.language
+        : null,
+      codepageMapping: toNullableString(payload.codepageMapping),
+    };
+
+    return device;
+  }
+
   const device: PosSavedSerialPrinterDevice = {
     type: "serial",
     vendorId: toNullableNumber(payload.vendorId),
@@ -182,6 +196,29 @@ function toSavedPrinterDevice(
   };
 
   return device;
+}
+
+function getInvalidSavedDeviceError(
+  savedDevice: PosSavedPrinterDevice
+): { message: string; reason: string } | null {
+  if (savedDevice.type === "bluetooth" && savedDevice.id.trim().length === 0) {
+    return {
+      message: "No fue posible identificar la impresora Bluetooth conectada.",
+      reason: "Identificador Bluetooth inválido",
+    };
+  }
+
+  if (
+    savedDevice.type === "qz" &&
+    savedDevice.printerName.trim().length === 0
+  ) {
+    return {
+      message: "No fue posible identificar la impresora QZ Tray.",
+      reason: "Impresora QZ inválida",
+    };
+  }
+
+  return null;
 }
 
 function toPrinterStatusSnapshot(value: unknown): PrinterStatusSnapshot | null {
@@ -231,6 +268,7 @@ class PosPrinterManager {
   private state: PosPrinterRuntimeState = DEFAULT_PRINTER_RUNTIME_STATE;
   private connectionType: PosPrinterConnectionType | null = null;
   private serialConfigHash = "";
+  private qzConfigHash = "";
   private printer: ReceiptPrinterDriver | null = null;
   private printerStatus: ReceiptPrinterStatusDriver | null = null;
   private runtimeOrganizationKey = "__none__";
@@ -303,6 +341,7 @@ class PosPrinterManager {
       usb: "WebUSB",
       serial: "WebSerial",
       bluetooth: "WebBluetooth",
+      qz: "QZ Tray",
     };
 
     throw new Error(
@@ -312,6 +351,10 @@ class PosPrinterManager {
 
   private getSerialConfigHash(settings: PosLocalPrinterSettings) {
     return JSON.stringify(settings.serial);
+  }
+
+  private getQzConfigHash(settings: PosLocalPrinterSettings) {
+    return JSON.stringify(settings.qz);
   }
 
   private clearPendingConnection(error?: Error) {
@@ -338,12 +381,14 @@ class PosPrinterManager {
   ) {
     const orgKey = this.normalizeOrgKey(organizationId);
     const serialConfigHash = this.getSerialConfigHash(settings);
+    const qzConfigHash = this.getQzConfigHash(settings);
     const shouldRecreateDriver =
       !this.printer ||
       this.connectionType !== connectionType ||
       this.runtimeOrganizationKey !== orgKey ||
       (connectionType === "serial" &&
-        this.serialConfigHash !== serialConfigHash);
+        this.serialConfigHash !== serialConfigHash) ||
+      (connectionType === "qz" && this.qzConfigHash !== qzConfigHash);
 
     if (!shouldRecreateDriver) {
       this.runtimeOrganizationKey = orgKey;
@@ -384,6 +429,16 @@ class PosPrinterManager {
       this.printer = new Driver();
     }
 
+    if (connectionType === "qz") {
+      const module = await import(
+        "@/features/pos/printing/qz-tray-receipt-printer.client"
+      );
+      const Driver = module.default as new (
+        config: PosLocalPrinterSettings["qz"]
+      ) => ReceiptPrinterDriver;
+      this.printer = new Driver(settings.qz);
+    }
+
     if (!this.printer) {
       throw new Error("No se pudo inicializar el driver de impresión");
     }
@@ -391,6 +446,7 @@ class PosPrinterManager {
     this.connectionType = connectionType;
     this.runtimeOrganizationKey = orgKey;
     this.serialConfigHash = serialConfigHash;
+    this.qzConfigHash = qzConfigHash;
     this.bindPrinterEvents();
 
     return this.printer;
@@ -423,18 +479,13 @@ class PosPrinterManager {
           : {};
 
       const savedDevice = toSavedPrinterDevice(activeConnectionType, payload);
-      if (
-        savedDevice.type === "bluetooth" &&
-        savedDevice.id.trim().length === 0
-      ) {
+      const invalidDeviceError = getInvalidSavedDeviceError(savedDevice);
+      if (invalidDeviceError) {
         this.setState({
           status: "error",
-          message:
-            "No fue posible identificar la impresora Bluetooth conectada.",
+          message: invalidDeviceError.message,
         });
-        this.clearPendingConnection(
-          new Error("Identificador Bluetooth inválido")
-        );
+        this.clearPendingConnection(new Error(invalidDeviceError.reason));
         return;
       }
 
@@ -470,16 +521,24 @@ class PosPrinterManager {
         cashDrawerOpened: null,
       });
 
-      this.initializePrinterStatus(
-        savedDevice,
-        this.resolveOrgIdFromKey(this.runtimeOrganizationKey),
-        expectedPrinter,
-        boundGeneration
-      ).catch(() => {
+      if (activeConnectionType === "qz") {
+        // QZ Tray prints raw commands by printer name and does not expose a
+        // two-way data channel, so the receipt-printer-status driver cannot run.
         this.setState({
           supportsTwoWay: false,
         });
-      });
+      } else {
+        this.initializePrinterStatus(
+          savedDevice,
+          this.resolveOrgIdFromKey(this.runtimeOrganizationKey),
+          expectedPrinter,
+          boundGeneration
+        ).catch(() => {
+          this.setState({
+            supportsTwoWay: false,
+          });
+        });
+      }
 
       this.clearPendingConnection();
     });
