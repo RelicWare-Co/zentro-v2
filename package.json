@@ -4,12 +4,12 @@
   ],
   "dependencies": {
     "@base-ui/react": "^1.5.0",
+    "@medibase/webusb-receipt-printer": "^1.0.9",
     "@point-of-sale/keyboard-barcode-scanner": "^1.1.4",
     "@point-of-sale/receipt-printer-encoder": "^3.0.3",
     "@point-of-sale/receipt-printer-status": "^2.0.0",
     "@point-of-sale/webbluetooth-receipt-printer": "^2.0.0",
     "@point-of-sale/webserial-receipt-printer": "^2.0.0",
-    "@point-of-sale/webusb-receipt-printer": "^2.0.0",
     "@rocicorp/zero": "^1.5.0",
     "@tanstack/react-query": "^5.100.14",
     "@tanstack/react-table": "^8.21.3",

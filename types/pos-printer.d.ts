@@ -61,43 +61,6 @@ declare module "@point-of-sale/receipt-printer-status" {
   }
 }
 
-declare module "@point-of-sale/webusb-receipt-printer" {
-  interface ReceiptPrinterDriver {
-    addEventListener(
-      event: "connected",
-      listener: (device: unknown) => void
-    ): void;
-    addEventListener(event: "disconnected", listener: () => void): void;
-    addEventListener(
-      event: "data",
-      listener: (data: DataView | Uint8Array) => void
-    ): void;
-    connect: () => Promise<void> | void;
-    disconnect?: () => Promise<void> | void;
-    listen?: () => Promise<boolean> | boolean;
-    print: (data: Uint8Array | ArrayLike<number>) => Promise<void> | void;
-    reconnect: (device: unknown) => Promise<void> | void;
-  }
-
-  export default class WebUSBReceiptPrinter {
-    constructor();
-    connect: () => Promise<void> | void;
-    reconnect: (device: unknown) => Promise<void> | void;
-    disconnect?: () => Promise<void> | void;
-    listen?: () => Promise<boolean> | boolean;
-    print: (data: Uint8Array | ArrayLike<number>) => Promise<void> | void;
-    addEventListener(
-      event: "connected",
-      listener: (device: unknown) => void
-    ): void;
-    addEventListener(event: "disconnected", listener: () => void): void;
-    addEventListener(
-      event: "data",
-      listener: (data: DataView | Uint8Array) => void
-    ): void;
-  }
-}
-
 declare module "@point-of-sale/webserial-receipt-printer" {
   interface ReceiptPrinterDriver {
     addEventListener(
