@@ -7,6 +7,7 @@ import {
 
 interface PrintSaleReceiptParams {
   activeOrganizationId: string | null;
+  activeOrganizationName?: string | null;
   customer: PosCustomer | undefined;
   defaultTerminalName: string;
   paymentMethods: Array<{ id: string; label: string }>;
@@ -32,6 +33,7 @@ interface PrintSaleReceiptParams {
 
 export async function printSaleReceipt({
   activeOrganizationId,
+  activeOrganizationName,
   customer,
   defaultTerminalName,
   paymentMethods,
@@ -39,6 +41,7 @@ export async function printSaleReceipt({
   snapshot,
 }: PrintSaleReceiptParams) {
   const document = buildSaleReceiptDocument({
+    businessName: activeOrganizationName,
     documentId: result.saleId,
     issuedAt: Date.now(),
     status: result.status,

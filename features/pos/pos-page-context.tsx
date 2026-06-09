@@ -185,6 +185,7 @@ export function PosPageProvider({
 
   const { data: activeOrganization } = useActiveOrganization();
   const activeOrganizationId = activeOrganization?.id ?? null;
+  const activeOrganizationName = activeOrganization?.name ?? null;
 
   const { data: settings, isLoading: isSettingsLoading } = usePosSettings();
   const { data: categories, isLoading: isCategoriesLoading } =
@@ -279,6 +280,7 @@ export function PosPageProvider({
       const customer = customers.find((c) => c.id === selectedCustomerId);
       await printSaleReceipt({
         activeOrganizationId,
+        activeOrganizationName,
         customer,
         defaultTerminalName,
         paymentMethods: paymentMethodsForReceipt,
