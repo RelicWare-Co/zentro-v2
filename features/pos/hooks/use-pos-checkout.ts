@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useCreateSaleMutation } from "@/features/sales/hooks/use-sales";
 import { parseMoneyInput } from "@/lib/utils";
 import type { CartItem, CartTotals, PaymentMethod } from "../types";
@@ -34,14 +34,30 @@ function canCompleteSaleWithCashChange(
   return nonCashPaid <= totalAmount;
 }
 
+export function buildQuickSalePayments(totalAmount: number) {
+  if (totalAmount <= 0) {
+    return [];
+  }
+
+  return [
+    {
+      method: "cash",
+      amount: totalAmount,
+      reference: null,
+    },
+  ];
+}
+
 export function usePosCheckout(
   activeShiftId: string | undefined,
   cart: CartItem[],
   cartTotals: CartTotals,
   selectedCustomerId: string,
+  deliveryInfo: string,
   discountInput: string,
   clearCart: () => void,
   resetDiscount: () => void,
+  resetDeliveryInfo: () => void,
   paymentMethodOptions: Array<{
     id: string;
     label: string;
@@ -62,6 +78,7 @@ export function usePosCheckout(
     };
     snapshot: {
       cart: CartItem[];
+      deliveryInfo: string | null;
       payments: Array<{
         method: string;
         amount: number;
@@ -80,6 +97,7 @@ export function usePosCheckout(
     },
   ]);
   const [isCreditSale, setIsCreditSale] = useState(false);
+  const isQuickSaleSubmittingRef = useRef(false);
 
   const createSaleMutation = useCreateSaleMutation();
 
@@ -213,27 +231,30 @@ export function usePosCheckout(
   );
 
   const handleQuickSale = useCallback(() => {
-    if (!activeShiftId || cart.length === 0) {
+    if (
+      !activeShiftId ||
+      cart.length === 0 ||
+      createSaleMutation.isPending ||
+      isQuickSaleSubmittingRef.current
+    ) {
       return;
     }
     const shiftId = activeShiftId;
+    isQuickSaleSubmittingRef.current = true;
 
-    const quickSalePayment = {
-      method: "cash",
-      amount: cartTotals.totalAmount,
-      reference: null,
-    };
+    const quickSalePayments = buildQuickSalePayments(cartTotals.totalAmount);
 
     const receiptSnapshot = {
       cart: cart.map((item) => ({
         ...item,
         modifiers: item.modifiers.map((modifier) => ({ ...modifier })),
       })),
-      payments: [quickSalePayment],
+      deliveryInfo: deliveryInfo.trim() || null,
+      payments: quickSalePayments,
       totals: { ...cartTotals },
     };
 
-    const payload = buildSalePayload(shiftId, [quickSalePayment], false);
+    const payload = buildSalePayload(shiftId, quickSalePayments, false);
 
     createSaleMutation.mutate(payload, {
       onSuccess: (result) => {
@@ -247,8 +268,12 @@ export function usePosCheckout(
         });
 
         clearCart();
+        resetDeliveryInfo();
         resetDiscount();
         resetPayments();
+      },
+      onSettled: () => {
+        isQuickSaleSubmittingRef.current = false;
       },
     });
   }, [
@@ -256,7 +281,9 @@ export function usePosCheckout(
     cart,
     createSaleMutation,
     cartTotals,
+    deliveryInfo,
     clearCart,
+    resetDeliveryInfo,
     resetDiscount,
     resetPayments,
     onSaleCreated,
@@ -288,6 +315,7 @@ export function usePosCheckout(
         ...item,
         modifiers: item.modifiers.map((modifier) => ({ ...modifier })),
       })),
+      deliveryInfo: deliveryInfo.trim() || null,
       payments: salePayments.map((payment) => ({ ...payment })),
       totals: { ...cartTotals },
     };
@@ -307,6 +335,7 @@ export function usePosCheckout(
 
         closeCheckoutModal();
         clearCart();
+        resetDeliveryInfo();
         resetDiscount();
         resetPayments();
       },
@@ -318,7 +347,9 @@ export function usePosCheckout(
     isCreditSale,
     payments,
     cartTotals,
+    deliveryInfo,
     clearCart,
+    resetDeliveryInfo,
     resetDiscount,
     resetPayments,
     onSaleCreated,

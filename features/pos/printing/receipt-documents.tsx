@@ -16,6 +16,7 @@ export function buildSaleReceiptDocument(input: {
   status: string;
   customerName: string;
   customerMeta?: string | null;
+  deliveryInfo?: string | null;
   cashierName?: string | null;
   terminalName?: string | null;
   items: Array<{
@@ -77,6 +78,10 @@ export function buildSaleReceiptDocument(input: {
       {
         label: "Contacto",
         value: input.customerMeta,
+      },
+      {
+        label: "Domicilio",
+        value: input.deliveryInfo,
       },
       {
         label: "Cajero",

@@ -1,5 +1,6 @@
 import { Check, Search, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { usePosPage } from "@/features/pos/pos-page-context";
 import { formatCurrency } from "@/features/pos/utils";
 import { CheckoutSectionV2 } from "@/features/posv2/components/checkout-section-v2";
@@ -128,6 +129,25 @@ export function CartPanelV2({ className }: CartPanelV2Props) {
                   {formatCurrency(totalAmount)}
                 </span>
               </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label
+                className="font-medium text-[#6b6b6b] text-xs"
+                htmlFor="pos-v2-delivery-info"
+              >
+                Info domicilio
+              </label>
+              <Textarea
+                className="min-h-14 resize-none border-[rgba(255,255,255,0.08)] bg-[#101010] text-white text-xs placeholder:text-[#4b4b4b]"
+                id="pos-v2-delivery-info"
+                maxLength={280}
+                onChange={(event) =>
+                  actions.setDeliveryInfo(event.target.value)
+                }
+                placeholder="Dirección, referencia o instrucciones"
+                value={state.deliveryInfo}
+              />
             </div>
 
             <CheckoutSectionV2 />

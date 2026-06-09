@@ -59,6 +59,7 @@ export interface PosPageState {
   categories: Category[];
   checkoutError: Error | null;
   customers: PosCustomer[];
+  deliveryInfo: string;
   discountInput: string;
   hasNextPage: boolean;
   hasPaymentDifference: boolean;
@@ -118,6 +119,7 @@ export interface PosPageActions {
   removeFromCart: (cartItemId: string) => void;
   removePaymentMethod: (index: number) => void;
   setActiveCategoryId: (id: string) => void;
+  setDeliveryInfo: (value: string) => void;
   setDiscountInput: (value: string) => void;
   setIsCreditSale: (value: boolean) => void;
   setIsMobileCartOpen: (open: boolean) => void;
@@ -174,6 +176,7 @@ export function PosPageProvider({
   const [activeCategoryId, setActiveCategoryId] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
+  const [deliveryInfo, setDeliveryInfo] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [isMobileCartOpen, setIsMobileCartOpen] = useState(false);
   const [activeModal, setActiveModal] = useState<PosActiveModal | null>(null);
@@ -248,6 +251,15 @@ export function PosPageProvider({
     totalItems,
   } = usePosCart();
 
+  const resetDeliveryInfo = useCallback(() => {
+    setDeliveryInfo("");
+  }, []);
+
+  const clearCurrentOrder = useCallback(() => {
+    clearCart();
+    resetDeliveryInfo();
+  }, [clearCart, resetDeliveryInfo]);
+
   const modifierModalControl = useMemo(
     () => ({
       openModifierModal: () => setActiveModal({ type: "modifier" }),
@@ -277,9 +289,11 @@ export function PosPageProvider({
     cart,
     totals,
     selectedCustomerId,
+    deliveryInfo,
     discountInput,
-    clearCart,
+    clearCurrentOrder,
     resetDiscount,
+    resetDeliveryInfo,
     paymentMethodOptions,
     allowCreditSales,
     closeActiveModal,
@@ -427,6 +441,7 @@ export function PosPageProvider({
         categories: categories ?? [],
         checkoutError: checkout.error,
         customers,
+        deliveryInfo,
         discountInput,
         hasNextPage: !!hasNextPage,
         hasPaymentDifference: checkout.hasPaymentDifference,
@@ -459,7 +474,7 @@ export function PosPageProvider({
       actions: {
         addToCart,
         addPaymentMethod: checkout.addPaymentMethod,
-        clearCart,
+        clearCart: clearCurrentOrder,
         closeActiveModal,
         confirmCashMovement: shift.handleCashMovement,
         confirmCloseShift: shift.handleCloseShift,
@@ -486,6 +501,7 @@ export function PosPageProvider({
         removeFromCart,
         removePaymentMethod: checkout.removePaymentMethod,
         setActiveCategoryId,
+        setDeliveryInfo,
         setDiscountInput,
         setIsCreditSale: checkout.setIsCreditSale,
         setIsMobileCartOpen,
@@ -521,6 +537,7 @@ export function PosPageProvider({
       cart,
       categories,
       customers,
+      deliveryInfo,
       discountInput,
       hasNextPage,
       isActiveShift,
@@ -543,7 +560,7 @@ export function PosPageProvider({
       totals,
       viewMode,
       addToCart,
-      clearCart,
+      clearCurrentOrder,
       closeActiveModal,
       handleConfirmModifiers,
       handleQuickAddWithoutModifiers,

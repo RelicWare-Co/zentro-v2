@@ -64,9 +64,11 @@ export function PosV1Layout() {
         {!isMobile && (
           <CartPanel
             cart={state.cart}
+            deliveryInfo={state.deliveryInfo}
             isQuickSaleMode={state.isQuickSaleMode}
             onCheckout={handleCheckout}
             onClearCart={actions.clearCart}
+            onDeliveryInfoChange={actions.setDeliveryInfo}
             onRemoveItem={actions.removeFromCart}
             onUpdateItemDiscount={actions.updateItemDiscount}
             onUpdateQuantity={actions.updateQuantity}
@@ -102,9 +104,11 @@ export function PosV1Layout() {
               <CartPanel
                 cart={state.cart}
                 className="w-full flex-1 border-l-0"
+                deliveryInfo={state.deliveryInfo}
                 isQuickSaleMode={state.isQuickSaleMode}
                 onCheckout={handleCheckout}
                 onClearCart={actions.clearCart}
+                onDeliveryInfoChange={actions.setDeliveryInfo}
                 onRemoveItem={actions.removeFromCart}
                 onUpdateItemDiscount={actions.updateItemDiscount}
                 onUpdateQuantity={actions.updateQuantity}
