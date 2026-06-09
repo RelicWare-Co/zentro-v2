@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useCreateSaleMutation } from "@/features/sales/hooks/use-sales";
 import { parseMoneyInput } from "@/lib/utils";
 import type { CartItem, CartTotals, PaymentMethod } from "../types";
@@ -80,6 +80,7 @@ export function usePosCheckout(
     },
   ]);
   const [isCreditSale, setIsCreditSale] = useState(false);
+  const isQuickSaleSubmittingRef = useRef(false);
 
   const createSaleMutation = useCreateSaleMutation();
 
@@ -213,10 +214,16 @@ export function usePosCheckout(
   );
 
   const handleQuickSale = useCallback(() => {
-    if (!activeShiftId || cart.length === 0) {
+    if (
+      !activeShiftId ||
+      cart.length === 0 ||
+      createSaleMutation.isPending ||
+      isQuickSaleSubmittingRef.current
+    ) {
       return;
     }
     const shiftId = activeShiftId;
+    isQuickSaleSubmittingRef.current = true;
 
     const quickSalePayment = {
       method: "cash",
@@ -249,6 +256,9 @@ export function usePosCheckout(
         clearCart();
         resetDiscount();
         resetPayments();
+      },
+      onSettled: () => {
+        isQuickSaleSubmittingRef.current = false;
       },
     });
   }, [

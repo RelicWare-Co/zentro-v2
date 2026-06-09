@@ -1,5 +1,6 @@
 import { User, Zap } from "lucide-react";
 import { useMemo } from "react";
+import { CustomerPicker } from "@/features/pos/components/customer-picker";
 import { usePosPage } from "@/features/pos/pos-page-context";
 import { cn } from "@/lib/utils";
 
@@ -10,7 +11,7 @@ interface CheckoutCustomerSectionProps {
 export function CheckoutCustomerSection({
   className,
 }: CheckoutCustomerSectionProps) {
-  const { state } = usePosPage();
+  const { state, actions } = usePosPage();
 
   const selectedCustomer = useMemo(
     () =>
@@ -21,17 +22,6 @@ export function CheckoutCustomerSection({
   );
 
   const isQuickSale = !selectedCustomer;
-  const label = selectedCustomer?.name ?? "Venta rápida";
-  const meta = selectedCustomer
-    ? [
-        selectedCustomer.documentNumber,
-        selectedCustomer.phone,
-        selectedCustomer.email,
-      ]
-        .filter(Boolean)
-        .join(" · ") || "Cliente seleccionado"
-    : "Sin cliente asociado";
-
   return (
     <div
       className={cn(
@@ -49,10 +39,13 @@ export function CheckoutCustomerSection({
       >
         {isQuickSale ? <Zap className="size-4" /> : <User className="size-4" />}
       </div>
-      <div className="min-w-0 flex-1">
-        <p className="truncate font-medium text-sm text-zinc-200">{label}</p>
-        <p className="truncate text-xs text-zinc-500">{meta}</p>
-      </div>
+      <CustomerPicker
+        buttonClassName="h-auto flex-1 border-0 bg-transparent p-0 hover:bg-transparent hover:text-white"
+        contentClassName="w-[min(420px,calc(100vw-2rem))]"
+        customers={state.customers}
+        onCustomerChange={actions.setSelectedCustomerId}
+        selectedCustomerId={state.selectedCustomerId}
+      />
     </div>
   );
 }
