@@ -1,4 +1,8 @@
 import type { CSSProperties } from "react";
+import {
+  getThermalReceiptCssMetrics,
+  type PosReceiptLayoutSettings,
+} from "@/features/pos/printing/receipt-layout.shared";
 
 const EMPTY_ITEMS: ThermalReceiptItem[] = [];
 const EMPTY_PAYMENTS: ThermalReceiptPayment[] = [];
@@ -36,6 +40,7 @@ export interface ThermalReceiptProps {
   infoLines?: ThermalReceiptInfoLine[];
   issuedAtLabel: string;
   items?: ThermalReceiptItem[];
+  layout?: Partial<PosReceiptLayoutSettings>;
   payments?: ThermalReceiptPayment[];
   statusLabel?: string;
   title: string;
@@ -50,6 +55,7 @@ export function ThermalReceipt({
   statusLabel,
   infoLines,
   items = EMPTY_ITEMS,
+  layout,
   payments = EMPTY_PAYMENTS,
   totals,
   footerLines = DEFAULT_FOOTER,
@@ -57,12 +63,34 @@ export function ThermalReceipt({
   const visibleInfoLines = (infoLines ?? []).filter((line) =>
     Boolean(line.value)
   );
+  const metrics = getThermalReceiptCssMetrics(layout);
 
   return (
-    <div style={styles.page}>
+    <div
+      style={{
+        ...styles.page,
+        width: `${metrics.contentWidthMm}mm`,
+        fontSize: `${metrics.bodyFontPx}px`,
+        lineHeight: metrics.lineHeight,
+      }}
+    >
       <header style={styles.centeredSection}>
-        <p style={styles.businessName}>{businessName}</p>
-        <p style={styles.title}>{title}</p>
+        <p
+          style={{
+            ...styles.businessName,
+            fontSize: `${metrics.businessNameFontPx}px`,
+          }}
+        >
+          {businessName}
+        </p>
+        <p
+          style={{
+            ...styles.title,
+            fontSize: `${metrics.titleFontPx}px`,
+          }}
+        >
+          {title}
+        </p>
         {documentLabel ? <p style={styles.metaLine}>{documentLabel}</p> : null}
         <p style={styles.metaLine}>{issuedAtLabel}</p>
         {statusLabel ? <p style={styles.metaLine}>{statusLabel}</p> : null}

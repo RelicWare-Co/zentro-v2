@@ -1,5 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import { buildSaleReceiptDocument } from "@/features/pos/printing/receipt-documents";
+import {
+  getThermalReceiptCssMetrics,
+  getThermalReceiptEncoderColumns,
+  getThermalReceiptEncoderHeight,
+} from "@/features/pos/printing/receipt-layout.shared";
 
 describe("POS sale receipt", () => {
   test("uses the active organization name as the receipt business name", () => {
@@ -27,5 +32,31 @@ describe("POS sale receipt", () => {
     });
 
     expect(document.receipt.businessName).toBe("Tienda Central");
+  });
+
+  test("maps 58mm receipt settings to narrow paper and larger text", () => {
+    expect(
+      getThermalReceiptEncoderColumns({
+        receiptPaperWidth: "58mm",
+        receiptFontScale: "large",
+      })
+    ).toBe(32);
+    expect(
+      getThermalReceiptEncoderHeight({
+        receiptPaperWidth: "58mm",
+        receiptFontScale: "large",
+      })
+    ).toBe(2);
+    expect(
+      getThermalReceiptCssMetrics({
+        receiptPaperWidth: "58mm",
+        receiptFontScale: "large",
+      })
+    ).toMatchObject({
+      paperWidthMm: 58,
+      pageMarginMm: 3,
+      contentWidthMm: 52,
+      bodyFontPx: 13,
+    });
   });
 });

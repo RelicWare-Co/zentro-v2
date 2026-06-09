@@ -168,7 +168,7 @@ export function PrinterSettingsProvider({
           ),
         resetLocalSettings: () => {
           resetSettings();
-          setFeedbackMessage("Configuración local restablecida.");
+          setFeedbackMessage("Ajustes reiniciados a valores por defecto.");
           setFeedbackError(null);
         },
         setConnectionSettings,

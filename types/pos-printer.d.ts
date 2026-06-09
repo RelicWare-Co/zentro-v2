@@ -3,6 +3,7 @@ declare module "@point-of-sale/receipt-printer-encoder" {
     constructor(options?: {
       language?: string;
       codepageMapping?: string;
+      columns?: number;
       errors?: string;
     });
     get columns(): number;
@@ -10,6 +11,7 @@ declare module "@point-of-sale/receipt-printer-encoder" {
     codepage(value: string): this;
     align(value: string): this;
     bold(value: boolean): this;
+    size(width?: number | string, height?: number): this;
     line(value: string): this;
     newline(count?: number): this;
     cut(value?: string): this;

@@ -1,4 +1,13 @@
 import { useCallback, useMemo, useSyncExternalStore } from "react";
+import type {
+  PosReceiptFontScale,
+  PosReceiptPaperWidth,
+} from "@/features/pos/printing/receipt-layout.shared";
+import {
+  DEFAULT_POS_RECEIPT_LAYOUT_SETTINGS,
+  isPosReceiptFontScale,
+  isPosReceiptPaperWidth,
+} from "@/features/pos/printing/receipt-layout.shared";
 
 const POS_PRINTER_SETTINGS_STORAGE_KEY = "zentro:pos-printer-settings:v1";
 const POS_PRINTER_SETTINGS_EVENT = "zentro:pos-printer-settings:updated";
@@ -70,6 +79,8 @@ export interface PosLocalPrinterSettings {
   language: PosPrinterLanguage;
   openDrawerAfterPrint: boolean;
   outputMode: PosPrinterOutputMode;
+  receiptFontScale: PosReceiptFontScale;
+  receiptPaperWidth: PosReceiptPaperWidth;
   savedDevices: {
     usb: PosSavedUsbPrinterDevice | null;
     serial: PosSavedSerialPrinterDevice | null;
@@ -83,6 +94,8 @@ const DEFAULT_POS_LOCAL_PRINTER_SETTINGS: PosLocalPrinterSettings = {
   connectionType: "usb",
   language: "auto",
   codepageMapping: "epson",
+  receiptPaperWidth: DEFAULT_POS_RECEIPT_LAYOUT_SETTINGS.receiptPaperWidth,
+  receiptFontScale: DEFAULT_POS_RECEIPT_LAYOUT_SETTINGS.receiptFontScale,
   autoReconnect: true,
   openDrawerAfterPrint: false,
   serial: {
@@ -297,6 +310,12 @@ function normalizePosLocalPrinterSettings(
       value.codepageMapping,
       fallback.codepageMapping
     ),
+    receiptPaperWidth: isPosReceiptPaperWidth(value.receiptPaperWidth)
+      ? value.receiptPaperWidth
+      : fallback.receiptPaperWidth,
+    receiptFontScale: isPosReceiptFontScale(value.receiptFontScale)
+      ? value.receiptFontScale
+      : fallback.receiptFontScale,
     autoReconnect: toBoolean(value.autoReconnect, fallback.autoReconnect),
     openDrawerAfterPrint: toBoolean(
       value.openDrawerAfterPrint,

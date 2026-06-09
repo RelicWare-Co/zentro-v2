@@ -33,6 +33,10 @@ import {
   type PosLocalPrinterSettings,
 } from "@/features/pos/printing/printer-settings.local.client";
 import { usePrinterSettings } from "@/features/pos/printing/printer-settings-context.client";
+import {
+  POS_RECEIPT_FONT_SCALES,
+  POS_RECEIPT_PAPER_WIDTHS,
+} from "@/features/pos/printing/receipt-layout.shared";
 
 function toIntegerInRange(
   value: string,
@@ -88,6 +92,18 @@ function getCashDrawerLabel(value: boolean | null) {
     return "abierta";
   }
   return "cerrada";
+}
+
+function getReceiptPaperWidthLabel(
+  value: PosLocalPrinterSettings["receiptPaperWidth"]
+) {
+  return value === "58mm" ? "58 mm" : "80 mm";
+}
+
+function getReceiptFontScaleLabel(
+  value: PosLocalPrinterSettings["receiptFontScale"]
+) {
+  return value === "large" ? "Grande" : "Normal";
 }
 
 function PrinterStatusDisplay({
@@ -178,6 +194,8 @@ function ConnectionSettingsForm({
   const languageId = useId();
   const codepageId = useId();
   const outputModeId = useId();
+  const receiptPaperWidthId = useId();
+  const receiptFontScaleId = useId();
   return (
     <div className="grid gap-3 md:grid-cols-2">
       <div className="grid gap-2">
@@ -257,6 +275,50 @@ function ConnectionSettingsForm({
           {POS_PRINTER_OUTPUT_MODES.map((outputMode) => (
             <NativeSelectOption key={outputMode} value={outputMode}>
               {outputMode === "pdf" ? "PDF" : "Impresora"}
+            </NativeSelectOption>
+          ))}
+        </NativeSelect>
+      </div>
+
+      <div className="grid gap-2">
+        <Label htmlFor={receiptPaperWidthId}>Ancho de papel</Label>
+        <NativeSelect
+          className="w-full"
+          id={receiptPaperWidthId}
+          onChange={(event) =>
+            setConnectionSettings((currentValue) => ({
+              ...currentValue,
+              receiptPaperWidth: event.target
+                .value as PosLocalPrinterSettings["receiptPaperWidth"],
+            }))
+          }
+          value={settings.receiptPaperWidth}
+        >
+          {POS_RECEIPT_PAPER_WIDTHS.map((paperWidth) => (
+            <NativeSelectOption key={paperWidth} value={paperWidth}>
+              {getReceiptPaperWidthLabel(paperWidth)}
+            </NativeSelectOption>
+          ))}
+        </NativeSelect>
+      </div>
+
+      <div className="grid gap-2">
+        <Label htmlFor={receiptFontScaleId}>Tamaño de letra</Label>
+        <NativeSelect
+          className="w-full"
+          id={receiptFontScaleId}
+          onChange={(event) =>
+            setConnectionSettings((currentValue) => ({
+              ...currentValue,
+              receiptFontScale: event.target
+                .value as PosLocalPrinterSettings["receiptFontScale"],
+            }))
+          }
+          value={settings.receiptFontScale}
+        >
+          {POS_RECEIPT_FONT_SCALES.map((fontScale) => (
+            <NativeSelectOption key={fontScale} value={fontScale}>
+              {getReceiptFontScaleLabel(fontScale)}
             </NativeSelectOption>
           ))}
         </NativeSelect>
@@ -481,7 +543,7 @@ function ActionButtonsGrid() {
         variant="outline"
       >
         <RefreshCcw className="size-4" />
-        Restablecer local
+        Reiniciar ajustes
       </Button>
     </div>
   );
@@ -519,6 +581,12 @@ export function LocalPrinterSettingsCard() {
           </Badge>
           <Badge className="border-zinc-700 bg-black/20 text-zinc-300">
             Canal: {settings.connectionType.toUpperCase()}
+          </Badge>
+          <Badge className="border-zinc-700 bg-black/20 text-zinc-300">
+            Papel: {getReceiptPaperWidthLabel(settings.receiptPaperWidth)}
+          </Badge>
+          <Badge className="border-zinc-700 bg-black/20 text-zinc-300">
+            Letra: {getReceiptFontScaleLabel(settings.receiptFontScale)}
           </Badge>
         </div>
 

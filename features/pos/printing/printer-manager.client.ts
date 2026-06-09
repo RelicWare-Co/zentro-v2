@@ -843,6 +843,7 @@ class PosPrinterManager {
       receipt: document.receipt,
       language,
       codepageMapping,
+      layout: settings,
     });
 
     await Promise.resolve(this.printer.print(payload));
