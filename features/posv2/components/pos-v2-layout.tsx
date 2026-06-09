@@ -13,6 +13,14 @@ export function PosV2Layout() {
   const { state, actions, meta } = usePosPage();
   const pendingBarcodeLookupRef = useRef<string[] | null>(null);
 
+  const handleOpenDrawer = useCallback(() => {
+    if (!state.activeShift) {
+      actions.openShiftModal();
+      return;
+    }
+    openPosCashDrawer(meta.activeOrganizationId).catch(() => undefined);
+  }, [state.activeShift, actions, meta.activeOrganizationId]);
+
   const handleBarcodeScan = useCallback(
     (event: KeyboardBarcodeScannerEvent) => {
       const payload = buildPosV2BarcodeScanPayload(event);
@@ -78,7 +86,7 @@ export function PosV2Layout() {
         defaultTerminalName={meta.defaultTerminalName}
         onCashMovement={actions.openCashMovementModal}
         onCloseShift={actions.openCloseShiftModal}
-        onOpenDrawer={() => openPosCashDrawer(meta.activeOrganizationId)}
+        onOpenDrawer={handleOpenDrawer}
       />
 
       <div className="grid min-h-0 grid-cols-[minmax(0,1fr)_440px] overflow-hidden">

@@ -57,7 +57,7 @@ El empaquetado MSIX **solo puede ejecutarse en Windows 10/11** con el [Windows S
 1. Windows 10 u 11 (64-bit).
 2. Windows SDK (incluye `makeappx.exe`, `makepri.exe`, `signtool.exe`).
 3. Bun y dependencias del monorepo (`bun install` en la raíz).
-4. ImageMagick (`magick`) para regenerar iconos/tiles MSIX: `bun run --cwd desktop icons`.
+4. ImageMagick (`magick`) solo si vas a regenerar `.ico` / `.icns` con `bun run --cwd desktop icons`. Los tiles MSIX se regeneran automáticamente al ejecutar `bun run desktop:make:msix`.
 
 ### Configuración
 
@@ -73,6 +73,9 @@ El empaquetado MSIX **solo puede ejecutarse en Windows 10/11** con el [Windows S
 ```powershell
 # Solo MSIX x64 (salida: desktop\out\make\msix\x64\*.msix)
 bun run desktop:make:msix
+
+# Solo regenerar assets referenciados por Package.appxmanifest
+bun run --cwd desktop msix:assets
 
 # Instaladores Windows (Squirrel + MSIX si estás en win32)
 bun run desktop:make:win

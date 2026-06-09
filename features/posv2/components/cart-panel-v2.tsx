@@ -136,11 +136,7 @@ export function CartPanelV2({ className }: CartPanelV2Props) {
           <div className="px-3 pb-2">
             <Button
               className="h-9 w-full rounded-lg border border-[rgba(255,255,255,0.12)] bg-[#151515] font-semibold text-white text-xs shadow-none transition-all hover:border-[rgba(255,255,255,0.2)] hover:bg-[#1a1a1a] disabled:opacity-40"
-              disabled={
-                !state.canFinalizeSale ||
-                state.isProcessingCheckout ||
-                !state.activeShift
-              }
+              disabled={!state.canFinalizeSale || state.isProcessingCheckout}
               onClick={actions.finalizeSale}
               type="button"
             >

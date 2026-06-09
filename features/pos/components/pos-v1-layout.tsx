@@ -1,4 +1,5 @@
 import { ShoppingCart } from "lucide-react";
+import { useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
@@ -22,8 +23,20 @@ export function PosV1Layout() {
     if (isMobile) {
       actions.setIsMobileCartOpen(false);
     }
+    if (state.isQuickSaleMode) {
+      actions.handleQuickSale();
+      return;
+    }
     actions.openCheckout();
   };
+
+  const handleOpenDrawer = useCallback(() => {
+    if (!state.activeShift) {
+      actions.openShiftModal();
+      return;
+    }
+    openPosCashDrawer(meta.activeOrganizationId).catch(() => undefined);
+  }, [state.activeShift, actions, meta.activeOrganizationId]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-[var(--color-void)] text-[var(--color-photon)]">
@@ -31,12 +44,14 @@ export function PosV1Layout() {
         activeShift={state.activeShift}
         customers={state.customers}
         defaultTerminalName={meta.defaultTerminalName}
+        isQuickSaleMode={state.isQuickSaleMode}
         onCashMovement={actions.openCashMovementModal}
         onCloseShift={actions.openCloseShiftModal}
         onCreateCustomer={actions.openCreateCustomerModal}
         onCustomerChange={actions.setSelectedCustomerId}
-        onOpenDrawer={() => openPosCashDrawer(meta.activeOrganizationId)}
+        onOpenDrawer={handleOpenDrawer}
         onOpenShift={actions.openShiftModal}
+        onToggleQuickSaleMode={actions.toggleQuickSaleMode}
         selectedCustomerId={state.selectedCustomerId}
       />
 
@@ -49,7 +64,7 @@ export function PosV1Layout() {
         {!isMobile && (
           <CartPanel
             cart={state.cart}
-            isActiveShift={!!state.activeShift}
+            isQuickSaleMode={state.isQuickSaleMode}
             onCheckout={handleCheckout}
             onClearCart={actions.clearCart}
             onRemoveItem={actions.removeFromCart}
@@ -87,7 +102,7 @@ export function PosV1Layout() {
               <CartPanel
                 cart={state.cart}
                 className="w-full flex-1 border-l-0"
-                isActiveShift={!!state.activeShift}
+                isQuickSaleMode={state.isQuickSaleMode}
                 onCheckout={handleCheckout}
                 onClearCart={actions.clearCart}
                 onRemoveItem={actions.removeFromCart}

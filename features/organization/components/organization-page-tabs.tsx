@@ -75,36 +75,26 @@ export function OrganizationPageTabs({ children }: { children: ReactNode }) {
           </SelectContent>
         </Select>
       </div>
-      <TabsList className="hidden h-auto w-full flex-wrap gap-2 border-0 bg-transparent p-0 sm:flex">
-        <TabsTrigger
-          className="data-[state=active]:!border-zinc-700 h-10 shrink-0 gap-2 rounded-xl border border-transparent px-5 font-medium text-sm text-zinc-400 transition-all hover:text-white data-[state=active]:bg-[var(--color-carbon)] data-[state=active]:text-white"
-          value="general"
-        >
-          <Building2 className="size-4" />
-          General
-        </TabsTrigger>
-        <TabsTrigger
-          className="data-[state=active]:!border-zinc-700 h-10 shrink-0 gap-2 rounded-xl border border-transparent px-5 font-medium text-sm text-zinc-400 transition-all hover:text-white data-[state=active]:bg-[var(--color-carbon)] data-[state=active]:text-white"
-          value="members"
-        >
-          <Users className="size-4" />
-          Miembros
-        </TabsTrigger>
-        <TabsTrigger
-          className="data-[state=active]:!border-zinc-700 h-10 shrink-0 gap-2 rounded-xl border border-transparent px-5 font-medium text-sm text-zinc-400 transition-all hover:text-white data-[state=active]:bg-[var(--color-carbon)] data-[state=active]:text-white"
-          value="invitations"
-        >
-          <Mail className="size-4" />
-          Invitaciones
-        </TabsTrigger>
-        <TabsTrigger
-          className="data-[state=active]:!border-zinc-700 h-10 shrink-0 gap-2 rounded-xl border border-transparent px-5 font-medium text-sm text-zinc-400 transition-all hover:text-white data-[state=active]:bg-[var(--color-carbon)] data-[state=active]:text-white"
-          value="access"
-        >
-          <Link2 className="size-4" />
-          Acceso
-        </TabsTrigger>
-      </TabsList>
+      <div className="hidden w-full justify-center sm:flex">
+        <TabsList className="flex-wrap">
+          <TabsTrigger value="general">
+            <Building2 className="size-4" />
+            General
+          </TabsTrigger>
+          <TabsTrigger value="members">
+            <Users className="size-4" />
+            Miembros
+          </TabsTrigger>
+          <TabsTrigger value="invitations">
+            <Mail className="size-4" />
+            Invitaciones
+          </TabsTrigger>
+          <TabsTrigger value="access">
+            <Link2 className="size-4" />
+            Acceso
+          </TabsTrigger>
+        </TabsList>
+      </div>
       {children}
     </Tabs>
   );

@@ -47,10 +47,7 @@ export function CheckoutDetailsModal() {
             </span>
           </div>
 
-          <CheckoutCustomerSection
-            description="Obligatorio cuando quede saldo pendiente."
-            title="Cliente"
-          />
+          <CheckoutCustomerSection />
 
           <CheckoutDiscountSection />
 
