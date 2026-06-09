@@ -1,5 +1,6 @@
 import { Search, Trash2, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 
 import { cn } from "@/lib/utils";
 import type { CartItem, CartTotals } from "../types";
@@ -9,9 +10,11 @@ import { CartItemCard } from "./cart-item-card";
 interface CartPanelProps {
   cart: CartItem[];
   className?: string;
+  deliveryInfo: string;
   isQuickSaleMode?: boolean;
   onCheckout: () => void;
   onClearCart: () => void;
+  onDeliveryInfoChange: (value: string) => void;
   onRemoveItem: (cartItemId: string) => void;
   onUpdateItemDiscount: (cartItemId: string, value: string) => void;
   onUpdateQuantity: (cartItemId: string, delta: number) => void;
@@ -21,8 +24,10 @@ interface CartPanelProps {
 
 export function CartPanel({
   cart,
+  deliveryInfo,
   totalItems,
   totals,
+  onDeliveryInfoChange,
   onUpdateQuantity,
   onRemoveItem,
   onUpdateItemDiscount,
@@ -88,6 +93,23 @@ export function CartPanel({
       {/* Payment Summary */}
       <div className="shrink-0 border-zinc-800 border-t bg-[#0a0a0a] p-4">
         <div className="space-y-3">
+          <div className="space-y-1.5">
+            <label
+              className="font-medium text-xs text-zinc-400"
+              htmlFor="pos-delivery-info"
+            >
+              Info domicilio
+            </label>
+            <Textarea
+              className="min-h-16 resize-none border-zinc-800 bg-[#0f0f0f] text-sm text-white placeholder:text-zinc-600"
+              id="pos-delivery-info"
+              maxLength={280}
+              onChange={(event) => onDeliveryInfoChange(event.target.value)}
+              placeholder="Dirección, referencia o instrucciones"
+              value={deliveryInfo}
+            />
+          </div>
+
           <div className="space-y-1.5">
             <div className="flex justify-between text-sm text-zinc-400">
               <span>Subtotal</span>

@@ -39,9 +39,11 @@ export function usePosCheckout(
   cart: CartItem[],
   cartTotals: CartTotals,
   selectedCustomerId: string,
+  deliveryInfo: string,
   discountInput: string,
   clearCart: () => void,
   resetDiscount: () => void,
+  resetDeliveryInfo: () => void,
   paymentMethodOptions: Array<{
     id: string;
     label: string;
@@ -62,6 +64,7 @@ export function usePosCheckout(
     };
     snapshot: {
       cart: CartItem[];
+      deliveryInfo: string | null;
       payments: Array<{
         method: string;
         amount: number;
@@ -236,6 +239,7 @@ export function usePosCheckout(
         ...item,
         modifiers: item.modifiers.map((modifier) => ({ ...modifier })),
       })),
+      deliveryInfo: deliveryInfo.trim() || null,
       payments: [quickSalePayment],
       totals: { ...cartTotals },
     };
@@ -254,6 +258,7 @@ export function usePosCheckout(
         });
 
         clearCart();
+        resetDeliveryInfo();
         resetDiscount();
         resetPayments();
       },
@@ -266,7 +271,9 @@ export function usePosCheckout(
     cart,
     createSaleMutation,
     cartTotals,
+    deliveryInfo,
     clearCart,
+    resetDeliveryInfo,
     resetDiscount,
     resetPayments,
     onSaleCreated,
@@ -298,6 +305,7 @@ export function usePosCheckout(
         ...item,
         modifiers: item.modifiers.map((modifier) => ({ ...modifier })),
       })),
+      deliveryInfo: deliveryInfo.trim() || null,
       payments: salePayments.map((payment) => ({ ...payment })),
       totals: { ...cartTotals },
     };
@@ -317,6 +325,7 @@ export function usePosCheckout(
 
         closeCheckoutModal();
         clearCart();
+        resetDeliveryInfo();
         resetDiscount();
         resetPayments();
       },
@@ -328,7 +337,9 @@ export function usePosCheckout(
     isCreditSale,
     payments,
     cartTotals,
+    deliveryInfo,
     clearCart,
+    resetDeliveryInfo,
     resetDiscount,
     resetPayments,
     onSaleCreated,
