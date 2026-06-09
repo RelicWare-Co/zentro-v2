@@ -6,7 +6,7 @@
     "ultracite/biome/vitest"
   ],
   "files": {
-    "includes": ["!.agents"]
+    "includes": ["!.agents", "!qz/demo"]
   },
   "overrides": [
     {
