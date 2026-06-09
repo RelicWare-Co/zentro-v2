@@ -168,6 +168,8 @@ Zero is the primary API for app data (see `MIGRATION_PLAN.md`).
 
 - Full production deployment documentation lives in `docs/deployment/docker.md`. Update that document when service topology, variables, domains, build commands, rollout order, or Zero operating procedures change.
 - Production topology: one app/API container (`deploy/app/Dockerfile`), one zero-cache container (`deploy/zero-cache/Dockerfile`), and external managed Postgres with `wal_level=logical`. Compose deploy: `deploy/docker-compose.prod.yml` + `deploy/.env.production` (see `deploy/.env.production.example`).
+- The production compose file is Coolify/proxy-oriented and must not publish host ports. Use `deploy/docker-compose.host-ports.yml` only for direct Docker Compose runs that intentionally need `APP_PORT` / `ZERO_PORT` host bindings.
+- `deploy/.env.production` is optional in the compose file so Coolify can supply environment variables from its UI.
 - QA on Coolify uses `deploy/docker-compose.qa.yml`, which includes its own Postgres service, separate Postgres/Zero volumes, and a public Postgres host-port mapping controlled by `QA_POSTGRES_PORT`. Use `deploy/.env.qa.example` as the QA variable template.
 - Build from Git or CI with dockerfile path `deploy/app/Dockerfile` or `deploy/zero-cache/Dockerfile` and build context at the repository root.
 - Database migrations run in `scripts/docker-entrypoint.sh` before `bun run start` when `RUN_MIGRATIONS=true` (default). The entrypoint uses `set -euo pipefail` so migration failures stop the container and block health-check promotion.

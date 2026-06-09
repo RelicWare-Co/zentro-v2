@@ -1,0 +1,11 @@
+# Optional override for plain Docker Compose deployments that need direct host
+# access without a reverse proxy. Do not use this override in Coolify.
+
+services:
+  app:
+    ports:
+      - "${APP_PORT:-3000}:3000"
+
+  zero-cache:
+    ports:
+      - "${ZERO_PORT:-4848}:4848"
