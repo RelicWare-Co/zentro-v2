@@ -59,6 +59,7 @@ export interface PosPageState {
   categories: Category[];
   checkoutError: Error | null;
   customers: PosCustomer[];
+  deliveryInfo: string;
   discountInput: string;
   hasNextPage: boolean;
   hasPaymentDifference: boolean;
@@ -70,6 +71,7 @@ export interface PosPageState {
   isMobileCartOpen: boolean;
   isProcessingCheckout: boolean;
   isProductsLoading: boolean;
+  isQuickSaleMode: boolean;
   modifierProducts: Product[];
   modifierQuantities: Record<string, number>;
   paymentDifference: number;
@@ -104,6 +106,7 @@ export interface PosPageActions {
   handleBarcodeScanV1: (value: string) => boolean;
   handleBarcodeScanV2: (event: KeyboardBarcodeScannerEvent) => boolean;
   handleProductSelect: (product: Product) => void;
+  handleQuickSale: () => void;
   openActiveModal: (modal: PosActiveModal) => void;
   openCashMovementModal: () => void;
   openCheckout: () => void;
@@ -116,6 +119,7 @@ export interface PosPageActions {
   removeFromCart: (cartItemId: string) => void;
   removePaymentMethod: (index: number) => void;
   setActiveCategoryId: (id: string) => void;
+  setDeliveryInfo: (value: string) => void;
   setDiscountInput: (value: string) => void;
   setIsCreditSale: (value: boolean) => void;
   setIsMobileCartOpen: (open: boolean) => void;
@@ -123,6 +127,7 @@ export interface PosPageActions {
   setSelectedCustomerId: (id: string) => void;
   setViewMode: (mode: "grid" | "list") => void;
   toggleProductFavorite: (productId: string) => void;
+  toggleQuickSaleMode: () => void;
   updateItemDiscount: (cartItemId: string, value: string) => void;
   updateModifierQuantity: (modifierId: string, delta: number) => void;
   updatePayment: (
@@ -171,9 +176,11 @@ export function PosPageProvider({
   const [activeCategoryId, setActiveCategoryId] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
+  const [deliveryInfo, setDeliveryInfo] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [isMobileCartOpen, setIsMobileCartOpen] = useState(false);
   const [activeModal, setActiveModal] = useState<PosActiveModal | null>(null);
+  const [isQuickSaleMode, setIsQuickSaleMode] = useState(false);
 
   const closeActiveModal = useCallback(() => {
     setActiveModal(null);
@@ -181,6 +188,10 @@ export function PosPageProvider({
 
   const openActiveModal = useCallback((modal: PosActiveModal) => {
     setActiveModal(modal);
+  }, []);
+
+  const toggleQuickSaleMode = useCallback(() => {
+    setIsQuickSaleMode((prev) => !prev);
   }, []);
 
   const { data: activeOrganization } = useActiveOrganization();
@@ -241,6 +252,15 @@ export function PosPageProvider({
     totalItems,
   } = usePosCart();
 
+  const resetDeliveryInfo = useCallback(() => {
+    setDeliveryInfo("");
+  }, []);
+
+  const clearCurrentOrder = useCallback(() => {
+    clearCart();
+    resetDeliveryInfo();
+  }, [clearCart, resetDeliveryInfo]);
+
   const modifierModalControl = useMemo(
     () => ({
       openModifierModal: () => setActiveModal({ type: "modifier" }),
@@ -270,9 +290,11 @@ export function PosPageProvider({
     cart,
     totals,
     selectedCustomerId,
+    deliveryInfo,
     discountInput,
-    clearCart,
+    clearCurrentOrder,
     resetDiscount,
+    resetDeliveryInfo,
     paymentMethodOptions,
     allowCreditSales,
     closeActiveModal,
@@ -397,6 +419,13 @@ export function PosPageProvider({
     checkout.handleFinalizeSale();
   }, [requireActiveShift, checkout]);
 
+  const handleQuickSale = useCallback(() => {
+    if (!requireActiveShift()) {
+      return;
+    }
+    checkout.handleQuickSale();
+  }, [requireActiveShift, checkout]);
+
   const openShiftFromRequired = useCallback(() => {
     setActiveModal({ type: "open-shift" });
   }, []);
@@ -414,6 +443,7 @@ export function PosPageProvider({
         categories: categories ?? [],
         checkoutError: checkout.error,
         customers,
+        deliveryInfo,
         discountInput,
         hasNextPage: !!hasNextPage,
         hasPaymentDifference: checkout.hasPaymentDifference,
@@ -425,6 +455,7 @@ export function PosPageProvider({
         isMobileCartOpen,
         isProcessingCheckout: checkout.isProcessing,
         isProductsLoading,
+        isQuickSaleMode,
         modifierProducts: modifierProducts ?? [],
         modifierQuantities,
         paymentDifference: checkout.paymentDifference,
@@ -445,7 +476,7 @@ export function PosPageProvider({
       actions: {
         addToCart,
         addPaymentMethod: checkout.addPaymentMethod,
-        clearCart,
+        clearCart: clearCurrentOrder,
         closeActiveModal,
         confirmCashMovement: shift.handleCashMovement,
         confirmCloseShift: shift.handleCloseShift,
@@ -458,6 +489,7 @@ export function PosPageProvider({
         handleBarcodeScanV1,
         handleBarcodeScanV2,
         handleProductSelect,
+        handleQuickSale,
         openActiveModal,
         openCashMovementModal: () => setActiveModal({ type: "cash-movement" }),
         openCheckout,
@@ -471,6 +503,7 @@ export function PosPageProvider({
         removeFromCart,
         removePaymentMethod: checkout.removePaymentMethod,
         setActiveCategoryId,
+        setDeliveryInfo,
         setDiscountInput,
         setIsCreditSale: checkout.setIsCreditSale,
         setIsMobileCartOpen,
@@ -480,6 +513,7 @@ export function PosPageProvider({
         toggleProductFavorite: (productId) => {
           toggleFavoriteMutation.mutate({ productId });
         },
+        toggleQuickSaleMode,
         updateItemDiscount,
         updateModifierQuantity,
         updatePayment: checkout.updatePayment,
@@ -505,6 +539,7 @@ export function PosPageProvider({
       cart,
       categories,
       customers,
+      deliveryInfo,
       discountInput,
       hasNextPage,
       isActiveShift,
@@ -527,7 +562,7 @@ export function PosPageProvider({
       totals,
       viewMode,
       addToCart,
-      clearCart,
+      clearCurrentOrder,
       closeActiveModal,
       handleConfirmModifiers,
       handleQuickAddWithoutModifiers,
@@ -537,11 +572,14 @@ export function PosPageProvider({
       handleBarcodeScanV1,
       handleBarcodeScanV2,
       handleProductSelect,
+      handleQuickSale,
+      isQuickSaleMode,
       openActiveModal,
       openCheckout,
       openShiftFromRequired,
       removeFromCart,
       setDiscountInput,
+      toggleQuickSaleMode,
       updateItemDiscount,
       updateModifierQuantity,
       updateQuantity,

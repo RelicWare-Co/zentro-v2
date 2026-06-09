@@ -1,5 +1,6 @@
-import { Search, Trash2 } from "lucide-react";
+import { Search, Trash2, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 
 import { cn } from "@/lib/utils";
 import type { CartItem, CartTotals } from "../types";
@@ -9,9 +10,11 @@ import { CartItemCard } from "./cart-item-card";
 interface CartPanelProps {
   cart: CartItem[];
   className?: string;
-  isActiveShift: boolean;
+  deliveryInfo: string;
+  isQuickSaleMode?: boolean;
   onCheckout: () => void;
   onClearCart: () => void;
+  onDeliveryInfoChange: (value: string) => void;
   onRemoveItem: (cartItemId: string) => void;
   onUpdateItemDiscount: (cartItemId: string, value: string) => void;
   onUpdateQuantity: (cartItemId: string, delta: number) => void;
@@ -21,14 +24,16 @@ interface CartPanelProps {
 
 export function CartPanel({
   cart,
+  deliveryInfo,
   totalItems,
   totals,
-  isActiveShift,
+  onDeliveryInfoChange,
   onUpdateQuantity,
   onRemoveItem,
   onUpdateItemDiscount,
   onClearCart,
   onCheckout,
+  isQuickSaleMode,
   className,
 }: CartPanelProps) {
   const { subTotal, tax, discountAmount, totalAmount } = totals;
@@ -89,6 +94,23 @@ export function CartPanel({
       <div className="shrink-0 border-zinc-800 border-t bg-[#0a0a0a] p-4">
         <div className="space-y-3">
           <div className="space-y-1.5">
+            <label
+              className="font-medium text-xs text-zinc-400"
+              htmlFor="pos-delivery-info"
+            >
+              Info domicilio
+            </label>
+            <Textarea
+              className="min-h-16 resize-none border-zinc-800 bg-[#0f0f0f] text-sm text-white placeholder:text-zinc-600"
+              id="pos-delivery-info"
+              maxLength={280}
+              onChange={(event) => onDeliveryInfoChange(event.target.value)}
+              placeholder="Dirección, referencia o instrucciones"
+              value={deliveryInfo}
+            />
+          </div>
+
+          <div className="space-y-1.5">
             <div className="flex justify-between text-sm text-zinc-400">
               <span>Subtotal</span>
               <span className="text-zinc-200 tabular-nums">
@@ -120,10 +142,17 @@ export function CartPanel({
 
           <Button
             className="mt-2 h-12 w-full rounded-xl bg-[var(--color-voltage)] font-bold text-base text-black shadow-[0_4px_14px_rgba(201,230,5,0.2)] transition-all hover:bg-[#c9e605] hover:shadow-[0_6px_20px_rgba(201,230,5,0.3)]"
-            disabled={cart.length === 0 || !isActiveShift}
+            disabled={cart.length === 0}
             onClick={onCheckout}
           >
-            Cobrar
+            {isQuickSaleMode ? (
+              <span className="flex items-center gap-1.5">
+                <Zap className="size-4" />
+                Cobrar
+              </span>
+            ) : (
+              "Cobrar"
+            )}
           </Button>
         </div>
       </div>

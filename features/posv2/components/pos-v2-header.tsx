@@ -41,7 +41,6 @@ export function PosV2Header({
           </Button>
           <Button
             className="size-9 rounded-lg text-[#6b6b6b] hover:bg-[rgba(255,255,255,0.06)] hover:text-white disabled:opacity-40 md:h-10 md:w-10"
-            disabled={!activeShift}
             onClick={onOpenDrawer}
             size="icon"
             variant="ghost"

@@ -23,7 +23,7 @@
     Version="0.1.0.0"
     ProcessorArchitecture="x64" />
   <Properties>
-    <DisplayName>Zentro</DisplayName>
+    <DisplayName>Zentro POS</DisplayName>
     <PublisherDisplayName>YOUR_PUBLISHER_DISPLAY_NAME</PublisherDisplayName>
     <Logo>assets\StoreLogo.png</Logo>
   </Properties>
@@ -47,7 +47,7 @@
       Executable="app\zentro.exe"
       EntryPoint="Windows.FullTrustApplication">
       <uap:VisualElements
-        DisplayName="Zentro"
+        DisplayName="Zentro POS"
         Description="Desktop wrapper for Zentro"
         BackgroundColor="#0a0a0a"
         Square150x150Logo="assets\Square150x150Logo.png"

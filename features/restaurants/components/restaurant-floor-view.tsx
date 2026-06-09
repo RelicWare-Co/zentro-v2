@@ -248,19 +248,10 @@ export function RestaurantFloorView({
       ) : (
         <>
           <Tabs onValueChange={setActiveAreaId} value={resolvedAreaId}>
-            <TabsList className="h-auto flex-wrap gap-1 border border-zinc-800 bg-black/20 p-1">
-              <TabsTrigger
-                className="data-[state=active]:bg-[var(--color-voltage)] data-[state=active]:text-black"
-                value="all"
-              >
-                Todas
-              </TabsTrigger>
+            <TabsList className="flex-wrap gap-1">
+              <TabsTrigger value="all">Todas</TabsTrigger>
               {bootstrap.areas.map((area) => (
-                <TabsTrigger
-                  className="data-[state=active]:bg-[var(--color-voltage)] data-[state=active]:text-black"
-                  key={area.id}
-                  value={area.id}
-                >
+                <TabsTrigger key={area.id} value={area.id}>
                   {area.name}
                   <span className="ml-1 text-xs opacity-70">
                     ({area.tables.filter((table) => table.isActive).length})

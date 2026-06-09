@@ -34,6 +34,8 @@ const allowedPermissions = new Set([
   "serial",
   "usb",
 ]);
+// Must stay aligned with analytics script origins in pages/+Head.tsx.
+const umamiAnalyticsOrigin = "https://umami.relicware.co";
 const desktopContentSecurityPolicy = [
   "default-src 'self' data: blob:",
   "base-uri 'self'",
@@ -42,7 +44,7 @@ const desktopContentSecurityPolicy = [
   "img-src 'self' data: blob: https:",
   "font-src 'self' data:",
   "style-src 'self' 'unsafe-inline'",
-  "script-src 'self' 'unsafe-inline'",
+  `script-src 'self' 'unsafe-inline' ${umamiAnalyticsOrigin}`,
   "connect-src 'self' http: https: ws: wss:",
 ].join("; ");
 

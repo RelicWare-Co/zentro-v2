@@ -51,6 +51,9 @@ export function ProductListItem({
           <h3 className="truncate font-medium text-sm text-white md:text-[15px]">
             {product.name}
           </h3>
+          <p className="mt-0.5 font-medium text-[#6b6b6b] text-[10px] md:text-[11px]">
+            {product.categoryName}
+          </p>
           <div className="mt-0.5 flex items-center gap-2">
             {stockLabel ? (
               <span
