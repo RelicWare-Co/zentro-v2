@@ -34,6 +34,20 @@ function canCompleteSaleWithCashChange(
   return nonCashPaid <= totalAmount;
 }
 
+export function buildQuickSalePayments(totalAmount: number) {
+  if (totalAmount <= 0) {
+    return [];
+  }
+
+  return [
+    {
+      method: "cash",
+      amount: totalAmount,
+      reference: null,
+    },
+  ];
+}
+
 export function usePosCheckout(
   activeShiftId: string | undefined,
   cart: CartItem[],
@@ -228,11 +242,7 @@ export function usePosCheckout(
     const shiftId = activeShiftId;
     isQuickSaleSubmittingRef.current = true;
 
-    const quickSalePayment = {
-      method: "cash",
-      amount: cartTotals.totalAmount,
-      reference: null,
-    };
+    const quickSalePayments = buildQuickSalePayments(cartTotals.totalAmount);
 
     const receiptSnapshot = {
       cart: cart.map((item) => ({
@@ -240,11 +250,11 @@ export function usePosCheckout(
         modifiers: item.modifiers.map((modifier) => ({ ...modifier })),
       })),
       deliveryInfo: deliveryInfo.trim() || null,
-      payments: [quickSalePayment],
+      payments: quickSalePayments,
       totals: { ...cartTotals },
     };
 
-    const payload = buildSalePayload(shiftId, [quickSalePayment], false);
+    const payload = buildSalePayload(shiftId, quickSalePayments, false);
 
     createSaleMutation.mutate(payload, {
       onSuccess: (result) => {
