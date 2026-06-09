@@ -5,6 +5,11 @@ import type {
   ThermalReceiptTotal,
 } from "@/features/pos/components/thermal-receipt";
 import type { PosPrinterLanguage } from "@/features/pos/printing/printer-settings.local.client";
+import {
+  getThermalReceiptEncoderColumns,
+  getThermalReceiptEncoderHeight,
+  type PosReceiptLayoutSettings,
+} from "@/features/pos/printing/receipt-layout.shared";
 
 type EncodablePrinterLanguage = Exclude<PosPrinterLanguage, "auto">;
 
@@ -140,17 +145,21 @@ export function encodeThermalReceipt(options: {
   receipt: ThermalReceiptProps;
   language: EncodablePrinterLanguage;
   codepageMapping?: string | null;
+  layout?: Partial<PosReceiptLayoutSettings> | null;
 }) {
   const encoder = new ReceiptPrinterEncoder({
     language: options.language,
     codepageMapping: options.codepageMapping ?? "epson",
+    columns: getThermalReceiptEncoderColumns(options.layout),
     errors: "relaxed",
   });
 
   const receipt = options.receipt;
+  const textHeight = getThermalReceiptEncoderHeight(options.layout);
 
   encoder.initialize();
   encoder.codepage("auto");
+  encoder.size(1, textHeight);
   encoder.align("center");
   encoder.bold(true);
   encoder.line(toSingleLine(receipt.businessName ?? "Zentro"));

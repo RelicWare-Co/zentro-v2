@@ -18,7 +18,7 @@ export async function printThermalReceipt(
 
   const settings = readPosLocalPrinterSettings(organizationId);
   if (settings.outputMode === "pdf") {
-    return printReceiptAsPdf(document);
+    return printReceiptAsPdf(document, settings);
   }
 
   try {
@@ -29,7 +29,7 @@ export async function printThermalReceipt(
       "No se pudo imprimir en impresora POS, fallback a PDF",
       error
     );
-    return printReceiptAsPdf(document);
+    return printReceiptAsPdf(document, settings);
   }
 }
 

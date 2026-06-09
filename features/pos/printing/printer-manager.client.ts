@@ -363,7 +363,7 @@ class PosPrinterManager {
     this.eventGeneration++;
 
     if (connectionType === "usb") {
-      const module = await import("@point-of-sale/webusb-receipt-printer");
+      const module = await import("@medibase/webusb-receipt-printer");
       const Driver = module.default as new () => ReceiptPrinterDriver;
       this.printer = new Driver();
     }
@@ -843,6 +843,7 @@ class PosPrinterManager {
       receipt: document.receipt,
       language,
       codepageMapping,
+      layout: settings,
     });
 
     await Promise.resolve(this.printer.print(payload));

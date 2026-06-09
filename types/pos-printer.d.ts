@@ -3,6 +3,7 @@ declare module "@point-of-sale/receipt-printer-encoder" {
     constructor(options?: {
       language?: string;
       codepageMapping?: string;
+      columns?: number;
       errors?: string;
     });
     get columns(): number;
@@ -10,6 +11,7 @@ declare module "@point-of-sale/receipt-printer-encoder" {
     codepage(value: string): this;
     align(value: string): this;
     bold(value: boolean): this;
+    size(width?: number | string, height?: number): this;
     line(value: string): this;
     newline(count?: number): this;
     cut(value?: string): this;
@@ -56,43 +58,6 @@ declare module "@point-of-sale/receipt-printer-status" {
       };
       language?: string;
     });
-  }
-}
-
-declare module "@point-of-sale/webusb-receipt-printer" {
-  interface ReceiptPrinterDriver {
-    addEventListener(
-      event: "connected",
-      listener: (device: unknown) => void
-    ): void;
-    addEventListener(event: "disconnected", listener: () => void): void;
-    addEventListener(
-      event: "data",
-      listener: (data: DataView | Uint8Array) => void
-    ): void;
-    connect: () => Promise<void> | void;
-    disconnect?: () => Promise<void> | void;
-    listen?: () => Promise<boolean> | boolean;
-    print: (data: Uint8Array | ArrayLike<number>) => Promise<void> | void;
-    reconnect: (device: unknown) => Promise<void> | void;
-  }
-
-  export default class WebUSBReceiptPrinter {
-    constructor();
-    connect: () => Promise<void> | void;
-    reconnect: (device: unknown) => Promise<void> | void;
-    disconnect?: () => Promise<void> | void;
-    listen?: () => Promise<boolean> | boolean;
-    print: (data: Uint8Array | ArrayLike<number>) => Promise<void> | void;
-    addEventListener(
-      event: "connected",
-      listener: (device: unknown) => void
-    ): void;
-    addEventListener(event: "disconnected", listener: () => void): void;
-    addEventListener(
-      event: "data",
-      listener: (data: DataView | Uint8Array) => void
-    ): void;
   }
 }
 

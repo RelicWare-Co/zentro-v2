@@ -1,8 +1,18 @@
 import { useEffect } from "react";
 import { createRoot } from "react-dom/client";
+import { ThermalReceipt } from "@/features/pos/components/thermal-receipt";
+import {
+  getThermalReceiptCssMetrics,
+  type PosReceiptLayoutSettings,
+} from "@/features/pos/printing/receipt-layout.shared";
 import type { ThermalReceiptDocument } from "@/features/pos/printing/thermal-receipt-document";
 
-const PRINT_WINDOW_STYLES = `
+function buildPrintWindowStyles(
+  layout?: Partial<PosReceiptLayoutSettings> | null
+) {
+  const metrics = getThermalReceiptCssMetrics(layout);
+
+  return `
 	:root {
 		color-scheme: light;
 	}
@@ -18,8 +28,8 @@ const PRINT_WINDOW_STYLES = `
 	}
 
 	@page {
-		size: 80mm auto;
-		margin: 6mm;
+		size: ${metrics.paperWidthMm}mm auto;
+		margin: ${metrics.pageMarginMm}mm;
 	}
 
 	@media print {
@@ -29,15 +39,19 @@ const PRINT_WINDOW_STYLES = `
 		}
 	}
 `;
+}
 
-export function printReceiptAsPdf(document: ThermalReceiptDocument) {
+export function printReceiptAsPdf(
+  document: ThermalReceiptDocument,
+  layout?: Partial<PosReceiptLayoutSettings> | null
+) {
   if (typeof window === "undefined") {
     return false;
   }
 
   const printWindow = window.open("", "_blank", "width=520,height=900");
   if (!printWindow) {
-    return printReceiptInCurrentWindow(document);
+    return printReceiptInCurrentWindow(document, layout);
   }
 
   printWindow.document.open();
@@ -47,7 +61,7 @@ export function printReceiptAsPdf(document: ThermalReceiptDocument) {
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<title>${escapeHtml(document.title)}</title>
-		<style>${PRINT_WINDOW_STYLES}</style>
+		<style>${buildPrintWindowStyles(layout)}</style>
 	</head>
 	<body>
 		<div id="print-root"></div>
@@ -90,14 +104,17 @@ export function printReceiptAsPdf(document: ThermalReceiptDocument) {
         }, 1500);
       }}
     >
-      {document.content}
+      <ThermalReceipt {...document.receipt} layout={layout ?? undefined} />
     </PrintLifecycle>
   );
 
   return true;
 }
 
-function printReceiptInCurrentWindow(document: ThermalReceiptDocument) {
+function printReceiptInCurrentWindow(
+  document: ThermalReceiptDocument,
+  layout?: Partial<PosReceiptLayoutSettings> | null
+) {
   const existingRoot = window.document.getElementById("zentro-print-root");
   if (existingRoot) {
     existingRoot.remove();
@@ -111,7 +128,7 @@ function printReceiptInCurrentWindow(document: ThermalReceiptDocument) {
   const styleElement = window.document.createElement("style");
   styleElement.setAttribute("data-zentro-print", "true");
   styleElement.textContent = `
-${PRINT_WINDOW_STYLES}
+${buildPrintWindowStyles(layout)}
 #zentro-print-root {
 	position: fixed;
 	inset: 0;
@@ -167,7 +184,7 @@ ${PRINT_WINDOW_STYLES}
         }, 1500);
       }}
     >
-      {document.content}
+      <ThermalReceipt {...document.receipt} layout={layout ?? undefined} />
     </PrintLifecycle>
   );
 

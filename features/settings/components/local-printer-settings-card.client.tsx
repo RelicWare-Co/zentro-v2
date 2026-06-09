@@ -20,9 +20,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  NativeSelect,
-  NativeSelectOption,
-} from "@/components/ui/native-select";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import type { usePosPrinterRuntimeState } from "@/features/pos/printing/printer-manager.client";
@@ -33,6 +36,10 @@ import {
   type PosLocalPrinterSettings,
 } from "@/features/pos/printing/printer-settings.local.client";
 import { usePrinterSettings } from "@/features/pos/printing/printer-settings-context.client";
+import {
+  POS_RECEIPT_FONT_SCALES,
+  POS_RECEIPT_PAPER_WIDTHS,
+} from "@/features/pos/printing/receipt-layout.shared";
 
 function toIntegerInRange(
   value: string,
@@ -89,6 +96,24 @@ function getCashDrawerLabel(value: boolean | null) {
   }
   return "cerrada";
 }
+
+function getReceiptPaperWidthLabel(
+  value: PosLocalPrinterSettings["receiptPaperWidth"]
+) {
+  return value === "58mm" ? "58 mm" : "80 mm";
+}
+
+function getReceiptFontScaleLabel(
+  value: PosLocalPrinterSettings["receiptFontScale"]
+) {
+  return value === "large" ? "Grande" : "Normal";
+}
+
+const settingsSelectTriggerClassName =
+  "h-10 w-full rounded-lg border-zinc-800 bg-black/20 text-white";
+
+const settingsSelectContentClassName =
+  "border-zinc-800 bg-[var(--color-carbon)] text-white";
 
 function PrinterStatusDisplay({
   runtimeState,
@@ -178,50 +203,63 @@ function ConnectionSettingsForm({
   const languageId = useId();
   const codepageId = useId();
   const outputModeId = useId();
+  const receiptPaperWidthId = useId();
+  const receiptFontScaleId = useId();
   return (
     <div className="grid gap-3 md:grid-cols-2">
       <div className="grid gap-2">
         <Label htmlFor={connectionTypeId}>Tipo de conexión</Label>
-        <NativeSelect
-          className="w-full"
-          id={connectionTypeId}
-          onChange={(event) =>
+        <Select
+          onValueChange={(value) =>
             setConnectionSettings((currentValue) => ({
               ...currentValue,
-              connectionType: event.target
-                .value as PosLocalPrinterSettings["connectionType"],
+              connectionType:
+                value as PosLocalPrinterSettings["connectionType"],
             }))
           }
           value={settings.connectionType}
         >
-          {POS_PRINTER_CONNECTION_TYPES.map((connectionType) => (
-            <NativeSelectOption key={connectionType} value={connectionType}>
-              {connectionType.toUpperCase()}
-            </NativeSelectOption>
-          ))}
-        </NativeSelect>
+          <SelectTrigger
+            className={settingsSelectTriggerClassName}
+            id={connectionTypeId}
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className={settingsSelectContentClassName}>
+            {POS_PRINTER_CONNECTION_TYPES.map((connectionType) => (
+              <SelectItem key={connectionType} value={connectionType}>
+                {connectionType.toUpperCase()}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="grid gap-2">
         <Label htmlFor={languageId}>Lenguaje de fallback</Label>
-        <NativeSelect
-          className="w-full"
-          id={languageId}
-          onChange={(event) =>
+        <Select
+          onValueChange={(value) =>
             setConnectionSettings((currentValue) => ({
               ...currentValue,
-              language: event.target
-                .value as PosLocalPrinterSettings["language"],
+              language: value as PosLocalPrinterSettings["language"],
             }))
           }
           value={settings.language}
         >
-          {POS_PRINTER_LANGUAGES.map((language) => (
-            <NativeSelectOption key={language} value={language}>
-              {language}
-            </NativeSelectOption>
-          ))}
-        </NativeSelect>
+          <SelectTrigger
+            className={settingsSelectTriggerClassName}
+            id={languageId}
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className={settingsSelectContentClassName}>
+            {POS_PRINTER_LANGUAGES.map((language) => (
+              <SelectItem key={language} value={language}>
+                {language}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="grid gap-2">
@@ -242,24 +280,85 @@ function ConnectionSettingsForm({
 
       <div className="grid gap-2">
         <Label htmlFor={outputModeId}>Modo de salida</Label>
-        <NativeSelect
-          className="w-full"
-          id={outputModeId}
-          onChange={(event) =>
+        <Select
+          onValueChange={(value) =>
             setConnectionSettings((currentValue) => ({
               ...currentValue,
-              outputMode: event.target
-                .value as PosLocalPrinterSettings["outputMode"],
+              outputMode: value as PosLocalPrinterSettings["outputMode"],
             }))
           }
           value={settings.outputMode}
         >
-          {POS_PRINTER_OUTPUT_MODES.map((outputMode) => (
-            <NativeSelectOption key={outputMode} value={outputMode}>
-              {outputMode === "pdf" ? "PDF" : "Impresora"}
-            </NativeSelectOption>
-          ))}
-        </NativeSelect>
+          <SelectTrigger
+            className={settingsSelectTriggerClassName}
+            id={outputModeId}
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className={settingsSelectContentClassName}>
+            {POS_PRINTER_OUTPUT_MODES.map((outputMode) => (
+              <SelectItem key={outputMode} value={outputMode}>
+                {outputMode === "pdf" ? "PDF" : "Impresora"}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="grid gap-2">
+        <Label htmlFor={receiptPaperWidthId}>Ancho de papel</Label>
+        <Select
+          onValueChange={(value) =>
+            setConnectionSettings((currentValue) => ({
+              ...currentValue,
+              receiptPaperWidth:
+                value as PosLocalPrinterSettings["receiptPaperWidth"],
+            }))
+          }
+          value={settings.receiptPaperWidth}
+        >
+          <SelectTrigger
+            className={settingsSelectTriggerClassName}
+            id={receiptPaperWidthId}
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className={settingsSelectContentClassName}>
+            {POS_RECEIPT_PAPER_WIDTHS.map((paperWidth) => (
+              <SelectItem key={paperWidth} value={paperWidth}>
+                {getReceiptPaperWidthLabel(paperWidth)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="grid gap-2">
+        <Label htmlFor={receiptFontScaleId}>Tamaño de letra</Label>
+        <Select
+          onValueChange={(value) =>
+            setConnectionSettings((currentValue) => ({
+              ...currentValue,
+              receiptFontScale:
+                value as PosLocalPrinterSettings["receiptFontScale"],
+            }))
+          }
+          value={settings.receiptFontScale}
+        >
+          <SelectTrigger
+            className={settingsSelectTriggerClassName}
+            id={receiptFontScaleId}
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className={settingsSelectContentClassName}>
+            {POS_RECEIPT_FONT_SCALES.map((fontScale) => (
+              <SelectItem key={fontScale} value={fontScale}>
+                {getReceiptFontScaleLabel(fontScale)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
     </div>
   );
@@ -320,86 +419,110 @@ function SerialParametersSection({
           />
           <div className="grid gap-2">
             <Label htmlFor={dataBitsId}>Data bits</Label>
-            <NativeSelect
-              className="w-full"
-              id={dataBitsId}
-              onChange={(event) =>
+            <Select
+              onValueChange={(value) =>
                 setConnectionSettings((currentValue) => ({
                   ...currentValue,
                   serial: {
                     ...currentValue.serial,
-                    dataBits: event.target.value === "7" ? 7 : 8,
+                    dataBits: value === "7" ? 7 : 8,
                   },
                 }))
               }
               value={String(settings.serial.dataBits)}
             >
-              <NativeSelectOption value="8">8</NativeSelectOption>
-              <NativeSelectOption value="7">7</NativeSelectOption>
-            </NativeSelect>
+              <SelectTrigger
+                className={settingsSelectTriggerClassName}
+                id={dataBitsId}
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className={settingsSelectContentClassName}>
+                <SelectItem value="8">8</SelectItem>
+                <SelectItem value="7">7</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="grid gap-2">
             <Label htmlFor={parityId}>Paridad</Label>
-            <NativeSelect
-              className="w-full"
-              id={parityId}
-              onChange={(event) =>
+            <Select
+              onValueChange={(value) =>
                 setConnectionSettings((currentValue) => ({
                   ...currentValue,
                   serial: {
                     ...currentValue.serial,
-                    parity: event.target
-                      .value as PosLocalPrinterSettings["serial"]["parity"],
+                    parity:
+                      value as PosLocalPrinterSettings["serial"]["parity"],
                   },
                 }))
               }
               value={settings.serial.parity}
             >
-              <NativeSelectOption value="none">none</NativeSelectOption>
-              <NativeSelectOption value="even">even</NativeSelectOption>
-              <NativeSelectOption value="odd">odd</NativeSelectOption>
-            </NativeSelect>
+              <SelectTrigger
+                className={settingsSelectTriggerClassName}
+                id={parityId}
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className={settingsSelectContentClassName}>
+                <SelectItem value="none">none</SelectItem>
+                <SelectItem value="even">even</SelectItem>
+                <SelectItem value="odd">odd</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="grid gap-2">
             <Label htmlFor={flowControlId}>Flow control</Label>
-            <NativeSelect
-              className="w-full"
-              id={flowControlId}
-              onChange={(event) =>
+            <Select
+              onValueChange={(value) =>
                 setConnectionSettings((currentValue) => ({
                   ...currentValue,
                   serial: {
                     ...currentValue.serial,
-                    flowControl: event.target
-                      .value as PosLocalPrinterSettings["serial"]["flowControl"],
+                    flowControl:
+                      value as PosLocalPrinterSettings["serial"]["flowControl"],
                   },
                 }))
               }
               value={settings.serial.flowControl}
             >
-              <NativeSelectOption value="none">none</NativeSelectOption>
-              <NativeSelectOption value="hardware">hardware</NativeSelectOption>
-            </NativeSelect>
+              <SelectTrigger
+                className={settingsSelectTriggerClassName}
+                id={flowControlId}
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className={settingsSelectContentClassName}>
+                <SelectItem value="none">none</SelectItem>
+                <SelectItem value="hardware">hardware</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="grid gap-2">
             <Label htmlFor={stopBitsId}>Stop bits</Label>
-            <NativeSelect
-              className="w-full"
-              id={stopBitsId}
-              onChange={(event) =>
+            <Select
+              onValueChange={(value) =>
                 setConnectionSettings((currentValue) => ({
                   ...currentValue,
                   serial: {
                     ...currentValue.serial,
-                    stopBits: event.target.value === "2" ? 2 : 1,
+                    stopBits: value === "2" ? 2 : 1,
                   },
                 }))
               }
               value={String(settings.serial.stopBits)}
             >
-              <NativeSelectOption value="1">1</NativeSelectOption>
-              <NativeSelectOption value="2">2</NativeSelectOption>
-            </NativeSelect>
+              <SelectTrigger
+                className={settingsSelectTriggerClassName}
+                id={stopBitsId}
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className={settingsSelectContentClassName}>
+                <SelectItem value="1">1</SelectItem>
+                <SelectItem value="2">2</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </div>
@@ -481,7 +604,7 @@ function ActionButtonsGrid() {
         variant="outline"
       >
         <RefreshCcw className="size-4" />
-        Restablecer local
+        Reiniciar ajustes
       </Button>
     </div>
   );
@@ -519,6 +642,12 @@ export function LocalPrinterSettingsCard() {
           </Badge>
           <Badge className="border-zinc-700 bg-black/20 text-zinc-300">
             Canal: {settings.connectionType.toUpperCase()}
+          </Badge>
+          <Badge className="border-zinc-700 bg-black/20 text-zinc-300">
+            Papel: {getReceiptPaperWidthLabel(settings.receiptPaperWidth)}
+          </Badge>
+          <Badge className="border-zinc-700 bg-black/20 text-zinc-300">
+            Letra: {getReceiptFontScaleLabel(settings.receiptFontScale)}
           </Badge>
         </div>
 

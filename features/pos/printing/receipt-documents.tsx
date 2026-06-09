@@ -11,6 +11,7 @@ const receiptDateTimeFormatter = new Intl.DateTimeFormat("es-CO", {
 });
 
 export function buildSaleReceiptDocument(input: {
+  businessName?: string | null;
   documentId: string;
   issuedAt: Date | number;
   status: string;
@@ -66,6 +67,7 @@ export function buildSaleReceiptDocument(input: {
   });
 
   const receipt = {
+    businessName: input.businessName?.trim() || undefined,
     title: "Factura de venta",
     documentLabel: `Documento #${input.documentId.slice(0, 8)}`,
     issuedAtLabel: receiptDateTimeFormatter.format(new Date(input.issuedAt)),
