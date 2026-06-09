@@ -1,0 +1,3 @@
+# Never commit generated QZ signing material (private keys / certificates).
+*
+!.gitignore

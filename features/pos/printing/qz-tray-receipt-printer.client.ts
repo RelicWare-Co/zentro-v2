@@ -23,23 +23,53 @@ type DataListener = (data: DataView | Uint8Array) => void;
 
 const HOST_PROTOCOL_PATTERN = /^(?:\w+:)?\/\/([^/]+).*/i;
 
+const QZ_CERTIFICATE_ENDPOINT = "/api/qz/certificate";
+const QZ_SIGN_ENDPOINT = "/api/qz/sign";
+
 let securityConfigured = false;
 
+/**
+ * Wires QZ Tray's certificate + signature promises to our server-side signing
+ * endpoints so trusted operators print silently (no "allow this request"
+ * popup).
+ *
+ * Both promises degrade gracefully: if the server has no certificate/key
+ * configured (or the request fails), they resolve empty and QZ falls back to
+ * its unsigned/anonymous mode — printing still works, but QZ shows its allow
+ * popup. This keeps printing functional before the certificates are deployed.
+ */
 function ensureSecurityConfigured() {
   if (securityConfigured) {
     return;
   }
   securityConfigured = true;
 
-  // Unsigned / anonymous mode: we do not ship a private key in the browser, so
-  // QZ Tray will prompt the operator to allow the request the first time (they
-  // can tick "Remember this decision"). This avoids needing a backend signing
-  // endpoint while keeping printing functional.
   qz.security.setCertificatePromise((resolve) => {
-    resolve();
+    fetch(QZ_CERTIFICATE_ENDPOINT, {
+      cache: "no-store",
+      headers: { "Content-Type": "text/plain" },
+    })
+      .then((response) =>
+        response.ok ? response.text() : Promise.reject(new Error("no cert"))
+      )
+      .then((certificate) => resolve(certificate))
+      // No certificate configured → anonymous (unsigned) mode.
+      .catch(() => resolve());
   });
-  qz.security.setSignaturePromise(() => (resolve) => {
-    resolve();
+
+  qz.security.setSignatureAlgorithm("SHA512");
+  qz.security.setSignaturePromise((toSign) => (resolve) => {
+    fetch(`${QZ_SIGN_ENDPOINT}?request=${encodeURIComponent(toSign)}`, {
+      cache: "no-store",
+      headers: { "Content-Type": "text/plain" },
+    })
+      .then((response) =>
+        response.ok ? response.text() : Promise.reject(new Error("no sign"))
+      )
+      .then((signature) => resolve(signature))
+      // Signing unavailable → empty signature falls back to QZ's allow popup
+      // instead of hard-failing the print job.
+      .catch(() => resolve());
   });
 }
 
