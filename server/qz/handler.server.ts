@@ -4,6 +4,7 @@ import type { EvlogVariables } from "evlog/hono";
 import { Hono } from "hono";
 import { z } from "zod";
 import { auth } from "@/server/auth";
+import { isPrivateKeyPem, normalizePemSource } from "./pem.server";
 
 /**
  * QZ Tray server-side signing.
@@ -46,7 +47,7 @@ async function readPemSource(
 ): Promise<string | null> {
   const inline = inlineValue?.trim();
   if (inline) {
-    return inline;
+    return normalizePemSource(inline);
   }
 
   const filePath = pathValue?.trim();
@@ -56,8 +57,7 @@ async function readPemSource(
 
   try {
     const contents = await readFile(filePath, "utf8");
-    const trimmed = contents.trim();
-    return trimmed.length > 0 ? trimmed : null;
+    return normalizePemSource(contents);
   } catch {
     return null;
   }
@@ -108,6 +108,14 @@ function signRequest(
   );
 }
 
+function describeSigningError(error: unknown): string {
+  if (error instanceof Error) {
+    const code = "code" in error ? ` (${String(error.code)})` : "";
+    return `QZ signing failed${code}: ${error.message}`;
+  }
+  return "QZ signing failed with an unknown error";
+}
+
 async function hasValidSession(headers: Headers): Promise<boolean> {
   try {
     const session = await auth.api.getSession({ headers });
@@ -154,12 +162,18 @@ export function createQzApp() {
       // Not configured → client falls back to QZ unsigned mode.
       return c.text("QZ signing not configured", 503);
     }
+    if (!isPrivateKeyPem(privateKey)) {
+      c.get("log").warn("QZ signing private key is not a PEM private key");
+      return c.text("QZ signing key is invalid", 503, PLAIN_TEXT_HEADERS);
+    }
 
-    const signature = signRequest(
-      parsed.data.request,
-      privateKey,
-      getPassphrase()
-    );
+    let signature: string;
+    try {
+      signature = signRequest(parsed.data.request, privateKey, getPassphrase());
+    } catch (error) {
+      c.get("log").warn(describeSigningError(error));
+      return c.text("QZ signing key is invalid", 503, PLAIN_TEXT_HEADERS);
+    }
     return c.text(signature, 200, PLAIN_TEXT_HEADERS);
   });
 
