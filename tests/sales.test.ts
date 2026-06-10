@@ -911,7 +911,209 @@ describe("sale creation transactions", () => {
 
       await cleanup();
     });
+  });
 
+  describe("VAL-SALE-010: credit settings are enforced", () => {
+    test("credit sale is rejected when credit sales are disabled", async () => {
+      const { db, cleanup } = await createTestDb();
+      const { organizationId, userId } = await seedOrganizationWithMember(db);
+      const [productId, customerId, shiftId] = await Promise.all([
+        seedProduct(db, {
+          organizationId,
+          name: "Item",
+          price: 10_000,
+          stock: 10,
+          trackInventory: true,
+        }),
+        seedCustomer(db, {
+          organizationId,
+          name: "Carlos",
+        }),
+        seedShift(db, {
+          organizationId,
+          userId,
+          status: "open",
+        }),
+      ]);
+
+      const settings = {
+        credit: { allowCreditSales: false },
+      };
+      await db
+        .update(organization)
+        .set({
+          metadata: serializeOrganizationSettingsMetadata(settings as any),
+        })
+        .where(eq(organization.id, organizationId));
+
+      // try/catch instead of expect().rejects: bun test on Windows deadlocks
+      // when a transaction promise is passed to expect().rejects.
+      let creditRejectionMessage = "";
+      try {
+        await createCoreSale(
+          {
+            shiftId,
+            customerId,
+            items: [{ productId, quantity: 1, unitPrice: 10_000 }],
+            payments: [],
+            isCreditSale: true,
+          },
+          { db, organizationId, userId }
+        );
+      } catch (error) {
+        creditRejectionMessage = (error as Error).message;
+      }
+      expect(creditRejectionMessage).toBe(
+        "Las ventas a crédito no están habilitadas en la organización"
+      );
+
+      const accountRows = await db
+        .select()
+        .from(creditAccount)
+        .where(eq(creditAccount.organizationId, organizationId));
+      expect(accountRows.length).toBe(0);
+
+      await cleanup();
+    });
+
+    test("new credit account uses the organization default interest rate", async () => {
+      const { db, cleanup } = await createTestDb();
+      const { organizationId, userId } = await seedOrganizationWithMember(db);
+      const [productId, customerId, shiftId] = await Promise.all([
+        seedProduct(db, {
+          organizationId,
+          name: "Item",
+          price: 10_000,
+          stock: 10,
+          trackInventory: true,
+        }),
+        seedCustomer(db, {
+          organizationId,
+          name: "Diana",
+        }),
+        seedShift(db, {
+          organizationId,
+          userId,
+          status: "open",
+        }),
+      ]);
+
+      const settings = {
+        credit: { allowCreditSales: true, defaultInterestRate: 3 },
+      };
+      await db
+        .update(organization)
+        .set({
+          metadata: serializeOrganizationSettingsMetadata(settings as any),
+        })
+        .where(eq(organization.id, organizationId));
+
+      await createCoreSale(
+        {
+          shiftId,
+          customerId,
+          items: [{ productId, quantity: 1, unitPrice: 10_000 }],
+          payments: [],
+          isCreditSale: true,
+        },
+        { db, organizationId, userId }
+      );
+
+      const accountRows = await db
+        .select()
+        .from(creditAccount)
+        .where(
+          and(
+            eq(creditAccount.organizationId, organizationId),
+            eq(creditAccount.customerId, customerId)
+          )
+        );
+      expect(accountRows.length).toBe(1);
+      expect(accountRows[0].interestRate).toBe(3);
+
+      await cleanup();
+    });
+  });
+
+  describe("VAL-SALE-011: credit reversal guards against inconsistent balances", () => {
+    test("cancellation is rejected when the account balance no longer covers the charge", async () => {
+      const { db, cleanup } = await createTestDb();
+      const { organizationId, userId } = await seedOrganizationWithMember(db);
+      const [productId, customerId, shiftId] = await Promise.all([
+        seedProduct(db, {
+          organizationId,
+          name: "Item",
+          price: 30_000,
+          stock: 10,
+          trackInventory: true,
+        }),
+        seedCustomer(db, {
+          organizationId,
+          name: "Eva",
+        }),
+        seedShift(db, {
+          organizationId,
+          userId,
+          status: "open",
+        }),
+      ]);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
+
+      const saleResult = await createCoreSale(
+        {
+          shiftId,
+          customerId,
+          items: [{ productId, quantity: 1, unitPrice: 30_000 }],
+          payments: [],
+          isCreditSale: true,
+        },
+        { db, organizationId, userId }
+      );
+
+      // Simulate external drift: the balance no longer covers the charge.
+      await db
+        .update(creditAccount)
+        .set({ balance: 10_000 })
+        .where(
+          and(
+            eq(creditAccount.organizationId, organizationId),
+            eq(creditAccount.customerId, customerId)
+          )
+        );
+
+      // try/catch instead of expect().rejects: bun test on Windows deadlocks
+      // when a transaction promise is passed to expect().rejects.
+      let cancelRejectionMessage = "";
+      try {
+        await cancelSaleViaZero({
+          zeroDb,
+          ctx: zeroCtx,
+          input: { saleId: saleResult.saleId },
+        });
+      } catch (error) {
+        cancelRejectionMessage = (error as Error).message;
+      }
+      expect(cancelRejectionMessage).toBe(
+        "La cuenta de crédito ya no coincide con la deuda de esta venta"
+      );
+
+      const accountRows = await db
+        .select()
+        .from(creditAccount)
+        .where(
+          and(
+            eq(creditAccount.organizationId, organizationId),
+            eq(creditAccount.customerId, customerId)
+          )
+        );
+      expect(accountRows[0].balance).toBe(10_000);
+
+      await cleanup();
+    });
+  });
+
+  describe("VAL-SALE-009b: cash overpayment split rules", () => {
     test("split payment with non-cash exactly at total and cash covering change is allowed", async () => {
       const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);

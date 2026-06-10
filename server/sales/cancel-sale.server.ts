@@ -1,4 +1,4 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, gte, sql } from "drizzle-orm";
 import type { z } from "zod";
 import type { Database } from "@/database/drizzle/db";
 import {
@@ -191,10 +191,7 @@ async function reverseCreditCharges(
   await Promise.all(
     chargeTransactions.map(async (chargeTransaction) => {
       const [creditAccountRow] = await tx
-        .select({
-          id: creditAccount.id,
-          balance: creditAccount.balance,
-        })
+        .select({ id: creditAccount.id })
         .from(creditAccount)
         .where(
           and(
@@ -207,24 +204,27 @@ async function reverseCreditCharges(
       if (!creditAccountRow) {
         throw new Error("Cuenta de crédito no encontrada para anular la venta");
       }
-      if (creditAccountRow.balance < chargeTransaction.amount) {
-        throw new Error(
-          "La cuenta de crédito ya no coincide con la deuda de esta venta"
-        );
-      }
 
-      await tx
+      const updatedAccounts = await tx
         .update(creditAccount)
         .set({
-          balance: creditAccountRow.balance - chargeTransaction.amount,
+          balance: sql`${creditAccount.balance} - ${chargeTransaction.amount}`,
           updatedAt: cancelledAt,
         })
         .where(
           and(
             eq(creditAccount.id, creditAccountRow.id),
-            eq(creditAccount.organizationId, organizationId)
+            eq(creditAccount.organizationId, organizationId),
+            gte(creditAccount.balance, chargeTransaction.amount)
           )
+        )
+        .returning({ id: creditAccount.id });
+
+      if (updatedAccounts.length === 0) {
+        throw new Error(
+          "La cuenta de crédito ya no coincide con la deuda de esta venta"
         );
+      }
     })
   );
 }

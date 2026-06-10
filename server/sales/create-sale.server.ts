@@ -21,6 +21,7 @@ import {
 } from "@/database/drizzle/schema/sales.schema";
 import {
   getEnabledPaymentMethods,
+  type OrganizationSettings,
   parseOrganizationSettingsMetadata,
 } from "@/features/settings/settings.shared";
 import type {
@@ -157,7 +158,7 @@ async function validateShift(
   return targetShift;
 }
 
-async function getEnabledPaymentMethodIds(
+async function getOrganizationSettings(
   tx: CreateSaleDbExecutor,
   organizationId: string
 ) {
@@ -166,11 +167,7 @@ async function getEnabledPaymentMethodIds(
     .from(organization)
     .where(eq(organization.id, organizationId))
     .limit(1);
-  return new Set(
-    getEnabledPaymentMethods(
-      parseOrganizationSettingsMetadata(organizationRow?.metadata)
-    ).map((pm) => pm.id)
-  );
+  return parseOrganizationSettingsMetadata(organizationRow?.metadata);
 }
 
 async function validateCustomer(
@@ -637,7 +634,8 @@ async function handleCreditAccount(
   balanceDue: number,
   organizationId: string,
   saleId: string,
-  createdAt: Date
+  createdAt: Date,
+  creditSettings: OrganizationSettings["credit"]
 ) {
   if (!(isCreditSale && customerId)) {
     return;
@@ -676,7 +674,7 @@ async function handleCreditAccount(
       organizationId,
       customerId,
       balance: balanceDue,
-      interestRate: 0,
+      interestRate: creditSettings.defaultInterestRate,
       createdAt,
       updatedAt: createdAt,
     });
@@ -714,11 +712,21 @@ export async function runCreateSale(
   const isCreditSale = input.isCreditSale ?? false;
   const { saleId } = input;
 
-  const [, enabledPaymentMethodIds] = await Promise.all([
+  const [, organizationSettings] = await Promise.all([
     validateShift(tx, input.shiftId, organizationId, userId),
-    getEnabledPaymentMethodIds(tx, organizationId),
+    getOrganizationSettings(tx, organizationId),
     validateCustomer(tx, customerId, organizationId),
   ]);
+
+  if (isCreditSale && !organizationSettings.credit.allowCreditSales) {
+    throw new Error(
+      "Las ventas a crédito no están habilitadas en la organización"
+    );
+  }
+
+  const enabledPaymentMethodIds = new Set(
+    getEnabledPaymentMethods(organizationSettings).map((pm) => pm.id)
+  );
 
   const referencedProductIds = new Set<string>();
   for (const item of input.items) {
@@ -793,7 +801,8 @@ export async function runCreateSale(
     balanceDue,
     organizationId,
     saleId,
-    createdAt
+    createdAt,
+    organizationSettings.credit
   );
 
   return {

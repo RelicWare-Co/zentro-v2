@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, gte, sql } from "drizzle-orm";
 import type { z } from "zod";
 import type { Database } from "@/database/drizzle/db";
 import { organization } from "@/database/drizzle/schema/auth.schema";
@@ -272,16 +272,26 @@ export async function runRegisterCreditPayment(
     createdAt,
   });
 
-  const newBalance = accountRow.balance - amount;
-  await tx
+  const updatedAccounts = await tx
     .update(creditAccount)
-    .set({ balance: newBalance, updatedAt: createdAt })
+    .set({
+      balance: sql`${creditAccount.balance} - ${amount}`,
+      updatedAt: createdAt,
+    })
     .where(
       and(
         eq(creditAccount.id, input.creditAccountId),
-        eq(creditAccount.organizationId, context.organizationId)
+        eq(creditAccount.organizationId, context.organizationId),
+        gte(creditAccount.balance, amount)
       )
-    );
+    )
+    .returning({ balance: creditAccount.balance });
+
+  const updatedAccount = updatedAccounts[0];
+  if (!updatedAccount) {
+    throw new Error("El abono no puede superar el saldo pendiente");
+  }
+  const newBalance = updatedAccount.balance;
 
   await tx.insert(creditTransaction).values({
     id: input.transactionId,
