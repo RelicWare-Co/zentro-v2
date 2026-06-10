@@ -1,0 +1,2 @@
+DROP INDEX "customer_org_doc_uidx";--> statement-breakpoint
+CREATE UNIQUE INDEX "customer_org_doc_uidx" ON "customer" USING btree ("organization_id","document_number") WHERE "customer"."deleted_at" is null;

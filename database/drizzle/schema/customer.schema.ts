@@ -1,4 +1,4 @@
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   index,
   pgTable,
@@ -38,10 +38,13 @@ export const customer = pgTable(
   (table) => [
     index("customer_organizationId_idx").on(table.organizationId),
     index("customer_document_idx").on(table.documentNumber),
-    uniqueIndex("customer_org_doc_uidx").on(
-      table.organizationId,
-      table.documentNumber
-    ),
+    // Partial unique index: document numbers are unique only among ACTIVE
+    // (non-soft-deleted) customers. This matches `assertUniqueDocumentNumber`,
+    // which ignores soft-deleted rows, so a deleted customer's document can be
+    // reused by a new customer without violating the DB constraint.
+    uniqueIndex("customer_org_doc_uidx")
+      .on(table.organizationId, table.documentNumber)
+      .where(sql`${table.deletedAt} is null`),
   ]
 );
 
