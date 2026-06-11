@@ -62,7 +62,7 @@ export async function listCreditTransactionsViaZero({
 }) {
   const rows = await zeroDb.run(
     queries.credit.transactions.fn({
-      args: { creditAccountId },
+      args: { creditAccountId, limit: input.limit },
       ctx,
     })
   );

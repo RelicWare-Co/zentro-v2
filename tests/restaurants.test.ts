@@ -572,4 +572,95 @@ describe("restaurant module", () => {
       await cleanup();
     });
   });
+
+  describe("VAL-REST-007: kitchen board only returns active tickets", () => {
+    test("kitchen board excludes terminal tickets", async () => {
+      const { db, cleanup } = await createTestDb();
+      const { organizationId, userId } = await seedOrganizationWithMember(db, {
+        memberRole: "owner",
+      });
+      await setKitchenDisplayEnabled(db, organizationId, true);
+
+      const areaId = await seedRestaurantArea(db, {
+        organizationId,
+        name: "Terrace",
+      });
+      const [tableId, activeProductId, terminalProductId] = await Promise.all([
+        seedRestaurantTable(db, {
+          organizationId,
+          areaId,
+          name: "T1",
+        }),
+        seedProduct(db, {
+          organizationId,
+          name: "Arepa",
+          price: 12_000,
+          stock: 10,
+          trackInventory: false,
+        }),
+        seedProduct(db, {
+          organizationId,
+          name: "Sopa",
+          price: 14_000,
+          stock: 10,
+          trackInventory: false,
+        }),
+      ]);
+
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
+
+      const activeOrderItem = await addRestaurantOrderItemViaZero({
+        db,
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          tableId,
+          productId: activeProductId,
+          quantity: 1,
+        },
+      });
+      const activeTicket = await sendRestaurantOrderToKitchenViaZero({
+        db,
+        zeroDb,
+        ctx: zeroCtx,
+        input: { orderId: activeOrderItem.orderId },
+      });
+
+      const terminalOrderItem = await addRestaurantOrderItemViaZero({
+        db,
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          tableId,
+          productId: terminalProductId,
+          quantity: 1,
+        },
+      });
+      const terminalTicket = await sendRestaurantOrderToKitchenViaZero({
+        db,
+        zeroDb,
+        ctx: zeroCtx,
+        input: { orderId: terminalOrderItem.orderId },
+      });
+
+      await db
+        .update(restaurantKitchenTicket)
+        .set({ status: "served" })
+        .where(eq(restaurantKitchenTicket.id, terminalTicket.ticket.id));
+      await db
+        .update(restaurantOrderItem)
+        .set({ status: "served" })
+        .where(
+          eq(restaurantOrderItem.kitchenTicketId, terminalTicket.ticket.id)
+        );
+
+      const board = await getKitchenBoardViaZero({ zeroDb, ctx: zeroCtx });
+      expect(board.tickets.map((ticket) => ticket.id)).toEqual([
+        activeTicket.ticket.id,
+      ]);
+
+      await cleanup();
+    });
+  });
 });

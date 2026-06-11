@@ -79,6 +79,7 @@ export function useCreditTransactions(creditAccountId: string | null) {
   const [transactionRows, status] = useZeroQuery(
     queries.credit.transactions({
       creditAccountId: creditAccountId ?? null,
+      limit: 100,
     })
   );
   const error = getZeroQueryError(status);

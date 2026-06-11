@@ -156,6 +156,12 @@ async function createBootstrapAccount(
   };
 }
 
+export async function createIsolatedE2EAccount(
+  request: APIRequestContext
+): Promise<E2EBootstrap> {
+  return await createBootstrapAccount(request);
+}
+
 export async function ensureE2EBootstrap(
   request: APIRequestContext
 ): Promise<void> {

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import { useCreateSaleMutation } from "@/features/sales/hooks/use-sales";
 import { parseMoneyInput } from "@/lib/utils";
 import type { CartItem, CartTotals, PaymentMethod } from "../types";
@@ -32,6 +33,15 @@ function canCompleteSaleWithCashChange(
   );
 
   return nonCashPaid <= totalAmount;
+}
+
+function notifyPrintFailure(error: unknown) {
+  toast.error("La venta se registró, pero no se pudo imprimir el ticket", {
+    description:
+      error instanceof Error
+        ? error.message
+        : "Revisa la impresora e intenta reimprimir.",
+  });
 }
 
 export function buildQuickSalePayments(totalAmount: number) {
@@ -263,9 +273,7 @@ export function usePosCheckout(
             result,
             snapshot: receiptSnapshot,
           })
-        ).catch((error) => {
-          console.error("No se pudo imprimir el ticket de venta", error);
-        });
+        ).catch(notifyPrintFailure);
 
         clearCart();
         resetDeliveryInfo();
@@ -329,9 +337,7 @@ export function usePosCheckout(
             result,
             snapshot: receiptSnapshot,
           })
-        ).catch((error) => {
-          console.error("No se pudo imprimir el ticket de venta", error);
-        });
+        ).catch(notifyPrintFailure);
 
         closeCheckoutModal();
         clearCart();

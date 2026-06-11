@@ -18,7 +18,8 @@
 - Build with `bun run build`.
 - Run a built production server with `bun run start`; production startup must use Bun, not Node.
 - Type-check with `bunx tsc --noEmit`.
-- Run tests with `bun test`.
+- Run integration tests with `bun test`. The script is intentionally scoped to `tests/*.test.ts`, requires Postgres (`docker compose up -d postgres`), and excludes Playwright specs under `tests/e2e/`.
+- CI (`.github/workflows/ci.yml`) runs typecheck, Ultracite, and the integration test gate on pushes to `main`/`prod` and on pull requests.
 - Desktop Electron wrapper commands:
   - `bun run desktop:dev` — open Electron against `ZENTRO_DESKTOP_WEB_URL` or `http://localhost:3000` by default; run `bun run dev` separately first.
   - `bun run desktop:make` — package desktop installers with Electron Forge; set `ZENTRO_DESKTOP_WEB_URL` in `desktop/.env` or the shell before packaging.

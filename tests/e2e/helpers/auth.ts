@@ -1,5 +1,9 @@
 import { expect, type Page } from "@playwright/test";
-import { ensureE2EBootstrap, invalidateBootstrapCache } from "./bootstrap";
+import {
+  type E2EBootstrap,
+  ensureE2EBootstrap,
+  invalidateBootstrapCache,
+} from "./bootstrap";
 import { getNewOrgName, requireLoginCredentials, requireOrgName } from "./env";
 
 const invalidCredentialsPattern =
@@ -70,6 +74,16 @@ export async function login(page: Page): Promise<void> {
     return;
   }
 
+  if (
+    !(await page
+      .locator('input[name="email"]')
+      .isVisible({ timeout: 3000 })
+      .catch(() => false))
+  ) {
+    await waitForPostLogin(page);
+    return;
+  }
+
   await submitLoginForm(page, email, password);
   await waitForPostLogin(page);
 }
@@ -96,6 +110,43 @@ export async function selectOrganization(page: Page): Promise<void> {
 export async function loginAndSelectOrganization(page: Page): Promise<void> {
   await login(page);
   await selectOrganization(page);
+  await expect(
+    page.getByRole("heading", { name: "Panel de control" })
+  ).toBeVisible({ timeout: 30_000 });
+}
+
+export async function loginAndSelectBootstrapOrganization(
+  page: Page,
+  bootstrap: E2EBootstrap
+): Promise<void> {
+  await page.goto("/login");
+  await expect(
+    page
+      .locator('input[name="email"]')
+      .or(page.getByRole("heading", { name: "Elige Cómo Quieres Entrar" }))
+      .or(page.getByRole("heading", { name: "Panel de control" }))
+  ).toBeVisible({ timeout: 15_000 });
+
+  if (!(await isLoggedIn(page))) {
+    await submitLoginForm(page, bootstrap.loginEmail, bootstrap.loginPassword);
+    await waitForPostLogin(page);
+  }
+
+  const orgHeading = page.getByRole("heading", {
+    name: "Elige Cómo Quieres Entrar",
+  });
+  if (await orgHeading.isVisible({ timeout: 5000 }).catch(() => false)) {
+    await expect(
+      page.getByText(bootstrap.orgName, { exact: true })
+    ).toBeVisible({
+      timeout: 15_000,
+    });
+    await page
+      .getByRole("button")
+      .filter({ hasText: bootstrap.orgName })
+      .click();
+  }
+
   await expect(
     page.getByRole("heading", { name: "Panel de control" })
   ).toBeVisible({ timeout: 30_000 });

@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main, prod]
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: zentro
+          POSTGRES_PASSWORD: zentro
+          POSTGRES_DB: zentro
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U zentro"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://zentro:zentro@localhost:5432/zentro
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bunx tsc --noEmit
+      - run: bun run check
+      - run: bun test tests/*.test.ts

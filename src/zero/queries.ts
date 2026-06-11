@@ -52,6 +52,7 @@ const shiftByIdArgsSchema = z.object({
 
 const creditTransactionsArgsSchema = z.object({
   creditAccountId: z.string().trim().optional().nullable(),
+  limit: z.number().int().positive().max(500).optional(),
 });
 
 const SALES_TERMINAL_OPTIONS_LIMIT = 300;
@@ -133,6 +134,10 @@ function buildShiftDetailQuery(shiftId: string, organizationId: string) {
 
 function normalizeShiftsPageLimit(limit?: number) {
   return Math.min(Math.max(limit ?? 10, 1), 50);
+}
+
+function normalizeCreditTransactionsLimit(limit?: number) {
+  return Math.min(Math.max(limit ?? 100, 1), 500);
 }
 
 function buildShiftsListQuery(
@@ -468,7 +473,8 @@ export const queries = defineQueries({
       return zql.category
         .where("organizationId", ctx.orgID)
         .orderBy("name", "asc")
-        .orderBy("id", "asc");
+        .orderBy("id", "asc")
+        .limit(500);
     }),
     search: defineQuery(productsSearchArgsSchema, ({ args, ctx }) => {
       if (!hasOrgContext(ctx)) {
@@ -528,7 +534,8 @@ export const queries = defineQueries({
         .where("deletedAt", "IS", null)
         .related("category")
         .orderBy("name", "asc")
-        .orderBy("id", "asc");
+        .orderBy("id", "asc")
+        .limit(500);
     }),
     posCatalog: defineQuery(posCatalogArgsSchema, ({ args, ctx }) => {
       if (!hasOrgContext(ctx)) {
@@ -577,7 +584,8 @@ export const queries = defineQueries({
         .where("organizationId", ctx.orgID)
         .where("creditAccountId", normalizedCreditAccountId)
         .orderBy("createdAt", "desc")
-        .orderBy("id", "desc");
+        .orderBy("id", "desc")
+        .limit(normalizeCreditTransactionsLimit(args.limit));
     }),
   },
   shifts: {
@@ -781,6 +789,15 @@ export const queries = defineQueries({
 
       return zql.restaurantKitchenTicket
         .where("organizationId", ctx.orgID)
+        .where(({ cmp, or }) =>
+          or(cmp("status", "=", "sent"), cmp("status", "=", "ready"))
+        )
+        .whereExists("order", (query) => query.where("status", "open"))
+        .whereExists("items", (query) =>
+          query.where(({ cmp, or }) =>
+            or(cmp("status", "=", "sent"), cmp("status", "=", "ready"))
+          )
+        )
         .related("order", (query) =>
           query
             .where("status", "open")

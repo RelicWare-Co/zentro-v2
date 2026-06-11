@@ -233,6 +233,56 @@ describe("credit ledger", () => {
 
       await cleanup();
     });
+
+    test("transactions respect the requested query limit", async () => {
+      const { db, cleanup } = await createTestDb();
+      const { organizationId, userId } = await seedOrganizationWithMember(db);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
+      const customerId = await seedCustomer(db, {
+        organizationId,
+        name: "Alice",
+      });
+      const accountId = crypto.randomUUID();
+
+      const now = new Date();
+      await db.insert(creditAccount).values({
+        id: accountId,
+        organizationId,
+        customerId,
+        balance: 35_000,
+        interestRate: 0,
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      const transactionIds = Array.from({ length: 7 }, () =>
+        crypto.randomUUID()
+      );
+      await db.insert(creditTransaction).values(
+        transactionIds.map((id, index) => ({
+          id,
+          organizationId,
+          creditAccountId: accountId,
+          type: "charge",
+          amount: 5000,
+          createdAt: new Date(now.getTime() - index * 1000),
+        }))
+      );
+
+      const result = await listCreditTransactionsViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        creditAccountId: accountId,
+        input: { limit: 5 },
+      });
+      expect(result.data.length).toBe(5);
+      expect(result.data.map((transaction) => transaction.id)).toEqual(
+        transactionIds.slice(0, 5)
+      );
+
+      await cleanup();
+    });
   });
 
   describe("VAL-CRED-003: payment registration decreases balance and links to sale", () => {

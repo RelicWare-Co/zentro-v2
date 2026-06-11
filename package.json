@@ -76,7 +76,7 @@
     "desktop:make:win": "bun run --cwd desktop make:win",
     "desktop:check": "bun run --cwd desktop check",
     "desktop:fix": "bun run --cwd desktop fix",
-    "test": "bun test",
+    "test": "bun test tests/*.test.ts",
     "e2e:playwright": "playwright test",
     "e2e:playwright:smoke": "playwright test --grep @smoke",
     "e2e:playwright:ui": "playwright test --ui",
