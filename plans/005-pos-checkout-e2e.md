@@ -93,7 +93,7 @@ fails CI-able E2E instead of being discovered at a till.
   can't be automated without an app change (e.g. a missing accessible name),
   that's a STOP/report, not a code change.
 - `playwright.config.ts` — config is already correct.
-- `tests/*.test.ts` (DB integration suite), `.maestro/`, `maestro tests/`.
+- `tests/*.test.ts` (DB integration suite).
 
 ## Git workflow
 

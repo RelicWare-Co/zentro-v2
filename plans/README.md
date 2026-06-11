@@ -54,8 +54,7 @@ Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJE
   (`desktop/src/main.ts:47`): mitigated by `contextIsolation` + `sandbox`;
   fixing requires nonce-ing the inline theme script in `pages/+Head.tsx` —
   M effort, defense-in-depth.
-- **Dormant Maestro suites** (`.maestro/`, `maestro tests/`): delete or
-  document; Playwright is canonical (`tests/e2e/`).
+- **Maestro E2E**: removed from the repo; Playwright is canonical (`tests/e2e/`).
 - **Printer manager never removes event listeners**
   (`features/pos/printing/printer-manager.client.ts:455-683`): stale
   listeners are inert (generation guards) and GC'd with the old driver;
@@ -105,9 +104,8 @@ Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJE
   >1000-product orgs; search covers the tail.
 - *`schemas/` folder restructure* (DEBT-03): structural taste; no observed
   duplicate/conflicting schemas.
-- *Post-migration checklist in MIGRATION_PLAN.md* (DEBT-05 / DOCS-01): the
-  oRPC→Zero migration is recorded complete; the 7 unchecked boxes are a
-  how-to template (`MIGRATION_PLAN.md:260-266`), not unfinished work.
+- *MIGRATION_PLAN.md stale* (DOCS-01): addressed — doc now reflects completed
+  migration and points to AGENTS.md for ongoing conventions.
 - *KDS is stubbed* (DIR-02): wrong — a working kitchen board exists
   (`pages/(app)/kitchen/+Page.tsx`, `queries.restaurants.kitchenBoard`).
 - *Vike pre-1.0 / Zero vendor lock-in* (DEPS-02/03): watch items, no action.

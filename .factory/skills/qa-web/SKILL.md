@@ -10,21 +10,25 @@ description: >
 
 ## App Notes
 
-- Framework: Vike + React
+- Framework: Vike + React (CSR)
 - Auth: better-auth with email/password. Organization roles: owner, admin, member.
-- Database: SQLite (local dev.db)
+- Database: PostgreSQL (Docker: `docker compose up -d`; migrations: `bun run db:migrate`)
+- Data sync: Rocicorp Zero (`zero-cache` on port 4848; app callbacks on `:3000/api/zero/*`)
 - UI: shadcn/radix with Tailwind CSS, dark theme (#0f0f0f background)
 - Language: Spanish UI (es-CO)
-- API: oRPC OpenAPI at `/api`, Scalar docs at `/api/docs`
-- Dev server: `bun run dev` -> `http://localhost:3000`
+- API: Zero queries/mutators via `/api/zero/*`; REST auxiliares (`/api/dashboard/*`, `/api/organization/join-link-preview`, `/api/qz/*`)
+- Dev server: `bun run dev` → `http://localhost:3000`
+- E2E canónico: Playwright en `tests/e2e/` (`bun run e2e:playwright`)
 
 ## Testing Target
 
 This project uses a **local dev server** strategy:
 
-1. Start the dev server: `bun run dev` in the background
-2. Poll `http://localhost:3000` until it responds (timeout: 60s)
-3. Use `http://localhost:3000` as the base URL for all browser tests
+1. Start Postgres (and optionally zero-cache): `docker compose up -d`
+2. Start the dev server: `bun run dev` in the background
+3. If zero-cache is not running in Docker, start `bun run zero:dev` in another terminal
+4. Poll `http://localhost:3000` until it responds (timeout: 60s)
+5. Use `http://localhost:3000` as the base URL for all browser tests
 
 If the dev server cannot start, report ALL web tests as BLOCKED: "Dev server failed to start -- cannot verify branch code."
 
@@ -225,8 +229,8 @@ Password for all test accounts: use a strong consistent password (e.g., `QATestP
 ## Known Failure Modes
 
 1. **Dev server startup delay.** `bun run dev` may take 10-20 seconds to be ready on first run. Poll with retry every 2s up to 60s.
-2. **No active organization.** Users without an active organization may be redirected to `/organization` instead of `/dashboard`. Ensure organization is created and set active before testing POS or other org-scoped features.
-3. **Shift required for POS.** The POS page blocks product selection and checkout when no shift is open. Always open a shift first.
-4. **SQLite busy/locked.** If tests run in parallel against the same `dev.db`, SQLite may throw "database is locked". Run tests sequentially or use separate DB files.
+2. **Zero not connected.** Without zero-cache on `:4848`, org-scoped data will not sync. Ensure `docker compose up -d` or `bun run zero:dev` is running.
+3. **No active organization.** Users without an active organization may be redirected to `/organization` instead of `/dashboard`. Ensure organization is created and set active before testing POS or other org-scoped features.
+4. **Shift required for POS.** The POS page blocks product selection and checkout when no shift is open. Always open a shift first.
 5. **Spanish locale assumptions.** UI text is in Spanish (e.g., "Iniciar sesión", "Registrarse", "Cobrar"). Do not assume English labels.
 6. **Mobile drawer behavior.** On mobile viewports, the cart is inside a drawer. Open it via the floating cart button before verifying cart contents.

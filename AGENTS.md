@@ -5,7 +5,7 @@
 - Use conventional commits when creating git commits.
 - Keep changes scoped to the requested behavior. Do not rewrite unrelated code or revert user changes.
 - Prefer existing project patterns over introducing new abstractions.
-- Before migrating code from `../zentro-reborn`, read `MIGRATION_PLAN.md`, follow its milestone order unless there is a clear reason not to, and update the relevant checkboxes/notes in the same change as completed work.
+- Before porting behavior from `../zentro-reborn`, read `MIGRATION_PLAN.md` (migración oRPC→Zero completa) and follow Zero patterns in this file and `src/zero/*`.
 - If you are unsure about Vike behavior, consult the local docs/dependencies first. If that is not enough, clone or inspect the official repository for current guidance:
   - Vike: `https://github.com/vikejs/vike`
 - Update this `AGENTS.md` when a change introduces or materially changes project conventions, architecture, workflows, commands, or integration patterns that future agents need to know.
@@ -36,7 +36,7 @@
   - `bun run db:migrate`
   - `bun run db:push`
   - `bun run db:studio`
-- Zero commands (see `MIGRATION_PLAN.md` for the surface-by-surface plan):
+- Zero commands (historial de migración en `MIGRATION_PLAN.md`):
   - `bun run zero:schema:gen` regenerates `src/zero/schema.gen.ts` from the Drizzle schema using `drizzle-zero.config.ts`. Run it after **any** change to `database/drizzle/schema/*.schema.ts`.
   - `bun run zero:dev` starts `zero-cache-dev`. Run it in a separate terminal alongside `bun run dev`. It reads `ZERO_QUERY_URL` / `ZERO_MUTATE_URL` from `.env` (defaults point at `http://localhost:3000/api/zero/*`) and requires `ZERO_QUERY_FORWARD_COOKIES=true` / `ZERO_MUTATE_FORWARD_COOKIES=true` for better-auth cookies.
   - Postgres must be up first (`docker compose up -d`) and configured with `wal_level=logical` — already done in the committed `docker-compose.yml`. That compose file runs a one-shot `db-migrate` job after Postgres is healthy and only then starts **zero-cache** on port `4848` (réplica en volumen `zentro_zero_data`; callbacks a `host.docker.internal:3000`). Alternativa: `docker compose up -d postgres` + `bun run db:migrate` + `bun run zero:dev`.
@@ -111,7 +111,7 @@
 
 ## Zero (Rocicorp)
 
-Zero is the primary API for app data (see `MIGRATION_PLAN.md`).
+Zero is the primary API for app data (patterns in this section; migration history in `MIGRATION_PLAN.md`).
 
 ### File layout
 

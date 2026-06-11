@@ -22,7 +22,7 @@ flowchart LR
 | zero-cache | Container from `deploy/zero-cache/Dockerfile` | Platform volume at `/data` |
 | Postgres | External managed database | Provider-managed |
 
-Local development uses `docker compose up -d` (Postgres only) or `deploy/docker-compose.local.yml` (full stack with bundled Postgres).
+Local development uses `docker compose up -d` (Postgres + migrations + zero-cache; app on the host via `bun run dev`) or `deploy/docker-compose.local.yml` for a full containerized stack with bundled Postgres.
 
 ## Docker Compose (production)
 

@@ -70,14 +70,14 @@ apps:
       - "components/**"
       - "lib/**"
       - "hooks/**"
-      - "server/orpc/routers/**"
-      - "server/orpc/contracts/**"
+      - "server/**"
+      - "src/zero/**"
       - "database/**"
       - "+*.ts"
       - "+*.tsx"
     skill: qa-web
     test_tool: browser-harness
-    start_command: "bun run dev"
+    start_command: "docker compose up -d && bun run dev"
 
 feature_flags:
   provider: none
@@ -89,6 +89,6 @@ integrations: {}
 cleanup:
   auto_cleanup: true
   strategy: reset-db
-  instructions: "QA runs use the local dev SQLite database (file:./dev.db). The database is ephemeral and can be reset by removing dev.db and re-running migrations/seeds before the QA run. Alternatively, the test suite creates isolated in-memory test DBs per test."
+  instructions: "QA runs use the local Postgres database from docker compose (DATABASE_URL in .env). Reset with `docker compose down -v` and `docker compose up -d && bun run db:migrate` before a clean run. Integration tests use isolated DB helpers per test file."
 
 failure_learning: suggest_in_report

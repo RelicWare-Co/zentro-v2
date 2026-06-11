@@ -56,7 +56,7 @@ Each spec is isolated: top-level tests launch `/login` and sign in when needed.
 
 After login, org selection is detected by the heading **Elige Cómo Quieres Entrar** (not the badge alone).
 
-Product flows target `#product-form-*` ids on the create-product sheet — the same contract as the former Maestro flows. Do not fill money fields via shared placeholder `0`; use the dedicated price/cost/stock inputs.
+Product flows target `#product-form-*` ids on the create-product sheet. Do not fill money fields via shared placeholder `0`; use the dedicated price/cost/stock inputs.
 
 TODO: add shift lifecycle coverage once the close-shift flow is stable under the Zero dev runner; the current blocker is duplicate mutate processing during automated shift close.
 TODO: add credit-sale POS coverage after the E2E helpers can enable credit settings and create customers with credit accounts through the UI.
