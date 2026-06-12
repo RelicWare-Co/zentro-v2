@@ -13,52 +13,8 @@ import {
   useUpdateRestaurantOrderItemStatusMutation,
   useUpdateRestaurantOrderMetaMutation,
 } from "@/features/restaurants/hooks/use-restaurants";
-import { buildKitchenTicketDocument } from "@/features/restaurants/printing/kitchen-ticket-documents";
+import { printKitchenTicket } from "@/features/restaurants/printing/print-kitchen-ticket";
 import { useActiveOrganization } from "@/lib/auth-client";
-
-interface KitchenTicketItem {
-  modifiers: { name: string; quantity: number; unitPrice: number }[];
-  notes: string | null;
-  productName: string;
-  quantity: number;
-  totalAmount: number;
-}
-
-async function printKitchenTicket(
-  ticket: {
-    createdAt: number;
-    id: string;
-    items: KitchenTicketItem[];
-    orderNumber: number;
-    sequenceNumber: number;
-    table: { name: string; areaName: string };
-  },
-  activeOrganizationId: string | null
-) {
-  const document = buildKitchenTicketDocument({
-    ticketId: ticket.id,
-    orderNumber: ticket.orderNumber,
-    sequenceNumber: ticket.sequenceNumber,
-    createdAt: ticket.createdAt,
-    tableName: ticket.table.name,
-    areaName: ticket.table.areaName,
-    items: ticket.items.map((item) => ({
-      productName: item.productName,
-      quantity: item.quantity,
-      notes: item.notes,
-      modifiers: item.modifiers.map((m) => ({
-        name: m.name,
-        quantity: m.quantity,
-        unitPrice: m.unitPrice,
-      })),
-      totalAmount: item.totalAmount,
-    })),
-  });
-  const { printThermalReceipt } = await import(
-    "@/features/pos/printing/print-thermal-receipt.client"
-  );
-  await printThermalReceipt(document, activeOrganizationId);
-}
 
 async function runMutation(
   operation: () => Promise<unknown>,

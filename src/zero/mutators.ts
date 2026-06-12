@@ -144,6 +144,14 @@ export const addRestaurantOrderItemArgsSchema = zod.object({
   quantity: zod.number().int().positive(),
   notes: zod.string().trim().optional().nullable(),
   modifierProductIds: zod.array(zod.string().trim().min(1)).optional(),
+  modifiers: zod
+    .array(
+      zod.object({
+        modifierProductId: zod.string().trim().min(1),
+        quantity: zod.number().int().positive(),
+      })
+    )
+    .optional(),
   itemId: zod.string().trim().min(1),
 });
 export const updateRestaurantOrderMetaArgsSchema = zod.object({
@@ -171,6 +179,7 @@ export const closeRestaurantOrderArgsSchema = zod.object({
   orderId: zod.string().trim().min(1),
   shiftId: zod.string().trim().min(1),
   customerId: zod.string().trim().optional().nullable(),
+  saleId: zod.string().trim().min(1).optional(),
   payments: zod
     .array(
       zod.object({

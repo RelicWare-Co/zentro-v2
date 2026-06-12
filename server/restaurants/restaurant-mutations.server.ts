@@ -584,9 +584,32 @@ export async function runAddRestaurantOrderItem(
   const productId = normalizeRequiredString(args.productId, "productId");
   const quantity = toPositiveInteger(args.quantity, "quantity");
   const notes = normalizeOptionalString(args.notes);
-  const modifierProductIds = [...new Set(args.modifierProductIds ?? [])].filter(
-    Boolean
-  );
+  const modifierQuantities = new Map<string, number>();
+  for (const modifierProductId of args.modifierProductIds ?? []) {
+    const normalizedId = normalizeRequiredString(
+      modifierProductId,
+      "modifierProductIds[]"
+    );
+    modifierQuantities.set(
+      normalizedId,
+      Math.max(modifierQuantities.get(normalizedId) ?? 0, 1)
+    );
+  }
+  for (const modifier of args.modifiers ?? []) {
+    const normalizedId = normalizeRequiredString(
+      modifier.modifierProductId,
+      "modifiers[].modifierProductId"
+    );
+    const modifierQuantity = toPositiveInteger(
+      modifier.quantity,
+      "modifiers[].quantity"
+    );
+    modifierQuantities.set(
+      normalizedId,
+      (modifierQuantities.get(normalizedId) ?? 0) + modifierQuantity
+    );
+  }
+  const modifierProductIds = [...modifierQuantities.keys()];
 
   const database = db;
   const table = await assertTableFromOrganization(
@@ -650,7 +673,7 @@ export async function runAddRestaurantOrderItem(
         organizationId,
         orderItemId: itemId,
         modifierProductId,
-        quantity: 1,
+        quantity: modifierQuantities.get(modifierProductId) ?? 1,
         unitPrice: productSnapshot.get(modifierProductId)?.price ?? 0,
         createdAt: now,
       }))
@@ -977,6 +1000,7 @@ export async function runCloseRestaurantOrder(
 
   const saleResult = await createCoreSale(
     {
+      saleId: normalizeOptionalString(args.saleId) ?? undefined,
       shiftId: normalizeRequiredString(args.shiftId, "shiftId"),
       customerId: normalizeOptionalString(args.customerId),
       items: activeItems.map((item) => ({

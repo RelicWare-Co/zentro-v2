@@ -414,10 +414,11 @@ export function useUpdateRestaurantOrderItemStatusMutation() {
 export function useCloseRestaurantOrderMutation() {
   return useZeroMutation(
     async (input: z.infer<typeof CloseRestaurantOrderInputSchema>, zero) => {
+      const saleId = input.saleId ?? crypto.randomUUID();
       await waitForZeroMutation(
-        zero.mutate(mutators.restaurants.closeOrder(input))
+        zero.mutate(mutators.restaurants.closeOrder({ ...input, saleId }))
       );
-      return { success: true as const };
+      return { success: true as const, saleId };
     }
   );
 }

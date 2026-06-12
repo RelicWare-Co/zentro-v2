@@ -825,7 +825,7 @@ function mapCreateSaleError(error: unknown): never {
 }
 
 export function createCoreSale(
-  input: CreateSaleInput,
+  input: CreateSaleInput & { saleId?: string },
   ctx: {
     db: ReturnType<typeof dbSqlite>;
     organizationId: string;
@@ -833,7 +833,7 @@ export function createCoreSale(
   }
 ) {
   const { db: txCtx, organizationId, userId } = ctx;
-  const saleId = crypto.randomUUID();
+  const saleId = input.saleId ?? crypto.randomUUID();
 
   return txCtx
     .transaction((tx) =>

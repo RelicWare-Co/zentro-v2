@@ -15,6 +15,7 @@ import type {
   RestaurantBootstrap,
   RestaurantTableDetail,
 } from "@/features/restaurants/restaurants.shared";
+import { getOrderItemStatusLabel } from "@/features/restaurants/restaurants-ui.shared";
 import { cn } from "@/lib/utils";
 
 interface Product {
@@ -22,19 +23,6 @@ interface Product {
   id: string;
   name: string;
   price: number;
-}
-
-function getOrderStatusLabel(status: string): string {
-  if (status === "draft") {
-    return "Pendiente";
-  }
-  if (status === "sent") {
-    return "En cocina";
-  }
-  if (status === "ready") {
-    return "Listo";
-  }
-  return "Servido";
 }
 
 type OpenOrder = NonNullable<RestaurantTableDetail["openOrder"]>;
@@ -169,7 +157,7 @@ function OrderItemsPanel({
               className="shrink-0 border-zinc-700 bg-black/20 text-zinc-300"
               variant="outline"
             >
-              {getOrderStatusLabel(item.status)}
+              {getOrderItemStatusLabel(item.status)}
             </Badge>
           </div>
 

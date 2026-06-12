@@ -48,6 +48,19 @@ export function getTableStatusLabel(status: TableOccupancyStatus): string {
   }
 }
 
+export function getOrderItemStatusLabel(status: string): string {
+  if (status === "draft") {
+    return "Pendiente";
+  }
+  if (status === "sent") {
+    return "En cocina";
+  }
+  if (status === "ready") {
+    return "Listo";
+  }
+  return "Servido";
+}
+
 const TABLE_NUMBER_SUFFIX_PATTERN = /(\d+)\s*$/;
 
 export function suggestNextTableName(tables: RestaurantTableSummary[]): string {

@@ -261,7 +261,7 @@ export function RestaurantFloorView({
             </TabsList>
           </Tabs>
 
-          <div className="min-h-0 flex-1 space-y-8 overflow-y-auto pb-4">
+          <div className="min-h-0 flex-1 space-y-8 overflow-y-auto p-1 pb-4">
             {visibleAreas.map((area) => (
               <section key={area.id}>
                 {resolvedAreaId === "all" ? (

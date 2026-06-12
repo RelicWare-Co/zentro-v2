@@ -1,5 +1,5 @@
 import { ShoppingCart } from "lucide-react";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
@@ -13,11 +13,13 @@ import { PosHeader } from "@/features/pos/components/pos-header";
 import { ProductGrid } from "@/features/pos/components/product-grid";
 import { usePosPage } from "@/features/pos/pos-page-context";
 import { openPosCashDrawer } from "@/features/pos/printing/print-sale-receipt.client";
+import { RestaurantPosTables } from "@/features/restaurants/components/restaurant-pos-overlay";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 export function PosV1Layout() {
   const { state, actions, meta } = usePosPage();
   const isMobile = useIsMobile();
+  const [isTablesOverlayOpen, setIsTablesOverlayOpen] = useState(false);
 
   const handleCheckout = () => {
     if (isMobile) {
@@ -56,10 +58,19 @@ export function PosV1Layout() {
       />
 
       <div className="flex min-h-0 flex-1 overflow-hidden">
-        <ProductGrid
-          className={isMobile ? "border-r-0" : undefined}
-          shouldAutoFocusSearch={!isMobile}
-        />
+        <div className="relative flex min-h-0 min-w-0 flex-1 overflow-hidden">
+          <ProductGrid
+            className={isMobile ? "border-r-0" : undefined}
+            shouldAutoFocusSearch={!(isMobile || isTablesOverlayOpen)}
+          />
+
+          <RestaurantPosTables
+            activeTableId={state.tableSession?.tableId ?? null}
+            isOpen={isTablesOverlayOpen}
+            onOpenChange={setIsTablesOverlayOpen}
+            onSelectTable={actions.enterTableMode}
+          />
+        </div>
 
         {!isMobile && (
           <CartPanel
@@ -69,9 +80,12 @@ export function PosV1Layout() {
             onCheckout={handleCheckout}
             onClearCart={actions.clearCart}
             onDeliveryInfoChange={actions.setDeliveryInfo}
+            onExitTable={actions.exitTableMode}
             onRemoveItem={actions.removeFromCart}
+            onSendToKitchen={actions.sendTableOrderToKitchen}
             onUpdateItemDiscount={actions.updateItemDiscount}
             onUpdateQuantity={actions.updateQuantity}
+            tableSession={state.tableSession}
             totalItems={state.totalItems}
             totals={state.totals}
           />
@@ -109,9 +123,12 @@ export function PosV1Layout() {
                 onCheckout={handleCheckout}
                 onClearCart={actions.clearCart}
                 onDeliveryInfoChange={actions.setDeliveryInfo}
+                onExitTable={actions.exitTableMode}
                 onRemoveItem={actions.removeFromCart}
+                onSendToKitchen={actions.sendTableOrderToKitchen}
                 onUpdateItemDiscount={actions.updateItemDiscount}
                 onUpdateQuantity={actions.updateQuantity}
+                tableSession={state.tableSession}
                 totalItems={state.totalItems}
                 totals={state.totals}
               />

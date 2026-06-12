@@ -1,5 +1,5 @@
 import type { KeyboardBarcodeScannerEvent } from "@point-of-sale/keyboard-barcode-scanner";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { usePosPage } from "@/features/pos/pos-page-context";
 import { isPosOverlayBlockingCatalog } from "@/features/pos/pos-page-modals.shared";
 import { openPosCashDrawer } from "@/features/pos/printing/print-sale-receipt.client";
@@ -8,10 +8,12 @@ import { PosV2Header } from "@/features/posv2/components/pos-v2-header";
 import { ProductCatalog } from "@/features/posv2/components/product-catalog";
 import { useKeyboardBarcodeScanner } from "@/features/posv2/hooks/use-keyboard-barcode-scanner.client";
 import { buildPosV2BarcodeScanPayload } from "@/features/posv2/posv2-barcode.shared";
+import { RestaurantPosTables } from "@/features/restaurants/components/restaurant-pos-overlay";
 
 export function PosV2Layout() {
   const { state, actions, meta } = usePosPage();
   const pendingBarcodeLookupRef = useRef<string[] | null>(null);
+  const [isTablesOverlayOpen, setIsTablesOverlayOpen] = useState(false);
 
   const handleOpenDrawer = useCallback(() => {
     if (!state.activeShift) {
@@ -50,7 +52,8 @@ export function PosV2Layout() {
 
   const isBarcodeScannerEnabled = !(
     isPosOverlayBlockingCatalog(state.activeModal, state.isMobileCartOpen) ||
-    state.isProcessingCheckout
+    state.isProcessingCheckout ||
+    isTablesOverlayOpen
   );
 
   const { isConnected: isBarcodeScannerConnected } = useKeyboardBarcodeScanner({
@@ -90,7 +93,18 @@ export function PosV2Layout() {
       />
 
       <div className="grid min-h-0 grid-cols-[minmax(0,1fr)_440px] overflow-hidden">
-        <ProductCatalog isBarcodeScannerConnected={isBarcodeScannerConnected} />
+        <div className="relative grid min-h-0 overflow-hidden">
+          <ProductCatalog
+            isBarcodeScannerConnected={isBarcodeScannerConnected}
+          />
+
+          <RestaurantPosTables
+            activeTableId={state.tableSession?.tableId ?? null}
+            isOpen={isTablesOverlayOpen}
+            onOpenChange={setIsTablesOverlayOpen}
+            onSelectTable={actions.enterTableMode}
+          />
+        </div>
 
         <CartPanelV2 className="min-h-0" />
       </div>

@@ -12,6 +12,14 @@ export const AddRestaurantOrderItemInputSchema = z.object({
   quantity: z.coerce.number().int().positive(),
   notes: NullableStringSchema,
   modifierProductIds: z.array(z.string().trim().min(1)).optional(),
+  modifiers: z
+    .array(
+      z.object({
+        modifierProductId: z.string().trim().min(1),
+        quantity: z.coerce.number().int().positive(),
+      })
+    )
+    .optional(),
 });
 
 export const UpdateRestaurantOrderMetaInputSchema = z
@@ -50,6 +58,7 @@ export const CloseRestaurantOrderInputSchema = z.object({
   orderId: z.string().trim().min(1),
   shiftId: z.string().trim().min(1),
   customerId: NullableStringSchema,
+  saleId: z.string().trim().min(1).optional(),
   payments: z
     .array(
       z.object({

@@ -58,6 +58,22 @@ export function buildQuickSalePayments(totalAmount: number) {
   ];
 }
 
+export function buildSalePaymentsFromInputs(payments: PaymentMethod[]) {
+  return payments.reduce<
+    Array<{ method: string; amount: number; reference: string | null }>
+  >((acc, paymentMethod) => {
+    const amount = parseMoneyInput(paymentMethod.amount);
+    if (amount > 0) {
+      acc.push({
+        method: paymentMethod.method,
+        amount,
+        reference: paymentMethod.reference.trim() || null,
+      });
+    }
+    return acc;
+  }, []);
+}
+
 export function usePosCheckout(
   activeShiftId: string | undefined,
   cart: CartItem[],
@@ -304,19 +320,7 @@ export function usePosCheckout(
     }
     const shiftId = activeShiftId;
 
-    const salePayments = payments.reduce<
-      Array<{ method: string; amount: number; reference: string | null }>
-    >((acc, paymentMethod) => {
-      const amount = parseMoneyInput(paymentMethod.amount);
-      if (amount > 0) {
-        acc.push({
-          method: paymentMethod.method,
-          amount,
-          reference: paymentMethod.reference.trim() || null,
-        });
-      }
-      return acc;
-    }, []);
+    const salePayments = buildSalePaymentsFromInputs(payments);
 
     const receiptSnapshot = {
       cart: cart.map((item) => ({
@@ -432,6 +436,7 @@ export function usePosCheckout(
     addPaymentMethod,
     removePaymentMethod,
     updatePayment,
+    resetPayments,
     handleQuickSale,
     handleFinalizeSale,
 
