@@ -5,7 +5,7 @@
 - Use conventional commits when creating git commits.
 - Keep changes scoped to the requested behavior. Do not rewrite unrelated code or revert user changes.
 - Prefer existing project patterns over introducing new abstractions.
-- Before porting behavior from `../zentro-reborn`, read `MIGRATION_PLAN.md` (migración oRPC→Zero completa) and follow Zero patterns in this file and `src/zero/*`.
+- Before porting behavior from `../zentro-reborn`, read `MIGRATION_PLAN.md` (migración oRPC→Zero completa) and follow Zero patterns in this file and `zero/*`.
 - If you are unsure about Vike behavior, consult the local docs/dependencies first. If that is not enough, clone or inspect the official repository for current guidance:
   - Vike: `https://github.com/vikejs/vike`
 - Update this `AGENTS.md` when a change introduces or materially changes project conventions, architecture, workflows, commands, or integration patterns that future agents need to know.
@@ -37,7 +37,7 @@
   - `bun run db:push`
   - `bun run db:studio`
 - Zero commands (historial de migración en `MIGRATION_PLAN.md`):
-  - `bun run zero:schema:gen` regenerates `src/zero/schema.gen.ts` from the Drizzle schema using `drizzle-zero.config.ts`. Run it after **any** change to `database/drizzle/schema/*.schema.ts`.
+  - `bun run zero:schema:gen` regenerates `zero/schema.gen.ts` from the Drizzle schema using `drizzle-zero.config.ts`. Run it after **any** change to `database/drizzle/schema/*.schema.ts`.
   - `bun run zero:dev` starts `zero-cache-dev`. Run it in a separate terminal alongside `bun run dev`. It reads `ZERO_QUERY_URL` / `ZERO_MUTATE_URL` from `.env` (defaults point at `http://localhost:3000/api/zero/*`) and requires `ZERO_QUERY_FORWARD_COOKIES=true` / `ZERO_MUTATE_FORWARD_COOKIES=true` for better-auth cookies.
   - Postgres must be up first (`docker compose up -d`) and configured with `wal_level=logical` — already done in the committed `docker-compose.yml`. That compose file runs a one-shot `db-migrate` job after Postgres is healthy and only then starts **zero-cache** on port `4848` (réplica en volumen `zentro_zero_data`; callbacks a `host.docker.internal:3000`). Alternativa: `docker compose up -d postgres` + `bun run db:migrate` + `bun run zero:dev`.
 
@@ -159,31 +159,47 @@ Zero is the primary API for app data (patterns in this section; migration histor
 ### File layout
 
 - `drizzle-zero.config.ts` — controls which Drizzle tables/columns are exposed to Zero. Keep better-auth credential/session tables and token columns out of the browser-replicated schema.
-- `src/zero/schema.gen.ts` — generated. **Do not edit.** Regenerate with `bun run zero:schema:gen` after any change to `database/drizzle/schema/*.schema.ts`.
-- `src/zero/schema.ts` — re-exports `schema`, `zql`, row types, and `ZeroContext`. Import schema-related symbols from here, not from `schema.gen.ts`, so the file the generator writes can change without touching consumers.
-- `src/zero/context.ts` — `ZeroContext { id, orgID, role, systemRole }`. Registers the context with Zero's `DefaultTypes`. Importing `./schema` already pulls this in.
-- `src/zero/queries.ts` — shared query registry built with `defineQueries`/`defineQuery`. Browser-safe. Use Zod for `args` validation.
-- `src/zero/mutators.ts` — shared mutator registry built with `defineMutators`/`defineMutator`. Browser-safe. Mutators must be `async` and `await` all `tx.mutate.*` writes.
-- `src/zero/mutators.server.ts` — server-only override registry passed to the `/api/zero/mutate` endpoint. Use this for hard validation, audit logs, and side-effects that should not run optimistically.
-- `src/zero/db-provider.server.ts` — `zeroDrizzle(schema, db)` adapter wired to the existing Drizzle client. Used by `handleMutateRequest`.
-- `src/zero/client.ts` — `createZeroOptions({ userID, context, cacheURL })` builder. In production, `server/runtime-config.server.ts` reads `ZERO_CACHE_URL` or `VITE_ZERO_CACHE_URL` and exposes it through `/api/runtime-config`; `ZeroProviderGate` uses that runtime value before opening a Zero websocket so static Vike HTML cannot freeze the localhost fallback.
-- `src/zero/zero-provider.client.tsx` — React `<ZeroProvider>` wrapper. Browser-only; mounted via the dynamic-import gate in `pages/+Layout.tsx`.
+- `zero/schema.gen.ts` — generated. **Do not edit.** Regenerate with `bun run zero:schema:gen` after any change to `database/drizzle/schema/*.schema.ts`.
+- `zero/schema.ts` — re-exports `schema`, `zql`, row types, and `ZeroContext`. Import schema-related symbols from here, not from `schema.gen.ts`, so the file the generator writes can change without touching consumers.
+- `zero/context.ts` — `ZeroContext { id, orgID, role, systemRole }`. Registers the context with Zero's `DefaultTypes`. Importing `./schema` already pulls this in.
+- `zero/queries.shared.ts` — cross-slice query helpers (e.g. `hasOrgContext`). Browser-safe.
+- `zero/mutators.shared.ts` — cross-slice mutator helpers. Browser-safe.
+- **Feature slices** (per-domain definitions; see `docs/adr/0007-split-zero-registries-into-feature-slices.md`):
+  - `features/<domain>/<domain>.queries.ts` — `defineQuery` entries exported as `<domain>Queries`
+  - `features/<domain>/<domain>.mutators.ts` — optimistic `defineMutator` entries exported as `<domain>Mutators`
+  - `features/<domain>/<domain>.mutators.server.ts` — server-authoritative overrides (when needed)
+- **Composition roots** (thin assembly only — no domain logic):
+  - `zero/queries.ts` — spreads feature query slices into one `defineQueries` registry for `/api/zero/query`
+  - `zero/mutators.ts` — spreads feature mutator slices into one `defineMutators` registry
+  - `zero/mutators.server.ts` — spreads server overrides on top of shared mutators for `/api/zero/mutate`
+- `zero/db-provider.server.ts` — `zeroDrizzle(schema, db)` adapter wired to the existing Drizzle client. Used by `handleMutateRequest`.
+- `zero/client.ts` — `createZeroOptions({ userID, context, cacheURL })` builder. In production, `server/runtime-config.server.ts` reads `ZERO_CACHE_URL` or `VITE_ZERO_CACHE_URL` and exposes it through `/api/runtime-config`; `ZeroProviderGate` uses that runtime value before opening a Zero websocket so static Vike HTML cannot freeze the localhost fallback.
+- `zero/zero-provider.client.tsx` — React `<ZeroProvider>` wrapper. Browser-only; mounted via the dynamic-import gate in `pages/+Layout.tsx`.
 - `server/zero/context.server.ts` — `resolveZeroAuth(headers)` derives `ZeroContext` from the better-auth session. **Always** use this; never trust client-supplied identity.
 - `server/zero/handler.server.ts` — Hono router that mounts `/api/zero/query` and `/api/zero/mutate`. Already registered in `server/hono.ts`.
 - `server/dashboard/handler.server.ts` — authenticated `GET /api/dashboard/overview` REST transport (aggregation in `features/dashboard/build-overview.server.ts`).
 
+### Dependency direction
+
+Slices, composition roots, and consumers follow a one-way graph (no cycles):
+
+- **Feature slices** import `@/zero/schema` and allowed shared modules (`@/zero/context`, `zero/queries.shared`, `zero/mutators.shared`). They must **not** import the composed registries (`@/zero/queries`, `@/zero/mutators`, `@/zero/mutators.server`).
+- **Composition roots** (`zero/queries.ts`, `zero/mutators.ts`, `zero/mutators.server.ts`) import feature slices and assemble the single registry Zero dispatches by name.
+- **Hooks and components** import the composed registry (`@/zero/queries`, `@/zero/mutators`), not individual slices.
+
 ### Runtime boundaries
 
-- `src/zero/schema.ts`, `queries.ts`, `mutators.ts`, `context.ts`, `client.ts`, and `features/*/*.schema.ts` are isomorphic. **Do not import** Drizzle, the auth instance, `pg`, `postgres`, or anything under `server/**` from these files.
+- `zero/schema.ts`, feature `*.queries.ts` / `*.mutators.ts`, `zero/queries.shared.ts`, `zero/mutators.shared.ts`, `zero/context.ts`, `zero/client.ts`, and `features/*/*.schema.ts` are isomorphic. **Do not import** Drizzle, the auth instance, `pg`, `postgres`, or anything under `server/**` from these files.
 - Anything that talks to Drizzle/auth/log lives in `features/*/*.server.ts` or other `*.server.ts` files under the app shell (`server/`).
 - The React provider is `*.client.tsx`. Mount it through the dynamic-import wrapper documented in the **Vike** section so it stays out of the SSR bundle.
 
 ### Adding a query
 
-1. Add an entry to `src/zero/queries.ts` using `defineQuery`. Validate `args` with Zod when the query accepts inputs.
-2. Read identity from `ctx`, never from `args`. When `!ctx`, return an empty query (use the `cmpLit(false, "=", true)` deny-all predicate); do not throw.
-3. The query is automatically reachable from `/api/zero/query` because the handler dispatches by name via `mustGetQuery(queries, name)`.
-4. Consume it from React: `const [rows] = useQuery(queries.<name>(args))`.
+1. Add an entry to `features/<domain>/<domain>.queries.ts` using `defineQuery`. Validate `args` with Zod when the query accepts inputs.
+2. If the domain is new to Zero, register its `<domain>Queries` slice in `zero/queries.ts`.
+3. Read identity from `ctx`, never from `args`. When `!ctx`, return an empty query (use the `cmpLit(false, "=", true)` deny-all predicate); do not throw.
+4. The query is automatically reachable from `/api/zero/query` because the handler dispatches by name via `mustGetQuery(queries, name)`.
+5. Consume it from React: `const [rows] = useQuery(queries.<name>(args))`.
 
 ### Inventory (products + Kardex)
 
@@ -193,12 +209,13 @@ Zero is the primary API for app data (patterns in this section; migration histor
 
 ### Adding a mutator
 
-1. Add an entry to `src/zero/mutators.ts` using `defineMutator(zodSchema, async ({ tx, args, ctx }) => { ... })`.
-2. Validate identity vs `args.organizationId` (or equivalent) inside the mutator. Throw on mismatch — Zero rolls back the optimistic write and surfaces the error to the client.
-3. If the mutation needs hard server-side checks or side-effects, override the mutator in `src/zero/mutators.server.ts` using `defineMutators(sharedMutators, { ... })`. Delegate authoritative work to `features/<domain>/*.server.ts` helpers; the server-side override gets the Drizzle transaction at `tx.dbTransaction.wrappedTransaction`.
-4. Mutators that need complete relationship graphs for accounting/settlement (e.g. `shifts.close`) must be server-only/no-op on the client; client mutator reads only see locally cached rows.
-5. Always `await` every `tx.mutate.*` call. An unawaited write breaks transactionality.
-6. Consume from React: `const zero = useZero(); zero.mutate(mutators.<group>.<name>(args))`.
+1. Add an entry to `features/<domain>/<domain>.mutators.ts` using `defineMutator(zodSchema, async ({ tx, args, ctx }) => { ... })`.
+2. If the domain is new to Zero, register its `<domain>Mutators` slice in `zero/mutators.ts`.
+3. Validate identity vs `args.organizationId` (or equivalent) inside the mutator. Throw on mismatch — Zero rolls back the optimistic write and surfaces the error to the client.
+4. If the mutation needs hard server-side checks or side-effects, override it in `features/<domain>/<domain>.mutators.server.ts` and register that slice in `zero/mutators.server.ts`. Delegate authoritative work to `features/<domain>/*.server.ts` helpers; the server-side override gets the Drizzle transaction at `tx.dbTransaction.wrappedTransaction`.
+5. Mutators that need complete relationship graphs for accounting/settlement (e.g. `shifts.close`) must be server-only/no-op on the client; client mutator reads only see locally cached rows.
+6. Always `await` every `tx.mutate.*` call. An unawaited write breaks transactionality.
+7. Consume from React: `const zero = useZero(); zero.mutate(mutators.<group>.<name>(args))`.
 
 ### Auth and permissions
 

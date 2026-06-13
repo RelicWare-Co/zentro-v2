@@ -10,7 +10,7 @@ import {
   fetchInventoryMovementsForExport,
   type InventoryMovementWithRelations,
 } from "@/features/products/inventory-movements.shared";
-import { queries } from "@/src/zero/queries";
+import { queries } from "@/zero/queries";
 
 export function KardexExportButton({
   listParams,

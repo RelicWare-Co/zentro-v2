@@ -12,7 +12,7 @@ import {
   type ModuleEntitlementRow,
 } from "@/features/settings/organization-environment.shared";
 import { parseOrganizationSettingsMetadata } from "@/features/settings/settings.shared";
-import type { ZeroContext } from "@/src/zero/context";
+import type { ZeroContext } from "@/zero/context";
 
 export type SetModuleEntitlementDbExecutor = Pick<
   Database,

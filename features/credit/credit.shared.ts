@@ -8,7 +8,7 @@ import type {
   CreditAccount as ZeroCreditAccount,
   CreditTransaction as ZeroCreditTransaction,
   Customer as ZeroCustomer,
-} from "@/src/zero/schema";
+} from "@/zero/schema";
 
 export type CreditAccount = z.infer<typeof CreditAccountSchema>;
 export type CreditTransaction = z.infer<typeof CreditTransactionSchema>;

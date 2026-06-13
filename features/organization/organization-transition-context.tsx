@@ -10,7 +10,7 @@ import {
 } from "react";
 import { usePageContext } from "vike-react/usePageContext";
 import { queryClient } from "@/lib/query-client";
-import type { ZeroContext } from "@/src/zero/context";
+import type { ZeroContext } from "@/zero/context";
 
 export interface OrganizationTransitionOptions {
   destination?: string;

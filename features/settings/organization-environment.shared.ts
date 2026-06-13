@@ -14,7 +14,7 @@ import {
   isPlatformAdminRole,
 } from "@/features/organization/access-control.shared";
 import type { SettingsDataSchema } from "@/features/settings/settings.schema";
-import type { ZeroContext } from "@/src/zero/context";
+import type { ZeroContext } from "@/zero/context";
 import {
   type OrganizationSettings,
   parseOrganizationSettingsMetadata,

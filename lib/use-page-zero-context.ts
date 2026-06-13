@@ -1,5 +1,5 @@
 import { useOrganizationTransition } from "@/features/organization/organization-transition-context";
-import type { ZeroContext } from "@/src/zero/context";
+import type { ZeroContext } from "@/zero/context";
 
 /**
  * Stable Zero auth context for client hooks.

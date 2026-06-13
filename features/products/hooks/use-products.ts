@@ -20,12 +20,12 @@ import {
   useZeroMutation,
   waitForZeroMutation,
 } from "@/lib/use-zero-mutation";
-import { mutators } from "@/src/zero/mutators";
-import { queries } from "@/src/zero/queries";
+import { mutators } from "@/zero/mutators";
+import { queries } from "@/zero/queries";
 import type {
   Category as ZeroCategory,
   Product as ZeroProduct,
-} from "@/src/zero/schema";
+} from "@/zero/schema";
 
 type ZeroProductWithCategory = ZeroProduct & {
   readonly category?: ZeroCategory | null;

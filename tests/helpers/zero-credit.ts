@@ -6,9 +6,9 @@ import {
   paginateCreditAccounts,
   paginateCreditTransactions,
 } from "@/features/credit/credit.shared";
-import { serverMutators } from "@/src/zero/mutators.server";
-import { queries } from "@/src/zero/queries";
-import type { ZeroContext } from "@/src/zero/schema";
+import { serverMutators } from "@/zero/mutators.server";
+import { queries } from "@/zero/queries";
+import type { ZeroContext } from "@/zero/schema";
 import type { createZeroTestDb } from "./zero-shifts";
 
 type ZeroTestDb = ReturnType<typeof createZeroTestDb>;

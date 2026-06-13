@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { member } from "@/database/drizzle/schema/auth.schema";
-import { serverMutators } from "@/src/zero/mutators.server";
+import { serverMutators } from "@/zero/mutators.server";
 import { seedOrganizationWithMember, seedUser } from "./helpers/seed";
 import { createTestDb } from "./helpers/test-db";
 import {

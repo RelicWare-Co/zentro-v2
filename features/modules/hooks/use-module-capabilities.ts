@@ -7,7 +7,7 @@ import {
 } from "@/features/settings/organization-environment.shared";
 import { parseOrganizationSettingsMetadata } from "@/features/settings/settings.shared";
 import { getZeroQueryError } from "@/lib/use-zero-mutation";
-import { queries } from "@/src/zero/queries";
+import { queries } from "@/zero/queries";
 
 export function useModuleCapabilities() {
   const pageContext = usePageContext();

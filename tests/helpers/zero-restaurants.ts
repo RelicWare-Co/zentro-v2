@@ -31,9 +31,9 @@ import {
   type RestaurantTableRow,
 } from "@/features/restaurants/restaurants.shared";
 import { parseOrganizationSettingsMetadata } from "@/features/settings/settings.shared";
-import { serverMutators } from "@/src/zero/mutators.server";
-import { queries } from "@/src/zero/queries";
-import type { ZeroContext } from "@/src/zero/schema";
+import { serverMutators } from "@/zero/mutators.server";
+import { queries } from "@/zero/queries";
+import type { ZeroContext } from "@/zero/schema";
 import type { createZeroTestDb } from "./zero-shifts";
 
 type ZeroTestDb = ReturnType<typeof createZeroTestDb>;

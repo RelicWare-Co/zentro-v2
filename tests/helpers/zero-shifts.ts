@@ -16,9 +16,9 @@ import {
   type ShiftsListParams,
   type ShiftWithRelations,
 } from "@/features/shifts/shifts.shared";
-import { serverMutators } from "@/src/zero/mutators.server";
-import { queries } from "@/src/zero/queries";
-import { type ZeroContext, schema as zeroSchema } from "@/src/zero/schema";
+import { serverMutators } from "@/zero/mutators.server";
+import { queries } from "@/zero/queries";
+import { type ZeroContext, schema as zeroSchema } from "@/zero/schema";
 import type { TestDb } from "./test-db";
 
 type OpenShiftInput = z.infer<typeof OpenShiftInputSchema>;

@@ -1,6 +1,6 @@
 import type { Session, User } from "better-auth/types";
 import type { dbSqlite } from "./database/drizzle/db";
-import type { ZeroContext } from "./src/zero/context";
+import type { ZeroContext } from "./zero/context";
 
 declare global {
   // biome-ignore lint/style/noNamespace: Vike requires namespace augmentation for global type merging

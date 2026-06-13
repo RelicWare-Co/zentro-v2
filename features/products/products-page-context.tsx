@@ -24,7 +24,7 @@ import {
   UNCATEGORIZED_FILTER_VALUE,
 } from "@/features/products/products-page.constants.shared";
 import { parseOrganizationSettingsMetadata } from "@/features/settings/settings.shared";
-import { queries } from "@/src/zero/queries";
+import { queries } from "@/zero/queries";
 
 export type InventoryMovementType = "restock" | "waste" | "adjustment";
 export type InventoryRestockMode = "add_to_stock" | "set_as_total";

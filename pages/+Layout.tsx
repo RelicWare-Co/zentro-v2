@@ -10,7 +10,7 @@ import {
 } from "@/features/organization/organization-transition-context";
 import { TanstackQueryProvider } from "@/lib/query-provider";
 
-type ZeroProviderModule = typeof import("@/src/zero/zero-provider.client");
+type ZeroProviderModule = typeof import("@/zero/zero-provider.client");
 type ZentroZeroProviderComponent = ZeroProviderModule["ZentroZeroProvider"];
 type LoadingState = "error" | "loading" | "ready";
 interface RuntimeCacheURLResult {
@@ -143,7 +143,7 @@ function ZeroProviderGate({
 
   useEffect(() => {
     let cancelled = false;
-    import("@/src/zero/zero-provider.client")
+    import("@/zero/zero-provider.client")
       .then((module) => {
         if (!cancelled) {
           setProvider(() => module.ZentroZeroProvider);

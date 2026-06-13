@@ -88,7 +88,7 @@
     "db:push": "drizzle-kit push",
     "db:pull": "drizzle-kit pull",
     "db:studio": "drizzle-kit studio",
-    "zero:schema:gen": "drizzle-zero generate --output src/zero/schema.gen.ts --format",
+    "zero:schema:gen": "drizzle-zero generate --output zero/schema.gen.ts --format",
     "zero:dev": "zero-cache-dev",
     "shadcn": "npx shadcn@latest",
     "prod": "bun run build && bun run start",

@@ -165,8 +165,8 @@ Producción con contenedores Docker (app Bun + zero-cache + Postgres externo con
 
 ```
 pages/              Rutas Vike (+Page, +guard, +Layout)
-features/           UI y lógica por dominio (pos, sales, products, …)
-src/zero/           Schema, queries y mutators de Zero
+zero/               Schema, composition roots y provider de Zero
+features/           UI, lógica y slices Zero por dominio (pos, sales, products, …)
 server/             Hono: auth, Zero handlers, REST auxiliares
 database/drizzle/   Schema y migraciones PostgreSQL
 components/ui/      Componentes shadcn/ui

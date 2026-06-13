@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import type { ZeroContext } from "@/src/zero/context";
+import type { ZeroContext } from "@/zero/context";
 import {
   resolveStableZeroContext,
   zeroContextSignature,
-} from "@/src/zero/zero-context-stable.shared";
+} from "@/zero/zero-context-stable.shared";
 
 const baseContext: ZeroContext = {
   id: "user-1",

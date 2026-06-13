@@ -16,8 +16,8 @@ import {
   useZeroMutation,
   waitForZeroMutation,
 } from "@/lib/use-zero-mutation";
-import { mutators } from "@/src/zero/mutators";
-import { queries } from "@/src/zero/queries";
+import { mutators } from "@/zero/mutators";
+import { queries } from "@/zero/queries";
 
 export type {
   CreditAccount,

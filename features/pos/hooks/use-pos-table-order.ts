@@ -14,7 +14,7 @@ import {
 import { printKitchenTicket } from "@/features/restaurants/printing/print-kitchen-ticket";
 import type { RestaurantTableDetail } from "@/features/restaurants/restaurants.shared";
 import { parseOrganizationSettingsMetadata } from "@/features/settings/settings.shared";
-import { queries } from "@/src/zero/queries";
+import { queries } from "@/zero/queries";
 
 type TableOpenOrder = NonNullable<RestaurantTableDetail["openOrder"]>;
 type TableOrderItem = TableOpenOrder["items"][number];

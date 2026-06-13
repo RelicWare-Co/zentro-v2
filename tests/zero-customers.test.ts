@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import { zeroDrizzle } from "@rocicorp/zero/server/adapters/drizzle";
 import { buildOrganizationAccessPolicy } from "@/features/organization/organization-policy.shared";
-import { serverMutators } from "@/src/zero/mutators.server";
-import { queries } from "@/src/zero/queries";
-import { type ZeroContext, schema as zeroSchema } from "@/src/zero/schema";
+import { serverMutators } from "@/zero/mutators.server";
+import { queries } from "@/zero/queries";
+import { type ZeroContext, schema as zeroSchema } from "@/zero/schema";
 import { seedOrganizationWithMember } from "./helpers/seed";
 import { createTestDb } from "./helpers/test-db";
 

@@ -9,9 +9,9 @@ import {
   getEnabledPaymentMethods,
   parseOrganizationSettingsMetadata,
 } from "@/features/settings/settings.shared";
-import { mutators } from "@/src/zero/mutators";
-import { queries } from "@/src/zero/queries";
-import type { ZeroContext } from "@/src/zero/schema";
+import { mutators } from "@/zero/mutators";
+import { queries } from "@/zero/queries";
+import type { ZeroContext } from "@/zero/schema";
 import type { createZeroTestDb } from "./zero-shifts";
 
 type ZeroTestDb = ReturnType<typeof createZeroTestDb>;

@@ -12,9 +12,9 @@ import {
   useZeroMutation,
   waitForZeroMutation,
 } from "@/lib/use-zero-mutation";
-import { mutators } from "@/src/zero/mutators";
-import { queries } from "@/src/zero/queries";
-import type { Customer as ZeroCustomer } from "@/src/zero/schema";
+import { mutators } from "@/zero/mutators";
+import { queries } from "@/zero/queries";
+import type { Customer as ZeroCustomer } from "@/zero/schema";
 
 export type Customer = z.infer<typeof CustomerSchema>;
 export type CreateCustomerInput = z.infer<typeof CreateCustomerSchema>;

@@ -23,8 +23,8 @@ import {
   useZeroMutation,
   waitForZeroMutation,
 } from "@/lib/use-zero-mutation";
-import { mutators } from "@/src/zero/mutators";
-import { queries } from "@/src/zero/queries";
+import { mutators } from "@/zero/mutators";
+import { queries } from "@/zero/queries";
 
 export type { SalesListParams } from "@/features/sales/sales.shared";
 export type CreateSaleInput = z.infer<typeof CreateSaleInputSchema>;

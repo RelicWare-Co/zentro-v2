@@ -399,7 +399,7 @@ For schema changes that affect Zero, regenerate the browser schema when Drizzle 
 bun run zero:schema:gen
 ```
 
-Commit the updated `src/zero/schema.gen.ts` before deploying.
+Commit the updated `zero/schema.gen.ts` before deploying.
 
 ## Deployment order
 

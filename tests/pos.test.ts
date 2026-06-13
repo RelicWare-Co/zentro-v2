@@ -2,9 +2,9 @@ import { describe, expect, test } from "bun:test";
 import { zeroDrizzle } from "@rocicorp/zero/server/adapters/drizzle";
 import { eq } from "drizzle-orm";
 import { product } from "@/database/drizzle/schema/inventory.schema";
-import { serverMutators } from "@/src/zero/mutators.server";
-import { queries } from "@/src/zero/queries";
-import { schema as zeroSchema } from "@/src/zero/schema";
+import { serverMutators } from "@/zero/mutators.server";
+import { queries } from "@/zero/queries";
+import { schema as zeroSchema } from "@/zero/schema";
 import {
   seedCategory,
   seedCustomer,

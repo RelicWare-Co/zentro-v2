@@ -11,7 +11,7 @@
 //   from the request body.
 // - Logged-out callers receive a normal Zero response with `userID: null`;
 //   queries fall back to their "deny everything" branch (see
-//   `src/zero/queries.ts`). We do not 401 here because zero-cache treats
+//   `zero/queries.ts`). We do not 401 here because zero-cache treats
 //   401/403 specially (it puts the client into `needs-auth`).
 
 import {
@@ -23,10 +23,10 @@ import {
 import { handleMutateRequest, handleQueryRequest } from "@rocicorp/zero/server";
 import type { EvlogVariables } from "evlog/hono";
 import { Hono } from "hono";
-import { dbProvider } from "@/src/zero/db-provider.server";
-import { serverMutators } from "@/src/zero/mutators.server";
-import { queries } from "@/src/zero/queries";
-import { schema } from "@/src/zero/schema";
+import { dbProvider } from "@/zero/db-provider.server";
+import { serverMutators } from "@/zero/mutators.server";
+import { queries } from "@/zero/queries";
+import { schema } from "@/zero/schema";
 import { resolveZeroAuth } from "./context.server";
 
 // `mustGetMutator` and `mustGetQuery` infer their return type from the

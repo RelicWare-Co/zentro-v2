@@ -8,7 +8,7 @@ import {
   normalizeInventoryMovementsListLimit,
 } from "@/features/products/inventory-movements.shared";
 import { getZeroQueryError } from "@/lib/use-zero-mutation";
-import { queries } from "@/src/zero/queries";
+import { queries } from "@/zero/queries";
 
 export type InventoryMovementsListParams = z.infer<
   typeof ListInventoryMovementsInputSchema

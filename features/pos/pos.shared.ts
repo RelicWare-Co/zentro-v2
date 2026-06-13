@@ -2,7 +2,7 @@ import type { Product } from "@/features/pos/types";
 import type {
   Category as ZeroCategory,
   Product as ZeroProduct,
-} from "@/src/zero/schema";
+} from "@/zero/schema";
 
 export type PosProductWithCategory = ZeroProduct & {
   readonly category?: ZeroCategory | null;
