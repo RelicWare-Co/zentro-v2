@@ -18,14 +18,14 @@ import { z } from "zod";
 // Importing `./context` registers `ZeroContext` into Zero's DefaultTypes so
 // `ctx` here is typed as `ZeroContext | undefined`.
 import "./context";
+import { InventoryMovementsListQueryArgsSchema } from "@/features/products/inventory-movements.schema";
+import { SalesListQueryArgsSchema } from "@/features/sales/sales.schema";
 import {
   parseDateBoundary as parseSaleDateBoundary,
   resolveAmountRange,
 } from "@/features/sales/sales.shared";
+import { ShiftsListQueryArgsSchema } from "@/features/shifts/shifts.schema";
 import { parseDateBoundary as parseShiftDateBoundary } from "@/features/shifts/shifts.shared";
-import { InventoryMovementsListQueryArgsSchema } from "@/schemas/inventory-movements";
-import { SalesListQueryArgsSchema } from "@/schemas/sales";
-import { ShiftsListQueryArgsSchema } from "@/schemas/shifts";
 import type { ZeroContext } from "./context";
 import { zql } from "./schema";
 

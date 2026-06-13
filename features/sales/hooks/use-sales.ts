@@ -2,6 +2,10 @@ import { useQuery as useZeroQuery } from "@rocicorp/zero/react";
 import { useDeferredValue, useMemo, useRef } from "react";
 import type { z } from "zod";
 import type {
+  CreateSaleInputSchema,
+  CreateSaleResultSchema,
+} from "@/features/sales/sales.schema";
+import type {
   SaleDetail,
   SaleListItem,
   SalesListParams,
@@ -19,10 +23,6 @@ import {
   useZeroMutation,
   waitForZeroMutation,
 } from "@/lib/use-zero-mutation";
-import type {
-  CreateSaleInputSchema,
-  CreateSaleResultSchema,
-} from "@/schemas/sales";
 import { mutators } from "@/src/zero/mutators";
 import { queries } from "@/src/zero/queries";
 

@@ -1,4 +1,8 @@
 import type { z } from "zod";
+import type {
+  CloseShiftInputSchema,
+  ShiftCloseSummaryResultSchema,
+} from "@/features/pos/pos.schema";
 import {
   buildPaymentMethodOptions,
   comparePaymentMethodIds,
@@ -6,14 +10,10 @@ import {
   parseOrganizationSettingsMetadata,
 } from "@/features/settings/settings.shared";
 import type {
-  CloseShiftInputSchema,
-  ShiftCloseSummaryResultSchema,
-} from "@/schemas/pos";
-import type {
   ListShiftsInputSchema,
   ShiftDetailSchema,
   ShiftListCursorSchema,
-} from "@/schemas/shifts";
+} from "@/features/shifts/shifts.schema";
 
 export type ShiftListItem = z.infer<typeof ShiftDetailSchema>;
 export type ShiftCloseSummary = z.infer<typeof ShiftCloseSummaryResultSchema>;

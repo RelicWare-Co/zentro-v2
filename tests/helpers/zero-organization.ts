@@ -1,8 +1,5 @@
 import type { z } from "zod";
-import {
-  buildOrganizationManagement,
-  buildOrganizationSelection,
-} from "@/features/organization/organization.shared";
+import { getJoinLinkPreviewByToken } from "@/features/organization/join-link-preview.server";
 import type {
   CancelInvitationSchema,
   CreateJoinLinkSchema,
@@ -14,8 +11,11 @@ import type {
   RevokeJoinLinkSchema,
   UpdateMemberRoleSchema,
   UpdateOrganizationSchema,
-} from "@/schemas/organization";
-import { getJoinLinkPreviewByToken } from "@/server/organization/join-link-preview.server";
+} from "@/features/organization/organization.schema";
+import {
+  buildOrganizationManagement,
+  buildOrganizationSelection,
+} from "@/features/organization/organization.shared";
 import { serverMutators } from "@/src/zero/mutators.server";
 import { queries } from "@/src/zero/queries";
 import type { ZeroContext } from "@/src/zero/schema";

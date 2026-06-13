@@ -3,12 +3,6 @@ import { useDeferredValue, useMemo, useRef } from "react";
 import type { z } from "zod";
 import type { StockStatus } from "@/features/inventory/stock-status.shared";
 import { getStockStatus } from "@/features/inventory/stock-status.shared";
-import { sortProductsByCatalogSearch } from "@/features/products/products-search.shared";
-import {
-  getZeroQueryError,
-  useZeroMutation,
-  waitForZeroMutation,
-} from "@/lib/use-zero-mutation";
 import type {
   CategorySchema,
   CreateCategorySchema,
@@ -19,7 +13,13 @@ import type {
   RegisterInventoryMovementSchema,
   UpdateCategorySchema,
   UpdateProductSchema,
-} from "@/schemas/products";
+} from "@/features/products/products.schema";
+import { sortProductsByCatalogSearch } from "@/features/products/products-search.shared";
+import {
+  getZeroQueryError,
+  useZeroMutation,
+  waitForZeroMutation,
+} from "@/lib/use-zero-mutation";
 import { mutators } from "@/src/zero/mutators";
 import { queries } from "@/src/zero/queries";
 import type {

@@ -6,7 +6,7 @@ import type {
   AdminOrganizationsResponseSchema,
   AdminPlatformOverviewSchema,
   AdminSetOrganizationModuleSchema,
-} from "@/schemas/admin";
+} from "@/features/admin/admin.schema";
 import { ADMIN_QUERY_ROOT_KEY } from "./use-admin-users";
 
 export type AdminPlatformOverview = z.infer<typeof AdminPlatformOverviewSchema>;

@@ -19,19 +19,11 @@ import {
 import type { z } from "zod";
 import { z as zod } from "zod";
 import {
-  getEnabledPaymentMethods,
-  parseOrganizationSettingsMetadata,
-} from "@/features/settings/settings.shared";
-import {
-  buildExpectedAmountsByMethod,
-  normalizeNumber,
-} from "@/features/shifts/shifts.shared";
-import {
   CreateCustomerSchema,
   DeleteCustomerSchema,
   UpdateCustomerSchema,
-} from "@/schemas/customers";
-import { SetModuleEntitlementSchema } from "@/schemas/modules";
+} from "@/features/customers/customers.schema";
+import { SetModuleEntitlementSchema } from "@/features/modules/modules.schema";
 import {
   CancelInvitationSchema,
   DeleteOrganizationSchema,
@@ -42,8 +34,8 @@ import {
   RevokeJoinLinkSchema,
   UpdateMemberRoleSchema,
   UpdateOrganizationSchema,
-} from "@/schemas/organization";
-import { ToggleProductFavoriteInputSchema } from "@/schemas/pos";
+} from "@/features/organization/organization.schema";
+import { ToggleProductFavoriteInputSchema } from "@/features/pos/pos.schema";
 import {
   CreateCategorySchema,
   CreateProductSchema,
@@ -52,9 +44,20 @@ import {
   RegisterInventoryMovementSchema,
   UpdateCategorySchema,
   UpdateProductSchema,
-} from "@/schemas/products";
-import { CancelSaleInputSchema, CreateSaleInputSchema } from "@/schemas/sales";
-import { UpdateSettingsSchema } from "@/schemas/settings";
+} from "@/features/products/products.schema";
+import {
+  CancelSaleInputSchema,
+  CreateSaleInputSchema,
+} from "@/features/sales/sales.schema";
+import { UpdateSettingsSchema } from "@/features/settings/settings.schema";
+import {
+  getEnabledPaymentMethods,
+  parseOrganizationSettingsMetadata,
+} from "@/features/settings/settings.shared";
+import {
+  buildExpectedAmountsByMethod,
+  normalizeNumber,
+} from "@/features/shifts/shifts.shared";
 import "./context";
 import { type Schema, type ZeroContext, zql } from "./schema";
 

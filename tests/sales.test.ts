@@ -10,8 +10,8 @@ import {
   product,
 } from "@/database/drizzle/schema/inventory.schema";
 import { payment } from "@/database/drizzle/schema/sales.schema";
+import { createCoreSale } from "@/features/sales/create-sale.server";
 import { serializeOrganizationSettingsMetadata } from "@/features/settings/settings.shared";
-import { createCoreSale } from "@/server/sales/create-sale.server";
 import {
   seedCustomer,
   seedOrganizationWithMember,

@@ -19,15 +19,15 @@ import {
   saleItem,
   saleItemModifier,
 } from "@/database/drizzle/schema/sales.schema";
+import type {
+  CreateSaleInputSchema,
+  CreateSaleResultSchema,
+} from "@/features/sales/sales.schema";
 import {
   getEnabledPaymentMethods,
   type OrganizationSettings,
   parseOrganizationSettingsMetadata,
 } from "@/features/settings/settings.shared";
-import type {
-  CreateSaleInputSchema,
-  CreateSaleResultSchema,
-} from "@/schemas/sales";
 
 function normalizeOptionalString(value?: string | null) {
   if (value == null) {

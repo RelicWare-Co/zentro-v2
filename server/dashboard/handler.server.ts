@@ -2,9 +2,9 @@ import { createError } from "evlog";
 import type { EvlogVariables } from "evlog/hono";
 import { Hono } from "hono";
 import { dbSqlite } from "@/database/drizzle/db";
+import { runBuildDashboardOverview } from "@/features/dashboard/build-overview.server";
+import { resolveDashboardTimeZone } from "@/features/dashboard/zoned-time.server";
 import { resolveZeroAuth } from "@/server/zero/context.server";
-import { runBuildDashboardOverview } from "./build-overview.server";
-import { resolveDashboardTimeZone } from "./zoned-time.server";
 
 export function createDashboardApp() {
   const app = new Hono<EvlogVariables>();

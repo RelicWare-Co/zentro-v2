@@ -2,6 +2,11 @@ import { useQuery as useZeroQuery } from "@rocicorp/zero/react";
 import { useDeferredValue, useMemo, useRef } from "react";
 import type { z } from "zod";
 import type {
+  CloseShiftInputSchema,
+  OpenShiftInputSchema,
+  RegisterCashMovementInputSchema,
+} from "@/features/pos/pos.schema";
+import type {
   ShiftCloseSummary,
   ShiftListItem,
   ShiftsListParams,
@@ -20,11 +25,6 @@ import {
   useZeroMutation,
   waitForZeroMutation,
 } from "@/lib/use-zero-mutation";
-import type {
-  CloseShiftInputSchema,
-  OpenShiftInputSchema,
-  RegisterCashMovementInputSchema,
-} from "@/schemas/pos";
 import { mutators } from "@/src/zero/mutators";
 import { queries } from "@/src/zero/queries";
 

@@ -10,12 +10,12 @@ import {
   buildViewerAccess,
   type ModuleEntitlementRow,
 } from "@/features/settings/organization-environment.shared";
+import type { UpdateSettingsSchema } from "@/features/settings/settings.schema";
 import {
   normalizeOrganizationSettings,
   parseOrganizationSettingsMetadata,
   serializeOrganizationSettingsMetadata,
 } from "@/features/settings/settings.shared";
-import type { UpdateSettingsSchema } from "@/schemas/settings";
 import type { ZeroContext } from "@/src/zero/context";
 
 export type UpdateSettingsDbExecutor = Pick<Database, "select" | "update">;

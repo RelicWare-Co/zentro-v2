@@ -3,7 +3,7 @@ import type { z } from "zod";
 import type { Database } from "@/database/drizzle/db";
 import { organization, user } from "@/database/drizzle/schema/auth.schema";
 import { sale } from "@/database/drizzle/schema/sales.schema";
-import type { AdminPlatformOverviewSchema } from "@/schemas/admin";
+import type { AdminPlatformOverviewSchema } from "@/features/admin/admin.schema";
 import {
   formatZonedDateKey,
   getZonedDateParts,
@@ -11,7 +11,7 @@ import {
   shiftZonedDateParts,
   type ZonedDateParts,
   zonedMidnightUtc,
-} from "@/server/dashboard/zoned-time.server";
+} from "@/features/dashboard/zoned-time.server";
 
 export type AdminOverviewDbExecutor = Pick<Database, "select">;
 

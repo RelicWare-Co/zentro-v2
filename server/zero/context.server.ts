@@ -11,8 +11,8 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@/database/drizzle/db";
 import { member } from "@/database/drizzle/schema";
+import { getOrganizationAccessPolicy } from "@/features/organization/organization-policy";
 import { auth as authInstance } from "@/server/auth";
-import { getOrganizationAccessPolicy } from "@/server/organization/organization-policy";
 import type { ZeroContext } from "@/src/zero/context";
 
 type AuthSession = (typeof authInstance)["$Infer"]["Session"];

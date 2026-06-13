@@ -2,6 +2,10 @@ import { eq } from "drizzle-orm";
 import type { z } from "zod";
 import type { Database } from "@/database/drizzle/db";
 import { sale } from "@/database/drizzle/schema/sales.schema";
+import type {
+  CancelSaleInputSchema,
+  CreateSaleInputSchema,
+} from "@/features/sales/sales.schema";
 import {
   buildSaleDetail,
   buildSaleFilterOptions,
@@ -11,10 +15,6 @@ import {
   type SalesListParams,
   type SaleWithRelations,
 } from "@/features/sales/sales.shared";
-import type {
-  CancelSaleInputSchema,
-  CreateSaleInputSchema,
-} from "@/schemas/sales";
 import { serverMutators } from "@/src/zero/mutators.server";
 import { queries } from "@/src/zero/queries";
 import type { ZeroContext } from "@/src/zero/schema";

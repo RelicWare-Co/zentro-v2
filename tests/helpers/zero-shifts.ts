@@ -1,6 +1,11 @@
 import { zeroDrizzle } from "@rocicorp/zero/server/adapters/drizzle";
 import type { z } from "zod";
 import { buildOrganizationAccessPolicy } from "@/features/organization/organization-policy.shared";
+import type {
+  CloseShiftInputSchema,
+  OpenShiftInputSchema,
+  RegisterCashMovementInputSchema,
+} from "@/features/pos/pos.schema";
 import {
   buildShiftCloseSummary,
   buildShiftFilterOptions,
@@ -11,11 +16,6 @@ import {
   type ShiftsListParams,
   type ShiftWithRelations,
 } from "@/features/shifts/shifts.shared";
-import type {
-  CloseShiftInputSchema,
-  OpenShiftInputSchema,
-  RegisterCashMovementInputSchema,
-} from "@/schemas/pos";
 import { serverMutators } from "@/src/zero/mutators.server";
 import { queries } from "@/src/zero/queries";
 import { type ZeroContext, schema as zeroSchema } from "@/src/zero/schema";

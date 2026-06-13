@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { db } from "@/database/drizzle/db";
-import { getJoinLinkPreviewByToken } from "./join-link-preview.server";
+import { getJoinLinkPreviewByToken } from "@/features/organization/join-link-preview.server";
 
 const joinPreviewQuerySchema = z.object({
   token: z.string().trim().min(1).max(255),

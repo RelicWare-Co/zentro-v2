@@ -3,7 +3,7 @@ import type {
   CreditAccountSchema,
   CreditTransactionSchema,
   SearchCreditAccountsSchema,
-} from "@/schemas/credit";
+} from "@/features/credit/credit.schema";
 import type {
   CreditAccount as ZeroCreditAccount,
   CreditTransaction as ZeroCreditTransaction,

@@ -1,16 +1,16 @@
 import type { z } from "zod";
 import { getRestaurantModuleSettings } from "@/features/restaurants/restaurants.module";
-import {
-  getEnabledPaymentMethods,
-  type OrganizationSettings,
-  parseOrganizationSettingsMetadata,
-} from "@/features/settings/settings.shared";
 import type {
   KitchenBoardSchema,
   RestaurantBootstrapSchema,
   RestaurantConfigurationSchema,
   RestaurantTableDetailSchema,
-} from "@/schemas/restaurants";
+} from "@/features/restaurants/restaurants.schema";
+import {
+  getEnabledPaymentMethods,
+  type OrganizationSettings,
+  parseOrganizationSettingsMetadata,
+} from "@/features/settings/settings.shared";
 
 export type RestaurantBootstrap = z.infer<typeof RestaurantBootstrapSchema>;
 export type RestaurantTableDetail = z.infer<typeof RestaurantTableDetailSchema>;

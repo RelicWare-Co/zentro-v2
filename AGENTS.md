@@ -73,6 +73,49 @@
 - Desktop: Electron Forge + Vite workspace under `desktop/`; currently a hardened wrapper around the configured web URL, not an embedded offline server.
 - Logging: **evlog** with `evlog/vite` plugin and `evlog/hono` middleware.
 
+## Feature modules
+
+Each domain is co-located under `features/<domain>/` (see `docs/adr/0006-co-locate-domains-into-feature-modules.md`). A feature owns the whole concept: contract, reads, writes, server-authoritative logic, and UI.
+
+**Dividing line:** domain logic → feature; transport / wiring → `server/`.
+
+### File naming
+
+Files in a feature follow `<domain>.<role>.ts`, with Vike environment suffixes carrying the runtime seam:
+
+```
+features/sales/
+  sales.schema.ts            # Zod contract — isomorphic, browser-safe
+  create-sale.server.ts      # authoritative server write logic
+  cancel-sale.server.ts
+  sales.shared.ts            # client helpers
+  hooks/ · components/ · sales-page.tsx
+```
+
+- **Schemas:** `features/<domain>/<domain>.schema.ts` — the Zod contract for that domain. Import from `@/features/<domain>/<domain>.schema`, not a top-level `schemas/` tree (removed).
+- **Server logic:** `features/<domain>/*.server.ts` — Drizzle writes, SQL aggregation, audit logs, and other authoritative behavior. May live anywhere in the feature folder; the `.server.ts` suffix enforces the Vike boundary.
+- **Cross-feature schemas:** a schema lives with its **owning** domain. Non-owning consumers may import `*.schema.ts` across features (files are isomorphic and browser-safe). Examples: `customers` (customers + pos), `pos` (pos + shifts), `modules` (Zero registry + admin).
+
+`lib/` and `components/ui/` remain for genuinely cross-cutting code only.
+
+## Server (app shell)
+
+Top-level `server/` is **transport and wiring only** — no domain logic subfolders. Domain `.server.ts` files live in `features/<domain>/`.
+
+What stays in `server/`:
+
+- `server/hono.ts` — Hono app and route registration
+- `server/auth.ts` — better-auth wiring
+- `server/db-middleware.ts`
+- `server/runtime-config.server.ts`
+- `server/zero/` — `handler.server.ts` (`/api/zero/*`) and `context.server.ts` (`resolveZeroAuth`)
+- `server/qz/` — QZ signing endpoint
+- `server/dashboard/handler.server.ts` — REST transport for `GET /api/dashboard/overview`; calls `features/dashboard/*.server.ts`
+- `server/admin/handler.server.ts` — REST transport for platform-admin endpoints; calls `features/admin/*.server.ts`
+- `server/organization/handler.server.ts` — REST transport for org endpoints (e.g. join-link preview); calls `features/organization/*.server.ts`
+
+Do not add `server/<domain>/` folders for new domain logic.
+
 ## Logging (evlog)
 
 - The `evlog/vite` plugin in `vite.config.ts` auto-initializes the logger with `service: 'zentro'`.
@@ -127,12 +170,12 @@ Zero is the primary API for app data (patterns in this section; migration histor
 - `src/zero/zero-provider.client.tsx` — React `<ZeroProvider>` wrapper. Browser-only; mounted via the dynamic-import gate in `pages/+Layout.tsx`.
 - `server/zero/context.server.ts` — `resolveZeroAuth(headers)` derives `ZeroContext` from the better-auth session. **Always** use this; never trust client-supplied identity.
 - `server/zero/handler.server.ts` — Hono router that mounts `/api/zero/query` and `/api/zero/mutate`. Already registered in `server/hono.ts`.
-- `server/dashboard/handler.server.ts` — authenticated `GET /api/dashboard/overview` (SQL aggregation, not Zero sync).
+- `server/dashboard/handler.server.ts` — authenticated `GET /api/dashboard/overview` REST transport (aggregation in `features/dashboard/build-overview.server.ts`).
 
 ### Runtime boundaries
 
-- `schema.ts`, `queries.ts`, `mutators.ts`, `context.ts`, `client.ts` are isomorphic. **Do not import** Drizzle, the auth instance, `pg`, `postgres`, or anything under `server/**` from these files.
-- Anything that talks to Drizzle/auth/log lives in `*.server.ts` files.
+- `src/zero/schema.ts`, `queries.ts`, `mutators.ts`, `context.ts`, `client.ts`, and `features/*/*.schema.ts` are isomorphic. **Do not import** Drizzle, the auth instance, `pg`, `postgres`, or anything under `server/**` from these files.
+- Anything that talks to Drizzle/auth/log lives in `features/*/*.server.ts` or other `*.server.ts` files under the app shell (`server/`).
 - The React provider is `*.client.tsx`. Mount it through the dynamic-import wrapper documented in the **Vike** section so it stays out of the SSR bundle.
 
 ### Adding a query
@@ -152,7 +195,7 @@ Zero is the primary API for app data (patterns in this section; migration histor
 
 1. Add an entry to `src/zero/mutators.ts` using `defineMutator(zodSchema, async ({ tx, args, ctx }) => { ... })`.
 2. Validate identity vs `args.organizationId` (or equivalent) inside the mutator. Throw on mismatch — Zero rolls back the optimistic write and surfaces the error to the client.
-3. If the mutation needs hard server-side checks or side-effects, override the mutator in `src/zero/mutators.server.ts` using `defineMutators(sharedMutators, { ... })`. The server-side override gets the Drizzle transaction at `tx.dbTransaction.wrappedTransaction`.
+3. If the mutation needs hard server-side checks or side-effects, override the mutator in `src/zero/mutators.server.ts` using `defineMutators(sharedMutators, { ... })`. Delegate authoritative work to `features/<domain>/*.server.ts` helpers; the server-side override gets the Drizzle transaction at `tx.dbTransaction.wrappedTransaction`.
 4. Mutators that need complete relationship graphs for accounting/settlement (e.g. `shifts.close`) must be server-only/no-op on the client; client mutator reads only see locally cached rows.
 5. Always `await` every `tx.mutate.*` call. An unawaited write breaks transactionality.
 6. Consume from React: `const zero = useZero(); zero.mutate(mutators.<group>.<name>(args))`.

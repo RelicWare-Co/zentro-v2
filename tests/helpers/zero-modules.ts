@@ -1,10 +1,10 @@
 import type { z } from "zod";
+import type { SetModuleEntitlementSchema } from "@/features/modules/modules.schema";
 import {
   buildModuleCapabilities,
   type ModuleEntitlementRow,
 } from "@/features/settings/organization-environment.shared";
 import { parseOrganizationSettingsMetadata } from "@/features/settings/settings.shared";
-import type { SetModuleEntitlementSchema } from "@/schemas/modules";
 import { serverMutators } from "@/src/zero/mutators.server";
 import { queries } from "@/src/zero/queries";
 import type { ZeroContext } from "@/src/zero/schema";

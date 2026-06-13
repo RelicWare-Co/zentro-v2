@@ -6,7 +6,7 @@ import {
 } from "@/database/drizzle/schema/credit.schema";
 import { customer } from "@/database/drizzle/schema/customer.schema";
 import { sale } from "@/database/drizzle/schema/sales.schema";
-import { createCoreSale } from "@/server/sales/create-sale.server";
+import { createCoreSale } from "@/features/sales/create-sale.server";
 import {
   seedCustomer,
   seedOrganizationWithMember,

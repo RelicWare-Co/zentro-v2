@@ -13,7 +13,7 @@ import { sale } from "@/database/drizzle/schema/sales.schema";
 import type {
   AdminOrganizationDetailSchema,
   AdminOrganizationsResponseSchema,
-} from "@/schemas/admin";
+} from "@/features/admin/admin.schema";
 import {
   formatZonedDateKey,
   getZonedDateParts,
@@ -21,7 +21,7 @@ import {
   shiftZonedDateParts,
   type ZonedDateParts,
   zonedMidnightUtc,
-} from "@/server/dashboard/zoned-time.server";
+} from "@/features/dashboard/zoned-time.server";
 import { buildAdminModuleStates } from "./admin-modules.server";
 
 export type AdminOrganizationsDbExecutor = Pick<Database, "select">;

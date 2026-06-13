@@ -2,15 +2,15 @@ import { createError } from "evlog";
 import type { EvlogVariables } from "evlog/hono";
 import { Hono } from "hono";
 import { dbSqlite } from "@/database/drizzle/db";
-import { AdminSetOrganizationModuleSchema } from "@/schemas/admin";
-import { resolveDashboardTimeZone } from "@/server/dashboard/zoned-time.server";
-import { resolveZeroAuth, type ZeroAuth } from "@/server/zero/context.server";
+import { AdminSetOrganizationModuleSchema } from "@/features/admin/admin.schema";
 import {
   runBuildAdminOrganizationDetail,
   runBuildAdminOrganizations,
-} from "./build-admin-organizations.server";
-import { runBuildAdminOverview } from "./build-admin-overview.server";
-import { runAdminSetOrganizationModule } from "./set-organization-module.server";
+} from "@/features/admin/build-admin-organizations.server";
+import { runBuildAdminOverview } from "@/features/admin/build-admin-overview.server";
+import { runAdminSetOrganizationModule } from "@/features/admin/set-organization-module.server";
+import { resolveDashboardTimeZone } from "@/features/dashboard/zoned-time.server";
+import { resolveZeroAuth, type ZeroAuth } from "@/server/zero/context.server";
 
 /**
  * Platform-admin gate. Unlike org-scoped endpoints, an active organization is

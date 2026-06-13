@@ -2,6 +2,20 @@ import { useQuery as useZeroQuery } from "@rocicorp/zero/react";
 import { useRef } from "react";
 import { usePageContext } from "vike-react/usePageContext";
 import type { z } from "zod";
+import type {
+  AddRestaurantOrderItemInputSchema,
+  CloseRestaurantOrderInputSchema,
+  CreateRestaurantAreaInputSchema,
+  CreateRestaurantTableInputSchema,
+  DeleteRestaurantAreaInputSchema,
+  DeleteRestaurantDraftItemInputSchema,
+  DeleteRestaurantTableInputSchema,
+  SendRestaurantOrderToKitchenInputSchema,
+  UpdateRestaurantDraftItemInputSchema,
+  UpdateRestaurantOrderItemStatusInputSchema,
+  UpdateRestaurantOrderMetaInputSchema,
+  UpdateRestaurantTableInputSchema,
+} from "@/features/restaurants/restaurants.schema";
 import type { RestaurantConfiguration } from "@/features/restaurants/restaurants.shared";
 import {
   buildKitchenBoard,
@@ -22,20 +36,6 @@ import {
   useZeroMutation,
   waitForZeroMutation,
 } from "@/lib/use-zero-mutation";
-import type {
-  AddRestaurantOrderItemInputSchema,
-  CloseRestaurantOrderInputSchema,
-  CreateRestaurantAreaInputSchema,
-  CreateRestaurantTableInputSchema,
-  DeleteRestaurantAreaInputSchema,
-  DeleteRestaurantDraftItemInputSchema,
-  DeleteRestaurantTableInputSchema,
-  SendRestaurantOrderToKitchenInputSchema,
-  UpdateRestaurantDraftItemInputSchema,
-  UpdateRestaurantOrderItemStatusInputSchema,
-  UpdateRestaurantOrderMetaInputSchema,
-  UpdateRestaurantTableInputSchema,
-} from "@/schemas/restaurants";
 import { mutators } from "@/src/zero/mutators";
 import { queries } from "@/src/zero/queries";
 

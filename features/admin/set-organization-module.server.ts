@@ -3,7 +3,7 @@ import type { z } from "zod";
 import type { Database } from "@/database/drizzle/db";
 import { organization } from "@/database/drizzle/schema/auth.schema";
 import { organizationModuleEntitlement } from "@/database/drizzle/schema/feature.schema";
-import type { AdminSetOrganizationModuleSchema } from "@/schemas/admin";
+import type { AdminSetOrganizationModuleSchema } from "@/features/admin/admin.schema";
 import {
   type AdminModuleState,
   buildAdminModuleStates,

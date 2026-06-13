@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import type { z } from "zod";
-import type { DashboardOverviewSchema } from "@/schemas/dashboard";
+import type { DashboardOverviewSchema } from "@/features/dashboard/dashboard.schema";
 
 export type DashboardOverview = z.infer<typeof DashboardOverviewSchema>;
 

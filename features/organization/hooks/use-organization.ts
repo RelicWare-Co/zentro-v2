@@ -2,6 +2,18 @@ import { useQuery as useZeroQuery } from "@rocicorp/zero/react";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import type { z } from "zod";
+import type {
+  CancelInvitationSchema,
+  CreateJoinLinkSchema,
+  DeleteOrganizationSchema,
+  InviteMemberSchema,
+  JoinTokenSchema,
+  LeaveOrganizationSchema,
+  RemoveMemberSchema,
+  RevokeJoinLinkSchema,
+  UpdateMemberRoleSchema,
+  UpdateOrganizationSchema,
+} from "@/features/organization/organization.schema";
 import {
   buildOrganizationJoinPath,
   buildOrganizationManagement,
@@ -16,18 +28,6 @@ import {
   useZeroMutation,
   waitForZeroMutation,
 } from "@/lib/use-zero-mutation";
-import type {
-  CancelInvitationSchema,
-  CreateJoinLinkSchema,
-  DeleteOrganizationSchema,
-  InviteMemberSchema,
-  JoinTokenSchema,
-  LeaveOrganizationSchema,
-  RemoveMemberSchema,
-  RevokeJoinLinkSchema,
-  UpdateMemberRoleSchema,
-  UpdateOrganizationSchema,
-} from "@/schemas/organization";
 import { mutators } from "@/src/zero/mutators";
 import { queries } from "@/src/zero/queries";
 

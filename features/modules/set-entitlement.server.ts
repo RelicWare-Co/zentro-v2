@@ -5,13 +5,13 @@ import { organization } from "@/database/drizzle/schema/auth.schema";
 import { organizationModuleEntitlement } from "@/database/drizzle/schema/feature.schema";
 import type { ModuleAccessState } from "@/features/modules/module-access.shared";
 import type { ModuleKey } from "@/features/modules/module-registry";
+import type { SetModuleEntitlementSchema } from "@/features/modules/modules.schema";
 import {
   buildModuleAccessStates,
   buildViewerAccess,
   type ModuleEntitlementRow,
 } from "@/features/settings/organization-environment.shared";
 import { parseOrganizationSettingsMetadata } from "@/features/settings/settings.shared";
-import type { SetModuleEntitlementSchema } from "@/schemas/modules";
 import type { ZeroContext } from "@/src/zero/context";
 
 export type SetModuleEntitlementDbExecutor = Pick<

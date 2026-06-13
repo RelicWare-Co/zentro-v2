@@ -1,5 +1,9 @@
 import { z } from "zod";
 import {
+  ModuleAccessStateSchema,
+  ModuleKeySchema,
+} from "@/features/modules/modules.schema";
+import {
   restaurantModuleSettingsSchema,
   restaurantModuleToggleSettingsSchema,
 } from "@/features/restaurants/restaurants.module";
@@ -7,7 +11,6 @@ import {
   normalizePaymentMethodId,
   PAYMENT_METHOD_ID_PATTERN,
 } from "@/features/settings/settings.shared";
-import { ModuleAccessStateSchema, ModuleKeySchema } from "./modules";
 
 const paymentMethodIdSchema = z
   .string()

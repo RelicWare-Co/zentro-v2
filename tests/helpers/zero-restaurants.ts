@@ -7,6 +7,17 @@ import {
   restaurantOrderItem,
 } from "@/database/drizzle/schema/restaurant.schema";
 import { sale } from "@/database/drizzle/schema/sales.schema";
+import type {
+  AddRestaurantOrderItemInputSchema,
+  CloseRestaurantOrderInputSchema,
+  CreateRestaurantAreaInputSchema,
+  CreateRestaurantTableInputSchema,
+  DeleteRestaurantAreaInputSchema,
+  DeleteRestaurantTableInputSchema,
+  SendRestaurantOrderToKitchenInputSchema,
+  UpdateRestaurantAreaInputSchema,
+  UpdateRestaurantTableInputSchema,
+} from "@/features/restaurants/restaurants.schema";
 import {
   assertRestaurantModuleEnabled,
   buildKitchenBoard,
@@ -20,17 +31,6 @@ import {
   type RestaurantTableRow,
 } from "@/features/restaurants/restaurants.shared";
 import { parseOrganizationSettingsMetadata } from "@/features/settings/settings.shared";
-import type {
-  AddRestaurantOrderItemInputSchema,
-  CloseRestaurantOrderInputSchema,
-  CreateRestaurantAreaInputSchema,
-  CreateRestaurantTableInputSchema,
-  DeleteRestaurantAreaInputSchema,
-  DeleteRestaurantTableInputSchema,
-  SendRestaurantOrderToKitchenInputSchema,
-  UpdateRestaurantAreaInputSchema,
-  UpdateRestaurantTableInputSchema,
-} from "@/schemas/restaurants";
 import { serverMutators } from "@/src/zero/mutators.server";
 import { queries } from "@/src/zero/queries";
 import type { ZeroContext } from "@/src/zero/schema";

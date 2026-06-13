@@ -8,13 +8,13 @@ import {
 } from "react";
 import type { z } from "zod";
 import { useOrganizationManagement } from "@/features/organization/hooks/use-organization";
+import type { OrganizationManagementSchema } from "@/features/organization/organization.schema";
 import {
   ORGANIZATION_TAB_VALUES,
   type OrganizationTab,
 } from "@/features/organization/organization-page.constants.shared";
 import { authClient } from "@/lib/auth-client";
 import { usePageZeroContext } from "@/lib/use-page-zero-context";
-import type { OrganizationManagementSchema } from "@/schemas/organization";
 
 export type OrganizationManagementData = z.infer<
   typeof OrganizationManagementSchema

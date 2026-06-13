@@ -1,17 +1,17 @@
 import { useQuery as useZeroQuery } from "@rocicorp/zero/react";
 import { useDeferredValue, useRef } from "react";
 import type { z } from "zod";
-import {
-  getZeroQueryError,
-  useZeroMutation,
-  waitForZeroMutation,
-} from "@/lib/use-zero-mutation";
 import type {
   CreateCustomerSchema,
   CustomerSchema,
   DeleteCustomerSchema,
   UpdateCustomerSchema,
-} from "@/schemas/customers";
+} from "@/features/customers/customers.schema";
+import {
+  getZeroQueryError,
+  useZeroMutation,
+  waitForZeroMutation,
+} from "@/lib/use-zero-mutation";
 import { mutators } from "@/src/zero/mutators";
 import { queries } from "@/src/zero/queries";
 import type { Customer as ZeroCustomer } from "@/src/zero/schema";

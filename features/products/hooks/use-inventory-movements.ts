@@ -1,13 +1,13 @@
 import { useQuery as useZeroQuery } from "@rocicorp/zero/react";
 import { useDeferredValue, useMemo, useRef } from "react";
 import type { z } from "zod";
+import type { ListInventoryMovementsInputSchema } from "@/features/products/inventory-movements.schema";
 import {
   buildInventoryMovementsListPage,
   type InventoryMovementWithRelations,
   normalizeInventoryMovementsListLimit,
 } from "@/features/products/inventory-movements.shared";
 import { getZeroQueryError } from "@/lib/use-zero-mutation";
-import type { ListInventoryMovementsInputSchema } from "@/schemas/inventory-movements";
 import { queries } from "@/src/zero/queries";
 
 export type InventoryMovementsListParams = z.infer<

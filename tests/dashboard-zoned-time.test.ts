@@ -7,7 +7,7 @@ import {
   resolveDashboardTimeZone,
   shiftZonedDateParts,
   zonedMidnightUtc,
-} from "@/server/dashboard/zoned-time.server";
+} from "@/features/dashboard/zoned-time.server";
 
 describe("isSafeTimeZone", () => {
   test("accepts IANA zone names", () => {

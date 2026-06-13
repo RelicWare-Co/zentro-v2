@@ -1,6 +1,7 @@
 import { useQuery as useZeroQuery } from "@rocicorp/zero/react";
 import { useDeferredValue, useMemo, useRef } from "react";
 import type { z } from "zod";
+import type { RegisterCreditPaymentSchema } from "@/features/credit/credit.schema";
 import {
   buildCreditAccountListItem,
   buildCreditTransactionListItem,
@@ -15,7 +16,6 @@ import {
   useZeroMutation,
   waitForZeroMutation,
 } from "@/lib/use-zero-mutation";
-import type { RegisterCreditPaymentSchema } from "@/schemas/credit";
 import { mutators } from "@/src/zero/mutators";
 import { queries } from "@/src/zero/queries";
 

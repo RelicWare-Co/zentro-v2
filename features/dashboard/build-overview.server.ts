@@ -24,13 +24,13 @@ import {
   sale,
   saleItem,
 } from "@/database/drizzle/schema/sales.schema";
+import type { DashboardOverviewSchema } from "@/features/dashboard/dashboard.schema";
 import {
   buildPaymentMethodLabelMap,
   buildPaymentMethodOptions,
   getAllPaymentMethods,
   parseOrganizationSettingsMetadata,
 } from "@/features/settings/settings.shared";
-import type { DashboardOverviewSchema } from "@/schemas/dashboard";
 import {
   formatZonedDateKey,
   getZonedDateParts,

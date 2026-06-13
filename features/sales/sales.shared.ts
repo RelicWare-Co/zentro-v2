@@ -1,15 +1,15 @@
 import type { z } from "zod";
-import {
-  comparePaymentMethodIds,
-  getAllPaymentMethods,
-  parseOrganizationSettingsMetadata,
-} from "@/features/settings/settings.shared";
 import type {
   ListSalesInputSchema,
   SaleDetailSchema,
   SaleListCursorSchema,
   SaleListResultSchema,
-} from "@/schemas/sales";
+} from "@/features/sales/sales.schema";
+import {
+  comparePaymentMethodIds,
+  getAllPaymentMethods,
+  parseOrganizationSettingsMetadata,
+} from "@/features/settings/settings.shared";
 
 export type SaleListItem = z.infer<typeof SaleListResultSchema>["data"][number];
 export type SaleDetail = z.infer<typeof SaleDetailSchema>;

@@ -1,11 +1,11 @@
 import type { z } from "zod";
+import type { AdminModuleStateSchema } from "@/features/admin/admin.schema";
 import {
   buildModuleAccessStates,
   type ModuleEntitlementRow,
   type OrganizationViewerAccess,
 } from "@/features/settings/organization-environment.shared";
 import { parseOrganizationSettingsMetadata } from "@/features/settings/settings.shared";
-import type { AdminModuleStateSchema } from "@/schemas/admin";
 
 export type AdminModuleState = z.infer<typeof AdminModuleStateSchema>;
 

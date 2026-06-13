@@ -9,11 +9,11 @@ import {
 import { customer } from "@/database/drizzle/schema/customer.schema";
 import { shift } from "@/database/drizzle/schema/pos.schema";
 import { payment, sale } from "@/database/drizzle/schema/sales.schema";
+import type { RegisterCreditPaymentSchema } from "@/features/credit/credit.schema";
 import {
   getEnabledPaymentMethods,
   parseOrganizationSettingsMetadata,
 } from "@/features/settings/settings.shared";
-import type { RegisterCreditPaymentSchema } from "@/schemas/credit";
 
 type CreditPaymentDbExecutor = Pick<Database, "select" | "insert" | "update">;
 

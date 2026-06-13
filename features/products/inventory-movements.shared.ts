@@ -1,10 +1,10 @@
 import type { z } from "zod";
-import { toTimestamp } from "@/features/sales/sales.shared";
 import type {
   InventoryMovementListCursorSchema,
   InventoryMovementTypeSchema,
   ListInventoryMovementsInputSchema,
-} from "@/schemas/inventory-movements";
+} from "@/features/products/inventory-movements.schema";
+import { toTimestamp } from "@/features/sales/sales.shared";
 
 export type InventoryMovementType = z.infer<typeof InventoryMovementTypeSchema>;
 export type InventoryMovementListCursor = z.infer<

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ModuleKeySchema } from "@/schemas/modules";
+import { ModuleKeySchema } from "@/features/modules/modules.schema";
 
 export const AdminModuleStateSchema = z.object({
   key: ModuleKeySchema,

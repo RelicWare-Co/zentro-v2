@@ -9,12 +9,6 @@ import {
   user as userTable,
 } from "@/database/drizzle/schema/auth.schema";
 import { isOrganizationManagerRole } from "@/features/organization/access-control.shared";
-import {
-  getJoinLinkErrorMessage,
-  getJoinLinkStatus,
-  normalizeLabel,
-  toTimestamp,
-} from "@/features/organization/organization.shared";
 import type {
   CancelInvitationSchema,
   CreateJoinLinkSchema,
@@ -26,7 +20,13 @@ import type {
   RevokeJoinLinkSchema,
   UpdateMemberRoleSchema,
   UpdateOrganizationSchema,
-} from "@/schemas/organization";
+} from "@/features/organization/organization.schema";
+import {
+  getJoinLinkErrorMessage,
+  getJoinLinkStatus,
+  normalizeLabel,
+  toTimestamp,
+} from "@/features/organization/organization.shared";
 
 export type OrganizationDbExecutor = Pick<
   Database,

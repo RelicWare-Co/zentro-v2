@@ -18,7 +18,7 @@ import {
 import type {
   CancelSaleInputSchema,
   CancelSaleResultSchema,
-} from "@/schemas/sales";
+} from "@/features/sales/sales.schema";
 
 export type CancelSaleDbExecutor = Pick<
   Database,

@@ -1,9 +1,9 @@
 import { defineMutator, defineMutators } from "@rocicorp/zero";
-import type { CreditPaymentDbExecutor } from "@/server/credit/register-payment.server";
-import { runRegisterCreditPayment } from "@/server/credit/register-payment.server";
-import type { SetModuleEntitlementDbExecutor } from "@/server/modules/set-entitlement.server";
-import { runSetModuleEntitlement } from "@/server/modules/set-entitlement.server";
-import type { OrganizationDbExecutor } from "@/server/organization/organization-mutations.server";
+import type { CreditPaymentDbExecutor } from "@/features/credit/register-payment.server";
+import { runRegisterCreditPayment } from "@/features/credit/register-payment.server";
+import type { SetModuleEntitlementDbExecutor } from "@/features/modules/set-entitlement.server";
+import { runSetModuleEntitlement } from "@/features/modules/set-entitlement.server";
+import type { OrganizationDbExecutor } from "@/features/organization/organization-mutations.server";
 import {
   runCancelInvitation,
   runDeleteOrganization,
@@ -15,8 +15,8 @@ import {
   runRemoveMember,
   runUpdateMemberRole,
   runUpdateOrganization,
-} from "@/server/organization/organization-mutations.server";
-import type { RestaurantDbExecutor } from "@/server/restaurants/restaurant-mutations.server";
+} from "@/features/organization/organization-mutations.server";
+import type { RestaurantDbExecutor } from "@/features/restaurants/restaurant-mutations.server";
 import {
   runAddRestaurantOrderItem,
   runCloseRestaurantOrder,
@@ -31,13 +31,13 @@ import {
   runUpdateRestaurantOrderItemStatus,
   runUpdateRestaurantOrderMeta,
   runUpdateRestaurantTable,
-} from "@/server/restaurants/restaurant-mutations.server";
-import type { CancelSaleDbExecutor } from "@/server/sales/cancel-sale.server";
-import { runCancelSale } from "@/server/sales/cancel-sale.server";
-import type { CreateSaleDbExecutor } from "@/server/sales/create-sale.server";
-import { runCreateSale } from "@/server/sales/create-sale.server";
-import type { UpdateSettingsDbExecutor } from "@/server/settings/update-settings.server";
-import { runUpdateOrganizationSettings } from "@/server/settings/update-settings.server";
+} from "@/features/restaurants/restaurant-mutations.server";
+import type { CancelSaleDbExecutor } from "@/features/sales/cancel-sale.server";
+import { runCancelSale } from "@/features/sales/cancel-sale.server";
+import type { CreateSaleDbExecutor } from "@/features/sales/create-sale.server";
+import { runCreateSale } from "@/features/sales/create-sale.server";
+import type { UpdateSettingsDbExecutor } from "@/features/settings/update-settings.server";
+import { runUpdateOrganizationSettings } from "@/features/settings/update-settings.server";
 import type { ZeroContext } from "./context";
 import {
   addRestaurantOrderItemArgsSchema,

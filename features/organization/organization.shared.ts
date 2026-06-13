@@ -1,14 +1,14 @@
 import type { z } from "zod";
 import { isOrganizationManagerRole } from "@/features/organization/access-control.shared";
-import {
-  buildOrganizationAccessPolicy,
-  type OrganizationAccessPolicy,
-} from "@/features/organization/organization-policy.shared";
 import type {
   JoinLinkPreviewSchema,
   OrganizationManagementSchema,
   OrganizationSelectionSchema,
-} from "@/schemas/organization";
+} from "@/features/organization/organization.schema";
+import {
+  buildOrganizationAccessPolicy,
+  type OrganizationAccessPolicy,
+} from "@/features/organization/organization-policy.shared";
 
 export type OrganizationSelection = z.infer<typeof OrganizationSelectionSchema>;
 export type OrganizationManagement = z.infer<
