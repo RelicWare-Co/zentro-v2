@@ -3,6 +3,7 @@ import { parseError } from "evlog";
 import { type EvlogVariables, evlog } from "evlog/hono";
 import { Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
+import { createAdminApp } from "./admin/handler.server";
 import { auth } from "./auth";
 import { createDashboardApp } from "./dashboard/handler.server";
 import { dbMiddleware } from "./db-middleware";
@@ -36,6 +37,7 @@ function getApp() {
   app.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));
 
   app.route("/api/zero", createZeroApp());
+  app.route("/api/admin", createAdminApp());
   app.route("/api/dashboard", createDashboardApp());
   app.route("/api/organization", createOrganizationApp());
   app.route("/api/runtime-config", createRuntimeConfigApp());

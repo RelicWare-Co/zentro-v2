@@ -11,14 +11,17 @@ import {
   Package,
   Receipt,
   Settings,
+  Shield,
   Store,
   Users,
   UtensilsCrossed,
+  VenetianMask,
   Wallet,
 } from "lucide-react";
 import { useState } from "react";
 import { usePageContext } from "vike-react/usePageContext";
 import { OrganizationSelection } from "@/components/organization-selection";
+import { getImpersonatedBy } from "@/features/admin/admin.shared";
 import { useModuleCapabilities } from "@/features/modules/hooks/use-module-capabilities";
 import { useOrganizationTransition } from "@/features/organization/organization-transition-context";
 import { authClient } from "@/lib/auth-client";
@@ -97,6 +100,47 @@ const baseNavItems = [
   { name: "Configuración", path: "/settings", icon: Settings, order: 70 },
 ];
 
+function ImpersonationBanner() {
+  const { data: sessionData } = authClient.useSession();
+  const [isStopping, setIsStopping] = useState(false);
+
+  if (!getImpersonatedBy(sessionData?.session)) {
+    return null;
+  }
+
+  const handleStop = async () => {
+    setIsStopping(true);
+    try {
+      await authClient.admin.stopImpersonating();
+      queryClient.clear();
+      window.location.href = "/admin";
+    } catch {
+      setIsStopping(false);
+    }
+  };
+
+  return (
+    <div className="flex shrink-0 items-center justify-between gap-3 border-amber-400/20 border-b bg-amber-400/10 px-4 py-2 text-amber-200">
+      <div className="flex min-w-0 items-center gap-2 text-sm">
+        <VenetianMask className="size-4 shrink-0" />
+        <span className="truncate">
+          Estás suplantando a {sessionData?.user?.name ?? "otro usuario"}.
+        </span>
+      </div>
+      <button
+        className="shrink-0 rounded-lg border border-amber-400/30 px-3 py-1 font-medium text-sm transition-colors hover:bg-amber-400/10"
+        disabled={isStopping}
+        onClick={() => {
+          handleStop().catch(() => undefined);
+        }}
+        type="button"
+      >
+        {isStopping ? "Volviendo…" : "Volver a mi cuenta"}
+      </button>
+    </div>
+  );
+}
+
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -144,7 +188,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         }))
       )
     : [];
-  const navItems = [...baseNavItems, ...moduleNavItems].sort(
+  const adminNavItems =
+    zeroContext?.systemRole === "admin"
+      ? [{ name: "Admin", path: "/admin", icon: Shield, order: 65 }]
+      : [];
+  const navItems = [...baseNavItems, ...moduleNavItems, ...adminNavItems].sort(
     (left, right) => left.order - right.order
   );
   const lockMainScroll = isFullHeightRoute(pageContext.urlPathname);
@@ -327,6 +375,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       </aside>
 
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <ImpersonationBanner />
         <header className="flex h-16 shrink-0 items-center border-zinc-800 border-b bg-[var(--color-carbon)] px-4 lg:hidden">
           <button
             aria-label="Abrir navegación"
