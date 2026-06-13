@@ -27,7 +27,7 @@ export function DashboardOperationPanel() {
 
   return (
     <DashboardPanelShell
-      description="Estado del turno y distribución de cobros de hoy."
+      description="Estado del turno y distribución de sus cobros."
       title="Operación actual"
     >
       <div className="flex items-start justify-between gap-3">
@@ -80,7 +80,7 @@ export function DashboardOperationPanel() {
 
       <div className="border-zinc-800 border-t pt-4">
         <div className="mb-3 flex items-center justify-between">
-          <p className="font-medium text-sm text-white">Cobros hoy</p>
+          <p className="font-medium text-sm text-white">Cobros del turno</p>
           <p className="text-sm text-zinc-400">
             {formatCurrency(paymentTotal)}
           </p>
@@ -128,7 +128,7 @@ export function DashboardOperationPanel() {
           </div>
         ) : (
           <div className="rounded-xl border border-zinc-800 border-dashed px-4 py-6 text-center text-sm text-zinc-500">
-            Aún no hay cobros registrados hoy.
+            Aún no hay cobros registrados en el turno.
           </div>
         )}
       </div>

@@ -4,10 +4,19 @@ import type { DashboardOverviewSchema } from "@/schemas/dashboard";
 
 export type DashboardOverview = z.infer<typeof DashboardOverviewSchema>;
 
-async function fetchDashboardOverview(): Promise<DashboardOverview> {
-  const response = await fetch("/api/dashboard/overview", {
-    credentials: "include",
-  });
+function getBrowserTimeZone() {
+  return new Intl.DateTimeFormat().resolvedOptions().timeZone;
+}
+
+async function fetchDashboardOverview(
+  timeZone: string
+): Promise<DashboardOverview> {
+  const response = await fetch(
+    `/api/dashboard/overview?tz=${encodeURIComponent(timeZone)}`,
+    {
+      credentials: "include",
+    }
+  );
 
   if (!response.ok) {
     let message = "No se pudo cargar el dashboard";
@@ -26,8 +35,10 @@ async function fetchDashboardOverview(): Promise<DashboardOverview> {
 }
 
 export function useDashboardOverview() {
+  const timeZone = getBrowserTimeZone();
+
   return useQuery({
-    queryKey: ["dashboard", "overview"],
-    queryFn: fetchDashboardOverview,
+    queryKey: ["dashboard", "overview", timeZone],
+    queryFn: () => fetchDashboardOverview(timeZone),
   });
 }

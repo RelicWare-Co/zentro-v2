@@ -11,12 +11,24 @@ export const DashboardOverviewSchema = z.object({
       openedAt: z.number(),
     })
     .nullable(),
+  /**
+   * Sales window for the "current operation" stats: every open shift in the
+   * organization, or the last closed shift when none is open. Shifts often
+   * cross midnight (e.g. bars), so these metrics are shift-scoped, not
+   * calendar-day-scoped.
+   */
+  salesWindow: z.object({
+    kind: z.enum(["open", "closed", "none"]),
+    shiftCount: z.number(),
+    openedAt: z.number().nullable(),
+    closedAt: z.number().nullable(),
+  }),
   stats: z.object({
-    todayRevenue: z.number(),
-    todaySalesCount: z.number(),
-    todayAvgTicket: z.number(),
-    todayCustomersServed: z.number(),
-    yesterdayRevenue: z.number(),
+    shiftRevenue: z.number(),
+    shiftSalesCount: z.number(),
+    shiftAvgTicket: z.number(),
+    shiftCustomersServed: z.number(),
+    previousShiftRevenue: z.number(),
     monthRevenue: z.number(),
     monthSalesCount: z.number(),
     previousMonthRevenue: z.number(),

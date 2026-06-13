@@ -15,11 +15,11 @@ import {
 import { useDashboardData } from "@/features/dashboard/dashboard-page-context";
 
 export function DashboardStatsSection() {
-  const { stats, lowStockThreshold } = useDashboardData();
+  const { stats, salesWindow, lowStockThreshold } = useDashboardData();
 
-  const todayRevenueChange = getPercentChange(
-    stats.todayRevenue,
-    stats.yesterdayRevenue
+  const shiftRevenueChange = getPercentChange(
+    stats.shiftRevenue,
+    stats.previousShiftRevenue
   );
   const monthRevenueChange = getPercentChange(
     stats.monthRevenue,
@@ -29,22 +29,30 @@ export function DashboardStatsSection() {
   return (
     <section className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-5">
       <CompactStatCard
-        description={`${formatCount(stats.todaySalesCount)} ventas registradas`}
-        highlight={formatDelta(todayRevenueChange, "vs ayer")}
+        description={
+          salesWindow.kind === "none"
+            ? "Sin turnos registrados"
+            : `${formatCount(stats.shiftSalesCount)} ventas registradas`
+        }
+        highlight={formatDelta(shiftRevenueChange, "vs turno anterior")}
         icon={Receipt}
-        title="Ventas hoy"
-        value={formatCurrency(stats.todayRevenue)}
+        title={
+          salesWindow.kind === "closed"
+            ? "Ventas último turno"
+            : "Ventas del turno"
+        }
+        value={formatCurrency(stats.shiftRevenue)}
       />
       <CompactStatCard
         description={
-          stats.todayCustomersServed > 0
-            ? `${formatCount(stats.todayCustomersServed)} clientes identificados`
+          stats.shiftCustomersServed > 0
+            ? `${formatCount(stats.shiftCustomersServed)} clientes identificados`
             : "Sin clientes identificados"
         }
-        highlight="Basado en ventas del día"
+        highlight="Basado en ventas del turno"
         icon={Wallet}
         title="Ticket promedio"
-        value={formatCurrency(stats.todayAvgTicket)}
+        value={formatCurrency(stats.shiftAvgTicket)}
       />
       <CompactStatCard
         description={`${formatCount(stats.monthSalesCount)} ventas acumuladas`}

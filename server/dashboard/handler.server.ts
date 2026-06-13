@@ -4,6 +4,7 @@ import { Hono } from "hono";
 import { dbSqlite } from "@/database/drizzle/db";
 import { resolveZeroAuth } from "@/server/zero/context.server";
 import { runBuildDashboardOverview } from "./build-overview.server";
+import { resolveDashboardTimeZone } from "./zoned-time.server";
 
 export function createDashboardApp() {
   const app = new Hono<EvlogVariables>();
@@ -17,16 +18,23 @@ export function createDashboardApp() {
       });
     }
 
+    const timeZone = resolveDashboardTimeZone(c.req.query("tz"));
+
     c.get("log").set({
       dashboard: "overview",
       userId: authBundle.userID,
       organizationId: authBundle.ctx.orgID,
+      timeZone,
     });
 
-    const overview = await runBuildDashboardOverview(dbSqlite(), {
-      organizationId: authBundle.ctx.orgID,
-      userId: authBundle.userID,
-    });
+    const overview = await runBuildDashboardOverview(
+      dbSqlite(),
+      {
+        organizationId: authBundle.ctx.orgID,
+        userId: authBundle.userID,
+      },
+      timeZone
+    );
 
     return c.json(overview);
   });
