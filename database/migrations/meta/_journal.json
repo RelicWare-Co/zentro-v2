@@ -36,6 +36,13 @@
       "when": 1781066052883,
       "tag": "0004_gorgeous_chamber",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1781400143282,
+      "tag": "0005_ordinary_swordsman",
+      "breakpoints": true
     }
   ]
 }

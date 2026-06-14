@@ -31,7 +31,6 @@ export const restaurantArea = pgTable(
       .notNull(),
   },
   (table) => [
-    index("restaurantArea_organizationId_idx").on(table.organizationId),
     uniqueIndex("restaurantArea_org_name_uidx").on(
       table.organizationId,
       table.name
@@ -62,7 +61,6 @@ export const restaurantTable = pgTable(
       .notNull(),
   },
   (table) => [
-    index("restaurantTable_organizationId_idx").on(table.organizationId),
     index("restaurantTable_areaId_idx").on(table.areaId),
     uniqueIndex("restaurantTable_org_area_name_uidx").on(
       table.organizationId,
@@ -103,7 +101,6 @@ export const restaurantOrder = pgTable(
     closedAt: timestamp("closed_at", { withTimezone: true, mode: "date" }),
   },
   (table) => [
-    index("restaurantOrder_organizationId_idx").on(table.organizationId),
     index("restaurantOrder_tableId_idx").on(table.tableId),
     uniqueIndex("restaurantOrder_org_number_uidx").on(
       table.organizationId,
@@ -141,7 +138,6 @@ export const restaurantKitchenTicket = pgTable(
     index("restaurantKitchenTicket_organizationId_idx").on(
       table.organizationId
     ),
-    index("restaurantKitchenTicket_orderId_idx").on(table.orderId),
     uniqueIndex("restaurantKitchenTicket_order_sequence_uidx").on(
       table.orderId,
       table.sequenceNumber

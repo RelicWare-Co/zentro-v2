@@ -1,6 +1,5 @@
 import {
   foreignKey,
-  index,
   pgTable,
   text,
   timestamp,
@@ -35,7 +34,6 @@ export const organizationModuleEntitlement = pgTable(
       columns: [table.updatedByUserId],
       foreignColumns: [user.id],
     }).onDelete("set null"),
-    index("orgModuleEntitlement_organizationId_idx").on(table.organizationId),
     uniqueIndex("orgModuleEntitlement_org_module_uidx").on(
       table.organizationId,
       table.moduleKey

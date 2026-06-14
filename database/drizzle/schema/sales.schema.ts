@@ -31,7 +31,6 @@ export const sale = pgTable(
     }).notNull(),
   },
   (table) => [
-    index("sale_organizationId_idx").on(table.organizationId),
     index("sale_organizationId_createdAt_idx").on(
       table.organizationId,
       table.createdAt

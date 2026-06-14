@@ -36,7 +36,6 @@ export const customer = pgTable(
       .notNull(),
   },
   (table) => [
-    index("customer_organizationId_idx").on(table.organizationId),
     index("customer_document_idx").on(table.documentNumber),
     // Partial unique index: document numbers are unique only among ACTIVE
     // (non-soft-deleted) customers. This matches `assertUniqueDocumentNumber`,

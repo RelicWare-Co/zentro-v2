@@ -25,7 +25,6 @@ export const shift = pgTable(
     notes: text("notes"),
   },
   (table) => [
-    index("shift_organizationId_idx").on(table.organizationId),
     index("shift_organizationId_openedAt_idx").on(
       table.organizationId,
       table.openedAt
