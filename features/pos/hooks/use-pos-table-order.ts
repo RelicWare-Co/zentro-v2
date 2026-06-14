@@ -60,7 +60,10 @@ function buildTableCartItem(item: TableOrderItem): CartItem {
  * carrito POS (ítems + totales con impuestos, igual que `createCoreSale`) y
  * enruta las acciones del POS a las mutaciones del módulo de restaurantes.
  */
-export function usePosTableOrder(activeOrganizationId: string | null) {
+export function usePosTableOrder(
+  activeOrganizationId: string | null,
+  discountInput = "0"
+) {
   const [activeTableId, setActiveTableId] = useState<string | null>(null);
   const tableDetailQuery = useRestaurantTableDetail(activeTableId);
   const table = tableDetailQuery.data?.table ?? null;
@@ -84,7 +87,10 @@ export function usePosTableOrder(activeOrganizationId: string | null) {
     [activeItems]
   );
 
-  const totals = useMemo(() => calculateCartTotals(cart, "0"), [cart]);
+  const totals = useMemo(
+    () => calculateCartTotals(cart, discountInput),
+    [cart, discountInput]
+  );
 
   const itemStatusById = useMemo(() => {
     const statuses: Record<string, PosTableOrderItemStatus> = {};
@@ -267,6 +273,7 @@ export function usePosTableOrder(activeOrganizationId: string | null) {
     async (params: {
       shiftId: string;
       customerId: string | null;
+      discountAmount?: number;
       payments: Array<{
         method: string;
         amount: number;
@@ -280,6 +287,7 @@ export function usePosTableOrder(activeOrganizationId: string | null) {
         orderId: openOrder.id,
         shiftId: params.shiftId,
         customerId: params.customerId,
+        discountAmount: params.discountAmount,
         payments: params.payments,
       });
     },

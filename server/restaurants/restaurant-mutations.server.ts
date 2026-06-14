@@ -1003,6 +1003,10 @@ export async function runCloseRestaurantOrder(
       saleId: normalizeOptionalString(args.saleId) ?? undefined,
       shiftId: normalizeRequiredString(args.shiftId, "shiftId"),
       customerId: normalizeOptionalString(args.customerId),
+      discountAmount: toNonNegativeInteger(
+        args.discountAmount ?? 0,
+        "discountAmount"
+      ),
       items: activeItems.map((item) => ({
         productId: item.productId,
         quantity: item.quantity,

@@ -58,6 +58,7 @@ export const CloseRestaurantOrderInputSchema = z.object({
   orderId: z.string().trim().min(1),
   shiftId: z.string().trim().min(1),
   customerId: NullableStringSchema,
+  discountAmount: z.coerce.number().int().min(0).optional(),
   saleId: z.string().trim().min(1).optional(),
   payments: z
     .array(
