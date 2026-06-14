@@ -1,5 +1,6 @@
+import babel from "@rolldown/plugin-babel";
 import tailwindcss from "@tailwindcss/vite";
-import react from "@vitejs/plugin-react";
+import react, { reactCompilerPreset } from "@vitejs/plugin-react";
 
 /// <reference types="@batijs/core/types" />
 
@@ -8,7 +9,15 @@ import vike from "vike/plugin";
 import { defineConfig } from "vite";
 
 export default defineConfig({
-  plugins: [vike(), react(), tailwindcss(), evlog({ service: "zentro" })],
+  plugins: [
+    vike(),
+    react(),
+    babel({
+      presets: [reactCompilerPreset()],
+    }),
+    tailwindcss(),
+    evlog({ service: "zentro" }),
+  ],
 
   server: {
     allowedHosts: ["host.docker.internal"],
