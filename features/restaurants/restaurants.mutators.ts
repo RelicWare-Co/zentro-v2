@@ -43,6 +43,7 @@ export const closeRestaurantOrderArgsSchema = zod.object({
   orderId: zod.string().trim().min(1),
   shiftId: zod.string().trim().min(1),
   customerId: zod.string().trim().optional().nullable(),
+  discountAmount: zod.number().int().min(0).optional(),
   saleId: zod.string().trim().min(1).optional(),
   payments: zod
     .array(

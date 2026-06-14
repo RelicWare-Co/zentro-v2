@@ -317,6 +317,76 @@ describe("restaurant module", () => {
 
       await cleanup();
     });
+
+    test("close table order applies sale-level discount", async () => {
+      const { db, cleanup } = await createTestDb();
+      const { organizationId, userId } = await seedOrganizationWithMember(db, {
+        memberRole: "owner",
+      });
+      await setRestaurantModuleEnabled(db, organizationId, true);
+
+      const areaId = await seedRestaurantArea(db, {
+        organizationId,
+        name: "Salon",
+      });
+      const [tableId, productId, shiftId] = await Promise.all([
+        seedRestaurantTable(db, {
+          organizationId,
+          areaId,
+          name: "T2",
+        }),
+        seedProduct(db, {
+          organizationId,
+          price: 25_000,
+          taxRate: 0,
+        }),
+        seedShift(db, {
+          organizationId,
+          userId,
+          status: "open",
+        }),
+      ]);
+
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
+
+      const addResult = await addRestaurantOrderItemViaZero({
+        db,
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          tableId,
+          productId,
+          quantity: 1,
+        },
+      });
+
+      const closeResult = await closeRestaurantOrderViaZero({
+        db,
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          orderId: addResult.orderId,
+          shiftId,
+          discountAmount: 5000,
+          payments: [{ method: "cash", amount: 20_000 }],
+        },
+      });
+
+      expect(closeResult.saleId).toBeString();
+      expect(closeResult.status).toBe("completed");
+      expect(closeResult.totalAmount).toBe(20_000);
+
+      const discountedSaleRows = await db
+        .select()
+        .from(sale)
+        .where(eq(sale.id, closeResult.saleId));
+      expect(discountedSaleRows.length).toBe(1);
+      expect(discountedSaleRows[0].discountAmount).toBe(5000);
+      expect(discountedSaleRows[0].totalAmount).toBe(20_000);
+
+      await cleanup();
+    });
   });
 
   describe("VAL-REST-005: area/table CRUD requires manager access", () => {

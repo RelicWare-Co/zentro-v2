@@ -212,6 +212,7 @@ export function PosPageProvider({
   const [isMobileCartOpen, setIsMobileCartOpen] = useState(false);
   const [activeModal, setActiveModal] = useState<PosActiveModal | null>(null);
   const [isQuickSaleMode, setIsQuickSaleMode] = useState(false);
+  const [tableDiscountInput, setTableDiscountInput] = useState("0");
 
   const closeActiveModal = useCallback(() => {
     setActiveModal(null);
@@ -292,10 +293,13 @@ export function PosPageProvider({
     resetDeliveryInfo();
   }, [clearCart, resetDeliveryInfo]);
 
-  const tableOrder = usePosTableOrder(activeOrganizationId);
+  const tableOrder = usePosTableOrder(activeOrganizationId, tableDiscountInput);
   const isTableMode = Boolean(tableOrder.activeTableId);
   const effectiveCart = isTableMode ? tableOrder.cart : cart;
   const effectiveTotals = isTableMode ? tableOrder.totals : totals;
+  const effectiveDiscountInput = isTableMode
+    ? tableDiscountInput
+    : discountInput;
   const effectiveTotalItems = isTableMode
     ? tableOrder.cart.reduce((sum, item) => sum + item.quantity, 0)
     : totalItems;
@@ -390,7 +394,7 @@ export function PosPageProvider({
     effectiveTotals,
     selectedCustomerId,
     deliveryInfo,
-    discountInput,
+    effectiveDiscountInput,
     clearCurrentOrder,
     resetDiscount,
     resetDeliveryInfo,
@@ -532,6 +536,7 @@ export function PosPageProvider({
         const result = await tableOrder.closeTableOrder({
           shiftId,
           customerId: selectedCustomerId || null,
+          discountAmount: receiptSnapshot.totals.saleDiscountAmount,
           payments: salePayments,
         });
 
@@ -542,6 +547,7 @@ export function PosPageProvider({
         toast.success(`${tableName} cobrada y liberada`);
         closeActiveModal();
         checkout.resetPayments();
+        setTableDiscountInput("0");
         tableOrder.exitTable();
 
         Promise.resolve(
@@ -668,6 +674,7 @@ export function PosPageProvider({
   const setDiscountInputAction = useCallback(
     (value: string) => {
       if (tableOrder.activeTableId) {
+        setTableDiscountInput(value);
         return;
       }
       setDiscountInput(value);
@@ -700,6 +707,7 @@ export function PosPageProvider({
   const enterTableMode = useCallback(
     (tableId: string) => {
       checkout.resetPayments();
+      setTableDiscountInput("0");
       tableOrder.enterTable(tableId);
     },
     [checkout.resetPayments, tableOrder.enterTable]
@@ -707,6 +715,7 @@ export function PosPageProvider({
 
   const exitTableMode = useCallback(() => {
     checkout.resetPayments();
+    setTableDiscountInput("0");
     tableOrder.exitTable();
   }, [checkout.resetPayments, tableOrder.exitTable]);
 
@@ -746,7 +755,7 @@ export function PosPageProvider({
         checkoutError: checkout.error ?? tableOrder.closeOrderError,
         customers,
         deliveryInfo,
-        discountInput: isTableMode ? "0" : discountInput,
+        discountInput: effectiveDiscountInput,
         hasNextPage: !!hasNextPage,
         hasPaymentDifference: checkout.hasPaymentDifference,
         isActiveShift,
@@ -846,7 +855,7 @@ export function PosPageProvider({
       categories,
       customers,
       deliveryInfo,
-      discountInput,
+      effectiveDiscountInput,
       hasNextPage,
       isActiveShift,
       isActiveShiftLoading,
@@ -866,7 +875,6 @@ export function PosPageProvider({
       selectedProductForModifiers,
       tableOrder,
       tableSession,
-      isTableMode,
       effectiveCart,
       effectiveTotals,
       effectiveTotalItems,
