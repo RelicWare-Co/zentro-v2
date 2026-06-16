@@ -1,5 +1,5 @@
+import { Button } from "@mantine/core";
 import { Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { useProductsPage } from "@/features/products/products-page-context";
 
 export function CategoriesTab() {
@@ -9,11 +9,12 @@ export function CategoriesTab() {
     <>
       <div className="flex justify-end">
         <Button
-          className="bg-[var(--color-voltage)] text-black hover:bg-[#d9f15c]"
+          c="black"
+          color="voltage.5"
+          leftSection={<Plus className="size-4" />}
           onClick={actions.openCreateCategory}
           type="button"
         >
-          <Plus className="size-4" />
           Crear categoría
         </Button>
       </div>

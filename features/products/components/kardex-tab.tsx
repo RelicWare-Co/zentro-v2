@@ -1,7 +1,7 @@
+import { Button } from "@mantine/core";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { useDeferredValue, useMemo, useState } from "react";
-import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -26,14 +26,14 @@ function KardexOpenInventoryButton({ productId }: { productId: string }) {
 
   return (
     <Button
-      className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5"
+      color="gray"
       disabled={!product?.trackInventory}
       onClick={() => {
         if (product) {
           actions.openInventoryForProduct(product);
         }
       }}
-      size="sm"
+      size="xs"
       type="button"
       variant="outline"
     >
@@ -200,7 +200,7 @@ export function KardexTab() {
         </p>
         <div className="flex gap-2">
           <Button
-            className="border-zinc-800 bg-[var(--color-carbon)] text-zinc-300"
+            color="gray"
             disabled={pageIndex === 0}
             onClick={goToPreviousPage}
             type="button"
@@ -209,7 +209,7 @@ export function KardexTab() {
             Anterior
           </Button>
           <Button
-            className="border-zinc-800 bg-[var(--color-carbon)] text-zinc-300"
+            color="gray"
             disabled={!(data.hasMore && data.nextCursor)}
             onClick={() => {
               if (data.nextCursor) {

@@ -1,6 +1,5 @@
+import { Switch } from "@mantine/core";
 import type { ReactNode } from "react";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 
 export function ProductsField({
   label,
@@ -15,10 +14,10 @@ export function ProductsField({
 }) {
   return (
     <div className="space-y-2">
-      <Label htmlFor={htmlFor}>
+      <label className="font-medium text-sm" htmlFor={htmlFor}>
         {label}
         {required ? <span className="text-red-400"> *</span> : null}
-      </Label>
+      </label>
       {children}
     </div>
   );
@@ -41,7 +40,11 @@ export function ProductsToggleLine({
         <p className="font-medium text-white">{title}</p>
         <p className="text-sm text-zinc-400">{description}</p>
       </div>
-      <Switch checked={checked} onCheckedChange={onCheckedChange} />
+      <Switch
+        checked={checked}
+        color="voltage.5"
+        onChange={(event) => onCheckedChange(event.currentTarget.checked)}
+      />
     </div>
   );
 }

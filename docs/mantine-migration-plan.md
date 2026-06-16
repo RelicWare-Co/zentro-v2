@@ -14,10 +14,15 @@
   (estructura/comportamiento) + Tailwind (layout/spacing) conviven sin conflicto de reset en
   build. El tema dark (void/carbon/voltage) se preserva con overrides `styles` centralizados en
   `lib/mantine-dark.ts` (darkInput/Select/Drawer/Modal). Se mantiene `sonner` por ahora.
-- **Fase 3 features migradas:** `customers` ✅, `credit` ✅. (tsc + ultracite + build OK por feature).
-- **Pendiente:** restaurants, auth, settings, products, organization, dashboard, pos; capa de
-  primitivas opcional (Fase 2a) descartada de momento — la migración directa por feature resulta
-  más fiel porque cada feature pasa estilos de marca propios vía `className`/`styles`.
+- **Fase 3 features migradas:** `customers` ✅, `credit` ✅, `restaurants` ✅, `auth` ✅ (no-op:
+  100% Tailwind, sin shadcn), `settings` ✅. (tsc + ultracite + build OK por feature).
+- **Pendiente:** products, organization, dashboard (charts), pos (último, virtualización + sidebar).
+- **Patrones establecidos:** `lib/mantine-dark.ts` (darkInput/Select/Drawer/Modal); `Card`/`CardHeader`
+  shadcn → contenedor Tailwind o helper local (`SettingsCard`); `Dialog`→`Modal`, `Sheet`→`Drawer`,
+  `Select` shadcn→`Select` Mantine (`data`), `Switch.onCheckedChange`→`onChange(e.currentTarget.checked)`,
+  `Tabs`→`Tabs` Mantine, `Empty`→div, `Button asChild`→`component="a"`, `Badge tt="none"`.
+  La capa de primitivas (Fase 2a) se descarta — la migración directa por feature resulta más fiel
+  porque cada feature pasa estilos de marca propios vía `className`/`styles`.
 
 ## 1. Diagnóstico (medido sobre el repo)
 

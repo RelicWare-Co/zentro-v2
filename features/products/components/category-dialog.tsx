@@ -1,16 +1,7 @@
-import { useId, useState } from "react";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { ProductsField } from "@/features/products/components/products-ui-primitives";
+import { Button, Group, Modal, Textarea, TextInput } from "@mantine/core";
+import { useState } from "react";
 import { useProductsPage } from "@/features/products/products-page-context";
+import { darkInputStyles, darkModalStyles } from "@/lib/mantine-dark";
 import { getErrorMessage } from "@/lib/utils";
 
 function CategoryDialogContent({
@@ -32,78 +23,73 @@ function CategoryDialogContent({
 }) {
   const [name, setName] = useState(category?.name ?? "");
   const [description, setDescription] = useState(category?.description ?? "");
-  const nameId = useId();
-  const descriptionId = useId();
 
   return (
-    <Dialog onOpenChange={onOpenChange} open={open}>
-      <DialogContent className="border-zinc-800 bg-[var(--color-carbon)] text-white sm:max-w-[480px]">
-        <DialogHeader>
-          <DialogTitle>
-            {category ? "Editar categoría" : "Crear categoría"}
-          </DialogTitle>
-        </DialogHeader>
-        <form
-          className="space-y-4"
-          onSubmit={(event) => {
-            event.preventDefault();
-            onSave({
-              name,
-              description: description || null,
-            }).catch(() => undefined);
-          }}
-        >
-          <ProductsField htmlFor={nameId} label="Nombre" required>
-            <Input
-              className="border-zinc-700 bg-black/20"
-              id={nameId}
-              onChange={(event) => setName(event.target.value)}
-              placeholder="Ej. Bebidas"
-              required
-              value={name}
-            />
-          </ProductsField>
-          <ProductsField htmlFor={descriptionId} label="Descripción">
-            <Textarea
-              className="min-h-[80px] border-zinc-700 bg-black/20"
-              id={descriptionId}
-              onChange={(event) => setDescription(event.target.value)}
-              placeholder="Descripción opcional…"
-              value={description}
-            />
-          </ProductsField>
-          {error ? (
-            <p className="text-red-400 text-sm">
-              {getErrorMessage(error, "No se pudo guardar la categoría.")}
-            </p>
-          ) : null}
-          <DialogFooter className="gap-2 sm:justify-between">
-            {category && onDelete ? (
-              <Button
-                className="border-red-500/30 bg-transparent text-red-200 hover:bg-red-500/10"
-                disabled={isPending}
-                onClick={() => {
-                  onDelete().catch(() => undefined);
-                }}
-                type="button"
-                variant="outline"
-              >
-                Eliminar
-              </Button>
-            ) : (
-              <span />
-            )}
+    <Modal
+      centered
+      onClose={() => onOpenChange(false)}
+      opened={open}
+      styles={darkModalStyles}
+      title={category ? "Editar categoría" : "Crear categoría"}
+    >
+      <form
+        className="space-y-4"
+        onSubmit={(event) => {
+          event.preventDefault();
+          onSave({
+            name,
+            description: description || null,
+          }).catch(() => undefined);
+        }}
+      >
+        <TextInput
+          label="Nombre"
+          onChange={(event) => setName(event.target.value)}
+          placeholder="Ej. Bebidas"
+          required
+          styles={darkInputStyles}
+          value={name}
+          withAsterisk
+        />
+        <Textarea
+          label="Descripción"
+          minRows={3}
+          onChange={(event) => setDescription(event.target.value)}
+          placeholder="Descripción opcional…"
+          styles={darkInputStyles}
+          value={description}
+        />
+        {error ? (
+          <p className="text-red-400 text-sm">
+            {getErrorMessage(error, "No se pudo guardar la categoría.")}
+          </p>
+        ) : null}
+        <Group justify={category && onDelete ? "space-between" : "flex-end"}>
+          {category && onDelete ? (
             <Button
-              className="bg-[var(--color-voltage)] text-black hover:bg-[#d9f15c]"
-              disabled={isPending || !name.trim()}
-              type="submit"
+              color="red"
+              disabled={isPending}
+              onClick={() => {
+                onDelete().catch(() => undefined);
+              }}
+              type="button"
+              variant="outline"
             >
-              {isPending ? "Guardando..." : "Guardar"}
+              Eliminar
             </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+          ) : null}
+          <Button
+            c="black"
+            color="voltage.5"
+            disabled={!name.trim()}
+            loading={isPending}
+            type="submit"
+          >
+            Guardar
+          </Button>
+        </Group>
+      </form>
+    </Modal>
   );
 }
 

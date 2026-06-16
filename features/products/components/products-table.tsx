@@ -1,3 +1,4 @@
+import { ActionIcon, Badge, Button } from "@mantine/core";
 import {
   createColumnHelper,
   flexRender,
@@ -6,8 +7,6 @@ import {
 } from "@tanstack/react-table";
 import { Edit3, Trash2 } from "lucide-react";
 import { useMemo } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { DataTablePagination } from "@/components/ui/data-table-pagination";
 import {
   Table,
@@ -37,7 +36,7 @@ export function ProductsTable() {
               {row.original.name}
             </p>
             {row.original.isModifier ? (
-              <Badge className="mt-1 border-[var(--color-voltage)]/20 bg-[var(--color-voltage)]/10 text-[var(--color-voltage)]">
+              <Badge color="voltage" mt={4} tt="none" variant="light">
                 Modificador
               </Badge>
             ) : null}
@@ -87,33 +86,33 @@ export function ProductsTable() {
           <div className="flex justify-end gap-2">
             {row.original.trackInventory ? (
               <Button
-                className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5"
+                color="gray"
                 onClick={() => actions.openInventoryForProduct(row.original)}
-                size="sm"
+                size="xs"
                 type="button"
                 variant="outline"
               >
                 Stock
               </Button>
             ) : null}
-            <Button
-              className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5"
+            <ActionIcon
+              aria-label="Editar producto"
+              color="gray"
               onClick={() => actions.openEditProduct(row.original)}
-              size="sm"
               type="button"
               variant="outline"
             >
               <Edit3 className="size-3.5" />
-            </Button>
-            <Button
-              className="border-red-500/30 bg-transparent text-red-200 hover:bg-red-500/10"
+            </ActionIcon>
+            <ActionIcon
+              aria-label="Eliminar producto"
+              color="red"
               onClick={() => actions.requestDeleteProduct(row.original)}
-              size="sm"
               type="button"
               variant="outline"
             >
               <Trash2 className="size-3.5" />
-            </Button>
+            </ActionIcon>
           </div>
         ),
       }),

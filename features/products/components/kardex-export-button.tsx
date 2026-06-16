@@ -1,8 +1,8 @@
+import { Button } from "@mantine/core";
 import { useZero } from "@rocicorp/zero/react";
 import { Download } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import type { InventoryMovementsListParams } from "@/features/products/hooks/use-inventory-movements";
 import {
   buildInventoryMovementsCsv,
@@ -58,16 +58,16 @@ export function KardexExportButton({
 
   return (
     <Button
-      className="border-zinc-800 bg-[var(--color-carbon)] text-zinc-300 hover:bg-white/5 hover:text-white"
-      disabled={isExporting}
+      color="gray"
+      leftSection={<Download className="size-4" />}
+      loading={isExporting}
       onClick={() => {
         handleExport().catch(() => undefined);
       }}
       type="button"
       variant="outline"
     >
-      <Download className="size-4" />
-      {isExporting ? "Exportando..." : "Exportar CSV"}
+      Exportar CSV
     </Button>
   );
 }
