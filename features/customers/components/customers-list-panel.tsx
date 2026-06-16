@@ -1,10 +1,9 @@
-import { Edit3, Loader2, Plus, Search, Trash2, Users } from "lucide-react";
+import { ActionIcon, Badge, Button, Loader, TextInput } from "@mantine/core";
+import { Edit3, Plus, Search, Trash2, Users } from "lucide-react";
 import { useId } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { TableCell, TableHead, TableRow } from "@/components/ui/table";
 import { VirtualTable } from "@/components/ui/virtual-table";
+import { darkInputStyles } from "@/features/customers/components/customers-mantine";
 import { formatCustomerDocumentLabel } from "@/features/customers/customers-formatters.shared";
 import { useCustomersPage } from "@/features/customers/customers-page-context";
 
@@ -14,18 +13,18 @@ export function CustomersListPanel() {
 
   return (
     <>
-      <div className="relative w-full sm:max-w-sm">
-        <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-zinc-500" />
-        <Input
-          className="border-zinc-800 bg-black/20 pl-9"
+      <div className="w-full sm:max-w-sm">
+        <TextInput
           id={searchId}
+          leftSection={<Search className="size-4 text-zinc-500" />}
           onChange={(event) => actions.setSearchQuery(event.target.value)}
           placeholder="Buscar por nombre, teléfono, documento o email…"
+          rightSection={
+            state.isSearching ? <Loader color="gray" size="xs" /> : null
+          }
+          styles={darkInputStyles}
           value={state.searchQuery}
         />
-        {state.isSearching ? (
-          <Loader2 className="absolute top-1/2 right-3 size-4 -translate-y-1/2 animate-spin text-zinc-500" />
-        ) : null}
       </div>
 
       <VirtualTable
@@ -41,12 +40,12 @@ export function CustomersListPanel() {
               </p>
               {state.searchQuery.trim() ? null : (
                 <Button
-                  className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5 hover:text-white"
+                  color="gray"
+                  leftSection={<Plus className="size-4" />}
                   onClick={actions.openCreate}
                   type="button"
                   variant="outline"
                 >
-                  <Plus className="mr-2 size-4" />
                   Crear cliente
                 </Button>
               )}
@@ -74,8 +73,10 @@ export function CustomersListPanel() {
                 </p>
                 {customer.type ? (
                   <Badge
-                    className="mt-1 border-zinc-700 bg-zinc-800/80 text-zinc-300"
-                    variant="outline"
+                    className="mt-1"
+                    color="gray"
+                    size="sm"
+                    variant="default"
                   >
                     {customer.type === "juridica" ? "Jurídica" : "Natural"}
                   </Badge>
@@ -96,24 +97,22 @@ export function CustomersListPanel() {
             </TableCell>
             <TableCell className="text-right">
               <div className="flex justify-end gap-2">
-                <Button
-                  className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5"
+                <ActionIcon
+                  aria-label="Editar cliente"
+                  color="gray"
                   onClick={() => actions.openEdit(customer)}
-                  size="sm"
-                  type="button"
                   variant="outline"
                 >
                   <Edit3 className="size-3.5" />
-                </Button>
-                <Button
-                  className="border-red-500/30 bg-transparent text-red-200 hover:bg-red-500/10"
+                </ActionIcon>
+                <ActionIcon
+                  aria-label="Eliminar cliente"
+                  color="red"
                   onClick={() => actions.openDelete(customer)}
-                  size="sm"
-                  type="button"
                   variant="outline"
                 >
                   <Trash2 className="size-3.5" />
-                </Button>
+                </ActionIcon>
               </div>
             </TableCell>
           </>

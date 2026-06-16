@@ -1,22 +1,10 @@
+import { Button, Drawer, Select, TextInput } from "@mantine/core";
 import { type FormEvent, useId, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
-import { CustomerFormField } from "@/features/customers/components/customers-ui-primitives";
+  darkDrawerStyles,
+  darkInputStyles,
+  darkSelectStyles,
+} from "@/features/customers/components/customers-mantine";
 import {
   CUSTOMER_DOCUMENT_TYPE_OPTIONS,
   CUSTOMER_TYPE_OPTIONS,
@@ -25,17 +13,17 @@ import {
 import { useCustomersPage } from "@/features/customers/customers-page-context";
 import { getErrorMessage } from "@/lib/utils";
 
+const DOCUMENT_TYPE_DATA = [
+  { value: "none", label: "Sin documento" },
+  ...CUSTOMER_DOCUMENT_TYPE_OPTIONS,
+];
+
 function CustomerFormSheetContent() {
   const { state, actions, meta } = useCustomersPage();
   const [form, setForm] = useState(() =>
     getCustomerFormInitialValue(state.editingCustomer)
   );
   const nameId = useId();
-  const typeId = useId();
-  const documentTypeId = useId();
-  const documentNumberId = useId();
-  const phoneId = useId();
-  const emailId = useId();
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -52,130 +40,77 @@ function CustomerFormSheetContent() {
 
   return (
     <form className="flex h-full flex-col" onSubmit={handleSubmit}>
-      <SheetHeader className="shrink-0 border-zinc-800 border-b p-6">
-        <SheetTitle className="font-bold text-2xl">
-          {state.editingCustomer ? "Editar cliente" : "Crear cliente"}
-        </SheetTitle>
-        <SheetDescription className="text-zinc-400">
-          Datos de contacto e identificación.
-        </SheetDescription>
-      </SheetHeader>
-
       <div className="flex-1 space-y-6 overflow-y-auto p-6">
+        <p className="text-sm text-zinc-400">
+          Datos de contacto e identificación.
+        </p>
         <div className="grid gap-4">
-          <CustomerFormField htmlFor={nameId} label="Nombre" required>
-            <Input
-              className="border-zinc-700 bg-black/20"
-              id={nameId}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  name: event.target.value,
-                }))
-              }
-              placeholder="Ej. Juan Pérez"
-              required
-              value={form.name}
-            />
-          </CustomerFormField>
-          <CustomerFormField htmlFor={typeId} label="Tipo de cliente">
-            <Select
-              onValueChange={(value) =>
-                setForm((current) => ({
-                  ...current,
-                  type: value,
-                }))
-              }
-              value={form.type || "natural"}
-            >
-              <SelectTrigger
-                className="w-full border-zinc-700 bg-black/20 text-white"
-                id={typeId}
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
-                {CUSTOMER_TYPE_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </CustomerFormField>
-          <CustomerFormField htmlFor={documentTypeId} label="Tipo de documento">
-            <Select
-              onValueChange={(value) =>
-                setForm((current) => ({
-                  ...current,
-                  documentType: value === "none" ? "" : value,
-                }))
-              }
-              value={form.documentType || "none"}
-            >
-              <SelectTrigger
-                className="w-full border-zinc-700 bg-black/20 text-white"
-                id={documentTypeId}
-              >
-                <SelectValue placeholder="Sin documento" />
-              </SelectTrigger>
-              <SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
-                <SelectItem value="none">Sin documento</SelectItem>
-                {CUSTOMER_DOCUMENT_TYPE_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </CustomerFormField>
-          <CustomerFormField
-            htmlFor={documentNumberId}
+          <TextInput
+            id={nameId}
+            label="Nombre"
+            onChange={(event) =>
+              setForm((current) => ({ ...current, name: event.target.value }))
+            }
+            placeholder="Ej. Juan Pérez"
+            required
+            styles={darkInputStyles}
+            value={form.name}
+            withAsterisk
+          />
+          <Select
+            data={CUSTOMER_TYPE_OPTIONS}
+            label="Tipo de cliente"
+            onChange={(value) =>
+              setForm((current) => ({ ...current, type: value ?? "natural" }))
+            }
+            styles={darkSelectStyles}
+            value={form.type || "natural"}
+          />
+          <Select
+            data={DOCUMENT_TYPE_DATA}
+            label="Tipo de documento"
+            onChange={(value) =>
+              setForm((current) => ({
+                ...current,
+                documentType: !value || value === "none" ? "" : value,
+              }))
+            }
+            placeholder="Sin documento"
+            styles={darkSelectStyles}
+            value={form.documentType || "none"}
+          />
+          <TextInput
             label="Número de documento"
-          >
-            <Input
-              className="border-zinc-700 bg-black/20"
-              id={documentNumberId}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  documentNumber: event.target.value,
-                }))
-              }
-              placeholder="Ej. 1234567890"
-              value={form.documentNumber}
-            />
-          </CustomerFormField>
-          <CustomerFormField htmlFor={phoneId} label="Teléfono">
-            <Input
-              className="border-zinc-700 bg-black/20"
-              id={phoneId}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  phone: event.target.value,
-                }))
-              }
-              placeholder="Ej. 3001234567"
-              type="tel"
-              value={form.phone}
-            />
-          </CustomerFormField>
-          <CustomerFormField htmlFor={emailId} label="Correo electrónico">
-            <Input
-              className="border-zinc-700 bg-black/20"
-              id={emailId}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  email: event.target.value,
-                }))
-              }
-              placeholder="cliente@ejemplo.com"
-              type="email"
-              value={form.email}
-            />
-          </CustomerFormField>
+            onChange={(event) =>
+              setForm((current) => ({
+                ...current,
+                documentNumber: event.target.value,
+              }))
+            }
+            placeholder="Ej. 1234567890"
+            styles={darkInputStyles}
+            value={form.documentNumber}
+          />
+          <TextInput
+            label="Teléfono"
+            onChange={(event) =>
+              setForm((current) => ({ ...current, phone: event.target.value }))
+            }
+            placeholder="Ej. 3001234567"
+            styles={darkInputStyles}
+            type="tel"
+            value={form.phone}
+          />
+          <TextInput
+            label="Correo electrónico"
+            onChange={(event) =>
+              setForm((current) => ({ ...current, email: event.target.value }))
+            }
+            placeholder="cliente@ejemplo.com"
+            styles={darkInputStyles}
+            type="email"
+            value={form.email}
+          />
         </div>
 
         {meta.formError ? (
@@ -185,15 +120,18 @@ function CustomerFormSheetContent() {
         ) : null}
       </div>
 
-      <SheetFooter className="shrink-0 border-zinc-800 border-t bg-black/30 p-6">
+      <div className="shrink-0 border-zinc-800 border-t bg-black/30 p-6">
         <Button
-          className="bg-[var(--color-voltage)] text-black hover:bg-[#d9f15c]"
-          disabled={meta.isFormPending || !form.name.trim()}
+          c="black"
+          color="voltage.5"
+          disabled={!form.name.trim()}
+          fullWidth
+          loading={meta.isFormPending}
           type="submit"
         >
-          {meta.isFormPending ? "Guardando…" : "Guardar cliente"}
+          Guardar cliente
         </Button>
-      </SheetFooter>
+      </div>
     </form>
   );
 }
@@ -203,19 +141,17 @@ export function CustomerFormSheet() {
   const isOpen = state.activeOverlay?.type === "form";
 
   return (
-    <Sheet
-      onOpenChange={(open) => {
-        if (!open) {
-          actions.closeOverlay();
-        }
-      }}
-      open={isOpen}
+    <Drawer
+      onClose={actions.closeOverlay}
+      opened={isOpen}
+      position="right"
+      size={540}
+      styles={darkDrawerStyles}
+      title={state.editingCustomer ? "Editar cliente" : "Crear cliente"}
     >
-      <SheetContent className="!w-full !max-w-full sm:!w-[540px] overflow-hidden border-zinc-800 border-l bg-[var(--color-carbon)] p-0 text-white">
-        <CustomerFormSheetContent
-          key={isOpen ? (state.editingCustomer?.id ?? "new") : "closed"}
-        />
-      </SheetContent>
-    </Sheet>
+      <CustomerFormSheetContent
+        key={isOpen ? (state.editingCustomer?.id ?? "new") : "closed"}
+      />
+    </Drawer>
   );
 }
