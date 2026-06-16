@@ -1,3 +1,4 @@
+import { Button, Textarea } from "@mantine/core";
 import {
   Check,
   LogOut,
@@ -6,8 +7,6 @@ import {
   Trash2,
   UtensilsCrossed,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { buildTableItemStatusBadge } from "@/features/pos/components/table-item-status.shared";
 import {
   type PosTableSessionState,
@@ -62,11 +61,12 @@ function CartPanelV2Header({
         </div>
         <Button
           aria-label="Salir de la mesa"
-          className="h-8 shrink-0 rounded-lg px-2 font-medium text-xs text-zinc-400 transition-all hover:bg-white/5 hover:text-white"
+          className="shrink-0 text-zinc-400 hover:bg-white/5 hover:text-white"
+          leftSection={<LogOut className="size-4" />}
           onClick={onExitTable}
-          variant="ghost"
+          size="compact-sm"
+          variant="subtle"
         >
-          <LogOut className="mr-1 size-4" />
           Salir
         </Button>
       </>
@@ -83,12 +83,14 @@ function CartPanelV2Header({
       </div>
       <Button
         aria-label="Limpiar carrito"
-        className="h-8 rounded-lg px-2 font-medium text-red-400 text-xs transition-all hover:bg-red-400/10 hover:text-red-300"
+        className="text-red-400 hover:bg-red-400/10 hover:text-red-300"
+        color="red"
         disabled={!hasItems}
+        leftSection={<Trash2 className="size-4" />}
         onClick={onClearCart}
-        variant="ghost"
+        size="compact-sm"
+        variant="subtle"
       >
-        <Trash2 className="mr-1 size-4" />
         Limpiar
       </Button>
     </>
@@ -105,15 +107,16 @@ function CartPanelV2FooterAction({
   if (tableSession) {
     return (
       <Button
-        className="h-9 w-full rounded-lg border border-[rgba(255,255,255,0.12)] bg-transparent font-semibold text-white text-xs shadow-none transition-all hover:border-[rgba(255,255,255,0.2)] hover:bg-[#1a1a1a] disabled:opacity-40"
+        className="border-[rgba(255,255,255,0.12)] bg-transparent font-semibold text-white hover:border-[rgba(255,255,255,0.2)] hover:bg-[#1a1a1a]"
         disabled={
           tableSession.draftItemsCount === 0 || tableSession.isSendingToKitchen
         }
+        fullWidth
+        leftSection={<Send className="size-3.5" />}
         onClick={actions.sendTableOrderToKitchen}
         type="button"
         variant="outline"
       >
-        <Send className="mr-1.5 size-3.5" />
         {tableSession.isSendingToKitchen
           ? "Enviando a cocina..."
           : `Enviar a cocina${
@@ -126,22 +129,20 @@ function CartPanelV2FooterAction({
   }
 
   return (
-    <div className="space-y-1.5">
-      <label
-        className="font-medium text-[#6b6b6b] text-xs"
-        htmlFor="pos-v2-delivery-info"
-      >
-        Info domicilio
-      </label>
-      <Textarea
-        className="min-h-14 resize-none border-[rgba(255,255,255,0.08)] bg-[#101010] text-white text-xs placeholder:text-[#4b4b4b]"
-        id="pos-v2-delivery-info"
-        maxLength={280}
-        onChange={(event) => actions.setDeliveryInfo(event.target.value)}
-        placeholder="Dirección, referencia o instrucciones"
-        value={state.deliveryInfo}
-      />
-    </div>
+    <Textarea
+      classNames={{
+        input:
+          "resize-none border-[rgba(255,255,255,0.08)] bg-[#101010] text-white text-xs placeholder:text-[#4b4b4b]",
+      }}
+      id="pos-v2-delivery-info"
+      label="Info domicilio"
+      maxLength={280}
+      minRows={2}
+      onChange={(event) => actions.setDeliveryInfo(event.target.value)}
+      placeholder="Dirección, referencia o instrucciones"
+      styles={{ label: { color: "#6b6b6b", fontSize: "0.75rem" } }}
+      value={state.deliveryInfo}
+    />
   );
 }
 
@@ -275,15 +276,15 @@ export function CartPanelV2({ className }: CartPanelV2Props) {
 
           <div className="px-3 pb-2">
             <Button
-              className="h-9 w-full rounded-lg border border-[rgba(255,255,255,0.12)] bg-[#151515] font-semibold text-white text-xs shadow-none transition-all hover:border-[rgba(255,255,255,0.2)] hover:bg-[#1a1a1a] disabled:opacity-40"
-              disabled={!state.canFinalizeSale || state.isProcessingCheckout}
+              className="border-[rgba(255,255,255,0.12)] bg-[#151515] font-semibold text-white hover:border-[rgba(255,255,255,0.2)] hover:bg-[#1a1a1a]"
+              disabled={!state.canFinalizeSale}
+              fullWidth
+              leftSection={<Check className="size-3.5" />}
+              loading={state.isProcessingCheckout}
               onClick={actions.finalizeSale}
               type="button"
             >
-              <Check className="mr-1.5 size-3.5" />
-              {state.isProcessingCheckout
-                ? "Procesando..."
-                : `${tableSession ? "Cobrar mesa" : "Cobrar"} — ${formatCurrency(totalAmount)}`}
+              {`${tableSession ? "Cobrar mesa" : "Cobrar"} — ${formatCurrency(totalAmount)}`}
             </Button>
           </div>
         </div>

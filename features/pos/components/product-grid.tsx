@@ -1,6 +1,6 @@
+import { TextInput } from "@mantine/core";
 import { LayoutGrid, List, Search, X } from "lucide-react";
 import { useEffect, useId, useRef } from "react";
-import { Input } from "@/components/ui/input";
 import { CategoryTabs } from "@/features/pos/components/category-tabs";
 import { usePosBarcodeScanner } from "@/features/pos/hooks/use-pos-barcode-scanner";
 import { usePosPage } from "@/features/pos/pos-page-context";
@@ -69,32 +69,36 @@ export function ProductGrid({
     >
       <div className="shrink-0 space-y-4 border-zinc-800/50 border-b bg-[#0a0a0a] p-4">
         <div className="flex items-center gap-4">
-          <div className="relative max-w-md flex-1">
-            <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-zinc-500" />
-            <Input
-              className="h-10 rounded-lg border-zinc-800 bg-black/40 pr-10 pl-9 text-white transition-all placeholder:text-zinc-600 focus-visible:border-[var(--color-voltage)] focus-visible:ring-1 focus-visible:ring-[var(--color-voltage)]"
-              id={searchInputId}
-              onChange={handleSearchChange}
-              onKeyDown={handleKeyDown}
-              placeholder="Buscar productos, código de barras..."
-              ref={searchInputRef}
-              value={state.searchQuery}
-            />
-            {state.searchQuery.trim().length > 0 ? (
-              <button
-                aria-label="Limpiar búsqueda"
-                className="absolute top-1/2 right-2 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-md text-zinc-500 transition-colors hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-voltage)]"
-                data-search-clear-button
-                onClick={clearSearch}
-                onMouseDown={(event) => {
-                  event.preventDefault();
-                }}
-                type="button"
-              >
-                <X className="size-4" />
-              </button>
-            ) : null}
-          </div>
+          <TextInput
+            className="max-w-md flex-1"
+            classNames={{
+              input:
+                "h-10 rounded-lg border-zinc-800 bg-black/40 text-white placeholder:text-zinc-600 focus-visible:border-[var(--color-voltage)]",
+            }}
+            id={searchInputId}
+            leftSection={<Search className="size-4 text-zinc-500" />}
+            onChange={handleSearchChange}
+            onKeyDown={handleKeyDown}
+            placeholder="Buscar productos, código de barras..."
+            ref={searchInputRef}
+            rightSection={
+              state.searchQuery.trim().length > 0 ? (
+                <button
+                  aria-label="Limpiar búsqueda"
+                  className="inline-flex size-7 items-center justify-center rounded-md text-zinc-500 transition-colors hover:bg-white/5 hover:text-white"
+                  data-search-clear-button
+                  onClick={clearSearch}
+                  onMouseDown={(event) => {
+                    event.preventDefault();
+                  }}
+                  type="button"
+                >
+                  <X className="size-4" />
+                </button>
+              ) : null
+            }
+            value={state.searchQuery}
+          />
         </div>
 
         <div className="flex items-center gap-2">

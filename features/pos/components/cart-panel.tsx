@@ -1,3 +1,4 @@
+import { Button, Textarea } from "@mantine/core";
 import {
   LogOut,
   Search,
@@ -6,9 +7,8 @@ import {
   UtensilsCrossed,
   Zap,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 
+import { darkInputStyles } from "@/lib/mantine-dark";
 import { cn } from "@/lib/utils";
 import type { PosTableSessionState } from "../pos-page-context";
 import type { CartItem, CartTotals } from "../types";
@@ -52,11 +52,12 @@ function CartPanelHeader({
         </div>
         <Button
           aria-label="Salir de la mesa"
-          className="h-8 shrink-0 rounded-md px-2 font-medium text-xs text-zinc-400 transition-all hover:bg-white/5 hover:text-white"
+          className="shrink-0 text-zinc-400 hover:bg-white/5 hover:text-white"
+          leftSection={<LogOut className="size-4" />}
           onClick={onExitTable}
-          variant="ghost"
+          size="compact-sm"
+          variant="subtle"
         >
-          <LogOut className="mr-1 size-4" />
           Salir
         </Button>
       </div>
@@ -73,12 +74,14 @@ function CartPanelHeader({
       </div>
       <Button
         aria-label="Limpiar carrito"
-        className="h-8 rounded-md px-2 font-medium text-red-400 text-xs transition-all hover:bg-red-400/10 hover:text-red-300"
+        className="text-red-400 hover:bg-red-400/10 hover:text-red-300"
+        color="red"
         disabled={!hasItems}
+        leftSection={<Trash2 className="size-4" />}
         onClick={onClearCart}
-        variant="ghost"
+        size="compact-sm"
+        variant="subtle"
       >
-        <Trash2 className="mr-1 size-4" />
         Limpiar
       </Button>
     </div>
@@ -185,22 +188,20 @@ export function CartPanel({
       <div className="shrink-0 border-zinc-800 border-t bg-[#0a0a0a] p-4">
         <div className="space-y-3">
           {tableSession ? null : (
-            <div className="space-y-1.5">
-              <label
-                className="font-medium text-xs text-zinc-400"
-                htmlFor="pos-delivery-info"
-              >
-                Info domicilio
-              </label>
-              <Textarea
-                className="min-h-16 resize-none border-zinc-800 bg-[#0f0f0f] text-sm text-white placeholder:text-zinc-600"
-                id="pos-delivery-info"
-                maxLength={280}
-                onChange={(event) => onDeliveryInfoChange(event.target.value)}
-                placeholder="Dirección, referencia o instrucciones"
-                value={deliveryInfo}
-              />
-            </div>
+            <Textarea
+              classNames={{
+                input:
+                  "resize-none border-zinc-800 bg-[#0f0f0f] text-sm text-white placeholder:text-zinc-600",
+              }}
+              id="pos-delivery-info"
+              label="Info domicilio"
+              maxLength={280}
+              minRows={2}
+              onChange={(event) => onDeliveryInfoChange(event.target.value)}
+              placeholder="Dirección, referencia o instrucciones"
+              styles={{ label: darkInputStyles.label }}
+              value={deliveryInfo}
+            />
           )}
 
           <div className="space-y-1.5">
@@ -235,16 +236,17 @@ export function CartPanel({
 
           {tableSession ? (
             <Button
-              className="w-full border-zinc-700 bg-transparent text-zinc-100 hover:bg-white/5"
+              color="gray"
               disabled={
                 tableSession.draftItemsCount === 0 ||
                 tableSession.isSendingToKitchen
               }
+              fullWidth
+              leftSection={<Send aria-hidden="true" className="size-4" />}
               onClick={onSendToKitchen}
               type="button"
               variant="outline"
             >
-              <Send aria-hidden="true" className="size-4" />
               {tableSession.isSendingToKitchen
                 ? "Enviando a cocina..."
                 : `Enviar a cocina${
@@ -256,18 +258,15 @@ export function CartPanel({
           ) : null}
 
           <Button
-            className="mt-2 h-12 w-full rounded-xl bg-[var(--color-voltage)] font-bold text-base text-black shadow-[0_4px_14px_rgba(201,230,5,0.2)] transition-all hover:bg-[#c9e605] hover:shadow-[0_6px_20px_rgba(201,230,5,0.3)]"
+            className="mt-2 h-12 rounded-xl bg-[var(--color-voltage)] font-bold text-base text-black hover:bg-[#c9e605]"
             disabled={cart.length === 0}
+            fullWidth
+            leftSection={
+              isQuickSaleMode ? <Zap className="size-4" /> : undefined
+            }
             onClick={onCheckout}
           >
-            {isQuickSaleMode ? (
-              <span className="flex items-center gap-1.5">
-                <Zap className="size-4" />
-                {tableSession ? "Cobrar mesa" : "Cobrar"}
-              </span>
-            ) : (
-              <span>{tableSession ? "Cobrar mesa" : "Cobrar"}</span>
-            )}
+            {tableSession ? "Cobrar mesa" : "Cobrar"}
           </Button>
         </div>
       </div>
