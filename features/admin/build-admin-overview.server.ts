@@ -12,6 +12,7 @@ import {
   shiftZonedDateParts,
   type ZonedDateParts,
   zonedMidnightUtc,
+  zonedSaleDateKeyAlias,
 } from "@/features/dashboard/zoned-time.server";
 
 export type AdminOverviewDbExecutor = Pick<Database, "select">;
@@ -177,8 +178,8 @@ export async function runBuildAdminOverview(
           lt(sale.createdAt, tomorrowStart)
         )
       )
-      .groupBy(saleDateKey)
-      .orderBy(asc(saleDateKey)),
+      .groupBy(zonedSaleDateKeyAlias)
+      .orderBy(asc(zonedSaleDateKeyAlias)),
     db
       .select({
         id: organization.id,

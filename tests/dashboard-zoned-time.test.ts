@@ -11,6 +11,7 @@ import {
   resolveDashboardTimeZone,
   shiftZonedDateParts,
   zonedMidnightUtc,
+  zonedSaleDateKeyAlias,
 } from "@/features/dashboard/zoned-time.server";
 
 describe("isSafeTimeZone", () => {
@@ -121,13 +122,15 @@ describe("formatZonedDateKey", () => {
 });
 
 describe("buildZonedSaleDateKey", () => {
-  test("uses a stable validated time zone literal across grouped SQL expressions", () => {
+  test("uses a bound time zone parameter and a stable grouped alias", () => {
     const saleDateKey = buildZonedSaleDateKey(sale.createdAt, "America/Bogota");
     const query = new PgDialect().sqlToQuery(
-      sql`select ${saleDateKey} from ${sale} group by ${saleDateKey} order by ${saleDateKey} asc`
+      sql`select ${saleDateKey} as ${zonedSaleDateKeyAlias} from ${sale} group by ${zonedSaleDateKeyAlias} order by ${zonedSaleDateKeyAlias} asc`
     );
 
-    expect(query.sql).toContain("at time zone 'America/Bogota'");
-    expect(query.params).not.toContain("America/Bogota");
+    expect(query.sql).toContain("at time zone $1");
+    expect(query.sql).toContain('group by "dateKey"');
+    expect(query.sql).toContain('order by "dateKey" asc');
+    expect(query.params).toEqual(["America/Bogota"]);
   });
 });

@@ -8,8 +8,8 @@ import type { AnyColumn } from "drizzle-orm/column";
  * extra dependency is needed.
  */
 
-// Letters, digits, "_", "+", "-" and "/" cover every IANA zone name. The
-// strict shape also makes the value safe to inline as a SQL string literal.
+// Letters, digits, "_", "+", "-" and "/" cover every IANA zone name before
+// the value is passed to Intl and then into a SQL bind parameter.
 const SAFE_TIME_ZONE_REGEX = /^[A-Za-z][A-Za-z0-9_+\-/]*$/;
 
 // The dashboard formats everything as es-CO/COP; when the client does not
@@ -45,8 +45,10 @@ export function buildZonedSaleDateKey(
     throw new Error(`Invalid time zone: ${timeZone}`);
   }
 
-  return sql<string>`to_char(${createdAtColumn} at time zone ${sql.raw(`'${timeZone}'`)}, 'YYYY-MM-DD')`;
+  return sql<string>`to_char(${createdAtColumn} at time zone ${timeZone}, 'YYYY-MM-DD')`;
 }
+
+export const zonedSaleDateKeyAlias = sql`${sql.identifier("dateKey")}`;
 
 export function resolveDashboardTimeZone(
   requested: string | null | undefined

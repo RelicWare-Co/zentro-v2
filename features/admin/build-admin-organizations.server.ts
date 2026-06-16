@@ -22,6 +22,7 @@ import {
   shiftZonedDateParts,
   type ZonedDateParts,
   zonedMidnightUtc,
+  zonedSaleDateKeyAlias,
 } from "@/features/dashboard/zoned-time.server";
 import { buildAdminModuleStates } from "./admin-modules.server";
 
@@ -356,8 +357,8 @@ export async function runBuildAdminOrganizationDetail(
           lt(sale.createdAt, windows.tomorrowStart)
         )
       )
-      .groupBy(saleDateKey)
-      .orderBy(asc(saleDateKey)),
+      .groupBy(zonedSaleDateKeyAlias)
+      .orderBy(asc(zonedSaleDateKeyAlias)),
     db
       .select({
         id: sale.id,

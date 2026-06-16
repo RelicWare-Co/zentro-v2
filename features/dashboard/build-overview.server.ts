@@ -39,6 +39,7 @@ import {
   shiftZonedDateParts,
   type ZonedDateParts,
   zonedMidnightUtc,
+  zonedSaleDateKeyAlias,
 } from "./zoned-time.server";
 
 export type DashboardDbExecutor = Pick<Database, "select">;
@@ -398,8 +399,8 @@ export async function runBuildDashboardOverview(
           lt(sale.createdAt, tomorrowStart)
         )
       )
-      .groupBy(saleDateKey)
-      .orderBy(asc(saleDateKey)),
+      .groupBy(zonedSaleDateKeyAlias)
+      .orderBy(asc(zonedSaleDateKeyAlias)),
     salesWindow.shiftIds.length > 0
       ? db
           .select({

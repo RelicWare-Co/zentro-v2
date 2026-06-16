@@ -10,8 +10,7 @@ import {
   createContext,
   type Ref,
   use,
-  useEffect,
-  useRef,
+  useCallback,
 } from "react";
 import {
   type DayButton,
@@ -224,12 +223,14 @@ function CalendarDayButton({
 }: ComponentProps<typeof DayButton> & { locale?: Partial<Locale> }) {
   const defaultClassNames = getDefaultClassNames();
 
-  const ref = useRef<HTMLButtonElement>(null);
-  useEffect(() => {
-    if (modifiers.focused) {
-      ref.current?.focus();
-    }
-  }, [modifiers.focused]);
+  const ref = useCallback(
+    (node: HTMLButtonElement | null) => {
+      if (modifiers.focused) {
+        node?.focus();
+      }
+    },
+    [modifiers.focused]
+  );
 
   return (
     <Button

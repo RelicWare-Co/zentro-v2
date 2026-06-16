@@ -1,18 +1,6 @@
 import { drizzleZeroConfig } from "drizzle-zero";
 import {
   account,
-  cashMovement,
-  cashMovementRelations,
-  category,
-  categoryRelations,
-  creditAccount,
-  creditAccountRelations,
-  creditTransaction,
-  creditTransactionRelations,
-  customer,
-  customerRelations,
-  inventoryMovement,
-  inventoryMovementRelations,
   invitation,
   invitationRelations,
   member,
@@ -20,12 +8,39 @@ import {
   organization,
   organizationJoinLink,
   organizationJoinLinkRelations,
-  organizationModuleEntitlement,
   organizationRelations,
-  payment,
-  paymentRelations,
+  session,
+  user,
+  verification,
+} from "./database/drizzle/schema/auth.schema";
+import {
+  creditAccount,
+  creditAccountRelations,
+  creditTransaction,
+  creditTransactionRelations,
+} from "./database/drizzle/schema/credit.schema";
+import {
+  customer,
+  customerRelations,
+} from "./database/drizzle/schema/customer.schema";
+import { organizationModuleEntitlement } from "./database/drizzle/schema/feature.schema";
+import {
+  category,
+  categoryRelations,
+  inventoryMovement,
+  inventoryMovementRelations,
   product,
   productRelations,
+} from "./database/drizzle/schema/inventory.schema";
+import {
+  cashMovement,
+  cashMovementRelations,
+  shift,
+  shiftClosure,
+  shiftClosureRelations,
+  shiftRelations,
+} from "./database/drizzle/schema/pos.schema";
+import {
   restaurantArea,
   restaurantAreaRelations,
   restaurantKitchenTicket,
@@ -38,20 +53,17 @@ import {
   restaurantOrderRelations,
   restaurantTable,
   restaurantTableRelations,
+} from "./database/drizzle/schema/restaurant.schema";
+import {
+  payment,
+  paymentRelations,
   sale,
   saleItem,
   saleItemModifier,
   saleItemModifierRelations,
   saleItemRelations,
   saleRelations,
-  session,
-  shift,
-  shiftClosure,
-  shiftClosureRelations,
-  shiftRelations,
-  user,
-  verification,
-} from "./database/drizzle/schema";
+} from "./database/drizzle/schema/sales.schema";
 
 const drizzleSchema = {
   account,

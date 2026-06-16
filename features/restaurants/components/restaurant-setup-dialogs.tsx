@@ -35,12 +35,17 @@ export function CreateRestaurantAreaDialog({
   const [name, setName] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!open) {
-      setName("");
-      setErrorMessage(null);
+  const resetForm = () => {
+    setName("");
+    setErrorMessage(null);
+  };
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) {
+      resetForm();
     }
-  }, [open]);
+    onOpenChange(nextOpen);
+  };
 
   const handleSubmit = async () => {
     const trimmedName = name.trim();
@@ -52,6 +57,7 @@ export function CreateRestaurantAreaDialog({
     setErrorMessage(null);
     try {
       await createAreaMutation.mutateAsync({ name: trimmedName });
+      resetForm();
       onOpenChange(false);
     } catch (error) {
       setErrorMessage(
@@ -61,7 +67,7 @@ export function CreateRestaurantAreaDialog({
   };
 
   return (
-    <Dialog onOpenChange={onOpenChange} open={open}>
+    <Dialog onOpenChange={handleOpenChange} open={open}>
       <DialogContent className="border-zinc-800 bg-[var(--color-carbon)] text-[var(--color-photon)]">
         <DialogHeader>
           <DialogTitle>Nueva zona</DialogTitle>
@@ -92,7 +98,7 @@ export function CreateRestaurantAreaDialog({
         <DialogFooter>
           <Button
             className="border-zinc-700 bg-transparent text-zinc-100 hover:bg-white/5"
-            onClick={() => onOpenChange(false)}
+            onClick={() => handleOpenChange(false)}
             type="button"
             variant="outline"
           >

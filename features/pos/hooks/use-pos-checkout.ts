@@ -156,11 +156,13 @@ export function usePosCheckout(
     });
   }, [paymentMethodOptions]);
 
-  useEffect(() => {
-    if (!allowCreditSales) {
-      setIsCreditSale(false);
-    }
-  }, [allowCreditSales]);
+  const effectiveIsCreditSale = allowCreditSales && isCreditSale;
+  const setCreditSale = useCallback(
+    (value: boolean) => {
+      setIsCreditSale(allowCreditSales ? value : false);
+    },
+    [allowCreditSales]
+  );
 
   const addPaymentMethod = useCallback(() => {
     const defaultMethodId = getDefaultPaymentMethodId(paymentMethodOptions);
@@ -332,7 +334,11 @@ export function usePosCheckout(
       totals: { ...cartTotals },
     };
 
-    const payload = buildSalePayload(shiftId, salePayments, isCreditSale);
+    const payload = buildSalePayload(
+      shiftId,
+      salePayments,
+      effectiveIsCreditSale
+    );
 
     createSaleMutation.mutate(payload, {
       onSuccess: (result) => {
@@ -354,7 +360,7 @@ export function usePosCheckout(
     activeShiftId,
     cart,
     createSaleMutation,
-    isCreditSale,
+    effectiveIsCreditSale,
     payments,
     cartTotals,
     deliveryInfo,
@@ -381,7 +387,8 @@ export function usePosCheckout(
   const paymentDifference = totalAmount - totalPaid;
   const hasPaymentDifference = paymentDifference !== 0;
   const remainingCreditAmount = Math.max(paymentDifference, 0);
-  const shouldCreateCreditBalance = isCreditSale && remainingCreditAmount > 0;
+  const shouldCreateCreditBalance =
+    effectiveIsCreditSale && remainingCreditAmount > 0;
   const canReturnCashChange = useMemo(
     () =>
       canCompleteSaleWithCashChange(
@@ -429,8 +436,8 @@ export function usePosCheckout(
 
   return {
     payments,
-    isCreditSale,
-    setIsCreditSale,
+    isCreditSale: effectiveIsCreditSale,
+    setIsCreditSale: setCreditSale,
 
     // Handlers
     addPaymentMethod,

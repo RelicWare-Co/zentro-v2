@@ -181,12 +181,6 @@ export function RestaurantPosTables({
   const { data: capabilities } = useModuleCapabilities();
   const isAccessible = capabilities?.modules.restaurants.accessible ?? false;
 
-  useEffect(() => {
-    if (isOpen && !isAccessible && capabilities) {
-      onOpenChange(false);
-    }
-  }, [capabilities, isAccessible, isOpen, onOpenChange]);
-
   if (!isAccessible) {
     return null;
   }

@@ -1,5 +1,5 @@
 import { ArrowDownLeft } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { usePosPage } from "@/features/pos/pos-page-context";
 import { formatCurrency } from "@/features/pos/utils";
 import { AccountCreditSummary } from "@/features/posv2/components/checkout-account-credit-section";
@@ -126,21 +126,13 @@ export function CheckoutSectionV2() {
     )
   );
 
-  useEffect(() => {
-    if (availableModes.length === 0) {
-      return;
-    }
-
-    if (!availableModes.includes(paymentMode)) {
-      setPaymentMode(availableModes[0] ?? "cash");
-    }
-  }, [availableModes, paymentMode]);
-
-  useEffect(() => {
-    if (paymentMode !== "multiple" && state.payments.length > 1) {
-      actions.removePaymentMethod(state.payments.length - 1);
-    }
-  }, [paymentMode, state.payments.length, actions]);
+  const effectivePaymentMode = useMemo(
+    () =>
+      availableModes.includes(paymentMode)
+        ? paymentMode
+        : (availableModes[0] ?? "cash"),
+    [availableModes, paymentMode]
+  );
 
   const handleModeSelect = (mode: PosV2PaymentMode) => {
     if (mode === "accountCredit") {
@@ -156,7 +148,7 @@ export function CheckoutSectionV2() {
       return;
     }
 
-    if (paymentMode === "accountCredit") {
+    if (effectivePaymentMode === "accountCredit") {
       actions.setIsCreditSale(false);
     }
 
@@ -169,6 +161,10 @@ export function CheckoutSectionV2() {
       return;
     }
 
+    for (let index = state.payments.length - 1; index > 0; index--) {
+      actions.removePaymentMethod(index);
+    }
+
     const methodId = resolveMethodIdForMode(mode, meta.paymentMethodOptions);
     actions.updatePayment(0, "method", methodId);
     actions.updatePayment(
@@ -179,38 +175,41 @@ export function CheckoutSectionV2() {
   };
 
   const validation = getPaymentValidationState(
-    paymentMode,
+    effectivePaymentMode,
     state.totals.totalAmount,
     state.totalPaid,
     state.canReturnCashChange,
     state.selectedCustomerId,
     state.shouldCreateCreditBalance
   );
-  const showCashReceived = paymentMode === "cash";
+  const showCashReceived = effectivePaymentMode === "cash";
   const showChangeSummary =
-    paymentMode === "cash" ||
-    (paymentMode === "multiple" && state.totalPaid > 0);
+    effectivePaymentMode === "cash" ||
+    (effectivePaymentMode === "multiple" && state.totalPaid > 0);
 
   return (
     <div className="space-y-2.5">
       <PaymentMethodGridV2
         availableModes={availableModes}
         onSelect={handleModeSelect}
-        selectedMode={paymentMode}
+        selectedMode={effectivePaymentMode}
       />
 
-      {paymentMode === "accountCredit" ? <AccountCreditSummary /> : null}
+      {effectivePaymentMode === "accountCredit" ? (
+        <AccountCreditSummary />
+      ) : null}
 
-      {paymentMode === "multiple" ? <MultiplePaymentsSection /> : null}
+      {effectivePaymentMode === "multiple" ? <MultiplePaymentsSection /> : null}
 
       {showCashReceived ? <CashCheckoutSection /> : null}
 
-      {paymentMode === "transfer" || paymentMode === "card" ? (
+      {effectivePaymentMode === "transfer" ||
+      effectivePaymentMode === "card" ? (
         <CardTransferCheckoutSection />
       ) : null}
 
       {showChangeSummary ? (
-        <PaymentSummaryBox paymentMode={paymentMode} />
+        <PaymentSummaryBox paymentMode={effectivePaymentMode} />
       ) : null}
 
       <div className="flex items-center justify-between gap-2">
@@ -230,7 +229,7 @@ export function CheckoutSectionV2() {
         ) : null}
       </div>
 
-      {paymentMode === "multiple" && state.paymentDifference > 0 ? (
+      {effectivePaymentMode === "multiple" && state.paymentDifference > 0 ? (
         <p className="text-[#6b6b6b] text-xs">
           Falta por pagar: {formatCurrency(state.paymentDifference)}
         </p>

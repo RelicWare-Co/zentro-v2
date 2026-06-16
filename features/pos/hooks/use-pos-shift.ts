@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   useCloseShiftMutation,
   useOpenShiftMutation,
@@ -51,16 +51,13 @@ export function usePosShift(
   const { data: shiftCloseSummary, isFetching: isShiftSummaryFetching } =
     useShiftCloseSummary(activeShift?.id, isCloseShiftModalOpen);
 
-  useEffect(() => {
-    const defaultMovementMethod =
-      getDefaultMovementPaymentMethodId(paymentMethodOptions);
+  const effectiveMovementPaymentMethod = useMemo(() => {
     const hasCurrentMethod = paymentMethodOptions.some(
       (paymentMethod) => paymentMethod.id === movementPaymentMethod
     );
-
-    if (!hasCurrentMethod) {
-      setMovementPaymentMethod(defaultMovementMethod);
-    }
+    return hasCurrentMethod
+      ? movementPaymentMethod
+      : getDefaultMovementPaymentMethodId(paymentMethodOptions);
   }, [movementPaymentMethod, paymentMethodOptions]);
 
   // Open shift handler
@@ -103,7 +100,7 @@ export function usePosShift(
       {
         shiftId: activeShift.id,
         type: movementType as "expense" | "payout" | "inflow",
-        paymentMethod: movementPaymentMethod,
+        paymentMethod: effectiveMovementPaymentMethod,
         amount: parsedAmount,
         description: movementDescription.trim(),
       },
@@ -123,7 +120,7 @@ export function usePosShift(
     activeShift,
     movementAmount,
     movementDescription,
-    movementPaymentMethod,
+    effectiveMovementPaymentMethod,
     movementType,
     paymentMethodOptions,
     registerCashMovementMutation,
@@ -181,7 +178,7 @@ export function usePosShift(
 
   const canRegisterCashMovement =
     Boolean(activeShift) &&
-    movementPaymentMethod.trim().length > 0 &&
+    effectiveMovementPaymentMethod.trim().length > 0 &&
     movementDescription.trim().length > 0 &&
     parseMoneyInput(movementAmount) > 0;
 
@@ -207,7 +204,7 @@ export function usePosShift(
     // Form states - Cash movement
     movementType,
     setMovementType,
-    movementPaymentMethod,
+    movementPaymentMethod: effectiveMovementPaymentMethod,
     setMovementPaymentMethod,
     movementAmount,
     setMovementAmount,

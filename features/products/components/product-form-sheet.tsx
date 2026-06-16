@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useState } from "react";
+import { type FormEvent, useState } from "react";
 import { Link } from "@/components/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,19 +58,18 @@ function ProductFormSheetContent({
   lastCreatedCategoryId: string | null;
 }) {
   const [form, setForm] = useState(() => getProductFormInitialValue(product));
-
-  useEffect(() => {
-    if (lastCreatedCategoryId) {
-      setForm((current) => ({ ...current, categoryId: lastCreatedCategoryId }));
-    }
-  }, [lastCreatedCategoryId]);
+  const [hasExplicitCategorySelection, setHasExplicitCategorySelection] =
+    useState(false);
+  const effectiveCategoryId =
+    form.categoryId ||
+    (hasExplicitCategorySelection ? "" : (lastCreatedCategoryId ?? ""));
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     await onSave({
       ...(product ? { id: product.id } : {}),
       name: form.name,
-      categoryId: form.categoryId || null,
+      categoryId: effectiveCategoryId || null,
       sku: form.sku || null,
       barcode: form.barcode || null,
       price: parseMoneyInput(form.price),
@@ -125,8 +124,9 @@ function ProductFormSheetContent({
                       ...current,
                       categoryId: value === "none" ? "" : value,
                     }));
+                    setHasExplicitCategorySelection(true);
                   }}
-                  value={form.categoryId || "none"}
+                  value={effectiveCategoryId || "none"}
                 >
                   <SelectTrigger className="w-full border-zinc-700 bg-black/20 text-white">
                     <SelectValue placeholder="Sin categoría" />
