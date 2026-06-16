@@ -1,26 +1,21 @@
+import {
+  Button,
+  Group,
+  Modal,
+  NativeSelect,
+  Stack,
+  Text,
+  TextInput,
+} from "@mantine/core";
 import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  NativeSelect,
-  NativeSelectOption,
-} from "@/components/ui/native-select";
 import {
   useCreateRestaurantAreaMutation,
   useCreateRestaurantTableMutation,
 } from "@/features/restaurants/hooks/use-restaurants";
 import type { RestaurantAreaSummary } from "@/features/restaurants/restaurants-ui.shared";
 import { suggestNextTableName } from "@/features/restaurants/restaurants-ui.shared";
+import { darkInputStyles, darkModalStyles } from "@/lib/mantine-dark";
 
 interface CreateAreaDialogProps {
   onOpenChange: (open: boolean) => void;
@@ -67,54 +62,53 @@ export function CreateRestaurantAreaDialog({
   };
 
   return (
-    <Dialog onOpenChange={handleOpenChange} open={open}>
-      <DialogContent className="border-zinc-800 bg-[var(--color-carbon)] text-[var(--color-photon)]">
-        <DialogHeader>
-          <DialogTitle>Nueva zona</DialogTitle>
-          <DialogDescription className="text-zinc-400">
-            Agrupa mesas por salón, terraza, barra u otro espacio.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="grid gap-2">
-          <Label htmlFor="restaurant-new-area-name">Nombre</Label>
-          <Input
-            autoComplete="off"
-            className="border-zinc-700 bg-black/20"
-            id="restaurant-new-area-name"
-            onChange={(event) => setName(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") {
-                event.preventDefault();
-                handleSubmit();
-              }
-            }}
-            placeholder="Ej. Salón principal"
-            value={name}
-          />
-          {errorMessage ? (
-            <p className="text-red-300 text-sm">{errorMessage}</p>
-          ) : null}
-        </div>
-        <DialogFooter>
+    <Modal
+      centered
+      onClose={() => handleOpenChange(false)}
+      opened={open}
+      styles={darkModalStyles}
+      title="Nueva zona"
+    >
+      <Stack gap="md">
+        <Text c="dimmed" size="sm">
+          Agrupa mesas por salón, terraza, barra u otro espacio.
+        </Text>
+        <TextInput
+          autoComplete="off"
+          error={errorMessage}
+          label="Nombre"
+          onChange={(event) => setName(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              handleSubmit();
+            }
+          }}
+          placeholder="Ej. Salón principal"
+          styles={darkInputStyles}
+          value={name}
+        />
+        <Group justify="flex-end">
           <Button
-            className="border-zinc-700 bg-transparent text-zinc-100 hover:bg-white/5"
+            color="gray"
             onClick={() => handleOpenChange(false)}
             type="button"
-            variant="outline"
+            variant="default"
           >
             Cancelar
           </Button>
           <Button
-            className="bg-[var(--color-voltage)] text-black hover:bg-[#d9f15c]"
-            disabled={createAreaMutation.isPending}
+            c="black"
+            color="voltage.5"
+            loading={createAreaMutation.isPending}
             onClick={handleSubmit}
             type="button"
           >
-            {createAreaMutation.isPending ? "Creando…" : "Crear zona"}
+            Crear zona
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </Group>
+      </Stack>
+    </Modal>
   );
 }
 
@@ -186,81 +180,69 @@ export function CreateRestaurantTableDialog({
   };
 
   return (
-    <Dialog onOpenChange={onOpenChange} open={open}>
-      <DialogContent className="border-zinc-800 bg-[var(--color-carbon)] text-[var(--color-photon)]">
-        <DialogHeader>
-          <DialogTitle>Nueva mesa</DialogTitle>
-          <DialogDescription className="text-zinc-400">
-            Agrega una mesa a la zona activa. Aparecerá de inmediato en el
-            plano.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="grid gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="restaurant-new-table-area">Zona</Label>
-            <NativeSelect
-              className="border-zinc-700 bg-black/20"
-              id="restaurant-new-table-area"
-              onChange={(event) => setAreaId(event.target.value)}
-              value={areaId}
-            >
-              {areas.map((area) => (
-                <NativeSelectOption key={area.id} value={area.id}>
-                  {area.name}
-                </NativeSelectOption>
-              ))}
-            </NativeSelect>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_120px]">
-            <div className="grid gap-2">
-              <Label htmlFor="restaurant-new-table-name">Nombre</Label>
-              <Input
-                autoComplete="off"
-                className="border-zinc-700 bg-black/20"
-                id="restaurant-new-table-name"
-                onChange={(event) => setName(event.target.value)}
-                placeholder="Mesa 1"
-                value={name}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="restaurant-new-table-seats">Puestos</Label>
-              <Input
-                autoComplete="off"
-                className="border-zinc-700 bg-black/20"
-                id="restaurant-new-table-seats"
-                min={0}
-                onChange={(event) => setSeats(event.target.value)}
-                placeholder="4"
-                type="number"
-                value={seats}
-              />
-            </div>
-          </div>
-          {errorMessage ? (
-            <p className="text-red-300 text-sm">{errorMessage}</p>
-          ) : null}
+    <Modal
+      centered
+      onClose={() => onOpenChange(false)}
+      opened={open}
+      styles={darkModalStyles}
+      title="Nueva mesa"
+    >
+      <Stack gap="md">
+        <Text c="dimmed" size="sm">
+          Agrega una mesa a la zona activa. Aparecerá de inmediato en el plano.
+        </Text>
+        <NativeSelect
+          data={areas.map((area) => ({ value: area.id, label: area.name }))}
+          label="Zona"
+          onChange={(event) => setAreaId(event.target.value)}
+          styles={darkInputStyles}
+          value={areaId}
+        />
+        <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_120px]">
+          <TextInput
+            autoComplete="off"
+            label="Nombre"
+            onChange={(event) => setName(event.target.value)}
+            placeholder="Mesa 1"
+            styles={darkInputStyles}
+            value={name}
+          />
+          <TextInput
+            autoComplete="off"
+            label="Puestos"
+            min={0}
+            onChange={(event) => setSeats(event.target.value)}
+            placeholder="4"
+            styles={darkInputStyles}
+            type="number"
+            value={seats}
+          />
         </div>
-        <DialogFooter>
+        {errorMessage ? (
+          <p className="text-red-300 text-sm">{errorMessage}</p>
+        ) : null}
+        <Group justify="flex-end">
           <Button
-            className="border-zinc-700 bg-transparent text-zinc-100 hover:bg-white/5"
+            color="gray"
             onClick={() => onOpenChange(false)}
             type="button"
-            variant="outline"
+            variant="default"
           >
             Cancelar
           </Button>
           <Button
-            className="bg-[var(--color-voltage)] text-black hover:bg-[#d9f15c]"
-            disabled={createTableMutation.isPending || areas.length === 0}
+            c="black"
+            color="voltage.5"
+            disabled={areas.length === 0}
+            loading={createTableMutation.isPending}
             onClick={handleSubmit}
             type="button"
           >
-            {createTableMutation.isPending ? "Creando…" : "Crear mesa"}
+            Crear mesa
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </Group>
+      </Stack>
+    </Modal>
   );
 }
 

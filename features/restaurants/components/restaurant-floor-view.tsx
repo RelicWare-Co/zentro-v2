@@ -1,16 +1,6 @@
+import { Badge, Button, Tabs } from "@mantine/core";
 import { ChefHat, LayoutGrid, Plus, Users } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatCurrency } from "@/features/pos/utils";
 import {
   CreateRestaurantAreaDialog,
@@ -87,7 +77,7 @@ function TableTile({
             status === "occupied" &&
               "bg-[var(--color-voltage)]/15 text-[var(--color-voltage)]"
           )}
-          variant="secondary"
+          tt="none"
         >
           {getTableStatusLabel(status)}
         </Badge>
@@ -159,20 +149,17 @@ export function RestaurantFloorView({
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <Badge
-              className="border-zinc-700 bg-black/20 text-zinc-200"
-              variant="outline"
-            >
+            <Badge color="gray" tt="none" variant="outline">
               {stats.free} libres
             </Badge>
-            <Badge
-              className="border-zinc-700 bg-black/20 text-zinc-200"
-              variant="outline"
-            >
+            <Badge color="gray" tt="none" variant="outline">
               {stats.occupied} ocupadas
             </Badge>
             {stats.draft > 0 ? (
-              <Badge className="border-amber-400/30 bg-amber-400/10 text-amber-100">
+              <Badge
+                className="border-amber-400/30 bg-amber-400/10 text-amber-100"
+                tt="none"
+              >
                 {stats.draft} pendientes de envío
               </Badge>
             ) : null}
@@ -186,34 +173,34 @@ export function RestaurantFloorView({
         <div className="flex flex-wrap items-center gap-2">
           {kitchenEnabled ? (
             <Button
-              asChild
-              className="border-zinc-700 bg-transparent text-zinc-100 hover:bg-white/5"
+              color="gray"
+              component="a"
+              href="/kitchen"
+              leftSection={<ChefHat aria-hidden="true" className="size-4" />}
               variant="outline"
             >
-              <a href="/kitchen">
-                <ChefHat aria-hidden="true" className="size-4" />
-                Cocina
-              </a>
+              Cocina
             </Button>
           ) : null}
           {canManageLayout ? (
             <>
               <Button
-                className="border-zinc-700 bg-transparent text-zinc-100 hover:bg-white/5"
+                color="gray"
+                leftSection={<Plus aria-hidden="true" className="size-4" />}
                 onClick={() => setIsCreateAreaOpen(true)}
                 type="button"
                 variant="outline"
               >
-                <Plus aria-hidden="true" className="size-4" />
                 Zona
               </Button>
               <Button
-                className="bg-[var(--color-voltage)] text-black hover:bg-[#d9f15c]"
+                c="black"
+                color="voltage.5"
                 disabled={bootstrap.areas.length === 0}
+                leftSection={<Plus aria-hidden="true" className="size-4" />}
                 onClick={() => setIsCreateTableOpen(true)}
                 type="button"
               >
-                <Plus aria-hidden="true" className="size-4" />
                 Mesa
               </Button>
             </>
@@ -222,43 +209,46 @@ export function RestaurantFloorView({
       </div>
 
       {bootstrap.areas.length === 0 ? (
-        <Empty className="border-zinc-800 bg-[var(--color-carbon)]">
-          <EmptyHeader>
-            <EmptyMedia className="text-[var(--color-voltage)]" variant="icon">
-              <LayoutGrid aria-hidden="true" />
-            </EmptyMedia>
-            <EmptyTitle>Configura tu primer salón</EmptyTitle>
-            <EmptyDescription>
-              Crea una zona (salón, terraza, barra) y agrega mesas para empezar
-              a tomar pedidos.
-            </EmptyDescription>
-          </EmptyHeader>
+        <div className="flex flex-col items-center gap-3 rounded-xl border border-zinc-800 bg-[var(--color-carbon)] p-10 text-center">
+          <LayoutGrid
+            aria-hidden="true"
+            className="size-10 text-[var(--color-voltage)]"
+          />
+          <h2 className="font-medium text-lg text-white">
+            Configura tu primer salón
+          </h2>
+          <p className="max-w-md text-sm text-zinc-400">
+            Crea una zona (salón, terraza, barra) y agrega mesas para empezar a
+            tomar pedidos.
+          </p>
           {canManageLayout ? (
-            <EmptyContent>
-              <Button
-                className="bg-[var(--color-voltage)] text-black hover:bg-[#d9f15c]"
-                onClick={() => setIsCreateAreaOpen(true)}
-                type="button"
-              >
-                Crear primera zona
-              </Button>
-            </EmptyContent>
+            <Button
+              c="black"
+              color="voltage.5"
+              onClick={() => setIsCreateAreaOpen(true)}
+              type="button"
+            >
+              Crear primera zona
+            </Button>
           ) : null}
-        </Empty>
+        </div>
       ) : (
         <>
-          <Tabs onValueChange={setActiveAreaId} value={resolvedAreaId}>
-            <TabsList className="flex-wrap gap-1">
-              <TabsTrigger value="all">Todas</TabsTrigger>
+          <Tabs
+            onChange={(value) => setActiveAreaId(value ?? "all")}
+            value={resolvedAreaId}
+          >
+            <Tabs.List className="flex-wrap gap-1">
+              <Tabs.Tab value="all">Todas</Tabs.Tab>
               {bootstrap.areas.map((area) => (
-                <TabsTrigger key={area.id} value={area.id}>
+                <Tabs.Tab key={area.id} value={area.id}>
                   {area.name}
                   <span className="ml-1 text-xs opacity-70">
                     ({area.tables.filter((table) => table.isActive).length})
                   </span>
-                </TabsTrigger>
+                </Tabs.Tab>
               ))}
-            </TabsList>
+            </Tabs.List>
           </Tabs>
 
           <div className="min-h-0 flex-1 space-y-8 overflow-y-auto p-1 pb-4">
@@ -271,7 +261,10 @@ export function RestaurantFloorView({
                     </h2>
                     {canManageLayout ? (
                       <Button
-                        className="border-zinc-700 bg-transparent text-zinc-100 hover:bg-white/5"
+                        color="gray"
+                        leftSection={
+                          <Plus aria-hidden="true" className="size-4" />
+                        }
                         onClick={() => {
                           setActiveAreaId(area.id);
                           setIsCreateTableOpen(true);
@@ -280,7 +273,6 @@ export function RestaurantFloorView({
                         type="button"
                         variant="outline"
                       >
-                        <Plus aria-hidden="true" className="size-4" />
                         Mesa en {area.name}
                       </Button>
                     ) : null}

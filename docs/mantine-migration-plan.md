@@ -1,8 +1,23 @@
 # Plan de migración shadcn → Mantine
 
-> **Estado:** Propuesta (2026-06-16). No se ha tocado código.
+> **Estado:** En progreso (rama `feat/mantine-migration`).
 > **Decisiones del usuario:** migración **incremental por feature**; el eje **Tailwind (eliminar vs. coexistir)** se decide tras un POC comparativo.
-> **Stack relevante:** React 19, Vike (`ssr: false`, client-rendered), Tailwind v4, Mantine 9.x objetivo.
+> **Stack relevante:** React 19, Vike (`ssr: false`, client-rendered), Tailwind v4, Mantine **9.3.2** instalado.
+
+## Registro de progreso
+
+- **Fase 1 (fundación) — ✅** `MantineProvider` (forceColorScheme light) en `pages/+Layout.tsx`,
+  `lib/mantine-theme.ts` (escalas `voltage`/`carbon`, radius 0.625rem), `postcss.config.cjs`
+  con `postcss-preset-mantine` (pipeline propio, separado de `@tailwindcss/vite`).
+  `@mantine/core/styles.css` importado antes de `tailwind.css`.
+- **Decisión del eje — Modalidad A (coexistencia).** El POC de `customers` confirmó que Mantine
+  (estructura/comportamiento) + Tailwind (layout/spacing) conviven sin conflicto de reset en
+  build. El tema dark (void/carbon/voltage) se preserva con overrides `styles` centralizados en
+  `lib/mantine-dark.ts` (darkInput/Select/Drawer/Modal). Se mantiene `sonner` por ahora.
+- **Fase 3 features migradas:** `customers` ✅, `credit` ✅. (tsc + ultracite + build OK por feature).
+- **Pendiente:** restaurants, auth, settings, products, organization, dashboard, pos; capa de
+  primitivas opcional (Fase 2a) descartada de momento — la migración directa por feature resulta
+  más fiel porque cada feature pasa estilos de marca propios vía `className`/`styles`.
 
 ## 1. Diagnóstico (medido sobre el repo)
 

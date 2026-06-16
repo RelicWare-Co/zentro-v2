@@ -1,5 +1,4 @@
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
+import { Alert, Badge } from "@mantine/core";
 import { RestaurantFloorView } from "@/features/restaurants/components/restaurant-floor-view";
 import { RestaurantServiceView } from "@/features/restaurants/components/restaurant-service-view";
 import { useRestaurantPageState } from "@/features/restaurants/hooks/use-restaurant-page-state";
@@ -11,15 +10,14 @@ export default function RestaurantsPage() {
     <main className="flex h-[calc(100dvh-4rem)] flex-col bg-[var(--color-void)] p-4 text-[var(--color-photon)] md:p-6">
       {state.isBootstrapError ? (
         <Alert
-          className="mb-4 border-red-500/20 bg-red-500/10 text-red-100"
-          variant="destructive"
+          className="mb-4"
+          color="red"
+          title="Acceso denegado"
+          variant="light"
         >
-          <AlertTitle>Acceso denegado</AlertTitle>
-          <AlertDescription>
-            {state.bootstrapError instanceof Error
-              ? state.bootstrapError.message
-              : "No tienes acceso al módulo de restaurantes."}
-          </AlertDescription>
+          {state.bootstrapError instanceof Error
+            ? state.bootstrapError.message
+            : "No tienes acceso al módulo de restaurantes."}
         </Alert>
       ) : null}
 
@@ -38,6 +36,7 @@ export default function RestaurantsPage() {
           {state.bootstrap?.activeShift ? (
             <Badge
               className="border-emerald-500/30 bg-emerald-500/10 text-emerald-200"
+              tt="none"
               variant="outline"
             >
               Caja abierta
@@ -45,6 +44,7 @@ export default function RestaurantsPage() {
           ) : (
             <Badge
               className="border-amber-400/30 bg-amber-400/10 text-amber-100"
+              tt="none"
               variant="outline"
             >
               Sin caja activa
@@ -55,9 +55,8 @@ export default function RestaurantsPage() {
 
       <div aria-live="polite" className="mb-4">
         {state.feedbackMessage ? (
-          <Alert className="border-zinc-700 bg-[var(--color-carbon)] text-[var(--color-photon)]">
-            <AlertTitle>Estado</AlertTitle>
-            <AlertDescription>{state.feedbackMessage}</AlertDescription>
+          <Alert color="gray" title="Estado">
+            {state.feedbackMessage}
           </Alert>
         ) : null}
       </div>

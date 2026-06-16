@@ -1,22 +1,21 @@
-import { ArrowLeft, Minus, Plus, Search, Send, Trash2 } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
+  ActionIcon,
+  Alert,
+  Badge,
+  Button,
   NativeSelect,
-  NativeSelectOption,
-} from "@/components/ui/native-select";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Textarea } from "@/components/ui/textarea";
+  ScrollArea,
+  Textarea,
+  TextInput,
+} from "@mantine/core";
+import { ArrowLeft, Minus, Plus, Search, Send, Trash2 } from "lucide-react";
 import { formatCurrency } from "@/features/pos/utils";
 import type {
   RestaurantBootstrap,
   RestaurantTableDetail,
 } from "@/features/restaurants/restaurants.shared";
 import { getOrderItemStatusLabel } from "@/features/restaurants/restaurants-ui.shared";
-import { cn } from "@/lib/utils";
+import { darkInputStyles } from "@/lib/mantine-dark";
 
 interface Product {
   categoryName: string;
@@ -48,34 +47,34 @@ function OrderItemActions({
   if (item.status === "draft") {
     return (
       <>
-        <Button
-          className="border-zinc-700 bg-transparent text-zinc-100 hover:bg-white/5"
+        <ActionIcon
+          aria-label="Restar unidad"
+          color="gray"
           disabled={item.quantity <= 1 || updateDraftPending}
           onClick={() => onUpdateDraftQuantity(item.id, item.quantity - 1)}
-          size="icon-sm"
           type="button"
           variant="outline"
         >
           <Minus aria-hidden="true" className="size-4" />
-        </Button>
-        <Button
-          className="border-zinc-700 bg-transparent text-zinc-100 hover:bg-white/5"
+        </ActionIcon>
+        <ActionIcon
+          aria-label="Sumar unidad"
+          color="gray"
           disabled={updateDraftPending}
           onClick={() => onUpdateDraftQuantity(item.id, item.quantity + 1)}
-          size="icon-sm"
           type="button"
           variant="outline"
         >
           <Plus aria-hidden="true" className="size-4" />
-        </Button>
+        </ActionIcon>
         <Button
-          className="border-zinc-700 bg-transparent text-zinc-100 hover:bg-white/5"
+          color="gray"
           disabled={deleteDraftPending}
+          leftSection={<Trash2 aria-hidden="true" className="size-4" />}
           onClick={() => onDeleteDraftItem(item.id)}
           type="button"
           variant="outline"
         >
-          <Trash2 aria-hidden="true" className="size-4" />
           Quitar
         </Button>
       </>
@@ -88,7 +87,7 @@ function OrderItemActions({
 
   return (
     <Button
-      className="border-zinc-700 bg-transparent text-zinc-100 hover:bg-white/5"
+      color="gray"
       disabled={updateStatusPending}
       onClick={() => onMarkItemServed(item.id)}
       type="button"
@@ -153,10 +152,7 @@ function OrderItemsPanel({
                 </div>
               ) : null}
             </div>
-            <Badge
-              className="shrink-0 border-zinc-700 bg-black/20 text-zinc-300"
-              variant="outline"
-            >
+            <Badge color="gray" tt="none" variant="outline">
               {getOrderItemStatusLabel(item.status)}
             </Badge>
           </div>
@@ -252,12 +248,12 @@ export function RestaurantServiceView({
       <div className="flex flex-wrap items-center justify-between gap-3 border-zinc-800 border-b pb-4">
         <div className="flex min-w-0 items-center gap-3">
           <Button
-            className="border-zinc-700 bg-transparent text-zinc-100 hover:bg-white/5"
+            color="gray"
+            leftSection={<ArrowLeft aria-hidden="true" className="size-4" />}
             onClick={onBack}
             type="button"
             variant="outline"
           >
-            <ArrowLeft aria-hidden="true" className="size-4" />
             Plano
           </Button>
           <div className="min-w-0">
@@ -272,6 +268,7 @@ export function RestaurantServiceView({
         {openOrder ? (
           <Badge
             className="border-[var(--color-voltage)]/30 bg-[var(--color-voltage)]/10 text-[var(--color-voltage)]"
+            tt="none"
             variant="outline"
           >
             Orden #{openOrder.orderNumber}
@@ -279,6 +276,7 @@ export function RestaurantServiceView({
         ) : (
           <Badge
             className="border-emerald-500/30 bg-emerald-500/10 text-emerald-200"
+            tt="none"
             variant="outline"
           >
             Mesa libre
@@ -291,31 +289,34 @@ export function RestaurantServiceView({
           <div className="border-zinc-800 border-b p-4">
             <div className="mb-3 font-medium text-white">Carta</div>
             <div className="flex flex-wrap items-end gap-3">
-              <div className="relative min-w-[220px] flex-1">
-                <Search
-                  aria-hidden="true"
-                  className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-zinc-500"
-                />
-                <Input
+              <div className="min-w-[220px] flex-1">
+                <TextInput
                   autoComplete="off"
-                  className="border-zinc-700 bg-black/20 pl-9"
+                  leftSection={
+                    <Search
+                      aria-hidden="true"
+                      className="size-4 text-zinc-500"
+                    />
+                  }
                   onChange={(event) => onSearchChange(event.target.value)}
                   placeholder="Buscar producto…"
+                  styles={darkInputStyles}
                   value={searchQuery}
                 />
               </div>
               <NativeSelect
-                className="w-[180px] border-zinc-700 bg-black/20"
+                className="w-[180px]"
+                data={[
+                  { value: "all", label: "Todas" },
+                  ...bootstrap.categories.map((category) => ({
+                    value: category.id,
+                    label: category.name,
+                  })),
+                ]}
                 onChange={(event) => onCategoryChange(event.target.value)}
+                styles={darkInputStyles}
                 value={activeCategoryId}
-              >
-                <NativeSelectOption value="all">Todas</NativeSelectOption>
-                {bootstrap.categories.map((category) => (
-                  <NativeSelectOption key={category.id} value={category.id}>
-                    {category.name}
-                  </NativeSelectOption>
-                ))}
-              </NativeSelect>
+              />
             </div>
           </div>
 
@@ -357,37 +358,35 @@ export function RestaurantServiceView({
           <div className="border-zinc-800 border-b p-4">
             <div className="font-medium text-white">Cuenta</div>
             <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-              <div className="grid gap-2">
-                <Label htmlFor="serviceGuestCount">Comensales</Label>
-                <Input
-                  autoComplete="off"
-                  className="border-zinc-700 bg-black/20"
-                  id="serviceGuestCount"
-                  min={0}
-                  onChange={(event) => onGuestCountChange(event.target.value)}
-                  placeholder="2"
-                  type="number"
-                  value={guestCountInput}
-                />
-              </div>
-              <div className="grid gap-2 sm:col-span-2 xl:col-span-1">
-                <Label htmlFor="serviceOrderNotes">Notas</Label>
-                <Textarea
-                  autoComplete="off"
-                  className="min-h-16 border-zinc-700 bg-black/20"
-                  id="serviceOrderNotes"
-                  onChange={(event) => onNotesChange(event.target.value)}
-                  placeholder="Preferencias, alergias, celebración…"
-                  value={orderNotes}
-                />
-              </div>
+              <TextInput
+                autoComplete="off"
+                label="Comensales"
+                min={0}
+                onChange={(event) => onGuestCountChange(event.target.value)}
+                placeholder="2"
+                styles={darkInputStyles}
+                type="number"
+                value={guestCountInput}
+              />
+              <Textarea
+                autoComplete="off"
+                className="sm:col-span-2 xl:col-span-1"
+                label="Notas"
+                onChange={(event) => onNotesChange(event.target.value)}
+                placeholder="Preferencias, alergias, celebración…"
+                styles={darkInputStyles}
+                value={orderNotes}
+              />
               <Button
-                className="bg-[var(--color-voltage)] text-black hover:bg-[#d9f15c] sm:col-span-2 xl:col-span-1"
-                disabled={!openOrder || updateOrderMetaPending}
+                c="black"
+                className="sm:col-span-2 xl:col-span-1"
+                color="voltage.5"
+                disabled={!openOrder}
+                loading={updateOrderMetaPending}
                 onClick={onSaveMeta}
                 type="button"
               >
-                {updateOrderMetaPending ? "Guardando…" : "Guardar datos"}
+                Guardar datos
               </Button>
             </div>
           </div>
@@ -423,75 +422,63 @@ export function RestaurantServiceView({
                 </div>
 
                 <Button
-                  className="w-full border-zinc-700 bg-transparent text-zinc-100 hover:bg-white/5"
+                  color="gray"
                   disabled={
                     sendToKitchenPending ||
                     openOrder.totals.draftItemsCount === 0
                   }
+                  fullWidth
+                  leftSection={<Send aria-hidden="true" className="size-4" />}
                   onClick={onSendToKitchen}
                   type="button"
                   variant="outline"
                 >
-                  <Send aria-hidden="true" className="size-4" />
                   {sendToKitchenPending ? "Enviando…" : "Enviar a cocina"}
                 </Button>
 
                 {bootstrap.activeShift ? (
                   <div className="space-y-3 rounded-xl border border-zinc-800 bg-black/10 p-3">
-                    <div className="grid gap-2">
-                      <Label htmlFor="servicePaymentMethod">
-                        Método de pago
-                      </Label>
-                      <NativeSelect
-                        id="servicePaymentMethod"
-                        onChange={(event) =>
-                          onPaymentMethodChange(event.target.value)
-                        }
-                        value={paymentMethod}
-                      >
-                        {bootstrap.settings.paymentMethods.map((method) => (
-                          <NativeSelectOption key={method.id} value={method.id}>
-                            {method.label}
-                          </NativeSelectOption>
-                        ))}
-                      </NativeSelect>
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="servicePaymentReference">
-                        Referencia
-                      </Label>
-                      <Input
-                        autoComplete="off"
-                        className="border-zinc-700 bg-black/20"
-                        id="servicePaymentReference"
-                        onChange={(event) =>
-                          onPaymentReferenceChange(event.target.value)
-                        }
-                        placeholder="Voucher, transferencia…"
-                        value={paymentReference}
-                      />
-                    </div>
+                    <NativeSelect
+                      data={bootstrap.settings.paymentMethods.map((method) => ({
+                        value: method.id,
+                        label: method.label,
+                      }))}
+                      label="Método de pago"
+                      onChange={(event) =>
+                        onPaymentMethodChange(event.target.value)
+                      }
+                      styles={darkInputStyles}
+                      value={paymentMethod}
+                    />
+                    <TextInput
+                      autoComplete="off"
+                      label="Referencia"
+                      onChange={(event) =>
+                        onPaymentReferenceChange(event.target.value)
+                      }
+                      placeholder="Voucher, transferencia…"
+                      styles={darkInputStyles}
+                      value={paymentReference}
+                    />
                     <Button
-                      className={cn(
-                        "w-full bg-[var(--color-voltage)] text-black hover:bg-[#d9f15c]"
-                      )}
+                      c="black"
+                      color="voltage.5"
                       disabled={
                         closeOrderPending ||
                         (requiresReference &&
                           paymentReference.trim().length === 0)
                       }
+                      fullWidth
+                      loading={closeOrderPending}
                       onClick={onCloseOrder}
                       type="button"
                     >
-                      {closeOrderPending ? "Cobrando…" : "Cobrar mesa"}
+                      Cobrar mesa
                     </Button>
                   </div>
                 ) : (
-                  <Alert className="border-zinc-700 bg-black/10 text-[var(--color-photon)]">
-                    <AlertTitle>Caja requerida</AlertTitle>
-                    <AlertDescription>
-                      Abre una caja en POS para poder cobrar la mesa.
-                    </AlertDescription>
+                  <Alert color="gray" title="Caja requerida">
+                    Abre una caja en POS para poder cobrar la mesa.
                   </Alert>
                 )}
               </>

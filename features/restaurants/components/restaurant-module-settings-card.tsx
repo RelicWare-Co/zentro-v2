@@ -1,18 +1,6 @@
+import { Alert, Button, Divider, Switch, TextInput } from "@mantine/core";
 import { Plus, Trash2, UtensilsCrossed } from "lucide-react";
 import { useState } from "react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
 import type { ModuleAccessState } from "@/features/modules/module-access.shared";
 import type { RestaurantConfiguration } from "@/features/restaurants/hooks/use-restaurants";
 import {
@@ -23,6 +11,7 @@ import {
   useUpdateRestaurantTableMutation,
 } from "@/features/restaurants/hooks/use-restaurants";
 import type { OrganizationSettings } from "@/features/settings/settings.shared";
+import { darkInputStyles } from "@/lib/mantine-dark";
 
 interface RestaurantModuleSettingsCardProps {
   canManageSettings: boolean;
@@ -97,40 +86,34 @@ export function RestaurantModuleSettingsCard(
   };
 
   return (
-    <Card className="border-zinc-800 bg-[var(--color-carbon)] text-[var(--color-photon)] shadow-none">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+    <div className="rounded-xl border border-zinc-800 bg-[var(--color-carbon)] p-6 text-[var(--color-photon)]">
+      <div className="space-y-1.5">
+        <h3 className="flex items-center gap-2 font-semibold">
           <UtensilsCrossed
             aria-hidden="true"
             className="size-4 text-[var(--color-voltage)]"
           />
           Restaurantes
-        </CardTitle>
-        <CardDescription className="text-zinc-400">
+        </h3>
+        <p className="text-sm text-zinc-400">
           Activación del módulo, salida de cocina y estructura de mesas.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
+        </p>
+      </div>
+      <div className="mt-6 space-y-6">
         {props.moduleAccess.entitlementStatus === "blocked" ? (
-          <Alert
-            aria-live="polite"
-            className="border-zinc-700 bg-black/10 text-[var(--color-photon)]"
-          >
-            <AlertTitle>Módulo bloqueado</AlertTitle>
-            <AlertDescription>
-              Esta organización no tiene entitlement para restaurantes.
-            </AlertDescription>
+          <Alert aria-live="polite" color="gray" title="Módulo bloqueado">
+            Esta organización no tiene entitlement para restaurantes.
           </Alert>
         ) : null}
 
         {restaurantConfigMutationError ? (
           <Alert
             aria-live="polite"
-            className="border-red-500/20 bg-red-500/10 text-red-100"
-            variant="destructive"
+            color="red"
+            title="No se pudo actualizar restaurantes"
+            variant="light"
           >
-            <AlertTitle>No se pudo actualizar restaurantes</AlertTitle>
-            <AlertDescription>{restaurantConfigMutationError}</AlertDescription>
+            {restaurantConfigMutationError}
           </Alert>
         ) : null}
 
@@ -143,15 +126,16 @@ export function RestaurantModuleSettingsCard(
           </div>
           <Switch
             checked={props.settings.modules.restaurants.enabled}
+            color="voltage.5"
             disabled={!props.moduleAccess.canManageToggle}
-            onCheckedChange={(checked) =>
+            onChange={(event) =>
               props.onSettingsChange((currentValue) => ({
                 ...currentValue,
                 modules: {
                   ...currentValue.modules,
                   restaurants: {
                     ...currentValue.modules.restaurants,
-                    enabled: checked,
+                    enabled: event.currentTarget.checked,
                   },
                 },
               }))
@@ -169,15 +153,16 @@ export function RestaurantModuleSettingsCard(
             </div>
             <Switch
               checked={props.settings.restaurants.kitchen.displayEnabled}
+              color="voltage.5"
               disabled={!props.canManageSettings}
-              onCheckedChange={(checked) =>
+              onChange={(event) =>
                 props.onSettingsChange((currentValue) => ({
                   ...currentValue,
                   restaurants: {
                     ...currentValue.restaurants,
                     kitchen: {
                       ...currentValue.restaurants.kitchen,
-                      displayEnabled: checked,
+                      displayEnabled: event.currentTarget.checked,
                     },
                   },
                 }))
@@ -193,15 +178,16 @@ export function RestaurantModuleSettingsCard(
             </div>
             <Switch
               checked={props.settings.restaurants.kitchen.printTicketsEnabled}
+              color="voltage.5"
               disabled={!props.canManageSettings}
-              onCheckedChange={(checked) =>
+              onChange={(event) =>
                 props.onSettingsChange((currentValue) => ({
                   ...currentValue,
                   restaurants: {
                     ...currentValue.restaurants,
                     kitchen: {
                       ...currentValue.restaurants.kitchen,
-                      printTicketsEnabled: checked,
+                      printTicketsEnabled: event.currentTarget.checked,
                     },
                   },
                 }))
@@ -217,20 +203,21 @@ export function RestaurantModuleSettingsCard(
             </div>
             <Switch
               checked={props.settings.restaurants.kitchen.autoPrintOnSend}
+              color="voltage.5"
               disabled={
                 !(
                   props.canManageSettings &&
                   props.settings.restaurants.kitchen.printTicketsEnabled
                 )
               }
-              onCheckedChange={(checked) =>
+              onChange={(event) =>
                 props.onSettingsChange((currentValue) => ({
                   ...currentValue,
                   restaurants: {
                     ...currentValue.restaurants,
                     kitchen: {
                       ...currentValue.restaurants.kitchen,
-                      autoPrintOnSend: checked,
+                      autoPrintOnSend: event.currentTarget.checked,
                     },
                   },
                 }))
@@ -239,38 +226,33 @@ export function RestaurantModuleSettingsCard(
           </div>
         </div>
 
-        <Separator className="border-zinc-800" />
+        <Divider color="dark.4" />
 
         <div className="space-y-4">
-          <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
-            <div className="grid gap-2">
-              <Label htmlFor="new-area-name">Agregar zona</Label>
-              <Input
-                autoComplete="off"
-                className="border-zinc-700 bg-black/20"
-                disabled={!props.canManageSettings}
-                id="new-area-name"
-                name="new-area-name"
-                onChange={(event) => setNewAreaName(event.target.value)}
-                placeholder="Ej. Salón, Terraza, Barra…"
-                value={newAreaName}
-              />
-            </div>
-            <div className="flex items-end">
-              <Button
-                className="border-zinc-700 bg-transparent text-zinc-100 hover:bg-white/5"
-                disabled={
-                  !props.canManageSettings ||
-                  createRestaurantAreaMutation.isPending
-                }
-                onClick={handleCreateArea}
-                type="button"
-                variant="outline"
-              >
-                <Plus aria-hidden="true" className="size-4" />
-                Agregar zona
-              </Button>
-            </div>
+          <div className="grid items-end gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+            <TextInput
+              autoComplete="off"
+              disabled={!props.canManageSettings}
+              label="Agregar zona"
+              name="new-area-name"
+              onChange={(event) => setNewAreaName(event.target.value)}
+              placeholder="Ej. Salón, Terraza, Barra…"
+              styles={darkInputStyles}
+              value={newAreaName}
+            />
+            <Button
+              color="gray"
+              disabled={
+                !props.canManageSettings ||
+                createRestaurantAreaMutation.isPending
+              }
+              leftSection={<Plus aria-hidden="true" className="size-4" />}
+              onClick={handleCreateArea}
+              type="button"
+              variant="outline"
+            >
+              Agregar zona
+            </Button>
           </div>
 
           <div className="space-y-3">
@@ -282,11 +264,14 @@ export function RestaurantModuleSettingsCard(
                 <div className="flex items-center justify-between gap-3">
                   <div className="font-medium text-white">{area.name}</div>
                   <Button
-                    className="border-zinc-700 bg-transparent text-zinc-100 hover:bg-white/5"
+                    color="gray"
                     disabled={
                       !props.canManageSettings ||
                       deleteRestaurantAreaMutation.isPending ||
                       area.tables.length > 0
+                    }
+                    leftSection={
+                      <Trash2 aria-hidden="true" className="size-4" />
                     }
                     onClick={() => {
                       deleteRestaurantAreaMutation.mutate({
@@ -296,7 +281,6 @@ export function RestaurantModuleSettingsCard(
                     type="button"
                     variant="outline"
                   >
-                    <Trash2 aria-hidden="true" className="size-4" />
                     Eliminar
                   </Button>
                 </div>
@@ -318,20 +302,21 @@ export function RestaurantModuleSettingsCard(
                       <div className="flex items-center gap-3">
                         <Switch
                           checked={table.isActive}
+                          color="voltage.5"
                           disabled={
                             !props.canManageSettings ||
                             updateRestaurantTableMutation.isPending
                           }
-                          onCheckedChange={(checked) =>
+                          onChange={(event) =>
                             updateRestaurantTableMutation.mutate({
                               id: table.id,
-                              isActive: checked,
+                              isActive: event.currentTarget.checked,
                             })
                           }
                         />
                         <Button
                           aria-label={`Eliminar ${table.name}`}
-                          className="border-zinc-700 bg-transparent text-zinc-100 hover:bg-white/5"
+                          color="gray"
                           disabled={
                             !props.canManageSettings ||
                             deleteRestaurantTableMutation.isPending
@@ -352,9 +337,8 @@ export function RestaurantModuleSettingsCard(
                 </div>
 
                 <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_120px_auto]">
-                  <Input
+                  <TextInput
                     autoComplete="off"
-                    className="border-zinc-700 bg-black/20"
                     disabled={!props.canManageSettings}
                     name={`table-name-${area.id}`}
                     onChange={(event) =>
@@ -367,11 +351,11 @@ export function RestaurantModuleSettingsCard(
                       }))
                     }
                     placeholder="Nueva mesa…"
+                    styles={darkInputStyles}
                     value={newTableDrafts[area.id]?.name ?? ""}
                   />
-                  <Input
+                  <TextInput
                     autoComplete="off"
-                    className="border-zinc-700 bg-black/20"
                     disabled={!props.canManageSettings}
                     min={0}
                     name={`table-seats-${area.id}`}
@@ -385,20 +369,21 @@ export function RestaurantModuleSettingsCard(
                       }))
                     }
                     placeholder="Puestos"
+                    styles={darkInputStyles}
                     type="number"
                     value={newTableDrafts[area.id]?.seats ?? ""}
                   />
                   <Button
-                    className="border-zinc-700 bg-transparent text-zinc-100 hover:bg-white/5"
+                    color="gray"
                     disabled={
                       !props.canManageSettings ||
                       createRestaurantTableMutation.isPending
                     }
+                    leftSection={<Plus aria-hidden="true" className="size-4" />}
                     onClick={() => handleCreateTable(area.id)}
                     type="button"
                     variant="outline"
                   >
-                    <Plus aria-hidden="true" className="size-4" />
                     Agregar
                   </Button>
                 </div>
@@ -406,7 +391,7 @@ export function RestaurantModuleSettingsCard(
             ))}
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

@@ -1,9 +1,7 @@
+import { ActionIcon, Alert, Badge, Button } from "@mantine/core";
 import { UtensilsCrossed, X } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useRef } from "react";
 import { usePageContext } from "vike-react/usePageContext";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { useModuleCapabilities } from "@/features/modules/hooks/use-module-capabilities";
 import { isOrganizationManagerRole } from "@/features/organization/access-control.shared";
 import { RestaurantFloorView } from "@/features/restaurants/components/restaurant-floor-view";
@@ -113,6 +111,7 @@ function RestaurantPosTablesPanel({
           {bootstrap?.activeShift ? (
             <Badge
               className="border-emerald-500/30 bg-emerald-500/10 text-emerald-200"
+              tt="none"
               variant="outline"
             >
               Caja abierta
@@ -120,36 +119,36 @@ function RestaurantPosTablesPanel({
           ) : (
             <Badge
               className="border-amber-400/30 bg-amber-400/10 text-amber-100"
+              tt="none"
               variant="outline"
             >
               Sin caja activa
             </Badge>
           )}
-          <Button
+          <ActionIcon
             aria-label="Cerrar mesas"
-            className="border-zinc-700 bg-transparent text-zinc-100 hover:bg-white/5"
+            color="gray"
             onClick={onClose}
-            size="icon"
+            size="lg"
             type="button"
             variant="outline"
           >
             <X aria-hidden="true" className="size-4" />
-          </Button>
+          </ActionIcon>
         </div>
       </header>
 
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden p-4 md:p-6">
         {bootstrapQuery.isError ? (
           <Alert
-            className="mb-4 border-red-500/20 bg-red-500/10 text-red-100"
-            variant="destructive"
+            className="mb-4"
+            color="red"
+            title="Acceso denegado"
+            variant="light"
           >
-            <AlertTitle>Acceso denegado</AlertTitle>
-            <AlertDescription>
-              {bootstrapQuery.error instanceof Error
-                ? bootstrapQuery.error.message
-                : "No tienes acceso al módulo de restaurantes."}
-            </AlertDescription>
+            {bootstrapQuery.error instanceof Error
+              ? bootstrapQuery.error.message
+              : "No tienes acceso al módulo de restaurantes."}
           </Alert>
         ) : null}
 
@@ -197,11 +196,11 @@ export function RestaurantPosTables({
 
   return (
     <Button
-      className="absolute bottom-4 left-4 z-20 h-12 gap-2 rounded-full bg-[var(--color-voltage)] px-5 font-semibold text-black shadow-lg hover:bg-[#d9f15c]"
+      className="absolute bottom-4 left-4 z-20 h-12 rounded-full bg-[var(--color-voltage)] px-5 font-semibold text-black shadow-lg hover:bg-[#d9f15c]"
+      leftSection={<UtensilsCrossed aria-hidden="true" className="size-5" />}
       onClick={() => onOpenChange(true)}
       type="button"
     >
-      <UtensilsCrossed aria-hidden="true" className="size-5" />
       Mesas
     </Button>
   );
