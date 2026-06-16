@@ -1,5 +1,5 @@
+import { TextInput } from "@mantine/core";
 import { useId } from "react";
-import { Input } from "@/components/ui/input";
 import { usePosPage } from "@/features/pos/pos-page-context";
 import { posV2OrderInputClassName } from "@/features/posv2/components/pos-v2-order-styles";
 import { cn, formatMoneyInput, sanitizeMoneyInput } from "@/lib/utils";
@@ -16,9 +16,9 @@ export function CashCheckoutSection() {
       >
         Monto recibido
       </label>
-      <Input
+      <TextInput
         autoComplete="off"
-        className={cn("h-9", posV2OrderInputClassName)}
+        classNames={{ input: cn("h-9", posV2OrderInputClassName) }}
         id={amountReceivedId}
         inputMode="numeric"
         onChange={(event) =>

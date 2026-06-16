@@ -1,5 +1,5 @@
+import { Button } from "@mantine/core";
 import { Pencil } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { usePosPage } from "@/features/pos/pos-page-context";
 import { formatCurrency } from "@/features/pos/utils";
 import { posV2OrderSurfaceClassName } from "@/features/posv2/components/pos-v2-order-styles";
@@ -30,12 +30,13 @@ export function AccountCreditSummary() {
           )}
         </div>
         <Button
-          className="h-7 shrink-0 px-2 text-[#dfff06] text-xs hover:bg-[rgba(223,255,6,0.08)]"
+          className="shrink-0 text-[#dfff06] hover:bg-[rgba(223,255,6,0.08)]"
+          leftSection={<Pencil className="size-3" />}
           onClick={actions.openCheckoutDetails}
+          size="compact-xs"
           type="button"
-          variant="ghost"
+          variant="subtle"
         >
-          <Pencil className="mr-1 size-3" />
           Editar
         </Button>
       </div>

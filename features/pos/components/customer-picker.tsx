@@ -1,18 +1,6 @@
+import { Combobox, useCombobox } from "@mantine/core";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Button } from "@/components/ui/button";
-import {
-  Command,
-  CommandEmpty,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import type { PosCustomer } from "../types";
 
@@ -33,7 +21,10 @@ export function CustomerPicker({
   contentClassName,
   searchPlaceholder = "Buscar por nombre, documento o teléfono...",
 }: CustomerPickerProps) {
-  const [isOpen, setIsOpen] = useState(false);
+  const combobox = useCombobox({
+    onDropdownClose: () => setSearch(""),
+  });
+  const [search, setSearch] = useState("");
   const selectedCustomer = useMemo(
     () =>
       customers.find((customer) => customer.id === selectedCustomerId) ?? null,
@@ -50,19 +41,37 @@ export function CustomerPicker({
         .join(" · ")
     : "Venta rápida sin cliente asociado";
 
+  const normalizedSearch = search.trim().toLowerCase();
+  const filteredCustomers = customers.filter((customer) =>
+    `${customer.name} ${customer.documentNumber ?? ""} ${customer.phone ?? ""} ${customer.email ?? ""}`
+      .toLowerCase()
+      .includes(normalizedSearch)
+  );
+
   return (
-    <Popover onOpenChange={setIsOpen} open={isOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          aria-controls="customer-picker-list"
-          aria-expanded={isOpen}
+    <Combobox
+      classNames={{
+        dropdown: cn(
+          "w-[min(360px,calc(100vw-2rem))] border-zinc-800 bg-[var(--color-carbon)] p-0 text-white",
+          contentClassName
+        ),
+      }}
+      onOptionSubmit={(value) => {
+        onCustomerChange(value === "__mostrador__" ? "" : value);
+        combobox.closeDropdown();
+      }}
+      position="bottom-start"
+      store={combobox}
+    >
+      <Combobox.Target>
+        <button
+          aria-expanded={combobox.dropdownOpened}
           className={cn(
-            "h-11 min-w-0 justify-between rounded-lg border border-zinc-800 bg-[#101010] px-3 py-2 text-left text-sm text-white hover:bg-[#151515] hover:text-white",
+            "flex h-11 min-w-0 items-center justify-between rounded-lg border border-zinc-800 bg-[#101010] px-3 py-2 text-left text-sm text-white hover:bg-[#151515]",
             buttonClassName
           )}
-          role="combobox"
+          onClick={() => combobox.toggleDropdown()}
           type="button"
-          variant="ghost"
         >
           <span className="min-w-0">
             <span className="block truncate">{selectedCustomerLabel}</span>
@@ -71,32 +80,21 @@ export function CustomerPicker({
             </span>
           </span>
           <ChevronsUpDown className="ml-2 size-4 shrink-0 text-zinc-500" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent
-        align="start"
-        className={cn(
-          "w-[min(360px,calc(100vw-2rem))] border-zinc-800 bg-[var(--color-carbon)] p-0 text-white",
-          contentClassName
-        )}
-      >
-        <Command className="bg-transparent">
-          <CommandInput
-            className="text-white placeholder:text-zinc-500"
-            placeholder={searchPlaceholder}
-          />
-          <CommandList className="p-1.5" id="customer-picker-list">
-            <CommandEmpty className="text-zinc-400">
-              No se encontraron clientes.
-            </CommandEmpty>
-            <CommandItem
-              className="gap-3 rounded-lg py-3 text-white"
-              onSelect={() => {
-                onCustomerChange("");
-                setIsOpen(false);
-              }}
-              value="mostrador cliente mostrador venta rápida"
-            >
+        </button>
+      </Combobox.Target>
+
+      <Combobox.Dropdown>
+        <Combobox.Search
+          onChange={(event) => setSearch(event.currentTarget.value)}
+          placeholder={searchPlaceholder}
+          value={search}
+        />
+        <Combobox.Options className="p-1.5">
+          <Combobox.Option
+            className="gap-3 rounded-lg py-3 text-white"
+            value="__mostrador__"
+          >
+            <div className="flex items-center gap-3">
               <div className="min-w-0 flex-1 space-y-1">
                 <p className="truncate font-medium">Cliente Mostrador</p>
                 <p className="truncate text-xs text-zinc-400">
@@ -109,17 +107,15 @@ export function CustomerPicker({
                   selectedCustomerId === "" ? "opacity-100" : "opacity-0"
                 )}
               />
-            </CommandItem>
-            {customers.map((customer) => (
-              <CommandItem
-                className="gap-3 rounded-lg py-3 text-white"
-                key={customer.id}
-                onSelect={() => {
-                  onCustomerChange(customer.id);
-                  setIsOpen(false);
-                }}
-                value={`${customer.name} ${customer.documentNumber ?? ""} ${customer.phone ?? ""} ${customer.email ?? ""}`}
-              >
+            </div>
+          </Combobox.Option>
+          {filteredCustomers.map((customer) => (
+            <Combobox.Option
+              className="gap-3 rounded-lg py-3 text-white"
+              key={customer.id}
+              value={customer.id}
+            >
+              <div className="flex items-center gap-3">
                 <div className="min-w-0 flex-1 space-y-1">
                   <p className="truncate font-medium">{customer.name}</p>
                   <p className="truncate text-xs text-zinc-400">
@@ -136,11 +132,14 @@ export function CustomerPicker({
                       : "opacity-0"
                   )}
                 />
-              </CommandItem>
-            ))}
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+              </div>
+            </Combobox.Option>
+          ))}
+          {filteredCustomers.length === 0 ? (
+            <Combobox.Empty>No se encontraron clientes.</Combobox.Empty>
+          ) : null}
+        </Combobox.Options>
+      </Combobox.Dropdown>
+    </Combobox>
   );
 }

@@ -1,5 +1,5 @@
+import { TextInput } from "@mantine/core";
 import { useId } from "react";
-import { Input } from "@/components/ui/input";
 import { usePosPage } from "@/features/pos/pos-page-context";
 import { posV2OrderInputClassName } from "@/features/posv2/components/pos-v2-order-styles";
 import { cn, formatMoneyInput, sanitizeMoneyInput } from "@/lib/utils";
@@ -21,9 +21,9 @@ export function CardTransferCheckoutSection() {
         >
           Monto
         </label>
-        <Input
+        <TextInput
           autoComplete="off"
-          className={cn("h-9", posV2OrderInputClassName)}
+          classNames={{ input: cn("h-9", posV2OrderInputClassName) }}
           id={`${amountReceivedId}-amount`}
           inputMode="numeric"
           onChange={(event) =>
@@ -40,9 +40,9 @@ export function CardTransferCheckoutSection() {
       </div>
 
       {selectedMethod?.requiresReference ? (
-        <Input
+        <TextInput
           autoComplete="off"
-          className={cn("h-9", posV2OrderInputClassName)}
+          classNames={{ input: cn("h-9", posV2OrderInputClassName) }}
           onChange={(event) =>
             actions.updatePayment(0, "reference", event.target.value)
           }

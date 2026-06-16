@@ -1,7 +1,6 @@
+import { Button, TextInput } from "@mantine/core";
 import { Plus, XIcon } from "lucide-react";
 import { useId } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { usePosPage } from "@/features/pos/pos-page-context";
 import {
   posV2OrderBorder,
@@ -64,33 +63,30 @@ export function MultiplePaymentsSection() {
                 ))}
               </select>
 
-              <div className="relative w-28 shrink-0">
-                <span className="absolute top-1/2 left-2 -translate-y-1/2 text-[#6b6b6b] text-xs">
-                  $
-                </span>
-                <Input
-                  autoComplete="off"
-                  className={cn("h-9 pl-6", posV2OrderInputClassName)}
-                  id={`${amountId}-${index}`}
-                  inputMode="numeric"
-                  onChange={(event) =>
-                    actions.updatePayment(
-                      index,
-                      "amount",
-                      sanitizeMoneyInput(event.target.value)
-                    )
-                  }
-                  placeholder="0"
-                  type="text"
-                  value={formatMoneyInput(payment.amount)}
-                />
-              </div>
+              <TextInput
+                autoComplete="off"
+                className="w-28 shrink-0"
+                classNames={{ input: cn("h-9", posV2OrderInputClassName) }}
+                id={`${amountId}-${index}`}
+                inputMode="numeric"
+                leftSection={<span className="text-[#6b6b6b] text-xs">$</span>}
+                onChange={(event) =>
+                  actions.updatePayment(
+                    index,
+                    "amount",
+                    sanitizeMoneyInput(event.target.value)
+                  )
+                }
+                placeholder="0"
+                type="text"
+                value={formatMoneyInput(payment.amount)}
+              />
             </div>
 
             {selectedMethod?.requiresReference ? (
-              <Input
+              <TextInput
                 autoComplete="off"
-                className={cn("mt-2 h-9", posV2OrderInputClassName)}
+                classNames={{ input: cn("mt-2 h-9", posV2OrderInputClassName) }}
                 id={`${amountId}-ref-${index}`}
                 onChange={(event) =>
                   actions.updatePayment(index, "reference", event.target.value)
@@ -105,14 +101,15 @@ export function MultiplePaymentsSection() {
 
       <Button
         className={cn(
-          "h-8 w-full rounded-lg border-dashed bg-transparent text-[#6b6b6b] hover:border-[rgba(255,255,255,0.2)] hover:bg-[#151515] hover:text-white",
+          "w-full border-dashed bg-transparent text-[#6b6b6b] hover:border-[rgba(255,255,255,0.2)] hover:bg-[#151515] hover:text-white",
           posV2OrderBorder
         )}
+        leftSection={<Plus className="size-3.5" />}
         onClick={actions.addPaymentMethod}
+        size="compact-sm"
         type="button"
         variant="outline"
       >
-        <Plus className="mr-1.5 size-3.5" />
         Agregar método
       </Button>
     </div>

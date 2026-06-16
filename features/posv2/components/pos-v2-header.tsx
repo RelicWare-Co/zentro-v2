@@ -1,5 +1,5 @@
+import { ActionIcon } from "@mantine/core";
 import { ArrowLeftRight, Lock, Printer } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import type { ActiveShift } from "@/features/pos/types";
 
 interface PosV2HeaderProps {
@@ -30,32 +30,35 @@ export function PosV2Header({
         </div>
 
         <div className="flex items-center gap-2">
-          <Button
-            className="size-9 rounded-lg text-[#6b6b6b] hover:bg-[rgba(255,255,255,0.06)] hover:text-white disabled:opacity-40 md:h-10 md:w-10"
+          <ActionIcon
+            aria-label="Movimiento de efectivo"
+            className="size-9 text-[#6b6b6b] hover:bg-[rgba(255,255,255,0.06)] hover:text-white md:h-10 md:w-10"
+            color="gray"
             disabled={!activeShift}
             onClick={onCashMovement}
-            size="icon"
-            variant="ghost"
+            variant="subtle"
           >
             <ArrowLeftRight className="size-4 md:h-5 md:w-5" />
-          </Button>
-          <Button
-            className="size-9 rounded-lg text-[#6b6b6b] hover:bg-[rgba(255,255,255,0.06)] hover:text-white disabled:opacity-40 md:h-10 md:w-10"
+          </ActionIcon>
+          <ActionIcon
+            aria-label="Imprimir"
+            className="size-9 text-[#6b6b6b] hover:bg-[rgba(255,255,255,0.06)] hover:text-white md:h-10 md:w-10"
+            color="gray"
             onClick={onOpenDrawer}
-            size="icon"
-            variant="ghost"
+            variant="subtle"
           >
             <Printer className="size-4 md:h-5 md:w-5" />
-          </Button>
-          <Button
-            className="size-9 rounded-lg text-[#ef4444] hover:bg-[rgba(239,68,68,0.1)] hover:text-red-400 disabled:opacity-40 md:h-10 md:w-10"
+          </ActionIcon>
+          <ActionIcon
+            aria-label="Cerrar turno"
+            className="size-9 text-[#ef4444] hover:bg-[rgba(239,68,68,0.1)] hover:text-red-400 md:h-10 md:w-10"
+            color="red"
             disabled={!activeShift}
             onClick={onCloseShift}
-            size="icon"
-            variant="ghost"
+            variant="subtle"
           >
             <Lock className="size-4 md:h-5 md:w-5" />
-          </Button>
+          </ActionIcon>
         </div>
       </div>
     </header>
