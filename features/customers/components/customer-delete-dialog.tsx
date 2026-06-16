@@ -1,6 +1,6 @@
 import { Button, Group, Modal, Stack, Text } from "@mantine/core";
-import { darkModalStyles } from "@/features/customers/components/customers-mantine";
 import { useCustomersPage } from "@/features/customers/customers-page-context";
+import { darkModalStyles } from "@/lib/mantine-dark";
 
 export function CustomerDeleteDialog() {
   const { state, actions, meta } = useCustomersPage();

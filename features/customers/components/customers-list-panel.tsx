@@ -3,9 +3,9 @@ import { Edit3, Plus, Search, Trash2, Users } from "lucide-react";
 import { useId } from "react";
 import { TableCell, TableHead, TableRow } from "@/components/ui/table";
 import { VirtualTable } from "@/components/ui/virtual-table";
-import { darkInputStyles } from "@/features/customers/components/customers-mantine";
 import { formatCustomerDocumentLabel } from "@/features/customers/customers-formatters.shared";
 import { useCustomersPage } from "@/features/customers/customers-page-context";
+import { darkInputStyles } from "@/lib/mantine-dark";
 
 export function CustomersListPanel() {
   const { state, actions } = useCustomersPage();

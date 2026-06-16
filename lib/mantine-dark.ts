@@ -1,9 +1,9 @@
 /**
- * Shared Mantine style overrides for the customers feature.
+ * Shared Mantine style overrides for the app's dark surfaces.
  *
- * The customers screens render on a dark void/carbon surface with voltage
+ * Most feature screens render on a dark void/carbon surface with voltage
  * accents, so Mantine's default light components need explicit dark styling.
- * Centralizing the overrides here keeps the migrated components consistent
+ * Centralizing the overrides keeps migrated features consistent
  * (Modalidad A — coexistencia: Mantine for structure, Tailwind for layout).
  */
 
@@ -29,6 +29,7 @@ export const darkSelectStyles = {
     borderColor: ZINC_700,
     color: "#fff",
   },
+  label: { color: "#e4e4e7" },
   dropdown: {
     backgroundColor: CARBON,
     borderColor: ZINC_800,
@@ -39,13 +40,19 @@ export const darkSelectStyles = {
 
 /** Dark Drawer (carbon content/header surface, zinc borders). */
 export const darkDrawerStyles = {
-  content: { backgroundColor: CARBON, color: "#fff" },
+  content: {
+    backgroundColor: CARBON,
+    color: "#fff",
+    display: "flex",
+    flexDirection: "column",
+  },
   header: {
     backgroundColor: CARBON,
     color: "#fff",
     borderBottom: `1px solid ${ZINC_800}`,
   },
-  body: { padding: 0 },
+  // Inner content manages its own scroll/sticky footer via a flex column.
+  body: { padding: 0, flex: 1, minHeight: 0, overflow: "hidden" },
   title: { fontSize: "1.5rem", fontWeight: 700 },
 } as const;
 

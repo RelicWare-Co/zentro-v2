@@ -1,11 +1,11 @@
+import { ActionIcon, TextInput } from "@mantine/core";
 import { History, Plus, Search, Wallet } from "lucide-react";
 import { useId } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { TableCell, TableHead, TableRow } from "@/components/ui/table";
 import { VirtualTable } from "@/components/ui/virtual-table";
 import { creditCurrencyFormatter } from "@/features/credit/credit-formatters.shared";
 import { useCreditPage } from "@/features/credit/credit-page-context";
+import { darkInputStyles } from "@/lib/mantine-dark";
 
 export function CreditAccountsPanel() {
   const { state, actions } = useCreditPage();
@@ -13,13 +13,13 @@ export function CreditAccountsPanel() {
 
   return (
     <>
-      <div className="relative w-full sm:max-w-sm">
-        <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-zinc-500" />
-        <Input
-          className="border-zinc-800 bg-black/20 pl-9"
+      <div className="w-full sm:max-w-sm">
+        <TextInput
           id={searchId}
+          leftSection={<Search className="size-4 text-zinc-500" />}
           onChange={(event) => actions.setSearchQuery(event.target.value)}
           placeholder="Buscar por nombre, documento o teléfono…"
+          styles={darkInputStyles}
           value={state.searchQuery}
         />
       </div>
@@ -80,27 +80,23 @@ export function CreditAccountsPanel() {
             </TableCell>
             <TableCell className="text-right">
               <div className="flex justify-end gap-2">
-                <Button
-                  className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5"
+                <ActionIcon
+                  aria-label="Ver historial"
+                  color="gray"
                   onClick={() => actions.openLedger(account)}
-                  size="sm"
-                  type="button"
                   variant="outline"
                 >
                   <History className="size-3.5" />
-                  <span className="sr-only">Ver historial</span>
-                </Button>
+                </ActionIcon>
                 {account.balance > 0 ? (
-                  <Button
-                    className="border-emerald-500/30 bg-transparent text-emerald-200 hover:bg-emerald-500/10"
+                  <ActionIcon
+                    aria-label="Registrar abono"
+                    color="teal"
                     onClick={() => actions.openPayment(account)}
-                    size="sm"
-                    type="button"
                     variant="outline"
                   >
                     <Plus className="size-3.5" />
-                    <span className="sr-only">Registrar abono</span>
-                  </Button>
+                  </ActionIcon>
                 ) : null}
               </div>
             </TableCell>

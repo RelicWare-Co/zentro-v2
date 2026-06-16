@@ -1,16 +1,16 @@
 import { Button, Drawer, Select, TextInput } from "@mantine/core";
 import { type FormEvent, useId, useState } from "react";
 import {
-  darkDrawerStyles,
-  darkInputStyles,
-  darkSelectStyles,
-} from "@/features/customers/components/customers-mantine";
-import {
   CUSTOMER_DOCUMENT_TYPE_OPTIONS,
   CUSTOMER_TYPE_OPTIONS,
   getCustomerFormInitialValue,
 } from "@/features/customers/customers-form.shared";
 import { useCustomersPage } from "@/features/customers/customers-page-context";
+import {
+  darkDrawerStyles,
+  darkInputStyles,
+  darkSelectStyles,
+} from "@/lib/mantine-dark";
 import { getErrorMessage } from "@/lib/utils";
 
 const DOCUMENT_TYPE_DATA = [
