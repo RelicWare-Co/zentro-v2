@@ -1,4 +1,4 @@
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Alert } from "@mantine/core";
 import { useOrganizationSelectionPage } from "@/features/organization/organization-selection-context";
 
 export function OrganizationSelectionErrorAlert() {
@@ -10,12 +10,8 @@ export function OrganizationSelectionErrorAlert() {
 
   return (
     <div aria-live="polite">
-      <Alert
-        className="border-red-500/20 bg-red-500/10 text-red-100"
-        variant="destructive"
-      >
-        <AlertTitle>No se pudo completar la acción</AlertTitle>
-        <AlertDescription>{state.errorMsg}</AlertDescription>
+      <Alert color="red" title="No se pudo completar la acción" variant="light">
+        {state.errorMsg}
       </Alert>
     </div>
   );

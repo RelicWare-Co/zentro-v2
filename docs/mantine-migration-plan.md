@@ -15,8 +15,10 @@
   build. El tema dark (void/carbon/voltage) se preserva con overrides `styles` centralizados en
   `lib/mantine-dark.ts` (darkInput/Select/Drawer/Modal). Se mantiene `sonner` por ahora.
 - **Fase 3 features migradas:** `customers` ✅, `credit` ✅, `restaurants` ✅, `auth` ✅ (no-op:
-  100% Tailwind, sin shadcn), `settings` ✅. (tsc + ultracite + build OK por feature).
-- **Pendiente:** products, organization, dashboard (charts), pos (último, virtualización + sidebar).
+  100% Tailwind, sin shadcn), `settings` ✅, `products` ✅. (tsc + ultracite + build OK por feature).
+- **Pendiente:** organization, dashboard (charts), pos (último, virtualización + sidebar).
+- **Diferido a Fase 4:** `components/ui/table` + `data-table-pagination` (productos los siguen usando);
+  combobox shadcn (Popover+Command) ya migrado a `Select searchable`.
 - **Patrones establecidos:** `lib/mantine-dark.ts` (darkInput/Select/Drawer/Modal); `Card`/`CardHeader`
   shadcn → contenedor Tailwind o helper local (`SettingsCard`); `Dialog`→`Modal`, `Sheet`→`Drawer`,
   `Select` shadcn→`Select` Mantine (`data`), `Switch.onCheckedChange`→`onChange(e.currentTarget.checked)`,

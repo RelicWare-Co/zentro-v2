@@ -1,16 +1,8 @@
+import { Button, Group, Modal, Stack, Text } from "@mantine/core";
 import { AlertTriangle } from "lucide-react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { useCancelInvitationMutation } from "@/features/organization/hooks/use-organization";
 import { useOrganizationPage } from "@/features/organization/organization-page-context";
+import { darkModalStyles } from "@/lib/mantine-dark";
 import { getErrorMessage } from "@/lib/utils";
 
 interface InvitationCancelDialogProps {
@@ -47,29 +39,31 @@ export function InvitationCancelDialog({
   };
 
   return (
-    <AlertDialog onOpenChange={onOpenChange} open={open}>
-      <AlertDialogContent className="border-red-500/20 bg-[var(--color-carbon)] text-[var(--color-photon)]">
-        <AlertDialogHeader>
-          <AlertDialogTitle className="flex items-center gap-2 text-red-200">
-            <AlertTriangle className="size-5" />
-            Cancelar invitación
-          </AlertDialogTitle>
-          <AlertDialogDescription className="text-zinc-400">
-            La invitación será cancelada y el destinatario no podrá aceptarla.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5">
+    <Modal
+      centered
+      onClose={onOpenChange}
+      opened={open}
+      styles={darkModalStyles}
+      title={
+        <span className="flex items-center gap-2 font-semibold text-red-200">
+          <AlertTriangle className="size-5" />
+          Cancelar invitación
+        </span>
+      }
+    >
+      <Stack gap="lg">
+        <Text c="dimmed" size="sm">
+          La invitación será cancelada y el destinatario no podrá aceptarla.
+        </Text>
+        <Group justify="flex-end">
+          <Button color="gray" onClick={onOpenChange} variant="default">
             Volver
-          </AlertDialogCancel>
-          <AlertDialogAction
-            className="bg-red-500 text-white hover:bg-red-600"
-            onClick={handleCancel}
-          >
+          </Button>
+          <Button color="red" onClick={handleCancel}>
             Cancelar Invitación
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+          </Button>
+        </Group>
+      </Stack>
+    </Modal>
   );
 }

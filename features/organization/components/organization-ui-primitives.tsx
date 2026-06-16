@@ -1,8 +1,44 @@
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@mantine/core";
+import type { LucideIcon } from "lucide-react";
+import type { ReactNode } from "react";
 import {
   formatJoinLinkStatusLabel,
   type OrganizationJoinLinkStatus,
 } from "@/lib/organization-shared";
+
+/** Dark carbon card container (replaces the shadcn Card composition). */
+export function OrgCard({
+  title,
+  description,
+  icon: Icon,
+  iconClassName = "text-[var(--color-voltage)]",
+  children,
+  className = "",
+}: {
+  title: ReactNode;
+  description?: ReactNode;
+  icon?: LucideIcon;
+  iconClassName?: string;
+  children?: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={`rounded-xl border border-zinc-800 bg-[var(--color-carbon)] p-6 text-[var(--color-photon)] ${className}`}
+    >
+      <div className="space-y-1.5">
+        <h3 className="flex items-center gap-2 font-semibold">
+          {Icon ? <Icon className={`size-4 ${iconClassName}`} /> : null}
+          {title}
+        </h3>
+        {description ? (
+          <p className="text-sm text-zinc-400">{description}</p>
+        ) : null}
+      </div>
+      {children ? <div className="mt-6 space-y-4">{children}</div> : null}
+    </div>
+  );
+}
 
 export function Detail(props: {
   label: string;
@@ -42,7 +78,7 @@ export function JoinLinkStatusBadge(props: {
   }
 
   return (
-    <Badge className={className} variant="outline">
+    <Badge className={className} tt="none" variant="outline">
       {formatJoinLinkStatusLabel(props.status)}
     </Badge>
   );
