@@ -1,6 +1,7 @@
 # Thin wrapper around the official Zero cache image.
 # Mount persistent storage at /data in the platform (see docs/deployment/docker.md).
-FROM rocicorp/zero:1.5.0
+# Keep this tag in sync with @rocicorp/zero in package.json.
+FROM rocicorp/zero:1.6.2
 
 ENV ZERO_REPLICA_FILE=/data/replica.db \
     ZERO_LOG_LEVEL=info \

@@ -9,7 +9,7 @@ Do not commit secrets, database passwords, or auth secrets. Keep those in your p
 ```mermaid
 flowchart LR
   Browser["Browser client"] -->|"HTTPS app routes"| App["zentro-app\nBun + Vike + Hono\nport 3000"]
-  Browser -->|"Zero websocket /sync"| ZeroCache["zero-cache\nrocicorp/zero:1.5.0\nport 4848"]
+  Browser -->|"Zero websocket /sync"| ZeroCache["zero-cache\nrocicorp/zero:1.6.2\nport 4848"]
   ZeroCache -->|"query/mutate HTTP callbacks"| App
   ZeroCache -->|"logical replication"| Postgres["External Postgres\nwal_level=logical"]
   App -->|"Drizzle SQL + migrations"| Postgres
@@ -121,7 +121,7 @@ Variables derived from `DATABASE_URL` (`ZERO_UPSTREAM_DB`, etc.) are wired in co
 | Path | Purpose |
 | --- | --- |
 | `deploy/app/Dockerfile` | Production app image (Bun build + runtime) |
-| `deploy/zero-cache/Dockerfile` | Thin wrapper around `rocicorp/zero:1.5.0` |
+| `deploy/zero-cache/Dockerfile` | Thin wrapper around `rocicorp/zero:1.6.2`; keep the tag in sync with `@rocicorp/zero` in `package.json` |
 | `deploy/docker-compose.prod.yml` | Production Compose (app + zero-cache, external Postgres) |
 | `deploy/docker-compose.host-ports.yml` | Optional host port mappings for direct Compose runs |
 | `deploy/docker-compose.qa.yml` | QA Compose (app + zero-cache + dedicated Postgres) |
