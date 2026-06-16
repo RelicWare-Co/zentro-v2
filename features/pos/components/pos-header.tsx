@@ -1,6 +1,5 @@
+import { Button, Divider } from "@mantine/core";
 import { ArrowLeftRight, Lock, Plus, Printer, Unlock, Zap } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import type { ActiveShift, PosCustomer } from "../types";
 import { CustomerPicker } from "./customer-picker";
@@ -54,8 +53,9 @@ export function PosHeader({
             </span>
           </div>
 
-          <Separator
-            className="hidden h-5 border-zinc-700 md:block"
+          <Divider
+            className="hidden h-5 md:block"
+            color="dark.4"
             orientation="vertical"
           />
 
@@ -68,13 +68,13 @@ export function PosHeader({
               selectedCustomerId={selectedCustomerId}
             />
             <Button
-              className="h-7 shrink-0 px-2 text-[var(--color-voltage)] text-xs hover:bg-[var(--color-voltage)]/10 hover:text-[var(--color-voltage)]"
+              className="shrink-0 text-[var(--color-voltage)] hover:bg-[var(--color-voltage)]/10 hover:text-[var(--color-voltage)]"
+              leftSection={<Plus className="size-3.5" />}
               onClick={onCreateCustomer}
-              size="sm"
+              size="compact-sm"
               type="button"
-              variant="ghost"
+              variant="subtle"
             >
-              <Plus className="mr-1 size-3.5" />
               Cliente
             </Button>
           </div>
@@ -83,7 +83,7 @@ export function PosHeader({
         <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-end lg:w-auto">
           <Button
             className={cn(
-              "h-9 w-9 shrink-0 p-0 transition-all",
+              "h-9 w-9 shrink-0 p-0",
               isQuickSaleMode
                 ? "border-[var(--color-voltage)]/40 bg-[var(--color-voltage)]/15 text-[var(--color-voltage)] hover:bg-[var(--color-voltage)]/25"
                 : "border-zinc-700 bg-zinc-900/50 text-zinc-500 hover:border-zinc-600 hover:bg-zinc-800 hover:text-zinc-300"
@@ -100,42 +100,44 @@ export function PosHeader({
             <Zap className="size-4" />
           </Button>
           <Button
-            className="h-9 whitespace-nowrap border-zinc-700 bg-zinc-900/50 text-zinc-300 transition-all hover:border-zinc-600 hover:bg-zinc-800 hover:text-white"
+            className="whitespace-nowrap border-zinc-700 bg-zinc-900/50 text-zinc-300 hover:border-zinc-600 hover:bg-zinc-800 hover:text-white"
             disabled={!activeShift}
+            leftSection={<ArrowLeftRight className="size-4" />}
             onClick={onCashMovement}
             size="sm"
             variant="outline"
           >
-            <ArrowLeftRight className="size-4 sm:mr-2" />
             <span className="sm:hidden">Caja</span>
             <span className="hidden sm:inline">Movimiento de Caja</span>
           </Button>
           <Button
-            className="h-9 whitespace-nowrap border-zinc-700 bg-zinc-900/50 text-zinc-300 transition-all hover:border-zinc-600 hover:bg-zinc-800 hover:text-white"
+            className="whitespace-nowrap border-zinc-700 bg-zinc-900/50 text-zinc-300 hover:border-zinc-600 hover:bg-zinc-800 hover:text-white"
+            leftSection={<Printer className="size-4" />}
             onClick={onOpenDrawer}
             size="sm"
             variant="outline"
           >
-            <Printer className="size-4 sm:mr-2" />
             <span className="sm:hidden">Abrir</span>
             <span className="hidden sm:inline">Abrir Caja</span>
           </Button>
           <Button
             className={cn(
-              "h-9 whitespace-nowrap transition-all",
+              "whitespace-nowrap",
               activeShift
                 ? "border-red-900/30 bg-red-900/10 text-red-400 hover:border-red-900/50 hover:bg-red-900/30 hover:text-red-300"
                 : "border-[var(--color-voltage)]/40 bg-[var(--color-voltage)]/10 text-[var(--color-voltage)] hover:bg-[var(--color-voltage)]/20"
             )}
+            leftSection={
+              activeShift ? (
+                <Lock className="size-4" />
+              ) : (
+                <Unlock className="size-4" />
+              )
+            }
             onClick={activeShift ? onCloseShift : onOpenShift}
             size="sm"
             variant="outline"
           >
-            {activeShift ? (
-              <Lock className="size-4 sm:mr-2" />
-            ) : (
-              <Unlock className="size-4 sm:mr-2" />
-            )}
             <span className="sm:hidden">Turno</span>
             <span className="hidden sm:inline">
               {activeShift ? "Cerrar Turno" : "Abrir Turno"}
