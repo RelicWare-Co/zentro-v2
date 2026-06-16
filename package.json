@@ -97,7 +97,8 @@
     "check": "ultracite check",
     "fix": "ultracite fix",
     "git:fix-eol": "bun ./scripts/fix-git-eol.mjs",
-    "prepare": "bun ./scripts/install-lefthook.mjs"
+    "prepare": "bun ./scripts/install-lefthook.mjs",
+    "doctor": "npx react-doctor@latest"
   },
   "trustedDependencies": [
     "@rocicorp/zero-sqlite3"
