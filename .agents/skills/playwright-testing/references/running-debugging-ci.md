@@ -7,21 +7,22 @@ Use this when running tests, diagnosing failures, or setting CI behavior.
 Use package scripts if they exist. Otherwise use Bun's executor:
 
 ```bash
-bunx playwright test
+bun run e2e:playwright
+bun run e2e:playwright:smoke
 bunx playwright test tests/e2e/login.spec.ts
 bunx playwright test -g "signs in"
 bunx playwright test --project=chromium
 bunx playwright test --headed
-bunx playwright test --ui
-bunx playwright test --debug
+bun run e2e:playwright:ui
+bun run e2e:playwright:debug
 bunx playwright test --trace on
-bunx playwright show-report
+bun run e2e:playwright:report
 ```
 
 Official docs note:
 
 - Tests run headless by default.
-- Tests run in parallel by default.
+- Tests run in parallel by default, but this repo config sets `fullyParallel: false` and `workers: 1` because the shared bootstrap account/org and auth cookies are not parallel-safe.
 - `--project` selects configured browser/device projects.
 - `--ui` opens UI mode with trace-like step exploration and locator tools.
 - `--debug` opens the Playwright Inspector.
@@ -47,8 +48,8 @@ bunx playwright test --project=chromium
 
 1. Read the Playwright error and call log.
 2. If a locator failed, inspect whether the UI exposes the expected role/name/label.
-3. Run `bunx playwright test --ui` for local step-through and locator picking.
-4. Use `bunx playwright test --debug` for Inspector step-through.
+3. Run `bun run e2e:playwright:ui` for local step-through and locator picking.
+4. Use `bun run e2e:playwright:debug` for Inspector step-through.
 5. If the failure is CI-only, inspect traces, screenshots, videos, and HTML report.
 6. Fix the app, state setup, or locator contract. Add waits only as web-first assertions or explicit event waits.
 
@@ -81,7 +82,7 @@ bunx playwright test --trace on
 Open report:
 
 ```bash
-bunx playwright show-report
+bun run e2e:playwright:report
 ```
 
 Trace viewer lets you inspect actions, DOM snapshots, console, network, source, and errors for each step.
@@ -123,12 +124,12 @@ bun install
 bunx playwright install --with-deps
 ```
 
-- Ensure Postgres is running before Zero-backed tests.
+- Ensure Postgres is running before Playwright tests; the config starts Zero for the suite.
 - Run migrations/seeds required by the test environment.
-- Set auth/test env variables explicitly, e.g. `PLAYWRIGHT_USER_EMAIL`, `PLAYWRIGHT_USER_PASSWORD`, `PLAYWRIGHT_BASE_URL`.
+- Set auth/test env variables explicitly when needed: `PLAYWRIGHT_LOGIN_EMAIL`, `PLAYWRIGHT_LOGIN_PASSWORD`, `PLAYWRIGHT_ORG_NAME`, and `PLAYWRIGHT_BASE_URL`. Legacy `MAESTRO_*` names still exist as fallbacks in config/helpers.
 - Upload `playwright-report/` and `test-results/` as artifacts on failure.
 - Keep `forbidOnly: !!process.env.CI`.
-- Use `workers: process.env.CI ? 1 : undefined` until server-side data isolation supports higher concurrency.
+- Use `workers: 1` until server-side data isolation supports higher concurrency.
 
 ## Common Failure Patterns
 

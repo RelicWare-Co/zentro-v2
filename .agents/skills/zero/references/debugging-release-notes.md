@@ -19,6 +19,8 @@ Source docs to read for exact detail:
 - `source-docs/release-notes/*.mdx`
 - `source-docs/deprecated/*.mdx`
 
+Project caveat: `zentro-v2` currently depends on `@rocicorp/zero` 1.6.2, but the bundled release-note snapshot ends at Zero 1.5. Use this file for historical context and verify 1.6-specific behavior against local package types/binaries or current official docs.
+
 ## Inspector
 
 Use the Inspector to inspect live Zero state:
@@ -111,6 +113,8 @@ The bundled docs include deprecated topics:
 Use these only to migrate legacy apps. New work should use schemas, named queries, mutators, and explicit auth context.
 
 ## Release Notes That Affect Implementation
+
+The list below is complete only through the bundled 1.5 docs snapshot.
 
 Zero 1.5:
 

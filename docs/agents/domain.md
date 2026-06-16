@@ -1,36 +1,56 @@
 # Domain Docs
 
-How the engineering skills should consume this repo's domain documentation when exploring the codebase.
+How engineering skills should consume this repo's domain documentation.
 
-## Before exploring, read these
+## Current State
 
-- **`CONTEXT.md`** at the repo root, or
-- **`CONTEXT-MAP.md`** at the repo root if it exists — it points at one `CONTEXT.md` per context. Read each one relevant to the topic.
-- **`docs/adr/`** — read ADRs that touch the area you're about to work in. In multi-context repos, also check `src/<context>/docs/adr/` for context-scoped decisions.
+This is a single-context repo, but it currently does **not** have a root
+`CONTEXT.md` or `CONTEXT-MAP.md`. Do not block on their absence.
 
-If any of these files don't exist, **proceed silently**. Don't flag their absence; don't suggest creating them upfront. The producer skill (`/grill-with-docs`) creates them lazily when terms or decisions actually get resolved.
+Use these sources instead:
 
-## File structure
+- `AGENTS.md` — current project conventions, commands, boundaries, and workflows.
+- `MIGRATION_PLAN.md` — historical oRPC to Zero migration context and Zero-first direction.
+- `docs/adr/` — accepted architectural decisions.
+- `plans/` — implementation plans and follow-up work that may explain recent intent.
+- `docs/fix-log/` — non-trivial bug fixes and diagnostic history.
 
-Single-context repo (most repos):
+## Before Exploring
 
-```
-/
-├── CONTEXT.md
-├── docs/adr/
-│   ├── 0001-event-sourced-orders.md
-│   └── 0002-postgres-for-write-model.md
-└── src/
-```
+1. Read `AGENTS.md`.
+2. Read ADRs that touch the area you are about to change.
+3. Read `MIGRATION_PLAN.md` before porting behavior from `../zentro-reborn` or touching old API assumptions.
+4. Read relevant `plans/` and `docs/fix-log/` entries when investigating active work, regressions, or design intent.
 
-## Use the glossary's vocabulary
+Proceed silently if an optional file is absent. Only suggest creating
+`CONTEXT.md` when the task is specifically about documenting domain vocabulary
+or when unclear language is causing real implementation risk.
 
-When your output names a domain concept (in an issue title, a refactor proposal, a hypothesis, a test name), use the term as defined in `CONTEXT.md`. Don't drift to synonyms the glossary explicitly avoids.
+## Domain Vocabulary
 
-If the concept you need isn't in the glossary yet, that's a signal — either you're inventing language the project doesn't use (reconsider) or there's a real gap (note it for `/grill-with-docs`).
+Use the vocabulary already present in feature folders, schemas, ADRs, and UI
+copy. Important current domains include:
 
-## Flag ADR conflicts
+- `organization`
+- `modules`
+- `dashboard`
+- `products` / inventory / Kardex
+- `customers`
+- `sales`
+- `pos` and `posv2`
+- `shifts`
+- `restaurants`
+- `credit`
+- `settings`
+- `admin`
 
-If your output contradicts an existing ADR, surface it explicitly rather than silently overriding:
+If a new concept does not fit existing language, call that out in the issue,
+plan, or PR notes instead of inventing a parallel term.
 
-> _Contradicts ADR-0007 (event-sourced orders) — but worth reopening because…_
+## ADR Conflicts
+
+If your output contradicts an existing ADR, surface it explicitly rather than
+silently overriding the decision:
+
+> Contradicts ADR-0007 (split Zero registries into feature slices), but worth
+> reopening because...

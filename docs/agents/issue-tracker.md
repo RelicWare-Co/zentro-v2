@@ -1,4 +1,4 @@
-# Issue tracker: GitHub
+# Issue Tracker: GitHub
 
 Issues and PRDs for this repo live as GitHub issues. Use the `gh` CLI for all operations.
 
@@ -12,6 +12,12 @@ Issues and PRDs for this repo live as GitHub issues. Use the `gh` CLI for all op
 - **Close**: `gh issue close <number> --comment "..."`
 
 Infer the repo from `git remote -v` — `gh` does this automatically when run inside a clone.
+
+## Labels
+
+The live tracker currently has default GitHub labels, not the canonical skill
+triage labels. Read `docs/agents/triage-labels.md` before applying labels from a
+skill workflow.
 
 ## When a skill says "publish to the issue tracker"
 

@@ -26,10 +26,12 @@
   - `bun run desktop:make:msix` — build a Windows MSIX only (must run on Windows 10/11 with Windows SDK; output under `desktop/out/make/msix/`). Configure Store identity and `ZENTRO_MSIX_WINDOWS_KIT_VERSION` via `desktop/msix/.env.example`; see `desktop/README.md`.
   - `bun run desktop:make:win` — Windows Squirrel + MSIX makers for x64.
   - `bun run desktop:check` — type-check and Ultracite-check the Electron workspace.
- - `bun run --cwd desktop icons` — regenerate `desktop/assets/icon.*` from `desktop/assets/logo-icon.svg` (requires ImageMagick).
+  - `bun run --cwd desktop icons` — regenerate `desktop/assets/icon.*` from `desktop/assets/logo-icon.svg` (requires ImageMagick).
 - Playwright E2E (web; specs in `tests/e2e/`, see `tests/e2e/README.md`):
-  - `bun run e2e:playwright` — run all flows (starts app + zero-cache via config when not already running; requires Postgres).
+  - `bun run e2e:playwright` — run all flows (starts app + zero-cache via `playwright.config.ts` when not already running; requires Postgres).
   - `bun run e2e:playwright:smoke` — specs tagged `@smoke` only.
+  - `bun run e2e:playwright:ui` / `:debug` / `:report` — UI mode, inspector debug mode, and last HTML report.
+  - `auth.setup.ts` runs as a setup project before Chromium specs. When no `PLAYWRIGHT_LOGIN_EMAIL` is set, it creates a bootstrap account/org through API; use `FRESH=1` or `PLAYWRIGHT_E2E_FRESH=1` after resetting Postgres.
   - Set `PLAYWRIGHT_LOGIN_EMAIL`, `PLAYWRIGHT_LOGIN_PASSWORD`, and `PLAYWRIGHT_ORG_NAME` in the shell (legacy `MAESTRO_*` names still work as fallbacks).
 - Database commands:
   - `bun run db:generate`
@@ -270,11 +272,11 @@ Issues and PRDs for this repo live as GitHub issues. See `docs/agents/issue-trac
 
 ### Triage labels
 
-Five canonical roles mapped to the default label strings (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+The GitHub repo currently has default labels only; the five canonical skill labels are not provisioned. See `docs/agents/triage-labels.md` before applying or creating triage labels.
 
 ### Domain docs
 
-Single-context repo — one `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+Single-context repo with `AGENTS.md`, `MIGRATION_PLAN.md`, `docs/adr/`, and `plans/`. There is currently no root `CONTEXT.md`; see `docs/agents/domain.md`.
 
 ### Playwright testing
 

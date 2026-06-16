@@ -1,15 +1,39 @@
 # Triage Labels
 
-The skills speak in terms of five canonical triage roles. This file maps those roles to the actual label strings used in this repo's issue tracker.
+Last checked against GitHub on 2026-06-16.
 
-| Label in mattpocock/skills | Label in our tracker | Meaning                                  |
-| -------------------------- | -------------------- | ---------------------------------------- |
-| `needs-triage`             | `needs-triage`       | Maintainer needs to evaluate this issue  |
-| `needs-info`               | `needs-info`         | Waiting on reporter for more information |
-| `ready-for-agent`          | `ready-for-agent`    | Fully specified, ready for an AFK agent  |
-| `ready-for-human`          | `ready-for-human`    | Requires human implementation            |
-| `wontfix`                  | `wontfix`            | Will not be actioned                     |
+The skills speak in terms of five canonical triage roles, but this repository does
+not currently have dedicated triage-state labels. The live GitHub labels are the
+default project labels:
 
-When a skill mentions a role (e.g. "apply the AFK-ready triage label"), use the corresponding label string from this table.
+- `bug`
+- `documentation`
+- `duplicate`
+- `enhancement`
+- `good first issue`
+- `help wanted`
+- `invalid`
+- `question`
+- `wontfix`
 
-Edit the right-hand column to match whatever vocabulary you actually use.
+## Canonical Role Mapping
+
+| Skill role | Current tracker label | Guidance |
+| --- | --- | --- |
+| `needs-triage` | none | Do not apply a replacement label. Leave the issue open without a triage-state label unless the user asks to create one. |
+| `needs-info` | `question` | Use `question` when the issue is blocked on reporter/user clarification. |
+| `ready-for-agent` | none | Do not map this to `help wanted`; that label does not mean AFK-agent ready in this repo. Create `ready-for-agent` only if the user asks to enable the canonical workflow. |
+| `ready-for-human` | none | Do not apply a replacement label. Call out in the issue/comment that human implementation is needed. |
+| `wontfix` | `wontfix` | Apply `wontfix` when closing or marking work intentionally out of scope. |
+
+## If A Skill Requires Canonical Labels
+
+If a skill explicitly needs canonical labels to publish or advance work, first
+check the live tracker with:
+
+```bash
+gh label list --limit 200
+```
+
+If the required label is still absent, ask the user before creating labels on
+GitHub. Do not silently invent local mappings that change workflow semantics.

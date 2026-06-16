@@ -29,8 +29,9 @@ The source material was extracted from the official `microsoft/playwright` repos
 ## Project Defaults
 
 - Use Playwright for browser-level user flows and REST/browser hybrid checks. Keep `bun test` for unit tests.
-- Use `webServer` to start `bun run dev` at `http://localhost:3000`.
-- Start `bun run zero:dev` as a second `webServer` only for flows that require Zero sync. Postgres must already be up for Zero-backed tests.
+- The repo already has `@playwright/test`, package scripts, `playwright.config.ts`, and specs under `tests/e2e/`.
+- `playwright.config.ts` always starts both `bun run dev` and `bun run zero:dev` through `webServer` when ports `3000` and `4848` are not already serving. Postgres must already be up.
+- The setup project `tests/e2e/auth.setup.ts` runs before Chromium specs and can create a bootstrap account/org when explicit credentials are not supplied.
 - Prefer Chromium-only smoke coverage first. Add Firefox/WebKit/mobile projects only when the user wants cross-browser confidence or the feature warrants it.
 - Put browser E2E specs under `tests/e2e/**/*.spec.ts` unless the repo has already established another Playwright test directory.
 - Put auth state under `playwright/.auth/` and add it to `.gitignore`; do not commit storage state files.
@@ -54,17 +55,17 @@ The source material was extracted from the official `microsoft/playwright` repos
 
 ## Verification
 
-Use these commands once Playwright exists in the repo:
+Use these repo commands:
 
 ```bash
-bunx playwright test
+bun run e2e:playwright
 bunx playwright test tests/e2e/some-flow.spec.ts
-bunx playwright test --ui
-bunx playwright test --debug
-bunx playwright show-report
+bun run e2e:playwright:ui
+bun run e2e:playwright:debug
+bun run e2e:playwright:report
 ```
 
-If adding scripts, prefer names like:
+If adding scripts in a new repo, prefer names like:
 
 ```json
 {

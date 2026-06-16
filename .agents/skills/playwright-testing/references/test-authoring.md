@@ -148,8 +148,8 @@ type Fixtures = {
 export const test = base.extend<Fixtures>({
   signedInPage: async ({ page }, use) => {
     await page.goto("/login");
-    await page.getByLabel("Email").fill(process.env.PLAYWRIGHT_USER_EMAIL ?? "");
-    await page.getByLabel("Password").fill(process.env.PLAYWRIGHT_USER_PASSWORD ?? "");
+    await page.getByLabel("Email").fill(process.env.PLAYWRIGHT_LOGIN_EMAIL ?? "");
+    await page.getByLabel("Password").fill(process.env.PLAYWRIGHT_LOGIN_PASSWORD ?? "");
     await page.getByRole("button", { name: "Sign in" }).click();
     await expect(page).toHaveURL(/\/dashboard/);
     await use(page);
@@ -174,8 +174,8 @@ const authFile = path.join(import.meta.dirname, "../../playwright/.auth/user.jso
 
 setup("authenticate", async ({ page }) => {
   await page.goto("/login");
-  await page.getByLabel("Email").fill(process.env.PLAYWRIGHT_USER_EMAIL ?? "");
-  await page.getByLabel("Password").fill(process.env.PLAYWRIGHT_USER_PASSWORD ?? "");
+  await page.getByLabel("Email").fill(process.env.PLAYWRIGHT_LOGIN_EMAIL ?? "");
+  await page.getByLabel("Password").fill(process.env.PLAYWRIGHT_LOGIN_PASSWORD ?? "");
   await page.getByRole("button", { name: "Sign in" }).click();
   await expect(page).toHaveURL(/\/dashboard|\/organizations/);
   await page.context().storageState({ path: authFile });

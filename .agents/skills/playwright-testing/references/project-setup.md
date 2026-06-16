@@ -9,8 +9,10 @@ Use this when adding or changing Playwright infrastructure in `zentro-v2`.
 - Dev app command: `bun run dev`.
 - App URL: `http://localhost:3000`.
 - Zero dev command: `bun run zero:dev`; requires Postgres and configured Zero env.
-- Existing tests: `bun test` for unit tests, Playwright in `tests/e2e/` for web E2E flows.
-- No Playwright dependency or config was present when this skill was authored.
+- Existing tests: `bun test` for integration/unit-style tests, Playwright in `tests/e2e/` for web E2E flows.
+- Playwright is already installed and configured. `package.json` exposes `e2e:playwright`, `e2e:playwright:smoke`, `e2e:playwright:ui`, `e2e:playwright:debug`, and `e2e:playwright:report`.
+- `playwright.config.ts` uses a setup project (`tests/e2e/auth.setup.ts`) and then a Chromium project that depends on setup.
+- The config starts both `bun run dev` and `bun run zero:dev` with `webServer`. The zero readiness URL is `${ZERO_CACHE_URL}/keepalive`, defaulting to `http://localhost:4848/keepalive`.
 
 ## Minimal Install
 
@@ -21,11 +23,12 @@ bun add -d @playwright/test
 bunx playwright install
 ```
 
-Add scripts only if the user asks for Playwright to become a first-class repo command:
+The repo already has these scripts:
 
 ```json
 {
   "e2e:playwright": "playwright test",
+  "e2e:playwright:smoke": "playwright test --grep @smoke",
   "e2e:playwright:ui": "playwright test --ui",
   "e2e:playwright:debug": "playwright test --debug",
   "e2e:playwright:report": "playwright show-report"
@@ -34,19 +37,20 @@ Add scripts only if the user asks for Playwright to become a first-class repo co
 
 ## Baseline Config
 
-Official docs put runner options at the top level and browser/context options under `use`. Use `webServer` to launch a local server before tests. For this repo, prefer:
+Official docs put runner options at the top level and browser/context options under `use`. Use `webServer` to launch local servers before tests. For this repo, keep the active config close to:
 
 ```ts
 import { defineConfig, devices } from "@playwright/test";
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000";
+const zeroCacheURL = process.env.ZERO_CACHE_URL ?? "http://localhost:4848";
 
 export default defineConfig({
   testDir: "tests/e2e",
-  fullyParallel: true,
+  fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  workers: 1,
   reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : "html",
   use: {
     baseURL,
@@ -56,40 +60,34 @@ export default defineConfig({
   },
   projects: [
     {
+      name: "setup",
+      testMatch: /.*\.setup\.ts/,
+    },
+    {
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
+      dependencies: ["setup"],
     },
   ],
-  webServer: {
-    command: "bun run dev",
-    url: baseURL,
-    reuseExistingServer: !process.env.CI,
-    stdout: "ignore",
-    stderr: "pipe",
-    timeout: 120 * 1000,
-  },
+  webServer: [
+    {
+      command: "bun run dev",
+      url: baseURL,
+      reuseExistingServer: !process.env.CI,
+      stdout: "ignore",
+      stderr: "pipe",
+      timeout: 120_000,
+    },
+    {
+      command: "bun run zero:dev",
+      url: `${zeroCacheURL}/keepalive`,
+      reuseExistingServer: !process.env.CI,
+      stdout: "ignore",
+      stderr: "pipe",
+      timeout: 120_000,
+    },
+  ],
 });
-```
-
-Use multiple `webServer` entries only for flows that require Zero cache:
-
-```ts
-webServer: [
-  {
-    name: "app",
-    command: "bun run dev",
-    url: baseURL,
-    reuseExistingServer: !process.env.CI,
-    timeout: 120 * 1000,
-  },
-  {
-    name: "zero",
-    command: "bun run zero:dev",
-    url: process.env.ZERO_CACHE_URL ?? "http://localhost:4848",
-    reuseExistingServer: !process.env.CI,
-    timeout: 120 * 1000,
-  },
-]
 ```
 
 Before committing a Zero-backed config, verify the actual zero-cache readiness URL/port from repo env and local docs; do not assume `4848` if this repo config differs.
@@ -135,16 +133,17 @@ Use a setup project for shared-account tests that do not mutate shared server st
 
 ## File Layout
 
-Recommended first layout:
+Current layout:
 
 ```text
 playwright.config.ts
 tests/
   e2e/
     auth.setup.ts
-    smoke.spec.ts
-    fixtures.ts
-    pages/
+    auth/
+    helpers/
+    pos/
+    products/
 ```
 
 Keep page objects and fixtures under `tests/e2e/` unless they need to be shared with another test type.
@@ -153,7 +152,7 @@ Keep page objects and fixtures under `tests/e2e/` unless they need to be shared 
 
 - `forbidOnly: !!process.env.CI`
 - `retries: process.env.CI ? 2 : 0`
-- `workers: process.env.CI ? 1 : undefined` for shared local resources; raise workers only after data isolation is solid.
+- `workers: 1` for the shared bootstrap account/org; raise workers only after data isolation is solid.
 - `trace: "on-first-retry"`, `screenshot: "only-on-failure"`, `video: "on-first-retry"`.
 - HTML reporter should not auto-open on CI.
 

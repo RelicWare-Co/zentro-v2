@@ -95,4 +95,4 @@ Current roadmap themes from the status docs:
 
 ## Release Posture
 
-Zero 1.0 declared the public API stable. Breaking changes can still happen but should be rarer and smaller. Read `debugging-release-notes.md` before upgrades, especially across 0.25, 1.4, and 1.5.
+Zero 1.0 declared the public API stable. Breaking changes can still happen but should be rarer and smaller. Read `debugging-release-notes.md` before upgrades, especially across 0.25, 1.4, and 1.5. In `zentro-v2`, the installed package is currently 1.6.2, so verify behavior beyond 1.5 with local types or current official docs.

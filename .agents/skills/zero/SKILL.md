@@ -11,12 +11,14 @@ Use this skill to work with Zero, Rocicorp's query-driven sync system for TypeSc
 
 Zero is not a generic local-first/CRDT system. Treat it as a client-server system with an authoritative Postgres database, instant local reads, optimistic writes, server-side validation/authorization, and no offline writes.
 
+Project note for `zentro-v2`: `package.json` currently uses `@rocicorp/zero` `^1.6.2`, while this skill's bundled docs snapshot stops at Zero 1.5 release notes. For 1.6-specific behavior, verify against local package types/binaries or current official docs before editing code.
+
 ## Start Here
 
 1. Identify the Zero task: new integration, schema/ZQL, queries, mutators, auth, UI bindings, deployment, debugging, or upgrade.
 2. Read the narrow reference file below before editing code.
 3. If exact syntax, flags, or release behavior matters, search `references/source-index.md`, then read the matching file under `references/source-docs/`.
-4. Prefer current APIs from the docs snapshot. Deprecated APIs only belong in migration work or legacy code maintenance.
+4. Prefer APIs that match the installed project version. Use the bundled snapshot for stable context through 1.5, and verify behavior beyond that with local package types/binaries or current official docs. Deprecated APIs only belong in migration work or legacy code maintenance.
 
 ## Reference Map
 
@@ -25,7 +27,7 @@ Zero is not a generic local-first/CRDT system. Treat it as a client-server syste
 - `references/schema-queries-zql.md`: Zero schema, schema generation, relationships, ZQL clauses, query registries, server query endpoints, and performance-sensitive query design.
 - `references/mutators-auth-rest.md`: mutator definition, push endpoint setup, auth context, cookie/token forwarding, read/write authorization, logout, and REST endpoint patterns.
 - `references/deployment-operations.md`: Postgres provider support, zero-cache config, Cloud Zero, previews, self-hosting topology, rolling updates, backups, OpenTelemetry, and production safety.
-- `references/debugging-release-notes.md`: Inspector, analyze-query CLI, slow queries, replication inspection/reset, `zero-out`, deprecated APIs, and important release notes through Zero 1.5.
+- `references/debugging-release-notes.md`: Inspector, analyze-query CLI, slow queries, replication inspection/reset, `zero-out`, deprecated APIs, and important release notes through Zero 1.5. This is not complete for the repo's current `@rocicorp/zero` 1.6.2 dependency.
 - `references/source-index.md`: exhaustive index of all cloned Zero docs files, headings, source URLs, and word counts.
 - `references/source-docs/`: full raw MDX snapshot from `rocicorp/zero-docs` commit `21a131c2e089915fb9eea692f07cd37593d78186`.
 
