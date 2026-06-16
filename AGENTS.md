@@ -260,6 +260,7 @@ Slices, composition roots, and consumers follow a one-way graph (no cycles):
 
 - If you add a new architectural convention, API module pattern, dev command, integration, or non-obvious workflow, update this file in the same change.
 - If a convention becomes obsolete, remove or revise it instead of leaving conflicting guidance.
+- For every non-trivial bug fix or diagnostic fix, add a new Markdown entry under `docs/fix-log/` named `YYYY-MM-DD-descriptive-fix-name.md`. Include the symptom, root cause, solution, and verification so future agents can learn from prior fixes.
 
 ## Agent skills
 
