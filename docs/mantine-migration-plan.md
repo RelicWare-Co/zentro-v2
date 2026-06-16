@@ -14,11 +14,29 @@
   (estructura/comportamiento) + Tailwind (layout/spacing) conviven sin conflicto de reset en
   build. El tema dark (void/carbon/voltage) se preserva con overrides `styles` centralizados en
   `lib/mantine-dark.ts` (darkInput/Select/Drawer/Modal). Se mantiene `sonner` por ahora.
-- **Fase 3 features migradas:** `customers` ✅, `credit` ✅, `restaurants` ✅, `auth` ✅ (no-op:
-  100% Tailwind, sin shadcn), `settings` ✅, `products` ✅. (tsc + ultracite + build OK por feature).
-- **Pendiente:** organization, dashboard (charts), pos (último, virtualización + sidebar).
-- **Diferido a Fase 4:** `components/ui/table` + `data-table-pagination` (productos los siguen usando);
-  combobox shadcn (Popover+Command) ya migrado a `Select searchable`.
+- **Fase 3 — ✅ completa.** Todas las features del plan migradas a Mantine (Modalidad A):
+  `customers`, `credit`, `restaurants`, `auth` (no-op: 100% Tailwind), `settings`, `products`,
+  `organization`, `dashboard` (charts siguen en recharts), `pos`/`posv2` (flujo crítico).
+  Además `kitchen` (página suelta fuera de la tabla del plan). tsc + ultracite + build OK en cada commit.
+- **Combobox** (Popover+Command shadcn): migrado a `Select searchable` (filtros) y al primitivo
+  `Combobox` de Mantine (customer-picker con trigger e ítems custom de dos líneas).
+- **Patrones POS:** inputs con estilo de marca preservado vía `classNames={{ input }}`; vaul Drawer
+  móvil → Mantine `Drawer position="bottom"`; `Button asChild`+Link → `Button component={Link}`.
+
+### Pendiente (post Fase 3)
+- **Features fuera de la tabla del plan, aún con shadcn:** `admin` (~13 archivos), `sales` (~7),
+  `shifts` (~5). Migrar con los mismos patrones.
+- **Fase 4 — componentes difíciles (diferidos):**
+  - `components/ui/table` + `data-table-pagination`: aún usados por `products` (products-table,
+    kardex-tab) y `organization` (invitations-tab, members-tab). Migrar a Mantine `Table` o re-estilar.
+  - `virtual-table` / `virtual-list` / `virtual-product-catalog`: mantener `@tanstack/react-virtual`,
+    re-estilar contenedores. Usados por customers, credit, pos.
+  - `sidebar.tsx` (697 LOC) + `app-layout.tsx` → `AppShell`.
+  - `chart.tsx`: evaluar `@mantine/charts` vs. recharts directo (dashboard ya usa recharts).
+- **`sonner` Toaster:** se mantiene en `pages/+Layout.tsx`; evaluar `@mantine/notifications`.
+- **Fase 5 (eje Tailwind):** en Modalidad A se mantiene Tailwind para layout/spacing.
+- **Fase 6 (limpieza):** tras migrar lo anterior, eliminar `components/ui`, `shadcn`, `radix-ui`,
+  `cmdk`, `vaul`, `class-variance-authority`, etc., y `components.json`.
 - **Patrones establecidos:** `lib/mantine-dark.ts` (darkInput/Select/Drawer/Modal); `Card`/`CardHeader`
   shadcn → contenedor Tailwind o helper local (`SettingsCard`); `Dialog`→`Modal`, `Sheet`→`Drawer`,
   `Select` shadcn→`Select` Mantine (`data`), `Switch.onCheckedChange`→`onChange(e.currentTarget.checked)`,
