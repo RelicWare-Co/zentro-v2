@@ -90,9 +90,10 @@ function DesktopShell() {
 
     try {
       await window.zentroDesktop?.retryConnection();
-    } finally {
-      setIsRetrying(false);
+    } catch {
+      // Retry failures surface through onConnectionStatus.
     }
+    setIsRetrying(false);
   };
 
   return (

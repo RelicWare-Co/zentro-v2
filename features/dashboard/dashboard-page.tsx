@@ -60,17 +60,3 @@ export function DashboardPage() {
     </DashboardPageProvider>
   );
 }
-
-export const DashboardPageCompound = {
-  Provider: DashboardPageProvider,
-  Root: DashboardPageRoot,
-  Header: DashboardPageHeader,
-  Stats: DashboardStatsSection,
-  SalesTrend: DashboardSalesTrendPanel,
-  Operation: DashboardOperationPanel,
-  TopProducts: DashboardTopProductsPanel,
-  Alerts: DashboardAlertsPanel,
-  RecentSales: DashboardRecentSalesPanel,
-  Loading: DashboardPageLoading,
-  Error: DashboardPageError,
-};

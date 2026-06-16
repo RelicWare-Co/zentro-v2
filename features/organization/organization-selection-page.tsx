@@ -62,14 +62,3 @@ function OrganizationSelectionWithProvider() {
 export function OrganizationSelection() {
   return <OrganizationSelectionWithProvider />;
 }
-
-export const OrganizationSelectionCompound = {
-  Provider: OrganizationSelectionProvider,
-  Layout: OrganizationSelectionLayout,
-  Header: OrganizationSelectionHeader,
-  ListCard: OrganizationListCard,
-  InvitationsCard: OrganizationInvitationsCard,
-  CreateCard: OrganizationCreateCard,
-  CreationControlledCard: OrganizationCreationControlledCard,
-  InfoCard: OrganizationSelectionInfoCard,
-};

@@ -84,16 +84,3 @@ export function LoginPage() {
     </LoginPageProvider>
   );
 }
-
-export const LoginPageCompound = {
-  Provider: LoginPageProvider,
-  Shell: LoginPageShell,
-  Content: LoginPageContent,
-  Header: LoginPageHeader,
-  JoinSection: LoginJoinSection,
-  AuthSection: LoginAuthSection,
-  ModeTabs: LoginModeTabs,
-  LoginForm,
-  RegisterForm,
-  SignedInJoinCard,
-};

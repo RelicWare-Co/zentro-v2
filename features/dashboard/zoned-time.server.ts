@@ -45,7 +45,7 @@ export function buildZonedSaleDateKey(
     throw new Error(`Invalid time zone: ${timeZone}`);
   }
 
-  return sql<string>`to_char(${createdAtColumn} at time zone ${timeZone}, 'YYYY-MM-DD')`;
+  return sql<string>`to_char(${createdAtColumn} at time zone ${sql.raw(`'${timeZone}'`)}, 'YYYY-MM-DD')`;
 }
 
 export function resolveDashboardTimeZone(

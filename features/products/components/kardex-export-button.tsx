@@ -52,9 +52,8 @@ export function KardexExportButton({
       toast.success(`Exportados ${rows.length} movimientos.`);
     } catch {
       toast.error("No se pudo exportar el Kardex.");
-    } finally {
-      setIsExporting(false);
     }
+    setIsExporting(false);
   };
 
   return (

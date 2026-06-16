@@ -50,14 +50,3 @@ export function CustomersPage() {
     </CustomersPageProvider>
   );
 }
-
-export const CustomersPageCompound = {
-  Provider: CustomersPageProvider,
-  Root: CustomersPageRoot,
-  Header: CustomersPageHeader,
-  ListPanel: CustomersListPanel,
-  FormSheet: CustomerFormSheet,
-  DeleteDialog: CustomerDeleteDialog,
-  Loading: CustomersPageLoading,
-  Error: CustomersPageError,
-};

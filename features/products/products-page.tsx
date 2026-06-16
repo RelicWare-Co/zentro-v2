@@ -117,16 +117,3 @@ export function ProductsPage() {
     </ProductsPageProvider>
   );
 }
-
-export const ProductsPageCompound = {
-  Provider: ProductsPageProvider,
-  Root: ProductsPageRoot,
-  Header: ProductsPageHeader,
-  Tabs: ProductsPageTabs,
-  ProductsTab,
-  CategoriesTab,
-  ProductFormSheet,
-  CategoryDialog,
-  InventoryDialog,
-  ProductDeleteDialog,
-};

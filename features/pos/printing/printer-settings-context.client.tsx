@@ -114,18 +114,18 @@ export function PrinterSettingsProvider({
       try {
         const result = await action();
         if (result === false) {
-          throw new Error("No se pudo completar la operación solicitada.");
+          setFeedbackError("No se pudo completar la operación solicitada.");
+        } else {
+          setFeedbackMessage(successMessage);
         }
-        setFeedbackMessage(successMessage);
       } catch (error) {
         setFeedbackError(
           error instanceof Error
             ? error.message
             : "No se pudo completar la operación con la impresora."
         );
-      } finally {
-        setIsBusy(false);
       }
+      setIsBusy(false);
     },
     []
   );

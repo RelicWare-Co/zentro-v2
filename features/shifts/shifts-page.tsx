@@ -112,11 +112,3 @@ export function ShiftsPage() {
     </ShiftsPageProvider>
   );
 }
-
-export const ShiftsPageCompound = {
-  Provider: ShiftsPageProvider,
-  Root: ShiftsPageRoot,
-  Header: ShiftsPageHeader,
-  Metrics: ShiftsPageMetrics,
-  ListSection: ShiftsPageListSection,
-};

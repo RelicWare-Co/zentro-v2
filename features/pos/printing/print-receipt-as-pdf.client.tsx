@@ -1,6 +1,6 @@
-import { useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { ThermalReceipt } from "@/features/pos/components/thermal-receipt";
+import { PrintReceiptLifecycle } from "@/features/pos/printing/print-receipt-lifecycle.client";
 import {
   getThermalReceiptCssMetrics,
   type PosReceiptLayoutSettings,
@@ -94,7 +94,7 @@ export function printReceiptAsPdf(
   printWindow.onbeforeunload = cleanup;
 
   root.render(
-    <PrintLifecycle
+    <PrintReceiptLifecycle
       onReady={() => {
         printWindow.focus();
         printWindow.print();
@@ -105,7 +105,7 @@ export function printReceiptAsPdf(
       }}
     >
       <ThermalReceipt {...document.receipt} layout={layout ?? undefined} />
-    </PrintLifecycle>
+    </PrintReceiptLifecycle>
   );
 
   return true;
@@ -174,7 +174,7 @@ ${buildPrintWindowStyles(layout)}
   window.addEventListener("afterprint", cleanup, { once: true });
 
   root.render(
-    <PrintLifecycle
+    <PrintReceiptLifecycle
       onReady={() => {
         window.focus();
         window.print();
@@ -185,25 +185,10 @@ ${buildPrintWindowStyles(layout)}
       }}
     >
       <ThermalReceipt {...document.receipt} layout={layout ?? undefined} />
-    </PrintLifecycle>
+    </PrintReceiptLifecycle>
   );
 
   return true;
-}
-
-function PrintLifecycle({
-  children,
-  onReady,
-}: {
-  children: React.ReactNode;
-  onReady: () => void;
-}) {
-  useEffect(() => {
-    const timeoutId = window.setTimeout(onReady, 60);
-    return () => window.clearTimeout(timeoutId);
-  }, [onReady]);
-
-  return <>{children}</>;
 }
 
 function escapeHtml(value: string) {

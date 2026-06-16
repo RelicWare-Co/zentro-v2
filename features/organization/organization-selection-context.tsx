@@ -82,6 +82,72 @@ export function useOrganizationSelectionPage() {
   return context;
 }
 
+async function createOrganizationAndEnter({
+  enterOrganizationWorkspace,
+  newOrgName,
+  newOrgSlug,
+  onError,
+  refetchOrganizations,
+}: {
+  enterOrganizationWorkspace: (message: string) => Promise<void>;
+  newOrgName: string;
+  newOrgSlug: string;
+  onError: (message: string) => void;
+  refetchOrganizations: () => Promise<unknown>;
+}) {
+  if (!(newOrgName && newOrgSlug)) {
+    onError("Completa el nombre y el identificador antes de continuar.");
+    return;
+  }
+
+  const checkResult = await authClient.organization.checkSlug({
+    slug: newOrgSlug,
+  });
+
+  if (checkResult?.error) {
+    onError(
+      checkResult.error.message ||
+        "No fue posible validar el identificador de la organización."
+    );
+    return;
+  }
+
+  if (checkResult?.data?.status === false) {
+    onError("Ese identificador ya está en uso. Elige otro.");
+    return;
+  }
+
+  const result = await authClient.organization.create({
+    name: newOrgName,
+    slug: newOrgSlug,
+  });
+
+  if (result?.error) {
+    onError(result.error.message || "No se pudo crear la organización.");
+    return;
+  }
+
+  if (!result?.data) {
+    return;
+  }
+
+  const activateResult = await authClient.organization.setActive({
+    organizationId: result.data.id,
+  });
+
+  if (activateResult?.error) {
+    onError(
+      activateResult.error.message ||
+        "La organización se creó, pero no se pudo activar."
+    );
+    await refetchOrganizations();
+    return;
+  }
+
+  await refetchOrganizations();
+  await enterOrganizationWorkspace("Organización creada. Entrando...");
+}
+
 export function OrganizationSelectionProvider({
   children,
   orgNameInputId,
@@ -166,9 +232,8 @@ export function OrganizationSelectionProvider({
         if (error instanceof Error) {
           setErrorMsg(error.message);
         }
-      } finally {
-        setIsSelectingId(null);
       }
+      setIsSelectingId(null);
     },
     [runOrganizationTransition]
   );
@@ -200,63 +265,17 @@ export function OrganizationSelectionProvider({
       setIsSubmitting(true);
 
       try {
-        if (!(newOrgName && newOrgSlug)) {
-          setErrorMsg(
-            "Completa el nombre y el identificador antes de continuar."
-          );
-          return;
-        }
-
-        const checkResult = await authClient.organization.checkSlug({
-          slug: newOrgSlug,
+        await createOrganizationAndEnter({
+          enterOrganizationWorkspace,
+          newOrgName,
+          newOrgSlug,
+          onError: setErrorMsg,
+          refetchOrganizations,
         });
-
-        if (checkResult?.error) {
-          setErrorMsg(
-            checkResult.error.message ||
-              "No fue posible validar el identificador de la organización."
-          );
-          return;
-        }
-
-        if (checkResult?.data?.status === false) {
-          setErrorMsg("Ese identificador ya está en uso. Elige otro.");
-          return;
-        }
-
-        const result = await authClient.organization.create({
-          name: newOrgName,
-          slug: newOrgSlug,
-        });
-
-        if (result?.error) {
-          setErrorMsg(
-            result.error.message || "No se pudo crear la organización."
-          );
-          return;
-        }
-
-        if (result?.data) {
-          const activateResult = await authClient.organization.setActive({
-            organizationId: result.data.id,
-          });
-          if (activateResult?.error) {
-            setErrorMsg(
-              activateResult.error.message ||
-                "La organización se creó, pero no se pudo activar."
-            );
-            await refetchOrganizations();
-            return;
-          }
-
-          await refetchOrganizations();
-          await enterOrganizationWorkspace("Organización creada. Entrando...");
-        }
       } catch {
         setErrorMsg("Ocurrió un error inesperado al crear la organización.");
-      } finally {
-        setIsSubmitting(false);
       }
+      setIsSubmitting(false);
     },
     [newOrgName, newOrgSlug, refetchOrganizations, enterOrganizationWorkspace]
   );
@@ -275,31 +294,30 @@ export function OrganizationSelectionProvider({
           setErrorMsg(
             result.error.message || "No se pudo aceptar la invitación."
           );
-          return;
+        } else {
+          const activateResult = await authClient.organization.setActive({
+            organizationId: invitation.organizationId,
+          });
+          if (activateResult?.error) {
+            setErrorMsg(
+              activateResult.error.message ||
+                "No se pudo activar la organización de la invitación."
+            );
+          } else {
+            await Promise.all([refetchOrganizations(), refetchSelectionData()]);
+            await enterOrganizationWorkspace(
+              "Invitación aceptada. Entrando..."
+            );
+          }
         }
-
-        const activateResult = await authClient.organization.setActive({
-          organizationId: invitation.organizationId,
-        });
-        if (activateResult?.error) {
-          setErrorMsg(
-            activateResult.error.message ||
-              "No se pudo activar la organización de la invitación."
-          );
-          return;
-        }
-
-        await Promise.all([refetchOrganizations(), refetchSelectionData()]);
-        await enterOrganizationWorkspace("Invitación aceptada. Entrando...");
       } catch (error) {
         setErrorMsg(
           error instanceof Error
             ? error.message
             : "No se pudo aceptar la invitación."
         );
-      } finally {
-        setIsAcceptingInvitationId(null);
       }
+      setIsAcceptingInvitationId(null);
     },
     [enterOrganizationWorkspace, refetchOrganizations, refetchSelectionData]
   );
@@ -318,15 +336,13 @@ export function OrganizationSelectionProvider({
           setErrorMsg(
             result.error.message || "No se pudo rechazar la invitación."
           );
-          return;
+        } else {
+          await refetchSelectionData();
         }
-
-        await refetchSelectionData();
       } catch {
         setErrorMsg("No se pudo rechazar la invitación.");
-      } finally {
-        setIsRejectingInvitationId(null);
       }
+      setIsRejectingInvitationId(null);
     },
     [refetchSelectionData]
   );

@@ -59,9 +59,8 @@ export default function Page() {
           "No se pudo completar el acceso a la organización."
         )
       );
-    } finally {
-      setIsJoining(false);
     }
+    setIsJoining(false);
   };
 
   return (

@@ -6,13 +6,13 @@ import { AccountCreditSummary } from "@/features/posv2/components/checkout-accou
 import { CardTransferCheckoutSection } from "@/features/posv2/components/checkout-card-transfer-section";
 import { CashCheckoutSection } from "@/features/posv2/components/checkout-cash-section";
 import { MultiplePaymentsSection } from "@/features/posv2/components/checkout-multiple-payments-section";
+import { PaymentMethodGridV2 } from "@/features/posv2/components/payment-method-grid-v2";
 import {
   inferPaymentModeFromPayments,
-  PaymentMethodGridV2,
   type PosV2PaymentMode,
   resolveAvailablePaymentModes,
   resolveMethodIdForMode,
-} from "@/features/posv2/components/payment-method-grid-v2";
+} from "@/features/posv2/components/payment-method-grid-v2.shared";
 import {
   posV2OrderBorder,
   posV2OrderSurfaceClassName,

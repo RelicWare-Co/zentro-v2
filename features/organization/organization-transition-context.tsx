@@ -8,6 +8,7 @@ import {
   useMemo,
   useState,
 } from "react";
+import { navigate } from "vike/client/router";
 import { usePageContext } from "vike-react/usePageContext";
 import { queryClient } from "@/lib/query-client";
 import type { ZeroContext } from "@/zero/context";
@@ -110,7 +111,6 @@ export function OrganizationTransitionProvider({
         const nextContext = await refreshZeroContext();
 
         if (window.location.pathname !== destination) {
-          const { navigate } = await import("vike/client/router");
           await navigate(destination, {
             pageContext: {
               zeroContext: nextContext,

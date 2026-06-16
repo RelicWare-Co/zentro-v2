@@ -38,6 +38,7 @@ import {
   type PosLocalPrinterSettings,
 } from "@/features/pos/printing/printer-settings.local.client";
 import { usePrinterSettings } from "@/features/pos/printing/printer-settings-context.client";
+import { listQzPrinters } from "@/features/pos/printing/qz-tray-receipt-printer.client";
 import {
   POS_RECEIPT_FONT_SCALES,
   POS_RECEIPT_PAPER_WIDTHS,
@@ -555,9 +556,6 @@ function QzParametersSection({
     setIsLoadingPrinters(true);
     setLookupError(null);
     try {
-      const { listQzPrinters } = await import(
-        "@/features/pos/printing/qz-tray-receipt-printer.client"
-      );
       const foundPrinters = await listQzPrinters(settings.qz);
       setPrinters(foundPrinters);
       if (foundPrinters.length === 0) {
@@ -569,9 +567,8 @@ function QzParametersSection({
           ? error.message
           : "No se pudo conectar con QZ Tray. ¿Está abierto?"
       );
-    } finally {
-      setIsLoadingPrinters(false);
     }
+    setIsLoadingPrinters(false);
   };
 
   const selectablePrinters =

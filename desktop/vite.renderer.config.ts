@@ -19,7 +19,7 @@ export default defineConfig({
       "@": repoRoot,
       // The desktop shell only needs Button's default <button> path. Keep the
       // local renderer from bundling the full Radix meta-package dependency tree.
-      "radix-ui": path.join(desktopRoot, "src/renderer/radix-ui-shim.tsx"),
+      "radix-ui": path.join(desktopRoot, "src/renderer/radix-ui-shim-slot.ts"),
     },
   },
 });

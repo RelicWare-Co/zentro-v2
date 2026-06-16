@@ -1,5 +1,9 @@
 import { describe, expect, test } from "bun:test";
+import { sql } from "drizzle-orm";
+import { PgDialect } from "drizzle-orm/pg-core";
+import { sale } from "@/database/drizzle/schema/sales.schema";
 import {
+  buildZonedSaleDateKey,
   DEFAULT_DASHBOARD_TIME_ZONE,
   formatZonedDateKey,
   getZonedDateParts,
@@ -113,5 +117,17 @@ describe("formatZonedDateKey", () => {
     expect(formatZonedDateKey({ year: 2026, month: 6, day: 3 })).toBe(
       "2026-06-03"
     );
+  });
+});
+
+describe("buildZonedSaleDateKey", () => {
+  test("uses a stable validated time zone literal across grouped SQL expressions", () => {
+    const saleDateKey = buildZonedSaleDateKey(sale.createdAt, "America/Bogota");
+    const query = new PgDialect().sqlToQuery(
+      sql`select ${saleDateKey} from ${sale} group by ${saleDateKey} order by ${saleDateKey} asc`
+    );
+
+    expect(query.sql).toContain("at time zone 'America/Bogota'");
+    expect(query.params).not.toContain("America/Bogota");
   });
 });

@@ -157,14 +157,3 @@ export function SalesPage() {
     </SalesPageProvider>
   );
 }
-
-export const SalesPageCompound = {
-  Provider: SalesPageProvider,
-  Root: SalesPageRoot,
-  Header: SalesPageHeader,
-  ViewTabs: SalesPageViewTabs,
-  Metrics: SalesPageMetrics,
-  ListSection: SalesPageListSection,
-  DetailSheet: SalesDetailSheet,
-  CancelDialog: SalesCancelDialog,
-};

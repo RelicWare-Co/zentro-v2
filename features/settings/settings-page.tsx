@@ -1,8 +1,4 @@
 import type { ReactNode } from "react";
-import { CreditSettingsCard } from "@/features/settings/components/credit-settings-card";
-import { InventorySettingsCard } from "@/features/settings/components/inventory-settings-card";
-import { PosSettingsCard } from "@/features/settings/components/pos-settings-card";
-import { RestaurantConfigurationCard } from "@/features/settings/components/restaurant-configuration-card";
 import { SettingsPageAlerts } from "@/features/settings/components/settings-page-alerts";
 import { SettingsPageGrid } from "@/features/settings/components/settings-page-grid";
 import { SettingsPageHeader } from "@/features/settings/components/settings-page-header";
@@ -11,7 +7,6 @@ import {
   SettingsPageLoading,
 } from "@/features/settings/components/settings-page-states";
 import { SettingsSummaryCards } from "@/features/settings/components/settings-summary-cards";
-import { ThemeSettingsCard } from "@/features/settings/components/theme-settings-card";
 import {
   SettingsPageProvider,
   useSettingsPage,
@@ -53,17 +48,3 @@ export function SettingsPage() {
     </SettingsPageProvider>
   );
 }
-
-export const SettingsPageCompound = {
-  Provider: SettingsPageProvider,
-  Root: SettingsPageRoot,
-  Header: SettingsPageHeader,
-  Alerts: SettingsPageAlerts,
-  Summary: SettingsSummaryCards,
-  Grid: SettingsPageGrid,
-  ThemeCard: ThemeSettingsCard,
-  PosCard: PosSettingsCard,
-  CreditCard: CreditSettingsCard,
-  InventoryCard: InventorySettingsCard,
-  RestaurantCard: RestaurantConfigurationCard,
-};

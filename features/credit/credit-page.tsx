@@ -50,14 +50,3 @@ export function CreditPage() {
     </CreditPageProvider>
   );
 }
-
-export const CreditPageCompound = {
-  Provider: CreditPageProvider,
-  Root: CreditPageRoot,
-  Header: CreditPageHeader,
-  AccountsPanel: CreditAccountsPanel,
-  LedgerSheet: CreditLedgerSheet,
-  PaymentSheet: CreditPaymentSheet,
-  Loading: CreditPageLoading,
-  Error: CreditPageError,
-};

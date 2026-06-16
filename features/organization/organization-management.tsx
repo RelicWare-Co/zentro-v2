@@ -88,14 +88,3 @@ export function OrganizationManagement() {
     </OrganizationPageProvider>
   );
 }
-
-export const OrganizationPageCompound = {
-  Provider: OrganizationPageProvider,
-  Root: OrganizationPageRoot,
-  Header: OrganizationPageHeader,
-  Tabs: OrganizationPageTabs,
-  GeneralTab,
-  MembersTab,
-  InvitationsTab,
-  AccessTab,
-};

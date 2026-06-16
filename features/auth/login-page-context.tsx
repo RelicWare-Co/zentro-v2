@@ -94,13 +94,14 @@ export function LoginPageProvider({ children }: { children: ReactNode }) {
     setJoinError(null);
     setIsCompletingJoin(true);
 
+    let success = false;
     try {
       await redeemMutation.mutateAsync({ token: joinToken });
       await authClient.organization.setActive({
         organizationId,
       });
       queryClient.clear();
-      return true;
+      success = true;
     } catch (error: unknown) {
       setJoinError(
         getErrorMessage(
@@ -108,10 +109,9 @@ export function LoginPageProvider({ children }: { children: ReactNode }) {
           "No se pudo completar el acceso con este enlace."
         )
       );
-      return false;
-    } finally {
-      setIsCompletingJoin(false);
     }
+    setIsCompletingJoin(false);
+    return success;
   }, [joinPreview?.organization?.id, joinToken, redeemMutation]);
 
   const handleJoinWithCurrentAccount = useCallback(async () => {
