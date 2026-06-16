@@ -1,7 +1,6 @@
+import { Badge, Button } from "@mantine/core";
 import { ArrowRight } from "lucide-react";
 import { Link } from "@/components/link";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   DashboardPanelShell,
   MetricItem,
@@ -45,6 +44,7 @@ export function DashboardOperationPanel() {
               ? "border-0 bg-emerald-500/10 text-emerald-300"
               : "border-0 bg-zinc-800/80 text-zinc-300"
           }
+          tt="none"
         >
           {activeShift ? "Activo" : "Pendiente"}
         </Badge>
@@ -67,14 +67,14 @@ export function DashboardOperationPanel() {
         </div>
       ) : (
         <Button
-          asChild
-          className="h-9 w-full border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5 hover:text-white"
+          color="gray"
+          component={Link}
+          fullWidth
+          href="/pos"
+          rightSection={<ArrowRight className="size-4" />}
           variant="outline"
         >
-          <Link href="/pos">
-            Abrir caja en POS
-            <ArrowRight className="ml-2 size-4" />
-          </Link>
+          Abrir caja en POS
         </Button>
       )}
 
@@ -149,14 +149,14 @@ export function DashboardOperationPanel() {
       </div>
 
       <Button
-        asChild
-        className="h-10 w-full border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5 hover:text-white"
+        color="gray"
+        component={Link}
+        fullWidth
+        href="/shifts"
+        rightSection={<ArrowRight className="size-4" />}
         variant="outline"
       >
-        <Link href="/shifts">
-          Ver turnos y cierres
-          <ArrowRight className="ml-2 size-4" />
-        </Link>
+        Ver turnos y cierres
       </Button>
     </DashboardPanelShell>
   );

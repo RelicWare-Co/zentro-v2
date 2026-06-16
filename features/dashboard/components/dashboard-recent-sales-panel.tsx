@@ -1,4 +1,4 @@
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@mantine/core";
 import {
   DashboardPanelShell,
   EmptyState,
@@ -34,7 +34,9 @@ export function DashboardRecentSalesPanel() {
                     {recentSale.customerName ?? "Cliente mostrador"}
                   </p>
                   <Badge
-                    className={`${getSaleStatusBadgeClass(recentSale.status)} border-0 px-2 py-0.5 text-[10px]`}
+                    className={`${getSaleStatusBadgeClass(recentSale.status)} border-0`}
+                    size="sm"
+                    tt="none"
                   >
                     {formatSaleStatus(recentSale.status)}
                   </Badge>

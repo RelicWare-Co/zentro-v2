@@ -1,6 +1,6 @@
+import { Button } from "@mantine/core";
 import { Package, Store } from "lucide-react";
 import { Link } from "@/components/link";
-import { Button } from "@/components/ui/button";
 import { dashboardDateTimeFormatter } from "@/features/dashboard/dashboard-formatters.shared";
 import { useDashboardData } from "@/features/dashboard/dashboard-page-context";
 
@@ -24,23 +24,24 @@ export function DashboardPageHeader() {
 
       <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
         <Button
-          asChild
-          className="h-10 w-full border-zinc-800 bg-[var(--color-carbon)] px-4 text-zinc-300 hover:bg-white/5 hover:text-white sm:w-auto"
+          className="w-full sm:w-auto"
+          color="gray"
+          component={Link}
+          href="/products"
+          leftSection={<Package aria-hidden="true" className="size-4" />}
           variant="outline"
         >
-          <Link href="/products">
-            <Package aria-hidden="true" className="mr-2 size-4" />
-            Ver inventario
-          </Link>
+          Ver inventario
         </Button>
         <Button
-          asChild
-          className="h-10 w-full bg-[var(--color-voltage)] px-4 font-semibold text-black hover:bg-[#c9e605] sm:w-auto"
+          c="black"
+          className="w-full sm:w-auto"
+          color="voltage.5"
+          component={Link}
+          href="/pos"
+          leftSection={<Store aria-hidden="true" className="size-4" />}
         >
-          <Link href="/pos">
-            <Store aria-hidden="true" className="mr-2 size-4" />
-            Ir al POS
-          </Link>
+          Ir al POS
         </Button>
       </div>
     </div>

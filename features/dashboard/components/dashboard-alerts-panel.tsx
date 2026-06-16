@@ -1,6 +1,6 @@
+import { Badge } from "@mantine/core";
 import { AlertTriangle, CreditCard } from "lucide-react";
 import { Link } from "@/components/link";
-import { Badge } from "@/components/ui/badge";
 import {
   DashboardPanelShell,
   EmptyState,
@@ -85,7 +85,10 @@ export function DashboardAlertsPanel() {
                     {productItem.categoryName ?? "Sin categoría"}
                   </p>
                 </div>
-                <Badge className="border-0 bg-amber-500/10 text-amber-300">
+                <Badge
+                  className="border-0 bg-amber-500/10 text-amber-300"
+                  tt="none"
+                >
                   Stock {formatCount(productItem.stock)}
                 </Badge>
               </Link>
