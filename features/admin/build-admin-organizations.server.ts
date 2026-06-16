@@ -15,6 +15,7 @@ import type {
   AdminOrganizationsResponseSchema,
 } from "@/features/admin/admin.schema";
 import {
+  buildZonedSaleDateKey,
   formatZonedDateKey,
   getZonedDateParts,
   isSafeTimeZone,
@@ -242,9 +243,7 @@ export async function runBuildAdminOrganizationDetail(
     eq(sale.organizationId, organizationId),
     ne(sale.status, "cancelled"),
   ];
-  // isSafeTimeZone guarantees the value has no quotes, so inlining it as a
-  // literal is safe. A bind param would not match the GROUP BY expression.
-  const saleDateKey = sql<string>`to_char(${sale.createdAt} at time zone ${sql.raw(`'${timeZone}'`)}, 'YYYY-MM-DD')`;
+  const saleDateKey = buildZonedSaleDateKey(sale.createdAt, timeZone);
 
   const [organizationRows] = await Promise.all([
     db

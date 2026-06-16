@@ -1,6 +1,6 @@
 import type { ZeroContext } from "./context";
 
-export function zeroContextSignature(
+export function zeroContextFingerprint(
   context: ZeroContext | null | undefined
 ): string | null {
   if (!context) {
@@ -24,14 +24,14 @@ export function zeroContextSignature(
 
 export function resolveStableZeroContext(
   previous: ZeroContext | undefined,
-  previousSignature: string | null,
+  previousFingerprint: string | null,
   next: ZeroContext | null | undefined
-): { context: ZeroContext | undefined; signature: string | null } {
-  const nextSignature = zeroContextSignature(next);
+): { context: ZeroContext | undefined; fingerprint: string | null } {
+  const nextFingerprint = zeroContextFingerprint(next);
 
-  if (nextSignature === previousSignature && previous !== undefined) {
-    return { context: previous, signature: previousSignature };
+  if (nextFingerprint === previousFingerprint && previous !== undefined) {
+    return { context: previous, fingerprint: previousFingerprint };
   }
 
-  return { context: next ?? undefined, signature: nextSignature };
+  return { context: next ?? undefined, fingerprint: nextFingerprint };
 }

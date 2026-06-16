@@ -32,6 +32,7 @@ import {
   parseOrganizationSettingsMetadata,
 } from "@/features/settings/settings.shared";
 import {
+  buildZonedSaleDateKey,
   formatZonedDateKey,
   getZonedDateParts,
   isSafeTimeZone,
@@ -163,9 +164,7 @@ export async function runBuildDashboardOverview(
     shiftZonedDateParts(today, { days: -(TOP_PRODUCTS_WINDOW_DAYS - 1) }),
     timeZone
   );
-  // isSafeTimeZone guarantees the value has no quotes, so inlining it as a
-  // literal is safe. A bind param would not match the GROUP BY expression.
-  const saleDateKey = sql<string>`to_char(${sale.createdAt} at time zone ${sql.raw(`'${timeZone}'`)}, 'YYYY-MM-DD')`;
+  const saleDateKey = buildZonedSaleDateKey(sale.createdAt, timeZone);
 
   // Shifts often cross midnight (bars close in the early morning), so the
   // "current operation" metrics follow shifts instead of the calendar day:

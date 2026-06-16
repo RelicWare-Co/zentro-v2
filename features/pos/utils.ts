@@ -149,10 +149,8 @@ export function calculateItemBaseAmount(item: CartItem): number {
   return basePrice + modifiersTotal;
 }
 
-/**
- * Genera una firma única para identificar items con los mismos modificadores
- */
-export function buildModifierSignature(
+/** Stable key for cart lines that share the same modifier selection. */
+export function buildModifierFingerprint(
   modifiers: CartItem["modifiers"]
 ): string {
   return modifiers

@@ -13,11 +13,6 @@ jobs:
         working-directory: desktop
     env:
       ZENTRO_DESKTOP_WEB_URL: ${{ vars.ZENTRO_DESKTOP_WEB_URL }}
-      ZENTRO_MSIX_PUBLISHER: ${{ vars.ZENTRO_MSIX_PUBLISHER }}
-      ZENTRO_MSIX_PACKAGE_IDENTITY: ${{ vars.ZENTRO_MSIX_PACKAGE_IDENTITY }}
-      ZENTRO_MSIX_SIGN: ${{ vars.ZENTRO_MSIX_SIGN }}
-      ZENTRO_MSIX_CERT_FILE: ${{ secrets.ZENTRO_MSIX_CERT_FILE }}
-      ZENTRO_MSIX_CERT_PASSWORD: ${{ secrets.ZENTRO_MSIX_CERT_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
 
@@ -26,7 +21,7 @@ jobs:
           bun-version: latest
 
       - name: Install dependencies
-        run: bun install
+        run: bun install --ignore-scripts
         working-directory: ${{ github.workspace }}
 
       - name: Generate MSIX tile assets
@@ -35,6 +30,12 @@ jobs:
 
       - name: Build MSIX (x64)
         run: bun run make:msix
+        env:
+          ZENTRO_MSIX_PUBLISHER: ${{ vars.ZENTRO_MSIX_PUBLISHER }}
+          ZENTRO_MSIX_PACKAGE_IDENTITY: ${{ vars.ZENTRO_MSIX_PACKAGE_IDENTITY }}
+          ZENTRO_MSIX_SIGN: ${{ vars.ZENTRO_MSIX_SIGN }}
+          ZENTRO_MSIX_CERT_FILE: ${{ secrets.ZENTRO_MSIX_CERT_FILE }}
+          ZENTRO_MSIX_CERT_PASSWORD: ${{ secrets.ZENTRO_MSIX_CERT_PASSWORD }}
 
       - name: Upload MSIX artifact
         uses: actions/upload-artifact@v4

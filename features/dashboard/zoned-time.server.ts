@@ -1,3 +1,6 @@
+import { type SQL, sql } from "drizzle-orm";
+import type { AnyColumn } from "drizzle-orm/column";
+
 /**
  * Day/month boundaries for dashboard metrics must follow the business's wall
  * clock, not the server's (production containers run in UTC). These helpers
@@ -31,6 +34,18 @@ export function isSafeTimeZone(value: string): boolean {
   } catch {
     return false;
   }
+}
+
+/** Local calendar date key for a sale timestamp in the org's IANA time zone. */
+export function buildZonedSaleDateKey(
+  createdAtColumn: AnyColumn,
+  timeZone: string
+): SQL<string> {
+  if (!isSafeTimeZone(timeZone)) {
+    throw new Error(`Invalid time zone: ${timeZone}`);
+  }
+
+  return sql<string>`to_char(${createdAtColumn} at time zone ${timeZone}, 'YYYY-MM-DD')`;
 }
 
 export function resolveDashboardTimeZone(

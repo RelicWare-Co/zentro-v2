@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from "react";
 import { parseMoneyInput } from "@/lib/utils";
 import type { CartItem, CartItemModifier, Product } from "../types";
 import {
-  buildModifierSignature,
+  buildModifierFingerprint,
   calculateCartTotals,
   calculateItemBaseAmount,
 } from "../utils";
@@ -14,11 +14,12 @@ export function usePosCart() {
   const addToCart = useCallback(
     (product: Product, modifiers: CartItemModifier[]) => {
       setCart((prevCart) => {
-        const targetModifierSignature = buildModifierSignature(modifiers);
+        const targetModifierFingerprint = buildModifierFingerprint(modifiers);
         const existingItem = prevCart.find(
           (item) =>
             item.product.id === product.id &&
-            buildModifierSignature(item.modifiers) === targetModifierSignature
+            buildModifierFingerprint(item.modifiers) ===
+              targetModifierFingerprint
         );
 
         if (existingItem) {

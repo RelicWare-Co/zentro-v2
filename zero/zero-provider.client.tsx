@@ -12,15 +12,15 @@ import { type ReactNode, useMemo, useRef } from "react";
 import { createZeroOptions } from "./client";
 import type { ZeroContext } from "./context";
 import { ZeroConnectionBoundary } from "./zero-connection-boundary.client";
-import { zeroContextSignature } from "./zero-context-stable.shared";
+import { zeroContextFingerprint } from "./zero-context-stable.shared";
 
 function useStableZeroContext(context: ZeroContext | undefined) {
   const stableRef = useRef(context);
-  const signatureRef = useRef(zeroContextSignature(context));
+  const fingerprintRef = useRef(zeroContextFingerprint(context));
 
-  const signature = zeroContextSignature(context);
-  if (signature !== signatureRef.current) {
-    signatureRef.current = signature;
+  const fingerprint = zeroContextFingerprint(context);
+  if (fingerprint !== fingerprintRef.current) {
+    fingerprintRef.current = fingerprint;
     stableRef.current = context;
   }
 

@@ -5,6 +5,7 @@ import { organization, user } from "@/database/drizzle/schema/auth.schema";
 import { sale } from "@/database/drizzle/schema/sales.schema";
 import type { AdminPlatformOverviewSchema } from "@/features/admin/admin.schema";
 import {
+  buildZonedSaleDateKey,
   formatZonedDateKey,
   getZonedDateParts,
   isSafeTimeZone,
@@ -94,9 +95,7 @@ export async function runBuildAdminOverview(
     shiftZonedDateParts(today, { days: -(TREND_DAYS - 1) }),
     timeZone
   );
-  // isSafeTimeZone guarantees the value has no quotes, so inlining it as a
-  // literal is safe. A bind param would not match the GROUP BY expression.
-  const saleDateKey = sql<string>`to_char(${sale.createdAt} at time zone ${sql.raw(`'${timeZone}'`)}, 'YYYY-MM-DD')`;
+  const saleDateKey = buildZonedSaleDateKey(sale.createdAt, timeZone);
   const notCancelled = ne(sale.status, "cancelled");
 
   const [

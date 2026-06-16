@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import type { ZeroContext } from "@/zero/context";
 import {
   resolveStableZeroContext,
-  zeroContextSignature,
+  zeroContextFingerprint,
 } from "@/zero/zero-context-stable.shared";
 
 const baseContext: ZeroContext = {
@@ -19,41 +19,41 @@ const baseContext: ZeroContext = {
   },
 };
 
-describe("zeroContextSignature", () => {
+describe("zeroContextFingerprint", () => {
   test("returns null for missing context", () => {
-    expect(zeroContextSignature(null)).toBeNull();
-    expect(zeroContextSignature(undefined)).toBeNull();
+    expect(zeroContextFingerprint(null)).toBeNull();
+    expect(zeroContextFingerprint(undefined)).toBeNull();
   });
 
   test("changes when auth-relevant fields change", () => {
     const otherOrg: ZeroContext = { ...baseContext, orgID: "org-2" };
-    expect(zeroContextSignature(baseContext)).not.toBe(
-      zeroContextSignature(otherOrg)
+    expect(zeroContextFingerprint(baseContext)).not.toBe(
+      zeroContextFingerprint(otherOrg)
     );
   });
 });
 
 describe("resolveStableZeroContext", () => {
-  test("reuses previous context when signature is unchanged", () => {
-    const previousSignature = zeroContextSignature(baseContext);
+  test("reuses previous context when fingerprint is unchanged", () => {
+    const previousFingerprint = zeroContextFingerprint(baseContext);
     const nextContext = { ...baseContext };
 
     const resolved = resolveStableZeroContext(
       baseContext,
-      previousSignature,
+      previousFingerprint,
       nextContext
     );
 
     expect(resolved.context).toBe(baseContext);
-    expect(resolved.signature).toBe(previousSignature);
+    expect(resolved.fingerprint).toBe(previousFingerprint);
   });
 
-  test("returns next context when signature changes", () => {
+  test("returns next context when fingerprint changes", () => {
     const nextContext: ZeroContext = { ...baseContext, role: "member" };
 
     const resolved = resolveStableZeroContext(
       baseContext,
-      zeroContextSignature(baseContext),
+      zeroContextFingerprint(baseContext),
       nextContext
     );
 
