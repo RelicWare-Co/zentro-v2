@@ -1,3 +1,4 @@
+import { Button } from "@mantine/core";
 import type { ConnectionState } from "@rocicorp/zero";
 import { useConnectionState, useZero } from "@rocicorp/zero/react";
 import { AlertTriangle, RefreshCw, RotateCcw } from "lucide-react";
@@ -8,7 +9,6 @@ import {
   useRef,
   useState,
 } from "react";
-import { Button } from "@/components/ui/button";
 
 const SLOW_CONNECTION_MS = 15_000;
 
@@ -53,12 +53,14 @@ function ZeroConnectionProblem({
           </div>
         </div>
         <Button
-          className="mt-5 w-full border-zinc-700 bg-zinc-900 text-white hover:bg-zinc-800"
+          color="gray"
+          fullWidth
+          leftSection={<RefreshCw className="size-4" />}
+          mt="lg"
           onClick={onAction}
           type="button"
           variant="outline"
         >
-          <RefreshCw className="size-4" />
           {actionLabel}
         </Button>
       </div>
