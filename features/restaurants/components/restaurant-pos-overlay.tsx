@@ -194,14 +194,20 @@ export function RestaurantPosTables({
     );
   }
 
+  // Positioned relative to the POS catalog (its `relative` wrapper), so it
+  // floats over the product zone instead of the app chrome. The absolute
+  // positioning lives on this div, not on the Mantine Button, because the
+  // Button's own root styles override `position`.
   return (
-    <Button
-      className="absolute bottom-4 left-4 z-20 h-12 rounded-full bg-[var(--color-voltage)] px-5 font-semibold text-black shadow-lg hover:bg-[#d9f15c]"
-      leftSection={<UtensilsCrossed aria-hidden="true" className="size-5" />}
-      onClick={() => onOpenChange(true)}
-      type="button"
-    >
-      Mesas
-    </Button>
+    <div className="absolute bottom-4 left-4 z-20">
+      <Button
+        className="h-12 rounded-full bg-[var(--color-voltage)] px-5 font-semibold text-black shadow-lg hover:bg-[#d9f15c]"
+        leftSection={<UtensilsCrossed aria-hidden="true" className="size-5" />}
+        onClick={() => onOpenChange(true)}
+        type="button"
+      >
+        Mesas
+      </Button>
+    </div>
   );
 }
