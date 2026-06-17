@@ -1,5 +1,4 @@
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge, Button } from "@mantine/core";
 import type { useSaleDetail } from "@/features/sales/hooks/use-sales";
 import {
   formatSaleStatus,
@@ -33,7 +32,9 @@ export function SaleDetailContent({
           <p className="font-mono text-sm text-white">{sale.id}</p>
         </div>
         <Badge
-          className={`${getSaleStatusBadgeClass(sale.status)} border-0 px-2 py-0.5 text-xs`}
+          className={`${getSaleStatusBadgeClass(sale.status)} border-0`}
+          size="sm"
+          tt="none"
         >
           {formatSaleStatus(sale.status)}
           {sale.status === "credit" && sale.balanceDue > 0
@@ -195,8 +196,9 @@ export function SaleDetailContent({
 
       {canCancelSale ? (
         <Button
-          className="w-full border-rose-500/30 bg-transparent text-rose-200 hover:bg-rose-500/10"
+          color="red"
           disabled={isCancelling}
+          fullWidth
           onClick={onRequestCancel}
           variant="outline"
         >

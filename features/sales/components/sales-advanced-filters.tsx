@@ -1,14 +1,8 @@
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, TextInput } from "@mantine/core";
 import { ALL_FILTER_VALUE } from "@/features/listing/listing.constants.shared";
 import { SalesFilterField } from "@/features/sales/components/sales-ui-primitives";
 import { useSalesPage } from "@/features/sales/sales-page-context";
+import { darkInputStyles, darkSelectStyles } from "@/lib/mantine-dark";
 import { formatMoneyInput, sanitizeMoneyInput } from "@/lib/utils";
 
 function SalesAdvancedFiltersFields({
@@ -20,10 +14,7 @@ function SalesAdvancedFiltersFields({
   const { filters } = state;
   const isMobile = layout === "mobile";
   const idPrefix = isMobile ? "mobile-" : "";
-  const inputClassName = isMobile
-    ? "h-11 border-zinc-700 bg-black/20 text-white placeholder:text-zinc-500"
-    : "h-9 border-zinc-700 bg-black/20 text-white placeholder:text-zinc-500";
-  const selectClassName = `${isMobile ? "h-11" : "h-9"} w-full border-zinc-700 bg-black/20 text-white`;
+  const size = isMobile ? "md" : "sm";
 
   return (
     <div className={isMobile ? "space-y-4" : "grid gap-4 md:grid-cols-2"}>
@@ -32,26 +23,24 @@ function SalesAdvancedFiltersFields({
         label="Medio de pago"
       >
         <Select
-          onValueChange={(value) =>
-            actions.setPaymentMethod(value === ALL_FILTER_VALUE ? "" : value)
+          data={[
+            { value: ALL_FILTER_VALUE, label: "Todos" },
+            ...state.filterOptions.paymentMethods.map((paymentMethod) => ({
+              value: paymentMethod.id,
+              label: paymentMethod.label,
+            })),
+          ]}
+          id={`${idPrefix}${meta.fieldIds.paymentMethod}`}
+          onChange={(value) =>
+            actions.setPaymentMethod(
+              !value || value === ALL_FILTER_VALUE ? "" : value
+            )
           }
+          placeholder="Todos"
+          size={size}
+          styles={darkSelectStyles}
           value={filters.paymentMethod || ALL_FILTER_VALUE}
-        >
-          <SelectTrigger
-            className={selectClassName}
-            id={`${idPrefix}${meta.fieldIds.paymentMethod}`}
-          >
-            <SelectValue placeholder="Todos" />
-          </SelectTrigger>
-          <SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
-            <SelectItem value={ALL_FILTER_VALUE}>Todos</SelectItem>
-            {state.filterOptions.paymentMethods.map((paymentMethod) => (
-              <SelectItem key={paymentMethod.id} value={paymentMethod.id}>
-                {paymentMethod.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        />
       </SalesFilterField>
 
       <SalesFilterField
@@ -59,26 +48,24 @@ function SalesAdvancedFiltersFields({
         label="Cajero"
       >
         <Select
-          onValueChange={(value) =>
-            actions.setCashierId(value === ALL_FILTER_VALUE ? "" : value)
+          data={[
+            { value: ALL_FILTER_VALUE, label: "Todos" },
+            ...state.filterOptions.cashiers.map((cashier) => ({
+              value: cashier.id,
+              label: cashier.name ?? "Cajero",
+            })),
+          ]}
+          id={`${idPrefix}${meta.fieldIds.cashier}`}
+          onChange={(value) =>
+            actions.setCashierId(
+              !value || value === ALL_FILTER_VALUE ? "" : value
+            )
           }
+          placeholder="Todos"
+          size={size}
+          styles={darkSelectStyles}
           value={filters.cashierId || ALL_FILTER_VALUE}
-        >
-          <SelectTrigger
-            className={selectClassName}
-            id={`${idPrefix}${meta.fieldIds.cashier}`}
-          >
-            <SelectValue placeholder="Todos" />
-          </SelectTrigger>
-          <SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
-            <SelectItem value={ALL_FILTER_VALUE}>Todos</SelectItem>
-            {state.filterOptions.cashiers.map((cashier) => (
-              <SelectItem key={cashier.id} value={cashier.id}>
-                {cashier.name ?? "Cajero"}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        />
       </SalesFilterField>
 
       <SalesFilterField
@@ -86,26 +73,24 @@ function SalesAdvancedFiltersFields({
         label="Terminal"
       >
         <Select
-          onValueChange={(value) =>
-            actions.setTerminalName(value === ALL_FILTER_VALUE ? "" : value)
+          data={[
+            { value: ALL_FILTER_VALUE, label: "Todas" },
+            ...state.filterOptions.terminals.map((terminal) => ({
+              value: terminal,
+              label: terminal,
+            })),
+          ]}
+          id={`${idPrefix}${meta.fieldIds.terminal}`}
+          onChange={(value) =>
+            actions.setTerminalName(
+              !value || value === ALL_FILTER_VALUE ? "" : value
+            )
           }
+          placeholder="Todas"
+          size={size}
+          styles={darkSelectStyles}
           value={filters.terminalName || ALL_FILTER_VALUE}
-        >
-          <SelectTrigger
-            className={selectClassName}
-            id={`${idPrefix}${meta.fieldIds.terminal}`}
-          >
-            <SelectValue placeholder="Todas" />
-          </SelectTrigger>
-          <SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
-            <SelectItem value={ALL_FILTER_VALUE}>Todas</SelectItem>
-            {state.filterOptions.terminals.map((terminal) => (
-              <SelectItem key={terminal} value={terminal}>
-                {terminal}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        />
       </SalesFilterField>
 
       <SalesFilterField
@@ -113,38 +98,38 @@ function SalesAdvancedFiltersFields({
         label="Estado de saldo"
       >
         <Select
-          onValueChange={(value) =>
-            actions.setBalanceStatus(value === ALL_FILTER_VALUE ? "" : value)
+          data={[
+            { value: ALL_FILTER_VALUE, label: "Todos" },
+            { value: "with_balance", label: "Con saldo pendiente" },
+            { value: "settled", label: "Sin saldo" },
+          ]}
+          id={`${idPrefix}${meta.fieldIds.balanceStatus}`}
+          onChange={(value) =>
+            actions.setBalanceStatus(
+              !value || value === ALL_FILTER_VALUE ? "" : value
+            )
           }
+          placeholder="Todos"
+          size={size}
+          styles={darkSelectStyles}
           value={filters.balanceStatus || ALL_FILTER_VALUE}
-        >
-          <SelectTrigger
-            className={selectClassName}
-            id={`${idPrefix}${meta.fieldIds.balanceStatus}`}
-          >
-            <SelectValue placeholder="Todos" />
-          </SelectTrigger>
-          <SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
-            <SelectItem value={ALL_FILTER_VALUE}>Todos</SelectItem>
-            <SelectItem value="with_balance">Con saldo pendiente</SelectItem>
-            <SelectItem value="settled">Sin saldo</SelectItem>
-          </SelectContent>
-        </Select>
+        />
       </SalesFilterField>
 
       <SalesFilterField
         htmlFor={`${idPrefix}${meta.fieldIds.amountMin}`}
         label="Monto mínimo"
       >
-        <Input
+        <TextInput
           autoComplete="off"
-          className={inputClassName}
           id={`${idPrefix}${meta.fieldIds.amountMin}`}
           inputMode="numeric"
           onChange={(event) =>
             actions.setAmountMin(sanitizeMoneyInput(event.target.value))
           }
           placeholder="Ej. 5.000…"
+          size={size}
+          styles={darkInputStyles}
           type="text"
           value={formatMoneyInput(filters.amountMin)}
         />
@@ -154,15 +139,16 @@ function SalesAdvancedFiltersFields({
         htmlFor={`${idPrefix}${meta.fieldIds.amountMax}`}
         label="Monto máximo"
       >
-        <Input
+        <TextInput
           autoComplete="off"
-          className={inputClassName}
           id={`${idPrefix}${meta.fieldIds.amountMax}`}
           inputMode="numeric"
           onChange={(event) =>
             actions.setAmountMax(sanitizeMoneyInput(event.target.value))
           }
           placeholder="Ej. 25.000…"
+          size={size}
+          styles={darkInputStyles}
           type="text"
           value={formatMoneyInput(filters.amountMax)}
         />
@@ -187,11 +173,12 @@ function SalesAdvancedFiltersFields({
             htmlFor={`${idPrefix}${meta.fieldIds.startDate}`}
             label="Desde"
           >
-            <Input
+            <TextInput
               autoComplete="off"
-              className={inputClassName}
               id={`${idPrefix}${meta.fieldIds.startDate}`}
               onChange={(event) => actions.setStartDate(event.target.value)}
+              size={size}
+              styles={darkInputStyles}
               type="date"
               value={filters.startDate}
             />
@@ -200,11 +187,12 @@ function SalesAdvancedFiltersFields({
             htmlFor={`${idPrefix}${meta.fieldIds.endDate}`}
             label="Hasta"
           >
-            <Input
+            <TextInput
               autoComplete="off"
-              className={inputClassName}
               id={`${idPrefix}${meta.fieldIds.endDate}`}
               onChange={(event) => actions.setEndDate(event.target.value)}
+              size={size}
+              styles={darkInputStyles}
               type="date"
               value={filters.endDate}
             />
