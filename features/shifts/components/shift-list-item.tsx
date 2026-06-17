@@ -1,5 +1,5 @@
+import { Badge } from "@mantine/core";
 import { User } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatPaymentMethodLabel } from "@/features/pos/utils";
 import type { ShiftListItem } from "@/features/shifts/shifts.shared";
 import {
@@ -33,6 +33,7 @@ export function ShiftListItemCard({
               </h3>
               <Badge
                 className={`${getShiftStatusBadgeClass(shift.status)} border-0`}
+                tt="none"
               >
                 {formatShiftStatus(shift.status)}
               </Badge>
@@ -154,6 +155,7 @@ export function ShiftListItemCard({
             {shift.closures.length > 0 ? (
               <Badge
                 className={`h-6 rounded-md border-0 px-2 py-0.5 ${getDifferenceClassName(shift.totals.totalDifference)}`}
+                tt="none"
                 variant="outline"
               >
                 {shift.totals.totalDifference === 0

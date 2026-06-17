@@ -1,7 +1,7 @@
+import { Button } from "@mantine/core";
 import { CircleDollarSign, Clock3, Receipt, Store, Wallet } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link } from "@/components/link";
-import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/features/pos/utils";
 import { ShiftsFilterToolbar } from "@/features/shifts/components/shifts-filter-toolbar";
 import { ShiftsListPanel } from "@/features/shifts/components/shifts-list-panel";
@@ -29,20 +29,23 @@ function ShiftsPageHeader() {
 
       <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
         <Button
-          asChild
-          className="h-10 w-full shrink-0 rounded-lg border-zinc-800 bg-[var(--color-carbon)] px-4 py-2 text-zinc-300 hover:bg-white/5 hover:text-white sm:w-auto"
+          className="w-full shrink-0 sm:w-auto"
+          color="gray"
+          component={Link}
+          href="/dashboard"
           variant="outline"
         >
-          <Link href="/dashboard">Ver dashboard</Link>
+          Ver dashboard
         </Button>
         <Button
-          asChild
-          className="h-10 w-full shrink-0 rounded-lg bg-[var(--color-voltage)] px-4 py-2 font-semibold text-black hover:bg-[#c9e605] sm:w-auto"
+          c="black"
+          className="w-full shrink-0 sm:w-auto"
+          color="voltage.5"
+          component={Link}
+          href="/pos"
+          leftSection={<Store aria-hidden="true" className="size-4" />}
         >
-          <Link href="/pos">
-            <Store aria-hidden="true" className="mr-2 size-4" />
-            Ir al POS
-          </Link>
+          Ir al POS
         </Button>
       </div>
     </div>
