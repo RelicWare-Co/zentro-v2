@@ -12,7 +12,6 @@ import {
   shiftZonedDateParts,
   type ZonedDateParts,
   zonedMidnightUtc,
-  zonedSaleDateKeyAlias,
 } from "@/features/dashboard/zoned-time.server";
 
 export type AdminOverviewDbExecutor = Pick<Database, "select">;
@@ -99,6 +98,27 @@ export async function runBuildAdminOverview(
   const saleDateKey = buildZonedSaleDateKey(sale.createdAt, timeZone);
   const notCancelled = ne(sale.status, "cancelled");
 
+  // Compute the zoned day once as a named column in a derived table, then
+  // aggregate over it. Grouping by a real subquery column avoids both Postgres
+  // pitfalls of the date-key expression: a SELECT alias is invisible to GROUP
+  // BY, and a re-emitted expression carries a different bind placeholder than
+  // the SELECT, so the two no longer match.
+  const salesTrendDays = db
+    .select({
+      dateKey: saleDateKey.as("date_key"),
+      totalAmount: sale.totalAmount,
+      organizationId: sale.organizationId,
+    })
+    .from(sale)
+    .where(
+      and(
+        notCancelled,
+        gte(sale.createdAt, trendStart),
+        lt(sale.createdAt, tomorrowStart)
+      )
+    )
+    .as("sales_trend_days");
+
   const [
     organizationsCountRows,
     usersCountRows,
@@ -165,21 +185,14 @@ export async function runBuildAdminOverview(
       ),
     db
       .select({
-        dateKey: saleDateKey,
-        revenue: sql<number>`coalesce(sum(${sale.totalAmount}), 0)`,
+        dateKey: salesTrendDays.dateKey,
+        revenue: sql<number>`coalesce(sum(${salesTrendDays.totalAmount}), 0)`,
         salesCount: sql<number>`count(*)`,
-        activeOrganizations: sql<number>`count(distinct ${sale.organizationId})`,
+        activeOrganizations: sql<number>`count(distinct ${salesTrendDays.organizationId})`,
       })
-      .from(sale)
-      .where(
-        and(
-          notCancelled,
-          gte(sale.createdAt, trendStart),
-          lt(sale.createdAt, tomorrowStart)
-        )
-      )
-      .groupBy(zonedSaleDateKeyAlias)
-      .orderBy(asc(zonedSaleDateKeyAlias)),
+      .from(salesTrendDays)
+      .groupBy(salesTrendDays.dateKey)
+      .orderBy(asc(salesTrendDays.dateKey)),
     db
       .select({
         id: organization.id,

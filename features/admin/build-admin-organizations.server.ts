@@ -22,7 +22,6 @@ import {
   shiftZonedDateParts,
   type ZonedDateParts,
   zonedMidnightUtc,
-  zonedSaleDateKeyAlias,
 } from "@/features/dashboard/zoned-time.server";
 import { buildAdminModuleStates } from "./admin-modules.server";
 
@@ -265,6 +264,26 @@ export async function runBuildAdminOrganizationDetail(
     return null;
   }
 
+  // Compute the zoned day once as a named column in a derived table, then
+  // aggregate over it. Grouping by a real subquery column avoids both Postgres
+  // pitfalls of the date-key expression: a SELECT alias is invisible to GROUP
+  // BY, and a re-emitted expression carries a different bind placeholder than
+  // the SELECT, so the two no longer match.
+  const salesTrendDays = db
+    .select({
+      dateKey: saleDateKey.as("date_key"),
+      totalAmount: sale.totalAmount,
+    })
+    .from(sale)
+    .where(
+      and(
+        ...saleClauses,
+        gte(sale.createdAt, windows.trendStart),
+        lt(sale.createdAt, windows.tomorrowStart)
+      )
+    )
+    .as("sales_trend_days");
+
   const [
     memberRows,
     todayMetricsRows,
@@ -345,20 +364,13 @@ export async function runBuildAdminOrganizationDetail(
       ),
     db
       .select({
-        dateKey: saleDateKey,
-        revenue: sql<number>`coalesce(sum(${sale.totalAmount}), 0)`,
+        dateKey: salesTrendDays.dateKey,
+        revenue: sql<number>`coalesce(sum(${salesTrendDays.totalAmount}), 0)`,
         salesCount: sql<number>`count(*)`,
       })
-      .from(sale)
-      .where(
-        and(
-          ...saleClauses,
-          gte(sale.createdAt, windows.trendStart),
-          lt(sale.createdAt, windows.tomorrowStart)
-        )
-      )
-      .groupBy(zonedSaleDateKeyAlias)
-      .orderBy(asc(zonedSaleDateKeyAlias)),
+      .from(salesTrendDays)
+      .groupBy(salesTrendDays.dateKey)
+      .orderBy(asc(salesTrendDays.dateKey)),
     db
       .select({
         id: sale.id,

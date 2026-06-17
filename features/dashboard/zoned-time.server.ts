@@ -48,8 +48,6 @@ export function buildZonedSaleDateKey(
   return sql<string>`to_char(${createdAtColumn} at time zone ${timeZone}, 'YYYY-MM-DD')`;
 }
 
-export const zonedSaleDateKeyAlias = sql`${sql.identifier("dateKey")}`;
-
 export function resolveDashboardTimeZone(
   requested: string | null | undefined
 ): string {

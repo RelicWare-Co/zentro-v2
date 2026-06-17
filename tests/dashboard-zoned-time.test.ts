@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { sql } from "drizzle-orm";
-import { PgDialect } from "drizzle-orm/pg-core";
+import { asc, sql } from "drizzle-orm";
+import { QueryBuilder } from "drizzle-orm/pg-core";
 import { sale } from "@/database/drizzle/schema/sales.schema";
 import {
   buildZonedSaleDateKey,
@@ -11,7 +11,6 @@ import {
   resolveDashboardTimeZone,
   shiftZonedDateParts,
   zonedMidnightUtc,
-  zonedSaleDateKeyAlias,
 } from "@/features/dashboard/zoned-time.server";
 
 describe("isSafeTimeZone", () => {
@@ -122,15 +121,41 @@ describe("formatZonedDateKey", () => {
 });
 
 describe("buildZonedSaleDateKey", () => {
-  test("uses a bound time zone parameter and a stable grouped alias", () => {
+  test("binds the time zone once and is grouped by a derived-table column", () => {
+    // Mirror the dashboard trend query: compute the zoned day once in a derived
+    // table aliased `date_key`, then aggregate by that column name in the outer
+    // query. This binds the time zone a single time (never interpolated) and
+    // makes GROUP BY reference a real column — sidestepping both the
+    // invisible-alias and placeholder-mismatch errors Postgres raises when the
+    // date-key expression is grouped directly.
+    const qb = new QueryBuilder();
     const saleDateKey = buildZonedSaleDateKey(sale.createdAt, "America/Bogota");
-    const query = new PgDialect().sqlToQuery(
-      sql`select ${saleDateKey} as ${zonedSaleDateKeyAlias} from ${sale} group by ${zonedSaleDateKeyAlias} order by ${zonedSaleDateKeyAlias} asc`
-    );
+    const trendDays = qb
+      .select({
+        dateKey: saleDateKey.as("date_key"),
+        totalAmount: sale.totalAmount,
+      })
+      .from(sale)
+      .as("sales_trend_days");
+    const query = qb
+      .select({
+        dateKey: trendDays.dateKey,
+        revenue: sql<number>`coalesce(sum(${trendDays.totalAmount}), 0)`,
+      })
+      .from(trendDays)
+      .groupBy(trendDays.dateKey)
+      .orderBy(asc(trendDays.dateKey))
+      .toSQL();
 
+    // The time zone is bound inside the derived table...
     expect(query.sql).toContain("at time zone $1");
-    expect(query.sql).toContain('group by "dateKey"');
-    expect(query.sql).toContain('order by "dateKey" asc');
+    expect(query.sql).toContain('as "date_key"');
+    // ...and the outer query groups/orders by that real column, never the
+    // expression, so the zoned `to_char` appears only once.
+    expect(query.sql).toContain('group by "date_key"');
+    expect(query.sql).toContain('order by "date_key"');
+    expect(query.sql.match(/to_char/g)).toHaveLength(1);
+    // Bound exactly once: not interpolated as a literal, not duplicated.
     expect(query.params).toEqual(["America/Bogota"]);
   });
 });
