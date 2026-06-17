@@ -1,6 +1,6 @@
 # Plan de migración shadcn → Mantine
 
-> **Estado:** En progreso (rama `feat/mantine-migration`).
+> **Estado:** Migración funcional completa (rama `feat/mantine-migration`); pendiente verificación visual.
 > **Decisiones del usuario:** migración **incremental por feature**; el eje **Tailwind (eliminar vs. coexistir)** se decide tras un POC comparativo.
 > **Stack relevante:** React 19, Vike (`ssr: false`, client-rendered), Tailwind v4, Mantine **9.3.2** instalado.
 
@@ -23,20 +23,27 @@
 - **Patrones POS:** inputs con estilo de marca preservado vía `classNames={{ input }}`; vaul Drawer
   móvil → Mantine `Drawer position="bottom"`; `Button asChild`+Link → `Button component={Link}`.
 
-### Pendiente (post Fase 3)
-- **Features fuera de la tabla del plan, aún con shadcn:** `admin` (~13 archivos), `sales` (~7),
-  `shifts` (~5). Migrar con los mismos patrones.
-- **Fase 4 — componentes difíciles (diferidos):**
-  - `components/ui/table` + `data-table-pagination`: aún usados por `products` (products-table,
-    kardex-tab) y `organization` (invitations-tab, members-tab). Migrar a Mantine `Table` o re-estilar.
-  - `virtual-table` / `virtual-list` / `virtual-product-catalog`: mantener `@tanstack/react-virtual`,
-    re-estilar contenedores. Usados por customers, credit, pos.
-  - `sidebar.tsx` (697 LOC) + `app-layout.tsx` → `AppShell`.
-  - `chart.tsx`: evaluar `@mantine/charts` vs. recharts directo (dashboard ya usa recharts).
-- **`sonner` Toaster:** se mantiene en `pages/+Layout.tsx`; evaluar `@mantine/notifications`.
-- **Fase 5 (eje Tailwind):** en Modalidad A se mantiene Tailwind para layout/spacing.
-- **Fase 6 (limpieza):** tras migrar lo anterior, eliminar `components/ui`, `shadcn`, `radix-ui`,
-  `cmdk`, `vaul`, `class-variance-authority`, etc., y `components.json`.
+- **Features fuera de la tabla del plan — ✅** `shifts`, `sales`, `admin` migradas (mismos patrones).
+  `admin` mantiene el `Table` shadcn por dentro (era el único punto pendiente, ver abajo);
+  `dropdown-menu`→`Menu` de Mantine en `admin-users-table`.
+- **Misceláneos — ✅** `zero-connection-boundary` (Button) y `data-table-pagination`
+  (ActionIcon/Select) migrados a Mantine.
+- **Fase 6 (limpieza) — ✅** Eliminados **58** archivos `components/ui/*` muertos (cierre verificado
+  por closure desde el código vivo). `sidebar.tsx` resultó ser **código muerto**: el layout real
+  (`app-layout.tsx`) ya era Tailwind puro, así que **no hizo falta** el rebuild a `AppShell`.
+  Deps removidas: `radix-ui`, `cmdk`, `vaul`, `react-day-picker`, `embla-carousel-react`,
+  `input-otp`, `class-variance-authority`, `react-resizable-panels`, `recharts` (sin uso real),
+  más `components.json`. El árbol de UI vivo es ahora **100% Mantine + Tailwind**.
+
+### Pendiente
+- **Helpers locales sin deps externas (se conservan):** `components/ui/{table, virtual-table,
+  virtual-list, data-table-pagination, sonner}`. `table.tsx` es un `<table>` estilado sin
+  shadcn/radix; `virtual-*` usan `@tanstack/react-virtual`; `sonner.tsx` envuelve `sonner`.
+  Consumidos por products/customers/credit/admin/organization (tablas) y `+Layout` (Toaster).
+  No bloquean nada; migrarlos a Mantine `Table`/`@mantine/notifications` es opcional (evaluar
+  fidelidad visual primero).
+- **Verificación visual pendiente:** todo se validó de forma estática (tsc + ultracite + `vike build`).
+  Falta un pase visual + `bun run e2e:playwright:smoke` antes de mergear.
 - **Patrones establecidos:** `lib/mantine-dark.ts` (darkInput/Select/Drawer/Modal); `Card`/`CardHeader`
   shadcn → contenedor Tailwind o helper local (`SettingsCard`); `Dialog`→`Modal`, `Sheet`→`Drawer`,
   `Select` shadcn→`Select` Mantine (`data`), `Switch.onCheckedChange`→`onChange(e.currentTarget.checked)`,
