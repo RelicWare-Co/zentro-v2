@@ -1,6 +1,11 @@
 # MacOS
 .DS_Store
 
+# Nix dev env (flake.nix): data dir local de Postgres + cache de direnv
+.nix/
+.direnv/
+.process-compose.*.yaml
+
 # Logs
 logs
 *.log

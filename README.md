@@ -33,10 +33,80 @@ Sistema de gestión comercial con punto de venta (POS), inventario, ventas, clie
 
 ## Requisitos
 
-- [Bun](https://bun.sh) (runtime y gestor de paquetes)
-- [Docker](https://www.docker.com) (PostgreSQL local con replicación lógica para Zero)
+- [Nix](https://nixos.org/download) con flakes habilitados (vía recomendada — provee Bun, Postgres y zero-cache de forma reproducible, sin Docker)
+- _Opcional:_ [direnv](https://direnv.net) para activar el entorno automáticamente al entrar al directorio
 
-## Desarrollo local
+> El flujo basado en Docker sigue disponible y documentado más abajo como alternativa.
+
+## Desarrollo local (Nix)
+
+Esta es la forma recomendada de levantar el entorno. El flake (`flake.nix`) provee Bun + cliente/servidor de Postgres + `process-compose`, gestiona un PostgreSQL **nativo** (con `wal_level=logical`, requerido por Zero) en un data dir local al proyecto (`.nix/postgres`), y orquesta `postgres → migraciones → zero-cache → app` en un solo comando.
+
+### 1. Configurar entorno
+
+```sh
+cp .env.example .env
+```
+
+Los valores por defecto (`zentro:zentro@localhost:5432/zentro`) ya coinciden con el Postgres que levanta el flake. Revisa las URLs de Zero y que las cookies de better-auth se reenvíen (`ZERO_QUERY_FORWARD_COOKIES` / `ZERO_MUTATE_FORWARD_COOKIES`).
+
+### 2. Levantar todo el stack
+
+```sh
+nix run            # bun install (si hace falta) + postgres + migraciones + zero-cache + app
+```
+
+Esto deja corriendo:
+
+- **Postgres** nativo en `localhost:5432` (datos en `.nix/postgres`, ignorado por git)
+- **zero-cache** en http://localhost:4848 (`bun run zero:dev`)
+- **app** (Vike + Hono) en http://localhost:3000
+
+`process-compose` muestra un TUI con el estado de cada proceso; sal con `q` / `Ctrl-C`.
+
+### Atajos del dev shell
+
+Entra al shell con `nix develop` (o automáticamente con direnv: `direnv allow`). También puedes correr cualquier atajo sin entrar al shell con `nix develop --command <atajo>`. Disponibles:
+
+| Comando | Qué hace |
+| --- | --- |
+| `nix run` | Levanta postgres + migraciones + zero-cache + app |
+| `pg-start` / `pg-stop` | Arranca/para el Postgres nativo en background |
+| `pg-init` | Inicializa el data dir de Postgres (idempotente; lo invocan `pg-start`/`nix run`) |
+| `pg-psql` | Abre `psql` en la base `zentro` |
+| `db-reset` | Para Postgres y borra su data dir (`.nix/postgres`) |
+| `env-reset` | Reset **total**: Postgres + réplica de Zero (`zero.db*`) |
+| `bun run db:seed` | Carga datos de prueba |
+
+### Limpiar datos
+
+Para empezar desde cero (p. ej. base corrupta o schema desincronizado):
+
+```sh
+# Solo la base de datos (Postgres nativo)
+nix develop --command db-reset
+
+# Reset total: Postgres + réplica SQLite de Zero (recomendado si reseteas la DB)
+nix develop --command env-reset
+```
+
+Tras un reset, el siguiente `nix run` reinicializa Postgres (initdb + rol `zentro` + base `zentro`), corre las migraciones y zero-cache reconstruye su réplica limpia. La réplica de Zero (`zero.db`) es un espejo del Postgres, por eso conviene `env-reset` (no solo `db-reset`) cuando borras la base, para que no queden desincronizados.
+
+### App desktop (opcional)
+
+Con la web corriendo, en otra terminal: `bun run desktop:dev` (ver sección desktop más abajo).
+
+### Solución de problemas (Nix)
+
+| Síntoma | Causa / arreglo |
+| --- | --- |
+| `experimental Nix feature 'nix-command' is disabled` | Habilita flakes: añade `experimental-features = nix-command flakes` a `~/.config/nix/nix.conf`. |
+| `password authentication failed for user "..."` en migrate | `DATABASE_URL`/`ZERO_UPSTREAM_DB` en tu `.env` deben ser `postgresql://zentro:zentro@localhost:5432/zentro` (las credenciales del Postgres del flake). |
+| zero-cache: `NODE_MODULE_VERSION` mismatch en `@rocicorp/zero-sqlite3` | El módulo nativo se compiló con otro Node. El flake usa Node 24; corre `bun install` **dentro** de `nix develop` para que el binario coincida con ese ABI. |
+| Postgres no arranca / `address already in use` (5432) | Hay otro Postgres ocupando el puerto. Páralo, o exporta `PGPORT` (y ajusta el `.env`) antes de `nix run`. |
+| `Path 'flake.nix' ... is not tracked by Git` | Los flakes solo ven archivos rastreados: `git add flake.nix process-compose.yaml`. |
+
+## Desarrollo local (Docker — alternativa)
 
 ### 1. Instalar dependencias
 

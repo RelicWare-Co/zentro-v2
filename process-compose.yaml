@@ -1,0 +1,46 @@
+# Orquestación del entorno de dev de Zentro (Postgres nativo + zero-cache + app).
+# Pensado para correr vía `nix run` (recomendado) o `process-compose up` dentro de
+# `nix develop`. Las variables PG* y el PATH (bun, postgres, …) las inyecta el flake.
+version: "0.5"
+
+processes:
+  postgres:
+    command: postgres -D "$PGDATA" -k "$PGHOST"
+    readiness_probe:
+      exec:
+        command: pg_isready -h localhost -p "${PGPORT:-5432}" -U "${PGUSER:-zentro}"
+      initial_delay_seconds: 1
+      period_seconds: 2
+      timeout_seconds: 5
+      failure_threshold: 30
+    availability:
+      restart: on_failure
+
+  # Crea la base `zentro` la primera vez (idempotente).
+  pg-bootstrap:
+    command: createdb -h localhost -p "${PGPORT:-5432}" -U "${PGUSER:-zentro}" "${PGDATABASE:-zentro}" 2>/dev/null || true
+    depends_on:
+      postgres:
+        condition: process_healthy
+    availability:
+      restart: "no"
+
+  migrate:
+    command: bun run db:migrate
+    depends_on:
+      pg-bootstrap:
+        condition: process_completed_successfully
+    availability:
+      restart: "no"
+
+  zero-cache:
+    command: bun run zero:dev
+    depends_on:
+      migrate:
+        condition: process_completed_successfully
+
+  app:
+    command: bun run dev
+    depends_on:
+      migrate:
+        condition: process_completed_successfully
