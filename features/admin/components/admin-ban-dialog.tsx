@@ -1,23 +1,14 @@
-import { type FormEvent, useId, useState } from "react";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import {
+  Button,
+  Group,
+  Modal,
   Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+  Stack,
+  Text,
+  Textarea,
+} from "@mantine/core";
+import { type FormEvent, useState } from "react";
+import { toast } from "sonner";
 import {
   ADMIN_BAN_DURATION_OPTIONS,
   type AdminBanDurationValue,
@@ -26,6 +17,11 @@ import {
 } from "@/features/admin/admin.shared";
 import { useAdminPage } from "@/features/admin/admin-page-context";
 import { useAdminUserActions } from "@/features/admin/hooks/use-admin-user-actions";
+import {
+  darkInputStyles,
+  darkModalStyles,
+  darkSelectStyles,
+} from "@/lib/mantine-dark";
 import { getErrorMessage } from "@/lib/utils";
 
 function AdminBanDialogContent({ user }: { user: AdminPanelUser }) {
@@ -33,8 +29,6 @@ function AdminBanDialogContent({ user }: { user: AdminPanelUser }) {
   const adminActions = useAdminUserActions();
   const [banReason, setBanReason] = useState("");
   const [duration, setDuration] = useState<AdminBanDurationValue>("permanent");
-  const reasonId = useId();
-  const durationId = useId();
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -53,62 +47,50 @@ function AdminBanDialogContent({ user }: { user: AdminPanelUser }) {
   };
 
   return (
-    <form className="space-y-4" onSubmit={handleSubmit}>
-      <DialogHeader>
-        <DialogTitle>Suspender usuario</DialogTitle>
-        <DialogDescription className="text-zinc-400">
+    <form onSubmit={handleSubmit}>
+      <Stack gap="md">
+        <Text c="dimmed" size="sm">
           {user.name} no podrá iniciar sesión y todas sus sesiones activas se
           cerrarán.
-        </DialogDescription>
-      </DialogHeader>
-      <div className="space-y-2">
-        <Label htmlFor={durationId}>Duración</Label>
+        </Text>
         <Select
-          onValueChange={(value) => setDuration(value as AdminBanDurationValue)}
+          allowDeselect={false}
+          data={ADMIN_BAN_DURATION_OPTIONS.map((option) => ({
+            value: option.value,
+            label: option.label,
+          }))}
+          label="Duración"
+          onChange={(value) =>
+            setDuration((value ?? "permanent") as AdminBanDurationValue)
+          }
+          styles={darkSelectStyles}
           value={duration}
-        >
-          <SelectTrigger
-            className="w-full border-zinc-700 bg-black/20 text-white"
-            id={durationId}
-          >
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
-            {ADMIN_BAN_DURATION_OPTIONS.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor={reasonId}>Motivo (opcional)</Label>
+        />
         <Textarea
-          className="border-zinc-700 bg-black/20"
-          id={reasonId}
+          label="Motivo (opcional)"
           onChange={(event) => setBanReason(event.target.value)}
           placeholder="Ej. Uso indebido de la cuenta"
+          styles={darkInputStyles}
           value={banReason}
         />
-      </div>
-      <DialogFooter>
-        <Button
-          className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5"
-          onClick={actions.closeOverlay}
-          type="button"
-          variant="outline"
-        >
-          Cancelar
-        </Button>
-        <Button
-          className="bg-red-500 text-white hover:bg-red-600"
-          disabled={adminActions.banUser.isPending}
-          type="submit"
-        >
-          {adminActions.banUser.isPending ? "Suspendiendo…" : "Suspender"}
-        </Button>
-      </DialogFooter>
+        <Group justify="flex-end">
+          <Button
+            color="gray"
+            onClick={actions.closeOverlay}
+            type="button"
+            variant="default"
+          >
+            Cancelar
+          </Button>
+          <Button
+            color="red"
+            loading={adminActions.banUser.isPending}
+            type="submit"
+          >
+            {adminActions.banUser.isPending ? "Suspendiendo…" : "Suspender"}
+          </Button>
+        </Group>
+      </Stack>
     </form>
   );
 }
@@ -120,17 +102,14 @@ export function AdminBanDialog() {
     state.activeOverlay?.type === "ban" ? state.activeOverlay.user : null;
 
   return (
-    <Dialog
-      onOpenChange={(open) => {
-        if (!open) {
-          actions.closeOverlay();
-        }
-      }}
-      open={isOpen}
+    <Modal
+      centered
+      onClose={actions.closeOverlay}
+      opened={isOpen}
+      styles={darkModalStyles}
+      title="Suspender usuario"
     >
-      <DialogContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
-        {user ? <AdminBanDialogContent key={user.id} user={user} /> : null}
-      </DialogContent>
-    </Dialog>
+      {user ? <AdminBanDialogContent key={user.id} user={user} /> : null}
+    </Modal>
   );
 }

@@ -1,16 +1,8 @@
+import { Button, Group, Modal, Stack, Text } from "@mantine/core";
 import { toast } from "sonner";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { useAdminPage } from "@/features/admin/admin-page-context";
 import { useAdminUserActions } from "@/features/admin/hooks/use-admin-user-actions";
+import { darkModalStyles } from "@/lib/mantine-dark";
 import { getErrorMessage } from "@/lib/utils";
 
 export function AdminDeleteDialog() {
@@ -34,37 +26,34 @@ export function AdminDeleteDialog() {
   };
 
   return (
-    <AlertDialog
-      onOpenChange={(open) => {
-        if (!open) {
-          actions.closeOverlay();
-        }
-      }}
-      open={isOpen}
+    <Modal
+      centered
+      onClose={actions.closeOverlay}
+      opened={isOpen}
+      styles={darkModalStyles}
+      title="¿Eliminar usuario?"
     >
-      <AlertDialogContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
-        <AlertDialogHeader>
-          <AlertDialogTitle>¿Eliminar usuario?</AlertDialogTitle>
-          <AlertDialogDescription className="text-zinc-400">
-            {user?.name} ({user?.email}) se eliminará de forma permanente junto
-            con sus sesiones y cuentas vinculadas. Esta acción no se puede
-            deshacer.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5">
+      <Stack gap="lg">
+        <Text c="dimmed" size="sm">
+          {user?.name} ({user?.email}) se eliminará de forma permanente junto
+          con sus sesiones y cuentas vinculadas. Esta acción no se puede
+          deshacer.
+        </Text>
+        <Group justify="flex-end">
+          <Button color="gray" onClick={actions.closeOverlay} variant="default">
             Cancelar
-          </AlertDialogCancel>
-          <AlertDialogAction
-            className="bg-red-500 text-white hover:bg-red-600"
+          </Button>
+          <Button
+            color="red"
+            loading={adminActions.removeUser.isPending}
             onClick={() => {
               handleConfirm().catch(() => undefined);
             }}
           >
             {adminActions.removeUser.isPending ? "Eliminando…" : "Eliminar"}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+          </Button>
+        </Group>
+      </Stack>
+    </Modal>
   );
 }

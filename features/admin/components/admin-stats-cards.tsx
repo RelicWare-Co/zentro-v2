@@ -1,5 +1,5 @@
+import { Skeleton } from "@mantine/core";
 import { ShieldCheck, Users, UserX } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useAdminUserStatsQuery } from "@/features/admin/hooks/use-admin-users";
 
 function StatCard({
@@ -18,7 +18,7 @@ function StatCard({
       </div>
       <div className="min-w-0">
         {value === null ? (
-          <Skeleton className="h-7 w-12 bg-zinc-800" />
+          <Skeleton height={28} radius="sm" width={48} />
         ) : (
           <p className="font-semibold text-2xl text-white">{value}</p>
         )}

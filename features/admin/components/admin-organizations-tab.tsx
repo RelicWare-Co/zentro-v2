@@ -1,8 +1,6 @@
+import { ActionIcon, Badge, TextInput } from "@mantine/core";
 import { Building2, ExternalLink, Search } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -30,6 +28,7 @@ import {
   formatCount,
   formatCurrency,
 } from "@/features/dashboard/dashboard-formatters.shared";
+import { darkInputStyles } from "@/lib/mantine-dark";
 
 function OrganizationsSummaryCards({
   organizations,
@@ -141,16 +140,14 @@ function OrganizationsTable({
                   : "Sin ventas"}
               </TableCell>
               <TableCell className="text-right">
-                <Button
+                <ActionIcon
                   aria-label={`Ver detalle de ${org.name}`}
-                  className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5"
+                  color="gray"
                   onClick={() => actions.openOrganization(org.id)}
-                  size="sm"
-                  type="button"
                   variant="outline"
                 >
                   <ExternalLink className="size-3.5" />
-                </Button>
+                </ActionIcon>
               </TableCell>
             </TableRow>
           ))}
@@ -200,6 +197,7 @@ export function AdminOrganizationsTab() {
         headerAside={
           <Badge
             className="self-start border-zinc-700 bg-black/20 text-zinc-300 sm:self-auto"
+            tt="none"
             variant="outline"
           >
             {formatCount(filtered.length)} de{" "}
@@ -209,12 +207,12 @@ export function AdminOrganizationsTab() {
         title="Organizaciones"
       >
         <div className="space-y-4">
-          <div className="relative max-w-sm">
-            <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-zinc-500" />
-            <Input
-              className="border-zinc-800 bg-black/20 pl-9 text-white placeholder:text-zinc-500"
+          <div className="max-w-sm">
+            <TextInput
+              leftSection={<Search className="size-4" />}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Buscar por nombre o slug…"
+              styles={darkInputStyles}
               value={search}
             />
           </div>

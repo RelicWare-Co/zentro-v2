@@ -1,3 +1,4 @@
+import { ActionIcon, Badge } from "@mantine/core";
 import {
   Building2,
   ChartColumn,
@@ -7,8 +8,6 @@ import {
   Users,
   Wallet,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -124,6 +123,7 @@ function AdminPlatformTrendPanel({
       headerAside={
         <Badge
           className="self-start border-zinc-700 bg-black/20 text-zinc-300 sm:self-auto"
+          tt="none"
           variant="outline"
         >
           {formatCurrency(totalRevenue)} · {formatCount(totalSales)} ventas
@@ -188,6 +188,7 @@ function AdminDailySalesByClientPanel({
       headerAside={
         <Badge
           className="self-start border-zinc-700 bg-black/20 text-zinc-300 sm:self-auto"
+          tt="none"
           variant="outline"
         >
           {formatCount(overview.today.activeOrganizations)} con ventas hoy
@@ -252,16 +253,14 @@ function AdminDailySalesByClientPanel({
                         : "Sin ventas"}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button
+                      <ActionIcon
                         aria-label={`Ver detalle de ${row.name}`}
-                        className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5"
+                        color="gray"
                         onClick={() => actions.openOrganization(row.id)}
-                        size="sm"
-                        type="button"
                         variant="outline"
                       >
                         <ExternalLink className="size-3.5" />
-                      </Button>
+                      </ActionIcon>
                     </TableCell>
                   </TableRow>
                 );

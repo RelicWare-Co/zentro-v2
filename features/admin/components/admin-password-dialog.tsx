@@ -1,26 +1,23 @@
-import { type FormEvent, useId, useState } from "react";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+  Button,
+  Group,
+  Modal,
+  PasswordInput,
+  Stack,
+  Text,
+} from "@mantine/core";
+import { type FormEvent, useState } from "react";
+import { toast } from "sonner";
 import type { AdminPanelUser } from "@/features/admin/admin.shared";
 import { useAdminPage } from "@/features/admin/admin-page-context";
 import { useAdminUserActions } from "@/features/admin/hooks/use-admin-user-actions";
+import { darkInputStyles, darkModalStyles } from "@/lib/mantine-dark";
 import { getErrorMessage } from "@/lib/utils";
 
 function AdminPasswordDialogContent({ user }: { user: AdminPanelUser }) {
   const { actions } = useAdminPage();
   const adminActions = useAdminUserActions();
   const [newPassword, setNewPassword] = useState("");
-  const passwordId = useId();
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -37,46 +34,43 @@ function AdminPasswordDialogContent({ user }: { user: AdminPanelUser }) {
   };
 
   return (
-    <form className="space-y-4" onSubmit={handleSubmit}>
-      <DialogHeader>
-        <DialogTitle>Cambiar contraseña</DialogTitle>
-        <DialogDescription className="text-zinc-400">
+    <form onSubmit={handleSubmit}>
+      <Stack gap="md">
+        <Text c="dimmed" size="sm">
           Define una nueva contraseña para {user.name}. Sus sesiones activas no
           se cierran automáticamente.
-        </DialogDescription>
-      </DialogHeader>
-      <div className="space-y-2">
-        <Label htmlFor={passwordId}>Nueva contraseña</Label>
-        <Input
-          className="border-zinc-700 bg-black/20"
-          id={passwordId}
+        </Text>
+        <PasswordInput
+          label="Nueva contraseña"
           minLength={8}
           onChange={(event) => setNewPassword(event.target.value)}
           placeholder="Mínimo 8 caracteres"
           required
-          type="password"
+          styles={darkInputStyles}
           value={newPassword}
         />
-      </div>
-      <DialogFooter>
-        <Button
-          className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5"
-          onClick={actions.closeOverlay}
-          type="button"
-          variant="outline"
-        >
-          Cancelar
-        </Button>
-        <Button
-          className="bg-[var(--color-voltage)] text-black hover:bg-[#d9f15c]"
-          disabled={adminActions.setUserPassword.isPending || !newPassword}
-          type="submit"
-        >
-          {adminActions.setUserPassword.isPending
-            ? "Guardando…"
-            : "Guardar contraseña"}
-        </Button>
-      </DialogFooter>
+        <Group justify="flex-end">
+          <Button
+            color="gray"
+            onClick={actions.closeOverlay}
+            type="button"
+            variant="default"
+          >
+            Cancelar
+          </Button>
+          <Button
+            c="black"
+            color="voltage.5"
+            disabled={!newPassword}
+            loading={adminActions.setUserPassword.isPending}
+            type="submit"
+          >
+            {adminActions.setUserPassword.isPending
+              ? "Guardando…"
+              : "Guardar contraseña"}
+          </Button>
+        </Group>
+      </Stack>
     </form>
   );
 }
@@ -88,17 +82,14 @@ export function AdminPasswordDialog() {
     state.activeOverlay?.type === "password" ? state.activeOverlay.user : null;
 
   return (
-    <Dialog
-      onOpenChange={(open) => {
-        if (!open) {
-          actions.closeOverlay();
-        }
-      }}
-      open={isOpen}
+    <Modal
+      centered
+      onClose={actions.closeOverlay}
+      opened={isOpen}
+      styles={darkModalStyles}
+      title="Cambiar contraseña"
     >
-      <DialogContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
-        {user ? <AdminPasswordDialogContent key={user.id} user={user} /> : null}
-      </DialogContent>
-    </Dialog>
+      {user ? <AdminPasswordDialogContent key={user.id} user={user} /> : null}
+    </Modal>
   );
 }
