@@ -20,7 +20,15 @@ export default defineConfig({
   ],
 
   server: {
+    // Bind on all interfaces so the dev server is reachable when running inside
+    // a container (harmless for host dev too).
+    host: true,
     allowedHosts: ["host.docker.internal"],
+    // Bind-mounted source over Docker on macOS doesn't reliably emit fs events;
+    // fall back to polling so HMR keeps working. Only enabled in docker dev.
+    ...(process.env.DOCKER_DEV
+      ? { watch: { usePolling: true, interval: 300 } }
+      : {}),
   },
 
   resolve: {

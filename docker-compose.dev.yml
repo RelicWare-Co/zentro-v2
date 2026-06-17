@@ -1,0 +1,56 @@
+# Dev override — runs the Vike/Vite app inside Docker with live reload.
+#
+# Use together with the base compose file:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+#
+# How node_modules is handled:
+#   - `.:/app`             bind-mounts your local source, so edits hot-reload.
+#   - `/app/node_modules`  anonymous volume that shadows the bind mount, keeping
+#                          the container's own (Linux) install instead of the
+#                          host's. The host node_modules is never used.
+#
+# After changing dependencies, reinstall *inside* the container and recreate
+# the anonymous volume so the new modules take effect:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm app bun install
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build -V
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: deploy/app/Dockerfile
+      target: dev
+    container_name: zentro-app-dev
+    # Loads optional local secrets (QZ, better-auth, etc.). The `environment`
+    # block below overrides any service-network values so localhost URLs from
+    # .env don't leak into the container.
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      NODE_ENV: development
+      # Enables Vite fs polling (see vite.config.ts).
+      DOCKER_DEV: "true"
+      # Talk to Postgres over the compose network, not localhost.
+      DATABASE_URL: postgresql://zentro:zentro@postgres:5432/zentro
+      ZERO_UPSTREAM_DB: postgresql://zentro:zentro@postgres:5432/zentro
+      # Browser-facing URLs — resolved from the host, so localhost is correct.
+      VITE_ZERO_CACHE_URL: http://localhost:4848
+      ZERO_CACHE_URL: http://localhost:4848
+      BETTER_AUTH_URL: http://localhost:3000
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # zero-cache now reaches the app over the compose network instead of the host.
+  zero-cache:
+    environment:
+      ZERO_QUERY_URL: http://app:3000/api/zero/query
+      ZERO_MUTATE_URL: http://app:3000/api/zero/mutate

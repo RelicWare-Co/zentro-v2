@@ -11,6 +11,19 @@ COPY package.json bun.lock ./
 COPY desktop/package.json ./desktop/package.json
 RUN bun install --frozen-lockfile --ignore-scripts
 
+# --- Dev stage (used by docker-compose.dev.yml) ---
+# Installs ALL deps (incl. devDependencies and trusted native builds) into the
+# image. At runtime the repo is bind-mounted over /app, but an anonymous volume
+# keeps this container-built node_modules instead of the host's — so the Linux
+# install never gets shadowed by the host's platform-specific modules.
+FROM base AS dev
+ENV NODE_ENV=development
+COPY package.json bun.lock ./
+COPY desktop/package.json ./desktop/package.json
+RUN bun install --frozen-lockfile
+EXPOSE 3000
+CMD ["bun", "run", "dev"]
+
 FROM base AS build
 COPY --from=install /app/node_modules node_modules
 COPY . .
