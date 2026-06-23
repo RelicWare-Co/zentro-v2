@@ -1,4 +1,16 @@
-import { createTheme, type MantineColorsTuple } from "@mantine/core";
+import {
+  type CSSVariablesResolver,
+  createTheme,
+  Drawer,
+  type MantineColorsTuple,
+  Menu,
+  Modal,
+  NativeSelect,
+  Popover,
+  Select,
+  Textarea,
+  TextInput,
+} from "@mantine/core";
 
 /**
  * Brand → Mantine theme mapping.
@@ -9,15 +21,39 @@ import { createTheme, type MantineColorsTuple } from "@mantine/core";
  * the app has no dark mode.
  */
 
-// Bright lime/yellow-green brand accent, anchored at #dfff06.
+export const brandColors = {
+  photon: "#ffffff",
+  voltage: "#dfff06",
+  voltageHover: "#c7e600",
+  carbon: "#1c1c1c",
+  void: "#0f0f0f",
+  posCanvas: "#0a0a0a",
+  posPanel: "#111111",
+  posSurface: "#151515",
+  posMuted: "#6b6b6b",
+} as const;
+
+export const brandColorCssVars = {
+  photon: "--mantine-color-white",
+  voltage: "--mantine-color-voltage-5",
+  voltageHover: "--mantine-color-voltage-6",
+  carbon: "--mantine-color-carbon-8",
+  void: "--mantine-color-carbon-9",
+  posCanvas: "--zentro-color-pos-canvas",
+  posPanel: "--zentro-color-pos-panel",
+  posSurface: "--zentro-color-pos-surface",
+  posMuted: "--zentro-color-pos-muted",
+} as const;
+
+// Bright lime/yellow-green brand accent.
 const voltage: MantineColorsTuple = [
   "#fbffe4",
   "#f5ffcb",
   "#ecff99",
   "#e3ff61",
   "#dbff33",
-  "#dfff06", // brand voltage
-  "#c7e600",
+  brandColors.voltage,
+  brandColors.voltageHover,
   "#9eb800",
   "#7c9000",
   "#5a6900",
@@ -33,9 +69,26 @@ const carbon: MantineColorsTuple = [
   "#8b8b8b",
   "#848484",
   "#717171",
-  "#1c1c1c", // carbon
-  "#0f0f0f", // void
+  brandColors.carbon,
+  brandColors.void,
 ];
+
+const darkSurface = "var(--color-carbon)";
+const zinc800 = "#27272a";
+const textOnDark = "#fff";
+
+const darkInputClassNames = {
+  input:
+    "[--zentro-mantine-input-bg:rgba(0,0,0,0.2)] [--zentro-mantine-input-border:#3f3f46] border-[var(--zentro-mantine-input-border)] bg-[var(--zentro-mantine-input-bg)] text-white",
+  label: "text-zinc-200",
+} as const;
+
+const darkSelectClassNames = {
+  ...darkInputClassNames,
+  dropdown:
+    "[--zentro-mantine-select-bg:var(--color-carbon)] [--zentro-mantine-select-border:#27272a] border-[var(--zentro-mantine-select-border)] bg-[var(--zentro-mantine-select-bg)] text-white",
+  option: "text-white",
+} as const;
 
 export const mantineTheme = createTheme({
   colors: {
@@ -50,4 +103,63 @@ export const mantineTheme = createTheme({
   // Inherit the font stack defined by the global stylesheet / Tailwind.
   fontFamily: "inherit",
   headings: { fontFamily: "inherit" },
+  components: {
+    TextInput: TextInput.extend({ classNames: darkInputClassNames }),
+    Textarea: Textarea.extend({ classNames: darkInputClassNames }),
+    Select: Select.extend({ classNames: darkSelectClassNames }),
+    NativeSelect: NativeSelect.extend({ classNames: darkSelectClassNames }),
+    Modal: Modal.extend({
+      styles: {
+        content: { backgroundColor: darkSurface, color: textOnDark },
+        header: { backgroundColor: darkSurface, color: textOnDark },
+      },
+    }),
+    Drawer: Drawer.extend({
+      styles: {
+        content: {
+          backgroundColor: darkSurface,
+          color: textOnDark,
+          display: "flex",
+          flexDirection: "column",
+        },
+        header: {
+          backgroundColor: darkSurface,
+          color: textOnDark,
+          borderBottom: `1px solid ${zinc800}`,
+        },
+        body: { padding: 0, flex: 1, minHeight: 0, overflow: "hidden" },
+        title: { fontSize: "1.5rem", fontWeight: 700 },
+      },
+    }),
+    Popover: Popover.extend({
+      styles: {
+        dropdown: {
+          backgroundColor: darkSurface,
+          borderColor: zinc800,
+          color: textOnDark,
+        },
+      },
+    }),
+    Menu: Menu.extend({
+      styles: {
+        dropdown: {
+          backgroundColor: darkSurface,
+          borderColor: zinc800,
+          color: textOnDark,
+        },
+        item: { color: textOnDark },
+      },
+    }),
+  },
+});
+
+export const mantineCssVariablesResolver: CSSVariablesResolver = () => ({
+  variables: {
+    [brandColorCssVars.posCanvas]: brandColors.posCanvas,
+    [brandColorCssVars.posPanel]: brandColors.posPanel,
+    [brandColorCssVars.posSurface]: brandColors.posSurface,
+    [brandColorCssVars.posMuted]: brandColors.posMuted,
+  },
+  light: {},
+  dark: {},
 });

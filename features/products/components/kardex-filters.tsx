@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useKardexProductPickerOptions } from "@/features/products/hooks/use-products";
 import type { InventoryMovementType } from "@/features/products/inventory-movements.shared";
 import { INVENTORY_MOVEMENT_TYPE_LABELS } from "@/features/products/inventory-movements.shared";
-import { darkInputStyles, darkSelectStyles } from "@/lib/mantine-dark";
 
 export interface KardexFiltersState {
   endDate: string;
@@ -42,7 +41,6 @@ export function KardexFilters({
           leftSection={<Search className="size-4 text-zinc-500" />}
           onChange={(event) => onChange({ searchQuery: event.target.value })}
           placeholder="Buscar producto, notas o usuario..."
-          styles={darkInputStyles}
           value={filters.searchQuery}
         />
       </div>
@@ -55,7 +53,6 @@ export function KardexFilters({
         placeholder="Producto"
         searchable
         searchValue={productPickerSearch}
-        styles={darkSelectStyles}
         value={filters.productId}
       />
       <Select
@@ -72,19 +69,16 @@ export function KardexFilters({
         ]}
         onChange={(value) => onChange({ type: value ?? "all" })}
         placeholder="Tipo"
-        styles={darkSelectStyles}
         value={filters.type}
       />
       <div className="grid grid-cols-2 gap-3">
         <TextInput
           onChange={(event) => onChange({ startDate: event.target.value })}
-          styles={darkInputStyles}
           type="date"
           value={filters.startDate}
         />
         <TextInput
           onChange={(event) => onChange({ endDate: event.target.value })}
-          styles={darkInputStyles}
           type="date"
           value={filters.endDate}
         />

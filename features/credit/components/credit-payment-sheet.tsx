@@ -4,11 +4,6 @@ import { type FormEvent, useState } from "react";
 import { creditCurrencyFormatter } from "@/features/credit/credit-formatters.shared";
 import { useCreditPage } from "@/features/credit/credit-page-context";
 import {
-  darkDrawerStyles,
-  darkInputStyles,
-  darkSelectStyles,
-} from "@/lib/mantine-dark";
-import {
   formatMoneyInput,
   getErrorMessage,
   parseMoneyInput,
@@ -91,7 +86,6 @@ function CreditPaymentSheetForm() {
               }
               placeholder="Ej. 50.000"
               required
-              styles={darkInputStyles}
               type="text"
               value={formatMoneyInput(amount)}
               withAsterisk
@@ -110,7 +104,6 @@ function CreditPaymentSheetForm() {
             onChange={(value) => setMethod(value ?? "")}
             placeholder="Selecciona método"
             required
-            styles={darkSelectStyles}
             value={method}
             withAsterisk
           />
@@ -119,7 +112,6 @@ function CreditPaymentSheetForm() {
             label="Venta asociada (opcional)"
             onChange={(event) => setSaleId(event.target.value)}
             placeholder="ID de venta"
-            styles={darkInputStyles}
             value={saleId}
           />
 
@@ -132,7 +124,6 @@ function CreditPaymentSheetForm() {
             onChange={(event) => setReference(event.target.value)}
             placeholder="Número de referencia"
             required={selectedMethod?.requiresReference}
-            styles={darkInputStyles}
             value={reference}
             withAsterisk={selectedMethod?.requiresReference}
           />
@@ -141,7 +132,6 @@ function CreditPaymentSheetForm() {
             label="Notas (opcional)"
             onChange={(event) => setNotes(event.target.value)}
             placeholder="Observaciones"
-            styles={darkInputStyles}
             value={notes}
           />
         </div>
@@ -185,7 +175,6 @@ export function CreditPaymentSheet() {
       opened={isOpen}
       position="right"
       size={480}
-      styles={darkDrawerStyles}
       title="Registrar abono"
     >
       <CreditPaymentSheetForm

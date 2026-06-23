@@ -11,7 +11,6 @@ import { usePosPage } from "@/features/pos/pos-page-context";
 import { isPosModalOpen } from "@/features/pos/pos-page-modals.shared";
 import { formatCurrency } from "@/features/pos/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { darkModalStyles } from "@/lib/mantine-dark";
 
 export function CheckoutModal() {
   const { state, actions, meta } = usePosPage();
@@ -45,7 +44,6 @@ export function CheckoutModal() {
       centered
       onClose={actions.closeActiveModal}
       opened={isOpen}
-      styles={darkModalStyles}
       title="Cobrar Orden"
     >
       <div className="space-y-5 py-2">

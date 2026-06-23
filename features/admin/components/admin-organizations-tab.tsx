@@ -28,7 +28,6 @@ import {
   formatCount,
   formatCurrency,
 } from "@/features/dashboard/dashboard-formatters.shared";
-import { darkInputStyles } from "@/lib/mantine-dark";
 
 function OrganizationsSummaryCards({
   organizations,
@@ -212,7 +211,6 @@ export function AdminOrganizationsTab() {
               leftSection={<Search className="size-4" />}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Buscar por nombre o slug…"
-              styles={darkInputStyles}
               value={search}
             />
           </div>

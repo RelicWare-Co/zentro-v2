@@ -18,7 +18,6 @@ import {
 import { organizationDateFormatter } from "@/features/organization/organization-formatters.shared";
 import { ORGANIZATION_ROLE_OPTIONS } from "@/features/organization/organization-page.constants.shared";
 import { useOrganizationPage } from "@/features/organization/organization-page-context";
-import { darkSelectStyles } from "@/lib/mantine-dark";
 import { formatOrganizationRoleLabel } from "@/lib/organization-shared";
 import { getErrorMessage } from "@/lib/utils";
 
@@ -131,7 +130,6 @@ export function MembersTab() {
                         disabled={updateRoleMutation.isPending}
                         onChange={(value) => setPendingRole(value ?? "")}
                         size="xs"
-                        styles={darkSelectStyles}
                         value={pendingRole}
                         w={128}
                       />

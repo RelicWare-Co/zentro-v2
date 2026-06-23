@@ -12,11 +12,6 @@ import {
 } from "@/features/products/products-form.shared";
 import { useProductsPage } from "@/features/products/products-page-context";
 import {
-  darkDrawerStyles,
-  darkInputStyles,
-  darkSelectStyles,
-} from "@/lib/mantine-dark";
-import {
   formatMoneyInput,
   getErrorMessage,
   parseMoneyInput,
@@ -86,7 +81,6 @@ function ProductFormSheetContent({
               }
               placeholder="Ej. Café americano"
               required
-              styles={darkInputStyles}
               value={form.name}
             />
           </ProductsField>
@@ -112,7 +106,6 @@ function ProductFormSheetContent({
                 setHasExplicitCategorySelection(true);
               }}
               placeholder="Sin categoría"
-              styles={darkSelectStyles}
               value={effectiveCategoryId || "none"}
             />
           </ProductsField>
@@ -125,7 +118,6 @@ function ProductFormSheetContent({
                 }))
               }
               placeholder="Ej. CAF-001"
-              styles={darkInputStyles}
               value={form.sku}
             />
           </ProductsField>
@@ -141,7 +133,6 @@ function ProductFormSheetContent({
                   }))
                 }
                 placeholder="Ej. 7701234567890"
-                styles={darkInputStyles}
                 value={form.barcode}
               />
               <Button
@@ -172,7 +163,6 @@ function ProductFormSheetContent({
               }
               placeholder="0"
               required
-              styles={darkInputStyles}
               type="text"
               value={formatMoneyInput(form.price)}
             />
@@ -188,7 +178,6 @@ function ProductFormSheetContent({
                 }))
               }
               placeholder="0"
-              styles={darkInputStyles}
               type="text"
               value={formatMoneyInput(form.cost)}
             />
@@ -204,7 +193,6 @@ function ProductFormSheetContent({
                 }))
               }
               placeholder="0"
-              styles={darkInputStyles}
               type="number"
               value={form.taxRate}
             />
@@ -222,7 +210,6 @@ function ProductFormSheetContent({
                     }))
                   }
                   placeholder="0"
-                  styles={darkInputStyles}
                   type="number"
                   value={form.stock}
                 />
@@ -237,7 +224,6 @@ function ProductFormSheetContent({
                     }))
                   }
                   placeholder={`Vacío = ${lowStockThreshold}`}
-                  styles={darkInputStyles}
                   type="number"
                   value={form.minStock}
                 />
@@ -261,7 +247,6 @@ function ProductFormSheetContent({
                     }))
                   }
                   placeholder="Opcional"
-                  styles={darkInputStyles}
                   type="number"
                   value={form.reorderQuantity}
                 />
@@ -324,7 +309,6 @@ export function ProductFormSheet() {
       opened={state.isProductSheetOpen}
       position="right"
       size={780}
-      styles={darkDrawerStyles}
       title={state.editingProduct ? "Editar producto" : "Crear producto"}
     >
       <ProductFormSheetContent

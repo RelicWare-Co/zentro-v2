@@ -8,7 +8,7 @@ import { usePageContext } from "vike-react/usePageContext";
 import { AppLayout } from "@/components/app-layout";
 import { Toaster } from "@/components/ui/sonner";
 import { OrganizationTransitionProvider } from "@/features/organization/organization-transition-context";
-import { mantineTheme } from "@/lib/mantine-theme";
+import { mantineCssVariablesResolver, mantineTheme } from "@/lib/mantine-theme";
 import { TanstackQueryProvider } from "@/lib/query-provider";
 import { ZeroProviderGate } from "@/zero/zero-provider-gate.client";
 
@@ -30,7 +30,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <MantineProvider forceColorScheme="light" theme={mantineTheme}>
+    <MantineProvider
+      cssVariablesResolver={mantineCssVariablesResolver}
+      forceColorScheme="light"
+      theme={mantineTheme}
+    >
       <TanstackQueryProvider>
         <OrganizationTransitionProvider>
           {content}

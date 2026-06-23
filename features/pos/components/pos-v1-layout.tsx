@@ -8,7 +8,6 @@ import { usePosPage } from "@/features/pos/pos-page-context";
 import { openPosCashDrawer } from "@/features/pos/printing/print-sale-receipt.client";
 import { RestaurantPosTables } from "@/features/restaurants/components/restaurant-pos-overlay";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { darkDrawerStyles } from "@/lib/mantine-dark";
 
 export function PosV1Layout() {
   const { state, actions, meta } = usePosPage();
@@ -106,7 +105,6 @@ export function PosV1Layout() {
             opened={state.isMobileCartOpen}
             position="bottom"
             size="85%"
-            styles={darkDrawerStyles}
             title="Orden Actual"
           >
             <div className="flex h-full flex-col">

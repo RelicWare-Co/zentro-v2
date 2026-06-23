@@ -9,7 +9,6 @@ import {
 import { useAdminPage } from "@/features/admin/admin-page-context";
 import { useAdminUserActions } from "@/features/admin/hooks/use-admin-user-actions";
 import { useAdminUserSessionsQuery } from "@/features/admin/hooks/use-admin-users";
-import { darkDrawerStyles } from "@/lib/mantine-dark";
 import { getErrorMessage } from "@/lib/utils";
 
 function SessionRow({ session }: { session: AdminPanelSession }) {
@@ -160,7 +159,6 @@ export function AdminSessionsSheet() {
       opened={isOpen}
       position="right"
       size={540}
-      styles={darkDrawerStyles}
       title="Sesiones activas"
     >
       {user ? <AdminSessionsSheetContent key={user.id} user={user} /> : null}

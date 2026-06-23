@@ -5,7 +5,6 @@ import {
   SettingsToggleRow,
 } from "@/features/settings/components/settings-ui-primitives";
 import { useSettingsPage } from "@/features/settings/settings-page-context";
-import { darkInputStyles } from "@/lib/mantine-dark";
 
 export function InventorySettingsCard() {
   const { actions, state } = useSettingsPage();
@@ -28,7 +27,6 @@ export function InventorySettingsCard() {
             })
           }
           placeholder="5"
-          styles={darkInputStyles}
           type="number"
           value={draftSettings.inventory.lowStockThreshold}
         />
@@ -46,7 +44,6 @@ export function InventorySettingsCard() {
             })
           }
           placeholder="19"
-          styles={darkInputStyles}
           type="number"
           value={draftSettings.inventory.defaultTaxRate}
         />

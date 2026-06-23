@@ -1,7 +1,6 @@
 import { Drawer } from "@mantine/core";
 import { SaleDetailContent } from "@/features/sales/components/sale-detail-content";
 import { useSalesPage } from "@/features/sales/sales-page-context";
-import { darkDrawerStyles } from "@/lib/mantine-dark";
 
 function SaleDetailPane() {
   const { state, actions, meta } = useSalesPage();
@@ -42,7 +41,6 @@ export function SalesDetailSheet() {
       opened={state.isDetailOpen}
       position="right"
       size="min(1000px, 100vw)"
-      styles={darkDrawerStyles}
       title="Detalle de venta"
     >
       <div className="flex h-full flex-col">

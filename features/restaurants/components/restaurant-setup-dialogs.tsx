@@ -15,7 +15,6 @@ import {
 } from "@/features/restaurants/hooks/use-restaurants";
 import type { RestaurantAreaSummary } from "@/features/restaurants/restaurants-ui.shared";
 import { suggestNextTableName } from "@/features/restaurants/restaurants-ui.shared";
-import { darkInputStyles, darkModalStyles } from "@/lib/mantine-dark";
 
 interface CreateAreaDialogProps {
   onOpenChange: (open: boolean) => void;
@@ -66,7 +65,6 @@ export function CreateRestaurantAreaDialog({
       centered
       onClose={() => handleOpenChange(false)}
       opened={open}
-      styles={darkModalStyles}
       title="Nueva zona"
     >
       <Stack gap="md">
@@ -85,7 +83,6 @@ export function CreateRestaurantAreaDialog({
             }
           }}
           placeholder="Ej. Salón principal"
-          styles={darkInputStyles}
           value={name}
         />
         <Group justify="flex-end">
@@ -184,7 +181,6 @@ export function CreateRestaurantTableDialog({
       centered
       onClose={() => onOpenChange(false)}
       opened={open}
-      styles={darkModalStyles}
       title="Nueva mesa"
     >
       <Stack gap="md">
@@ -195,7 +191,6 @@ export function CreateRestaurantTableDialog({
           data={areas.map((area) => ({ value: area.id, label: area.name }))}
           label="Zona"
           onChange={(event) => setAreaId(event.target.value)}
-          styles={darkInputStyles}
           value={areaId}
         />
         <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_120px]">
@@ -204,7 +199,6 @@ export function CreateRestaurantTableDialog({
             label="Nombre"
             onChange={(event) => setName(event.target.value)}
             placeholder="Mesa 1"
-            styles={darkInputStyles}
             value={name}
           />
           <TextInput
@@ -213,7 +207,6 @@ export function CreateRestaurantTableDialog({
             min={0}
             onChange={(event) => setSeats(event.target.value)}
             placeholder="4"
-            styles={darkInputStyles}
             type="number"
             value={seats}
           />

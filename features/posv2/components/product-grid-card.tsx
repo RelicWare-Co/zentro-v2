@@ -2,6 +2,19 @@ import { Heart, Package } from "lucide-react";
 import { usePosPage } from "@/features/pos/pos-page-context";
 import type { Product } from "@/features/pos/types";
 import { calculatePriceWithTax, formatCurrency } from "@/features/pos/utils";
+import {
+  posV2AccentBg,
+  posV2AccentFocusRing,
+  posV2AccentHoverBorder,
+  posV2AccentSoftShadow,
+  posV2AccentText,
+  posV2IconText,
+  posV2MutedText,
+  posV2OrderBorderSubtle,
+  posV2OrderCarbonBg,
+  posV2OrderHoverSurface,
+  posV2OrderSurfaceBg,
+} from "@/features/posv2/components/pos-v2-order-styles";
 import { cn } from "@/lib/utils";
 
 export function ProductGridCard({
@@ -33,29 +46,47 @@ export function ProductGridCard({
       <button
         className={cn(
           "flex h-full w-full flex-col items-center rounded-xl border p-3 text-left transition-all md:p-4",
-          "border-[rgba(255,255,255,0.06)] bg-[#151515]",
-          "hover:border-[#dfff06]/40 hover:shadow-[0_0_20px_rgba(223,255,6,0.08)]",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#dfff06]",
+          posV2OrderBorderSubtle,
+          posV2OrderSurfaceBg,
+          posV2AccentHoverBorder,
+          posV2AccentSoftShadow,
+          posV2AccentFocusRing,
           isOutOfStock && "opacity-45"
         )}
         onClick={onSelect}
         type="button"
       >
         {quantity > 0 ? (
-          <div className="absolute top-2 right-2 z-10 rounded-md bg-[#dfff06] px-2 py-0.5 font-bold text-[10px] text-black">
+          <div
+            className={cn(
+              "absolute top-2 right-2 z-10 rounded-md px-2 py-0.5 font-bold text-[10px] text-black",
+              posV2AccentBg
+            )}
+          >
             x{quantity}
           </div>
         ) : null}
 
-        <div className="mb-3 flex size-11 items-center justify-center rounded-lg border border-[rgba(255,255,255,0.06)] bg-[#1c1c1c] md:h-12 md:w-12">
-          <Package className="size-4 text-[#3d3d3d] md:h-5 md:w-5" />
+        <div
+          className={cn(
+            "mb-3 flex size-11 items-center justify-center rounded-lg border md:h-12 md:w-12",
+            posV2OrderBorderSubtle,
+            posV2OrderCarbonBg
+          )}
+        >
+          <Package className={cn("size-4 md:h-5 md:w-5", posV2IconText)} />
         </div>
 
         <h3 className="mb-0.5 line-clamp-2 text-center font-medium text-white text-xs leading-snug md:text-sm">
           {product.name}
         </h3>
 
-        <p className="mt-1 text-center font-medium text-[#6b6b6b] text-[10px] md:text-[11px]">
+        <p
+          className={cn(
+            "mt-1 text-center font-medium text-[10px] md:text-[11px]",
+            posV2MutedText
+          )}
+        >
           {product.categoryName}
         </p>
 
@@ -63,12 +94,17 @@ export function ProductGridCard({
           {formatCurrency(calculatePriceWithTax(product))}
         </p>
 
-        <div className="mt-2 flex w-full items-center justify-between border-[rgba(255,255,255,0.06)] border-t pt-2">
+        <div
+          className={cn(
+            "mt-2 flex w-full items-center justify-between border-t pt-2",
+            posV2OrderBorderSubtle
+          )}
+        >
           {stockLabel ? (
             <span
               className={cn(
                 "font-medium text-[10px] md:text-[11px]",
-                product.stock > 0 ? "text-[#dfff06]" : "text-red-500"
+                product.stock > 0 ? posV2AccentText : "text-red-500"
               )}
             >
               {stockLabel}
@@ -84,7 +120,11 @@ export function ProductGridCard({
           product.isFavorite ? "Quitar de favoritos" : "Agregar a favoritos"
         }
         aria-pressed={product.isFavorite}
-        className="absolute right-2 bottom-2 z-10 rounded p-1 hover:bg-[rgba(255,255,255,0.06)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#dfff06] disabled:opacity-50"
+        className={cn(
+          "absolute right-2 bottom-2 z-10 rounded p-1 disabled:opacity-50",
+          posV2OrderHoverSurface,
+          posV2AccentFocusRing
+        )}
         disabled={meta.isTogglingFavorite}
         onClick={(event) => {
           event.stopPropagation();
@@ -97,7 +137,7 @@ export function ProductGridCard({
             "size-3.5 transition-colors",
             product.isFavorite
               ? "fill-red-500 text-red-500"
-              : "text-[#3d3d3d] hover:text-red-400"
+              : `${posV2IconText} hover:text-red-400`
           )}
         />
       </button>

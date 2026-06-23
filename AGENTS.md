@@ -67,7 +67,7 @@
 - App framework: Vike with React, configured as full CSR (`ssr: false` in `pages/+config.ts`).
 - Vike client routing is enabled (`clientRouting: true`) so organization changes can update the client Zero context and navigate without a full page reload.
 - Server: Hono through `@vikejs/hono`.
-- Styling: Tailwind CSS v4, shadcn/radix-style UI components in `components/ui`.
+- UI: Mantine is the component system and theme layer. Tailwind CSS v4 remains for layout utilities and legacy token aliases; `components/ui` is not a shadcn registry.
 - Auth: better-auth with organization support.
 - Database: Drizzle ORM over PostgreSQL (`drizzle-orm/postgres-js`). Postgres runs locally with `wal_level=logical` (see `docker-compose.yml`) so Zero can mirror it via logical replication.
 - Server state: Zero (`@rocicorp/zero`) for replicated reads/writes + TanStack Query for ephemeral server fetches (dashboard overview).
@@ -247,13 +247,20 @@ Slices, composition roots, and consumers follow a one-way graph (no cycles):
 - `desktop/src/main.ts` loads `ZENTRO_DESKTOP_WEB_URL` when set. In development, it falls back to `http://localhost:3000`; packaged builds must bake a real web URL through `desktop/.env` or the shell.
 - The desktop app must keep `nodeIntegration: false`, `contextIsolation: true`, `sandbox: true`, and same-origin navigation guards unless there is a reviewed reason to change them.
 - Use `desktop/src/preload.ts` for minimal desktop affordances only. Mirror any browser-visible shape in `types/zentro-desktop.d.ts`. Do not expose broad Node/Electron APIs to the remote web surface; sandboxed preload code cannot import arbitrary Node built-ins.
-- The desktop splash/offline shell lives under `desktop/src/renderer/`, loads before the remote web app, and may reuse root UI primitives/styles (`components/ui`, `pages/tailwind.css`) without adding web app routes.
+- The desktop splash/offline shell lives under `desktop/src/renderer/`, loads before the remote web app, and may reuse root UI helpers/styles (`components/ui`, `pages/tailwind.css`) without adding web app routes.
 - `desktop/src/main.ts` injects a baseline CSP for the configured web origin only when the server response does not already provide one. The baseline must allow third-party analytics script origins used in `pages/+Head.tsx` (currently Umami).
 - MSIX / Microsoft Store: `@electron-forge/maker-msix` (experimental) is configured in `desktop/forge.config.ts` via `desktop/forge.msix.ts`; use the configured `msix` target, not a raw `@electron-forge/maker-msix` target, so package identity/assets/signing options are preserved. Builds require Windows + Windows SDK. Store publisher/package identity come from Partner Center (`ZENTRO_MSIX_PUBLISHER`, `ZENTRO_MSIX_PACKAGE_IDENTITY`), and `ZENTRO_MSIX_WINDOWS_KIT_VERSION` must match an installed SDK version under `C:\Program Files (x86)\Windows Kits\10\bin\`. Optional custom manifest: copy `desktop/msix/Package.appxmanifest.example` → `Package.appxmanifest`. CI: `.github/workflows/desktop-msix.yml`.
 
 ## UI
 
-- Reuse components from `components/ui` before adding new primitives.
+- Mantine (`@mantine/core`) is the default for new UI components, forms, overlays, menus, inputs, tables where practical, and theme-level styling.
+- The app-level provider lives in `pages/+Layout.tsx`: keep `MantineProvider` wired with `theme={mantineTheme}` and `cssVariablesResolver={mantineCssVariablesResolver}` from `lib/mantine-theme.ts`.
+- Keep brand tokens and shared Mantine overrides in `lib/mantine-theme.ts`. It owns `brandColors`, `brandColorCssVars`, `mantineTheme`, `mantineCssVariablesResolver`, and `theme.components` overrides.
+- Use Mantine's supported theming APIs for component customization: `theme.components` with `Component.extend`, and per-instance `classNames` / `styles` / Styles API selectors. Prefer CSS modules or Tailwind utility classes through `className`/`classNames` for layout and local visual adjustments.
+- Use `cssVariablesResolver` for project-owned CSS variables that must be emitted by Mantine, especially Zentro brand/runtime tokens. Do not style against Mantine private variables such as `--_*`; they are internal and can change in minor or patch releases.
+- Tailwind v4 remains a utility/layout layer and a compatibility surface for legacy tokens. `pages/tailwind.css` maps Tailwind aliases to Mantine/Zentro CSS variables with fallbacks because the Electron offline renderer imports that stylesheet without `MantineProvider`.
+- `components/ui` is only for existing local cross-cutting helpers that are still alive, such as table, virtual-table, virtual-list, data-table-pagination, and sonner wrappers. Do not generate new shadcn primitives, do not reintroduce `components.json`, and do not add the `shadcn` script/package.
+- `tailwind-merge`, `clsx`, and `cn()` remain allowed for existing local helpers and conditional class composition; do not remove them just because shadcn was removed.
 - Use lucide icons for icon buttons and UI affordances when available.
 - Auth and organization-selection screens are full-screen app surfaces, not pages inside the default sidebar layout.
 - Keep mobile and desktop layouts responsive, with no overlapping text or controls.

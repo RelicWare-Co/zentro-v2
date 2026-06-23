@@ -6,11 +6,6 @@ import {
   getCustomerFormInitialValue,
 } from "@/features/customers/customers-form.shared";
 import { useCustomersPage } from "@/features/customers/customers-page-context";
-import {
-  darkDrawerStyles,
-  darkInputStyles,
-  darkSelectStyles,
-} from "@/lib/mantine-dark";
 import { getErrorMessage } from "@/lib/utils";
 
 const DOCUMENT_TYPE_DATA = [
@@ -53,7 +48,6 @@ function CustomerFormSheetContent() {
             }
             placeholder="Ej. Juan Pérez"
             required
-            styles={darkInputStyles}
             value={form.name}
             withAsterisk
           />
@@ -63,7 +57,6 @@ function CustomerFormSheetContent() {
             onChange={(value) =>
               setForm((current) => ({ ...current, type: value ?? "natural" }))
             }
-            styles={darkSelectStyles}
             value={form.type || "natural"}
           />
           <Select
@@ -76,7 +69,6 @@ function CustomerFormSheetContent() {
               }))
             }
             placeholder="Sin documento"
-            styles={darkSelectStyles}
             value={form.documentType || "none"}
           />
           <TextInput
@@ -88,7 +80,6 @@ function CustomerFormSheetContent() {
               }))
             }
             placeholder="Ej. 1234567890"
-            styles={darkInputStyles}
             value={form.documentNumber}
           />
           <TextInput
@@ -97,7 +88,6 @@ function CustomerFormSheetContent() {
               setForm((current) => ({ ...current, phone: event.target.value }))
             }
             placeholder="Ej. 3001234567"
-            styles={darkInputStyles}
             type="tel"
             value={form.phone}
           />
@@ -107,7 +97,6 @@ function CustomerFormSheetContent() {
               setForm((current) => ({ ...current, email: event.target.value }))
             }
             placeholder="cliente@ejemplo.com"
-            styles={darkInputStyles}
             type="email"
             value={form.email}
           />
@@ -146,7 +135,6 @@ export function CustomerFormSheet() {
       opened={isOpen}
       position="right"
       size={540}
-      styles={darkDrawerStyles}
       title={state.editingCustomer ? "Editar cliente" : "Crear cliente"}
     >
       <CustomerFormSheetContent

@@ -1,6 +1,5 @@
 import { Button, Group, Modal, Stack, Text } from "@mantine/core";
 import { useCustomersPage } from "@/features/customers/customers-page-context";
-import { darkModalStyles } from "@/lib/mantine-dark";
 
 export function CustomerDeleteDialog() {
   const { state, actions, meta } = useCustomersPage();
@@ -11,7 +10,6 @@ export function CustomerDeleteDialog() {
       centered
       onClose={actions.closeOverlay}
       opened={isOpen}
-      styles={darkModalStyles}
       title="¿Eliminar cliente?"
     >
       <Stack gap="lg">

@@ -2,7 +2,12 @@ import { Button } from "@mantine/core";
 import { Pencil } from "lucide-react";
 import { usePosPage } from "@/features/pos/pos-page-context";
 import { formatCurrency } from "@/features/pos/utils";
-import { posV2OrderSurfaceClassName } from "@/features/posv2/components/pos-v2-order-styles";
+import {
+  posV2AccentSoftHoverBg,
+  posV2AccentText,
+  posV2MutedText,
+  posV2OrderSurfaceClassName,
+} from "@/features/posv2/components/pos-v2-order-styles";
 import { cn } from "@/lib/utils";
 
 export function AccountCreditSummary() {
@@ -15,7 +20,12 @@ export function AccountCreditSummary() {
     <div className={cn("space-y-2 p-2.5", posV2OrderSurfaceClassName)}>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 space-y-1">
-          <p className="font-medium text-[#6b6b6b] text-[10px] uppercase tracking-[0.12em]">
+          <p
+            className={cn(
+              "font-medium text-[10px] uppercase tracking-[0.12em]",
+              posV2MutedText
+            )}
+          >
             Venta a crédito
           </p>
           <p className="truncate text-sm text-white">
@@ -30,7 +40,7 @@ export function AccountCreditSummary() {
           )}
         </div>
         <Button
-          className="shrink-0 text-[#dfff06] hover:bg-[rgba(223,255,6,0.08)]"
+          className={cn("shrink-0", posV2AccentSoftHoverBg, posV2AccentText)}
           leftSection={<Pencil className="size-3" />}
           onClick={actions.openCheckoutDetails}
           size="compact-xs"

@@ -13,11 +13,6 @@ import {
   ShiftsAdvancedFiltersMobile,
 } from "@/features/shifts/components/shifts-advanced-filters";
 import { useShiftsPage } from "@/features/shifts/shifts-page-context";
-import {
-  darkDrawerStyles,
-  darkInputStyles,
-  darkSelectStyles,
-} from "@/lib/mantine-dark";
 
 export function ShiftsFilterToolbar() {
   const { state, actions, meta } = useShiftsPage();
@@ -43,7 +38,6 @@ export function ShiftsFilterToolbar() {
             leftSection={<Search aria-hidden="true" className="size-4" />}
             onChange={(event) => actions.setSearchQuery(event.target.value)}
             placeholder="Cajero, terminal o id…"
-            styles={darkInputStyles}
             value={filters.searchQuery}
           />
         </div>
@@ -62,7 +56,6 @@ export function ShiftsFilterToolbar() {
               )
             }
             placeholder="Estado"
-            styles={darkSelectStyles}
             value={filters.status || ALL_FILTER_VALUE}
           />
         </div>
@@ -84,7 +77,6 @@ export function ShiftsFilterToolbar() {
           opened={state.isMobileFilterOpen}
           position="bottom"
           size="85%"
-          styles={darkDrawerStyles}
           title="Filtros avanzados"
         >
           <div className="flex h-full flex-col">

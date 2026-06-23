@@ -3,9 +3,12 @@ import { Plus, XIcon } from "lucide-react";
 import { useId } from "react";
 import { usePosPage } from "@/features/pos/pos-page-context";
 import {
+  posV2MutedText,
   posV2OrderBorder,
+  posV2OrderHoverBorderStrong,
   posV2OrderInputClassName,
   posV2OrderSurfaceClassName,
+  posV2OrderSurfaceHoverBg,
 } from "@/features/posv2/components/pos-v2-order-styles";
 import { cn, formatMoneyInput, sanitizeMoneyInput } from "@/lib/utils";
 
@@ -28,7 +31,12 @@ export function MultiplePaymentsSection() {
             key={payment.id}
           >
             <div className="mb-2 flex items-center justify-between gap-2">
-              <span className="font-medium text-[#6b6b6b] text-[10px] uppercase tracking-[0.12em]">
+              <span
+                className={cn(
+                  "font-medium text-[10px] uppercase tracking-[0.12em]",
+                  posV2MutedText
+                )}
+              >
                 Pago {index + 1}
               </span>
               {state.payments.length > 1 ? (
@@ -47,7 +55,7 @@ export function MultiplePaymentsSection() {
             <div className="flex gap-2">
               <select
                 className={cn(
-                  "h-9 min-w-0 flex-1 rounded-lg px-2 text-white text-xs focus-visible:border-[#dfff06]/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#dfff06]/10",
+                  "h-9 min-w-0 flex-1 rounded-lg px-2 text-white text-xs",
                   posV2OrderInputClassName
                 )}
                 id={`${methodId}-${index}`}
@@ -69,7 +77,9 @@ export function MultiplePaymentsSection() {
                 classNames={{ input: cn("h-9", posV2OrderInputClassName) }}
                 id={`${amountId}-${index}`}
                 inputMode="numeric"
-                leftSection={<span className="text-[#6b6b6b] text-xs">$</span>}
+                leftSection={
+                  <span className={cn("text-xs", posV2MutedText)}>$</span>
+                }
                 onChange={(event) =>
                   actions.updatePayment(
                     index,
@@ -101,8 +111,11 @@ export function MultiplePaymentsSection() {
 
       <Button
         className={cn(
-          "w-full border-dashed bg-transparent text-[#6b6b6b] hover:border-[rgba(255,255,255,0.2)] hover:bg-[#151515] hover:text-white",
-          posV2OrderBorder
+          "w-full border-dashed bg-transparent hover:text-white",
+          posV2MutedText,
+          posV2OrderBorder,
+          posV2OrderHoverBorderStrong,
+          posV2OrderSurfaceHoverBg
         )}
         leftSection={<Plus className="size-3.5" />}
         onClick={actions.addPaymentMethod}

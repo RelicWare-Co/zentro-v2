@@ -13,11 +13,6 @@ import {
   SalesAdvancedFiltersMobile,
 } from "@/features/sales/components/sales-advanced-filters";
 import { useSalesPage } from "@/features/sales/sales-page-context";
-import {
-  darkDrawerStyles,
-  darkInputStyles,
-  darkSelectStyles,
-} from "@/lib/mantine-dark";
 
 export function SalesFilterToolbar() {
   const { state, actions, meta } = useSalesPage();
@@ -44,7 +39,6 @@ export function SalesFilterToolbar() {
             leftSection={<Search aria-hidden="true" className="size-4" />}
             onChange={(event) => actions.setSearchQuery(event.target.value)}
             placeholder="Cliente, cajero o id…"
-            styles={darkInputStyles}
             value={filters.searchQuery}
           />
         </div>
@@ -64,7 +58,6 @@ export function SalesFilterToolbar() {
               )
             }
             placeholder="Estado"
-            styles={darkSelectStyles}
             value={filters.status || ALL_FILTER_VALUE}
           />
         </div>
@@ -86,7 +79,6 @@ export function SalesFilterToolbar() {
           opened={state.isMobileFilterOpen}
           position="bottom"
           size="85%"
-          styles={darkDrawerStyles}
           title="Filtros avanzados"
         >
           <div className="flex h-full flex-col">

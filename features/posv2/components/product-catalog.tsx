@@ -1,6 +1,8 @@
 import { Package } from "lucide-react";
 import { type ReactNode, useEffect, useRef } from "react";
 import { usePosPage } from "@/features/pos/pos-page-context";
+import { posV2MutedText } from "@/features/posv2/components/pos-v2-order-styles";
+import { cn } from "@/lib/utils";
 import { CatalogToolbar } from "./catalog-toolbar";
 import { ProductGridCard } from "./product-grid-card";
 import { ProductListItem } from "./product-list-item";
@@ -44,14 +46,24 @@ export function ProductCatalog({
   let productContent: ReactNode;
   if (isLoading) {
     productContent = (
-      <div className="flex h-40 flex-col items-center justify-center text-[#6b6b6b]">
+      <div
+        className={cn(
+          "flex h-40 flex-col items-center justify-center",
+          posV2MutedText
+        )}
+      >
         <Package className="mb-3 size-8 animate-pulse" />
         <p className="text-sm">Cargando productos…</p>
       </div>
     );
   } else if (regularProducts.length === 0) {
     productContent = (
-      <div className="flex h-40 flex-col items-center justify-center text-[#6b6b6b]">
+      <div
+        className={cn(
+          "flex h-40 flex-col items-center justify-center",
+          posV2MutedText
+        )}
+      >
         <Package className="mb-3 size-8" />
         <p className="text-sm">No se encontraron productos.</p>
       </div>
@@ -93,7 +105,10 @@ export function ProductCatalog({
 
         {state.hasNextPage ? (
           <div
-            className="flex h-16 items-center justify-center text-[#6b6b6b]"
+            className={cn(
+              "flex h-16 items-center justify-center",
+              posV2MutedText
+            )}
             ref={loadMoreRef}
           >
             {state.isFetchingNextPage ? (

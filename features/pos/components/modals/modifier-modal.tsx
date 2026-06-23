@@ -3,7 +3,6 @@ import { Minus, Plus } from "lucide-react";
 import { usePosPage } from "@/features/pos/pos-page-context";
 import { isPosModalOpen } from "@/features/pos/pos-page-modals.shared";
 import { formatCurrency } from "@/features/pos/utils";
-import { darkModalStyles } from "@/lib/mantine-dark";
 
 export function ModifierModal() {
   const { state, actions } = usePosPage();
@@ -14,7 +13,6 @@ export function ModifierModal() {
       onClose={actions.closeActiveModal}
       opened={isPosModalOpen(state.activeModal, "modifier")}
       size="lg"
-      styles={darkModalStyles}
       title={`Añadir modificadores · ${state.selectedProductForModifiers?.name ?? ""}`}
     >
       <div className="space-y-3 py-2">

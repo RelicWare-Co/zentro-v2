@@ -5,7 +5,6 @@ import { TableCell, TableHead, TableRow } from "@/components/ui/table";
 import { VirtualTable } from "@/components/ui/virtual-table";
 import { creditCurrencyFormatter } from "@/features/credit/credit-formatters.shared";
 import { useCreditPage } from "@/features/credit/credit-page-context";
-import { darkInputStyles } from "@/lib/mantine-dark";
 
 export function CreditAccountsPanel() {
   const { state, actions } = useCreditPage();
@@ -19,7 +18,6 @@ export function CreditAccountsPanel() {
           leftSection={<Search className="size-4 text-zinc-500" />}
           onChange={(event) => actions.setSearchQuery(event.target.value)}
           placeholder="Buscar por nombre, documento o teléfono…"
-          styles={darkInputStyles}
           value={state.searchQuery}
         />
       </div>

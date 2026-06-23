@@ -7,8 +7,11 @@ import { CheckoutSummaryFooter } from "@/features/pos/components/checkout/checko
 import { usePosPage } from "@/features/pos/pos-page-context";
 import { isPosModalOpen } from "@/features/pos/pos-page-modals.shared";
 import { formatCurrency } from "@/features/pos/utils";
-import { posV2OrderInputClassName } from "@/features/posv2/components/pos-v2-order-styles";
-import { darkModalStyles } from "@/lib/mantine-dark";
+import {
+  posV2AccentText,
+  posV2OrderCanvasBg,
+  posV2OrderInputClassName,
+} from "@/features/posv2/components/pos-v2-order-styles";
 import { cn, formatMoneyInput, sanitizeMoneyInput } from "@/lib/utils";
 
 export function CheckoutDetailsModal() {
@@ -23,13 +26,19 @@ export function CheckoutDetailsModal() {
       centered
       onClose={actions.closeActiveModal}
       opened={isPosModalOpen(state.activeModal, "checkout-details")}
-      styles={darkModalStyles}
       title="Venta a crédito"
     >
       <div className="space-y-4 py-2">
-        <div className="flex items-center justify-between rounded-lg border border-zinc-800 bg-[#0a0a0a] px-4 py-3">
+        <div
+          className={cn(
+            "flex items-center justify-between rounded-lg border border-zinc-800 px-4 py-3",
+            posV2OrderCanvasBg
+          )}
+        >
           <span className="text-sm text-zinc-400">Total de la orden</span>
-          <span className="font-bold text-[#dfff06] text-xl tabular-nums">
+          <span
+            className={cn("font-bold text-xl tabular-nums", posV2AccentText)}
+          >
             {formatCurrency(state.totals.totalAmount)}
           </span>
         </div>
@@ -43,7 +52,8 @@ export function CheckoutDetailsModal() {
             autoComplete="off"
             classNames={{
               input: cn(
-                "h-10 border-zinc-700 bg-[#0a0a0a] text-white focus-visible:border-[#dfff06]/40",
+                "h-10 border-zinc-700 text-white",
+                posV2OrderCanvasBg,
                 posV2OrderInputClassName
               ),
             }}

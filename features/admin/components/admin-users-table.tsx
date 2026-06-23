@@ -42,7 +42,6 @@ import {
 import { useAdminPage } from "@/features/admin/admin-page-context";
 import { useAdminUserActions } from "@/features/admin/hooks/use-admin-user-actions";
 import type { AdminUsersSearchField } from "@/features/admin/hooks/use-admin-users";
-import { darkInputStyles, darkSelectStyles } from "@/lib/mantine-dark";
 import { getErrorMessage } from "@/lib/utils";
 
 const darkMenuStyles = {
@@ -218,7 +217,6 @@ export function AdminUsersTable() {
                 <Loader color="gray" size="xs" />
               ) : null
             }
-            styles={darkInputStyles}
             value={state.searchQuery}
           />
         </div>
@@ -229,7 +227,6 @@ export function AdminUsersTable() {
           onChange={(value) =>
             actions.setSearchField((value ?? "email") as AdminUsersSearchField)
           }
-          styles={darkSelectStyles}
           value={state.searchField}
         />
       </div>

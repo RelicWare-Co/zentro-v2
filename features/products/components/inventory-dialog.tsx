@@ -10,11 +10,6 @@ import {
 import { useEffect } from "react";
 import type { InventoryMovementType } from "@/features/products/products-page-context";
 import { useProductsPage } from "@/features/products/products-page-context";
-import {
-  darkInputStyles,
-  darkModalStyles,
-  darkSelectStyles,
-} from "@/lib/mantine-dark";
 import { getErrorMessage } from "@/lib/utils";
 
 const MOVEMENT_GROUP_OPTIONS = [
@@ -67,7 +62,6 @@ export function InventoryDialog() {
       onClose={actions.closeInventoryDialog}
       opened={open}
       size="lg"
-      styles={darkModalStyles}
       title="Movimiento de stock"
     >
       <div className="space-y-4">
@@ -88,7 +82,6 @@ export function InventoryDialog() {
           }}
           placeholder="Seleccionar producto..."
           searchable
-          styles={darkSelectStyles}
           value={state.inventoryProduct?.id ?? null}
         />
         <div>
@@ -107,7 +100,6 @@ export function InventoryDialog() {
                 actions.setInventoryRestockMode("add_to_stock");
               }
             }}
-            styles={darkSelectStyles}
             value={state.inventoryType}
           />
           <p className="mt-1 text-xs text-zinc-500">
@@ -162,7 +154,6 @@ export function InventoryDialog() {
               : "Ej. 10"
           }
           required
-          styles={darkInputStyles}
           type="number"
           value={state.inventoryQuantity}
           withAsterisk
@@ -172,7 +163,6 @@ export function InventoryDialog() {
           minRows={3}
           onChange={(event) => actions.setInventoryNotes(event.target.value)}
           placeholder="Motivo o referencia del movimiento…"
-          styles={darkInputStyles}
           value={state.inventoryNotes}
         />
         {mutations.registerInventoryMovementMutation.error ? (

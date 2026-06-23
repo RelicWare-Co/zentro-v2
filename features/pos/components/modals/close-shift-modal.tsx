@@ -14,7 +14,6 @@ import {
   formatCurrency,
   formatPaymentMethodLabel,
 } from "@/features/pos/utils";
-import { darkInputStyles, darkModalStyles } from "@/lib/mantine-dark";
 import {
   formatMoneyInput,
   parseMoneyInput,
@@ -68,7 +67,6 @@ export function CloseShiftModal() {
       onClose={actions.closeActiveModal}
       opened={isPosModalOpen(state.activeModal, "close-shift")}
       size="lg"
-      styles={darkModalStyles}
       title="Cierre de Turno"
     >
       <div className="space-y-6 py-2">
@@ -254,7 +252,6 @@ export function CloseShiftModal() {
                     }))
                   }
                   placeholder="0"
-                  styles={darkInputStyles}
                   type="text"
                   value={formatMoneyInput(
                     shift.closureAmounts[row.paymentMethod] ?? ""
@@ -291,7 +288,6 @@ export function CloseShiftModal() {
           minRows={3}
           onChange={(event) => shift.setCloseShiftNotes(event.target.value)}
           placeholder="Opcional: explica diferencias o novedades del cierre"
-          styles={darkInputStyles}
           value={shift.closeShiftNotes}
         />
 

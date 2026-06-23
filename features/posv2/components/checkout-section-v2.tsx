@@ -14,6 +14,10 @@ import {
   resolveMethodIdForMode,
 } from "@/features/posv2/components/payment-method-grid-v2.shared";
 import {
+  posV2AccentBg,
+  posV2AccentSoftBg,
+  posV2AccentText,
+  posV2MutedText,
   posV2OrderBorder,
   posV2OrderSurfaceClassName,
 } from "@/features/posv2/components/pos-v2-order-styles";
@@ -78,14 +82,14 @@ function PaymentSummaryBox({ paymentMode }: { paymentMode: PosV2PaymentMode }) {
     <div className={cn("p-3", posV2OrderSurfaceClassName)}>
       <div className="space-y-1.5">
         <div className="flex items-center justify-between text-sm">
-          <span className="text-[#6b6b6b]">Total</span>
+          <span className={posV2MutedText}>Total</span>
           <span className="text-white tabular-nums">
             {formatCurrency(state.totals.totalAmount)}
           </span>
         </div>
         <div className="flex items-center justify-between text-sm">
-          <span className="text-[#6b6b6b]">Recibido</span>
-          <span className="font-medium text-[#dfff06] tabular-nums">
+          <span className={posV2MutedText}>Recibido</span>
+          <span className={cn("font-medium tabular-nums", posV2AccentText)}>
             {formatCurrency(state.totalPaid)}
           </span>
         </div>
@@ -98,11 +102,18 @@ function PaymentSummaryBox({ paymentMode }: { paymentMode: PosV2PaymentMode }) {
             posV2OrderBorder
           )}
         >
-          <div className="flex items-center gap-1.5 font-semibold text-[#dfff06] text-sm">
+          <div
+            className={cn(
+              "flex items-center gap-1.5 font-semibold text-sm",
+              posV2AccentText
+            )}
+          >
             <ArrowDownLeft className="size-4" />
             <span>Cambio</span>
           </div>
-          <span className="font-bold text-[#dfff06] text-base tabular-nums">
+          <span
+            className={cn("font-bold text-base tabular-nums", posV2AccentText)}
+          >
             {formatCurrency(changeAmount)}
           </span>
         </div>
@@ -217,20 +228,28 @@ export function CheckoutSectionV2() {
           <span
             className={cn(
               "size-1.5 rounded-full",
-              validation.isValid ? "bg-[#dfff06]" : "bg-red-400"
+              validation.isValid ? posV2AccentBg : "bg-red-400"
             )}
           />
-          <span className="text-[#6b6b6b] text-xs">{validation.message}</span>
+          <span className={cn("text-xs", posV2MutedText)}>
+            {validation.message}
+          </span>
         </div>
         {validation.isValid ? (
-          <span className="rounded-full bg-[rgba(223,255,6,0.12)] px-2 py-0.5 font-medium text-[#dfff06] text-[10px]">
+          <span
+            className={cn(
+              "rounded-full px-2 py-0.5 font-medium text-[10px]",
+              posV2AccentSoftBg,
+              posV2AccentText
+            )}
+          >
             Válido
           </span>
         ) : null}
       </div>
 
       {effectivePaymentMode === "multiple" && state.paymentDifference > 0 ? (
-        <p className="text-[#6b6b6b] text-xs">
+        <p className={cn("text-xs", posV2MutedText)}>
           Falta por pagar: {formatCurrency(state.paymentDifference)}
         </p>
       ) : null}

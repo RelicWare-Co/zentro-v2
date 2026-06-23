@@ -4,7 +4,6 @@ import { useLeaveOrganizationMutation } from "@/features/organization/hooks/use-
 import { useOrganizationPage } from "@/features/organization/organization-page-context";
 import { useOrganizationTransition } from "@/features/organization/organization-transition-context";
 import { authClient } from "@/lib/auth-client";
-import { darkModalStyles } from "@/lib/mantine-dark";
 import { getErrorMessage } from "@/lib/utils";
 
 interface OrganizationLeaveDialogProps {
@@ -59,7 +58,6 @@ export function OrganizationLeaveDialog({
       centered
       onClose={() => onOpenChange(false)}
       opened={open}
-      styles={darkModalStyles}
       title={
         <span className="flex items-center gap-2 font-semibold text-amber-200">
           <AlertTriangle className="size-5" />

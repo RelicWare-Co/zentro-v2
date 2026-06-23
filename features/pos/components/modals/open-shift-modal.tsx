@@ -1,7 +1,6 @@
 import { Button, Group, Modal, Textarea, TextInput } from "@mantine/core";
 import { usePosPage } from "@/features/pos/pos-page-context";
 import { isPosModalOpen } from "@/features/pos/pos-page-modals.shared";
-import { darkInputStyles, darkModalStyles } from "@/lib/mantine-dark";
 import { formatMoneyInput, sanitizeMoneyInput } from "@/lib/utils";
 
 export function OpenShiftModal() {
@@ -13,7 +12,6 @@ export function OpenShiftModal() {
       centered
       onClose={actions.closeActiveModal}
       opened={isPosModalOpen(state.activeModal, "open-shift")}
-      styles={darkModalStyles}
       title="Apertura de Turno"
     >
       <div className="py-2">
@@ -29,7 +27,6 @@ export function OpenShiftModal() {
             shift.setStartingCash(sanitizeMoneyInput(e.target.value))
           }
           placeholder="0"
-          styles={darkInputStyles}
           type="text"
           value={formatMoneyInput(shift.startingCash)}
         />
@@ -40,7 +37,6 @@ export function OpenShiftModal() {
           minRows={3}
           onChange={(event) => shift.setOpenShiftNotes(event.target.value)}
           placeholder="Opcional: observaciones de apertura"
-          styles={darkInputStyles}
           value={shift.openShiftNotes}
         />
 

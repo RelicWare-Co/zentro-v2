@@ -6,7 +6,6 @@ import {
   type OrganizationTab,
 } from "@/features/organization/organization-page.constants.shared";
 import { useOrganizationPage } from "@/features/organization/organization-page-context";
-import { darkSelectStyles } from "@/lib/mantine-dark";
 
 const MOBILE_TAB_DATA = [
   { value: "general", label: "General" },
@@ -36,7 +35,6 @@ export function OrganizationPageTabs({ children }: { children: ReactNode }) {
           allowDeselect={false}
           data={MOBILE_TAB_DATA}
           onChange={selectTab}
-          styles={darkSelectStyles}
           value={state.activeTab}
           w={200}
         />

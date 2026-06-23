@@ -1,6 +1,4 @@
 @import "tailwindcss";
-@import "tw-animate-css";
-@import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -43,10 +41,15 @@
   --color-sidebar-ring: var(--sidebar-ring);
 
   /* Brand Colors */
-  --color-void: #0f0f0f;
-  --color-carbon: #1c1c1c;
-  --color-photon: #ffffff;
-  --color-voltage: #dfff06;
+  --color-void: var(--mantine-color-carbon-9, #0f0f0f);
+  --color-carbon: var(--mantine-color-carbon-8, #1c1c1c);
+  --color-photon: var(--mantine-color-white, #ffffff);
+  --color-voltage: var(--mantine-color-voltage-5, #dfff06);
+  --color-voltage-hover: var(--mantine-color-voltage-6, #c7e600);
+  --color-pos-canvas: var(--zentro-color-pos-canvas, #0a0a0a);
+  --color-pos-panel: var(--zentro-color-pos-panel, #111111);
+  --color-pos-surface: var(--zentro-color-pos-surface, #151515);
+  --color-pos-muted: var(--zentro-color-pos-muted, #6b6b6b);
 }
 
 :root {

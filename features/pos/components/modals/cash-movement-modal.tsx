@@ -2,11 +2,6 @@ import { Button, Group, Modal, Select, TextInput } from "@mantine/core";
 import { usePosPage } from "@/features/pos/pos-page-context";
 import { isPosModalOpen } from "@/features/pos/pos-page-modals.shared";
 import type { CashMovementType } from "@/features/pos/types";
-import {
-  darkInputStyles,
-  darkModalStyles,
-  darkSelectStyles,
-} from "@/lib/mantine-dark";
 import { formatMoneyInput, sanitizeMoneyInput } from "@/lib/utils";
 
 const MOVEMENT_TYPE_DATA = [
@@ -24,7 +19,6 @@ export function CashMovementModal() {
       centered
       onClose={actions.closeActiveModal}
       opened={isPosModalOpen(state.activeModal, "cash-movement")}
-      styles={darkModalStyles}
       title="Movimiento del Turno"
     >
       <div className="grid gap-4 py-2">
@@ -43,7 +37,6 @@ export function CashMovementModal() {
             }
           }}
           placeholder="Tipo de Movimiento"
-          styles={darkSelectStyles}
           value={shift.movementType}
         />
 
@@ -55,7 +48,6 @@ export function CashMovementModal() {
           label="Método Afectado"
           onChange={(value) => shift.setMovementPaymentMethod(value ?? "")}
           placeholder="Método de Pago"
-          styles={darkSelectStyles}
           value={shift.movementPaymentMethod}
         />
 
@@ -66,7 +58,6 @@ export function CashMovementModal() {
             shift.setMovementAmount(sanitizeMoneyInput(e.target.value))
           }
           placeholder="0"
-          styles={darkInputStyles}
           type="text"
           value={formatMoneyInput(shift.movementAmount)}
         />
@@ -75,7 +66,6 @@ export function CashMovementModal() {
           label="Descripción"
           onChange={(e) => shift.setMovementDescription(e.target.value)}
           placeholder="Ej. Pago de internet, Base adicional..."
-          styles={darkInputStyles}
           value={shift.movementDescription}
         />
 

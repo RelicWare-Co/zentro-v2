@@ -1,6 +1,5 @@
 import { Button, Group, Modal, Stack, Text } from "@mantine/core";
 import { useSalesPage } from "@/features/sales/sales-page-context";
-import { darkModalStyles } from "@/lib/mantine-dark";
 
 export function SalesCancelDialog() {
   const { state, actions } = useSalesPage();
@@ -10,7 +9,6 @@ export function SalesCancelDialog() {
       centered
       onClose={() => actions.setCancelDialogOpen(false)}
       opened={state.isCancelDialogOpen}
-      styles={darkModalStyles}
       title="Anular venta"
     >
       <Stack gap="lg">

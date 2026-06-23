@@ -7,8 +7,6 @@ import {
   ChevronsRight,
 } from "lucide-react";
 
-import { darkSelectStyles } from "@/lib/mantine-dark";
-
 interface DataTablePaginationProps<TData> {
   pageSizeOptions?: number[];
   table: Table<TData>;
@@ -38,7 +36,6 @@ export function DataTablePagination<TData>({
               }
             }}
             size="xs"
-            styles={darkSelectStyles}
             value={`${table.getState().pagination.pageSize}`}
             w={72}
           />

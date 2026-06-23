@@ -14,11 +14,6 @@ import {
 } from "@/features/admin/admin.shared";
 import { useAdminPage } from "@/features/admin/admin-page-context";
 import { useAdminUserActions } from "@/features/admin/hooks/use-admin-user-actions";
-import {
-  darkDrawerStyles,
-  darkInputStyles,
-  darkSelectStyles,
-} from "@/lib/mantine-dark";
 import { getErrorMessage } from "@/lib/utils";
 
 function AdminUserFormSheetContent({
@@ -88,7 +83,6 @@ function AdminUserFormSheetContent({
             }
             placeholder="Ej. Juan Pérez"
             required
-            styles={darkInputStyles}
             value={form.name}
           />
           <TextInput
@@ -101,7 +95,6 @@ function AdminUserFormSheetContent({
             }
             placeholder="usuario@ejemplo.com"
             required
-            styles={darkInputStyles}
             type="email"
             value={form.email}
           />
@@ -118,7 +111,6 @@ function AdminUserFormSheetContent({
                 }
                 placeholder="Mínimo 8 caracteres"
                 required
-                styles={darkInputStyles}
                 value={form.password}
               />
               <Select
@@ -134,7 +126,6 @@ function AdminUserFormSheetContent({
                     role: (value ?? "user") as AdminRoleValue,
                   }))
                 }
-                styles={darkSelectStyles}
                 value={form.role}
               />
             </>
@@ -176,7 +167,6 @@ export function AdminUserFormSheet() {
       opened={isOpen}
       position="right"
       size={540}
-      styles={darkDrawerStyles}
       title={editingUser ? "Editar usuario" : "Crear usuario"}
     >
       <AdminUserFormSheetContent

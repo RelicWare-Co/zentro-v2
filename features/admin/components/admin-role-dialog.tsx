@@ -9,7 +9,6 @@ import {
 } from "@/features/admin/admin.shared";
 import { useAdminPage } from "@/features/admin/admin-page-context";
 import { useAdminUserActions } from "@/features/admin/hooks/use-admin-user-actions";
-import { darkModalStyles, darkSelectStyles } from "@/lib/mantine-dark";
 import { getErrorMessage } from "@/lib/utils";
 
 function AdminRoleDialogContent({ user }: { user: AdminPanelUser }) {
@@ -42,7 +41,6 @@ function AdminRoleDialogContent({ user }: { user: AdminPanelUser }) {
           label: option.label,
         }))}
         onChange={(value) => setRole((value ?? "user") as AdminRoleValue)}
-        styles={darkSelectStyles}
         value={role}
       />
       <Group justify="flex-end">
@@ -81,7 +79,6 @@ export function AdminRoleDialog() {
       centered
       onClose={actions.closeOverlay}
       opened={isOpen}
-      styles={darkModalStyles}
       title="Cambiar rol"
     >
       {user ? <AdminRoleDialogContent key={user.id} user={user} /> : null}

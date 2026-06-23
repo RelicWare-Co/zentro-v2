@@ -18,7 +18,6 @@ import {
 import { organizationDateTimeFormatter } from "@/features/organization/organization-formatters.shared";
 import { ORGANIZATION_ROLE_OPTIONS } from "@/features/organization/organization-page.constants.shared";
 import { useOrganizationPage } from "@/features/organization/organization-page-context";
-import { darkInputStyles, darkSelectStyles } from "@/lib/mantine-dark";
 import { formatOrganizationRoleLabel } from "@/lib/organization-shared";
 import { getErrorMessage } from "@/lib/utils";
 
@@ -73,7 +72,6 @@ export function InvitationsTab() {
                 onChange={(e) => setInviteEmail(e.target.value)}
                 placeholder="colaborador@ejemplo.com"
                 required
-                styles={darkInputStyles}
                 type="email"
                 value={inviteEmail}
               />
@@ -85,7 +83,6 @@ export function InvitationsTab() {
                 disabled={inviteMutation.isPending}
                 label="Rol"
                 onChange={(value) => setInviteRole(value ?? "member")}
-                styles={darkSelectStyles}
                 value={inviteRole}
               />
             </div>

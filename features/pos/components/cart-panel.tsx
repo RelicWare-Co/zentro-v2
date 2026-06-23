@@ -8,7 +8,6 @@ import {
   Zap,
 } from "lucide-react";
 
-import { darkInputStyles } from "@/lib/mantine-dark";
 import { cn } from "@/lib/utils";
 import type { PosTableSessionState } from "../pos-page-context";
 import type { CartItem, CartTotals } from "../types";
@@ -199,7 +198,6 @@ export function CartPanel({
               minRows={2}
               onChange={(event) => onDeliveryInfoChange(event.target.value)}
               placeholder="Dirección, referencia o instrucciones"
-              styles={{ label: darkInputStyles.label }}
               value={deliveryInfo}
             />
           )}

@@ -2,7 +2,6 @@ import { Button, Group, Modal, Stack, Text } from "@mantine/core";
 import { toast } from "sonner";
 import { useAdminPage } from "@/features/admin/admin-page-context";
 import { useAdminUserActions } from "@/features/admin/hooks/use-admin-user-actions";
-import { darkModalStyles } from "@/lib/mantine-dark";
 import { getErrorMessage } from "@/lib/utils";
 
 export function AdminDeleteDialog() {
@@ -30,7 +29,6 @@ export function AdminDeleteDialog() {
       centered
       onClose={actions.closeOverlay}
       opened={isOpen}
-      styles={darkModalStyles}
       title="¿Eliminar usuario?"
     >
       <Stack gap="lg">

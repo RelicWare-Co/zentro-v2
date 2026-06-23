@@ -38,7 +38,6 @@ import {
   formatCount,
   formatCurrency,
 } from "@/features/dashboard/dashboard-formatters.shared";
-import { darkDrawerStyles } from "@/lib/mantine-dark";
 import { getErrorMessage } from "@/lib/utils";
 
 const trendDayFormatter = new Intl.DateTimeFormat("es-CO", {
@@ -390,7 +389,6 @@ export function AdminOrganizationSheet() {
       opened={isOpen}
       position="right"
       size={640}
-      styles={darkDrawerStyles}
       title="Detalle de organización"
     >
       {organizationId ? (

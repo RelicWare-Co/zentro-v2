@@ -2,7 +2,6 @@ import { Select, TextInput } from "@mantine/core";
 import { ALL_FILTER_VALUE } from "@/features/listing/listing.constants.shared";
 import { ShiftsFilterField } from "@/features/shifts/components/shifts-ui-primitives";
 import { useShiftsPage } from "@/features/shifts/shifts-page-context";
-import { darkInputStyles, darkSelectStyles } from "@/lib/mantine-dark";
 
 function ShiftsAdvancedFiltersFields({
   layout,
@@ -37,7 +36,6 @@ function ShiftsAdvancedFiltersFields({
           }
           placeholder="Todos"
           size={size}
-          styles={darkSelectStyles}
           value={filters.cashierId || ALL_FILTER_VALUE}
         />
       </ShiftsFilterField>
@@ -62,7 +60,6 @@ function ShiftsAdvancedFiltersFields({
           }
           placeholder="Todas"
           size={size}
-          styles={darkSelectStyles}
           value={filters.terminalName || ALL_FILTER_VALUE}
         />
       </ShiftsFilterField>
@@ -87,7 +84,6 @@ function ShiftsAdvancedFiltersFields({
           }
           placeholder="Todos"
           size={size}
-          styles={darkSelectStyles}
           value={filters.paymentMethod || ALL_FILTER_VALUE}
         />
       </ShiftsFilterField>
@@ -111,7 +107,6 @@ function ShiftsAdvancedFiltersFields({
           }
           placeholder="Todas"
           size={size}
-          styles={darkSelectStyles}
           value={filters.differenceStatus || ALL_FILTER_VALUE}
         />
       </ShiftsFilterField>
@@ -134,7 +129,6 @@ function ShiftsAdvancedFiltersFields({
           }
           placeholder="Todos"
           size={size}
-          styles={darkSelectStyles}
           value={filters.hasMovements || ALL_FILTER_VALUE}
         />
       </ShiftsFilterField>
@@ -147,7 +141,6 @@ function ShiftsAdvancedFiltersFields({
           id={`${idPrefix}${meta.fieldIds.startDate}`}
           onChange={(event) => actions.setStartDate(event.target.value)}
           size={size}
-          styles={darkInputStyles}
           type="date"
           value={filters.startDate}
         />
@@ -161,7 +154,6 @@ function ShiftsAdvancedFiltersFields({
           id={`${idPrefix}${meta.fieldIds.endDate}`}
           onChange={(event) => actions.setEndDate(event.target.value)}
           size={size}
-          styles={darkInputStyles}
           type="date"
           value={filters.endDate}
         />

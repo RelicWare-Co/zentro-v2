@@ -2,6 +2,18 @@ import { Heart, Package } from "lucide-react";
 import { usePosPage } from "@/features/pos/pos-page-context";
 import type { Product } from "@/features/pos/types";
 import { calculatePriceWithTax, formatCurrency } from "@/features/pos/utils";
+import {
+  posV2AccentFocusRing,
+  posV2AccentHoverBorder,
+  posV2AccentSoftShadow,
+  posV2AccentText,
+  posV2IconText,
+  posV2MutedText,
+  posV2OrderBorderSubtle,
+  posV2OrderCarbonBg,
+  posV2OrderHoverSurface,
+  posV2OrderSurfaceBg,
+} from "@/features/posv2/components/pos-v2-order-styles";
 import { cn } from "@/lib/utils";
 
 export function ProductListItem({
@@ -33,17 +45,25 @@ export function ProductListItem({
       <button
         className={cn(
           "flex w-full items-center gap-3 rounded-xl border p-3 pr-12 text-left transition-all md:gap-4 md:p-4",
-          "border-[rgba(255,255,255,0.06)] bg-[#151515]",
-          "hover:border-[#dfff06]/40 hover:shadow-[0_0_20px_rgba(223,255,6,0.08)]",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#dfff06]",
+          posV2OrderBorderSubtle,
+          posV2OrderSurfaceBg,
+          posV2AccentHoverBorder,
+          posV2AccentSoftShadow,
+          posV2AccentFocusRing,
           isOutOfStock && "opacity-45"
         )}
         onClick={onSelect}
         type="button"
       >
         <div className="shrink-0">
-          <div className="flex size-10 items-center justify-center rounded-lg border border-[rgba(255,255,255,0.06)] bg-[#1c1c1c] md:h-11 md:w-11">
-            <Package className="size-4 text-[#3d3d3d] md:h-5 md:w-5" />
+          <div
+            className={cn(
+              "flex size-10 items-center justify-center rounded-lg border md:h-11 md:w-11",
+              posV2OrderBorderSubtle,
+              posV2OrderCarbonBg
+            )}
+          >
+            <Package className={cn("size-4 md:h-5 md:w-5", posV2IconText)} />
           </div>
         </div>
 
@@ -51,7 +71,12 @@ export function ProductListItem({
           <h3 className="truncate font-medium text-sm text-white md:text-[15px]">
             {product.name}
           </h3>
-          <p className="mt-0.5 font-medium text-[#6b6b6b] text-[10px] md:text-[11px]">
+          <p
+            className={cn(
+              "mt-0.5 font-medium text-[10px] md:text-[11px]",
+              posV2MutedText
+            )}
+          >
             {product.categoryName}
           </p>
           <div className="mt-0.5 flex items-center gap-2">
@@ -59,7 +84,7 @@ export function ProductListItem({
               <span
                 className={cn(
                   "font-medium text-[10px] md:text-[11px]",
-                  product.stock > 0 ? "text-[#dfff06]" : "text-red-500"
+                  product.stock > 0 ? posV2AccentText : "text-red-500"
                 )}
               >
                 {stockLabel}
@@ -80,7 +105,11 @@ export function ProductListItem({
           product.isFavorite ? "Quitar de favoritos" : "Agregar a favoritos"
         }
         aria-pressed={product.isFavorite}
-        className="absolute top-1/2 right-3 z-10 -translate-y-1/2 rounded-md p-1.5 hover:bg-[rgba(255,255,255,0.06)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#dfff06] disabled:opacity-50"
+        className={cn(
+          "absolute top-1/2 right-3 z-10 -translate-y-1/2 rounded-md p-1.5 disabled:opacity-50",
+          posV2OrderHoverSurface,
+          posV2AccentFocusRing
+        )}
         disabled={meta.isTogglingFavorite}
         onClick={(event) => {
           event.stopPropagation();
@@ -93,7 +122,7 @@ export function ProductListItem({
             "size-4 transition-colors md:h-5 md:w-5",
             product.isFavorite
               ? "fill-red-500 text-red-500"
-              : "text-[#3d3d3d] hover:text-red-400"
+              : `${posV2IconText} hover:text-red-400`
           )}
         />
       </button>

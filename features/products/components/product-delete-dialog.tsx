@@ -1,6 +1,5 @@
 import { Button, Group, Modal, Stack, Text } from "@mantine/core";
 import { useProductsPage } from "@/features/products/products-page-context";
-import { darkModalStyles } from "@/lib/mantine-dark";
 
 export function ProductDeleteDialog() {
   const { state, actions, meta } = useProductsPage();
@@ -11,7 +10,6 @@ export function ProductDeleteDialog() {
       centered
       onClose={() => actions.setProductToDelete(null)}
       opened={Boolean(state.productToDelete)}
-      styles={darkModalStyles}
       title="¿Eliminar producto?"
     >
       <Stack gap="lg">

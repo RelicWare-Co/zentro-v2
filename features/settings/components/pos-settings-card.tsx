@@ -5,7 +5,6 @@ import {
   SettingsToggleControl,
 } from "@/features/settings/components/settings-ui-primitives";
 import { useSettingsPage } from "@/features/settings/settings-page-context";
-import { darkInputStyles } from "@/lib/mantine-dark";
 import { formatMoneyInput, parseMoneyInput } from "@/lib/utils";
 
 export function PosSettingsCard() {
@@ -31,7 +30,6 @@ export function PosSettingsCard() {
           actions.updatePosField("defaultTerminalName", event.target.value)
         }
         placeholder="Ej. Caja principal"
-        styles={darkInputStyles}
         value={draftSettings.pos.defaultTerminalName}
       />
 
@@ -46,7 +44,6 @@ export function PosSettingsCard() {
           )
         }
         placeholder="0"
-        styles={darkInputStyles}
         type="text"
         value={formatMoneyInput(draftSettings.pos.defaultStartingCash)}
       />
@@ -78,7 +75,6 @@ export function PosSettingsCard() {
                       })
                     }
                     placeholder="Ej. Tarjeta débito"
-                    styles={darkInputStyles}
                     value={paymentMethod.label}
                   />
                   <p className="text-xs text-zinc-500">
@@ -124,7 +120,6 @@ export function PosSettingsCard() {
                   actions.setNewPaymentMethodLabel(event.target.value)
                 }
                 placeholder="Ej. Daviplata, QR, Zelle"
-                styles={darkInputStyles}
                 value={newPaymentMethodLabel}
               />
               <p className="text-xs text-zinc-500">

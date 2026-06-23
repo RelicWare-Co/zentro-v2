@@ -2,7 +2,6 @@ import { Button, Group, Modal, Stack, Text } from "@mantine/core";
 import { AlertTriangle } from "lucide-react";
 import { useRemoveMemberMutation } from "@/features/organization/hooks/use-organization";
 import { useOrganizationPage } from "@/features/organization/organization-page-context";
-import { darkModalStyles } from "@/lib/mantine-dark";
 import { getErrorMessage } from "@/lib/utils";
 
 interface MemberRemoveDialogProps {
@@ -43,7 +42,6 @@ export function MemberRemoveDialog({
       centered
       onClose={onOpenChange}
       opened={open}
-      styles={darkModalStyles}
       title={
         <span className="flex items-center gap-2 font-semibold text-red-200">
           <AlertTriangle className="size-5" />

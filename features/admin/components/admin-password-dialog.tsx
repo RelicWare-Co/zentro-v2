@@ -11,7 +11,6 @@ import { toast } from "sonner";
 import type { AdminPanelUser } from "@/features/admin/admin.shared";
 import { useAdminPage } from "@/features/admin/admin-page-context";
 import { useAdminUserActions } from "@/features/admin/hooks/use-admin-user-actions";
-import { darkInputStyles, darkModalStyles } from "@/lib/mantine-dark";
 import { getErrorMessage } from "@/lib/utils";
 
 function AdminPasswordDialogContent({ user }: { user: AdminPanelUser }) {
@@ -46,7 +45,6 @@ function AdminPasswordDialogContent({ user }: { user: AdminPanelUser }) {
           onChange={(event) => setNewPassword(event.target.value)}
           placeholder="Mínimo 8 caracteres"
           required
-          styles={darkInputStyles}
           value={newPassword}
         />
         <Group justify="flex-end">
@@ -86,7 +84,6 @@ export function AdminPasswordDialog() {
       centered
       onClose={actions.closeOverlay}
       opened={isOpen}
-      styles={darkModalStyles}
       title="Cambiar contraseña"
     >
       {user ? <AdminPasswordDialogContent key={user.id} user={user} /> : null}

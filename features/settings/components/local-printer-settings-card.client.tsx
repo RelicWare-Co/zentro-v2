@@ -32,7 +32,6 @@ import {
   POS_RECEIPT_PAPER_WIDTHS,
 } from "@/features/pos/printing/receipt-layout.shared";
 import { SettingsCard } from "@/features/settings/components/settings-ui-primitives";
-import { darkInputStyles, darkSelectStyles } from "@/lib/mantine-dark";
 
 function toIntegerInRange(
   value: string,
@@ -194,7 +193,6 @@ function ConnectionSettingsForm({
             }));
           }
         }}
-        styles={darkSelectStyles}
         value={settings.connectionType}
       />
 
@@ -209,7 +207,6 @@ function ConnectionSettingsForm({
             }));
           }
         }}
-        styles={darkSelectStyles}
         value={settings.language}
       />
 
@@ -222,7 +219,6 @@ function ConnectionSettingsForm({
           }))
         }
         placeholder="epson"
-        styles={darkInputStyles}
         value={settings.codepageMapping}
       />
 
@@ -240,7 +236,6 @@ function ConnectionSettingsForm({
             }));
           }
         }}
-        styles={darkSelectStyles}
         value={settings.outputMode}
       />
 
@@ -259,7 +254,6 @@ function ConnectionSettingsForm({
             }));
           }
         }}
-        styles={darkSelectStyles}
         value={settings.receiptPaperWidth}
       />
 
@@ -278,7 +272,6 @@ function ConnectionSettingsForm({
             }));
           }
         }}
-        styles={darkSelectStyles}
         value={settings.receiptFontScale}
       />
     </div>
@@ -346,7 +339,6 @@ function SerialParametersSection({
                 },
               }))
             }
-            styles={darkSelectStyles}
             value={String(settings.serial.dataBits)}
           />
           <Select
@@ -364,7 +356,6 @@ function SerialParametersSection({
                 }));
               }
             }}
-            styles={darkSelectStyles}
             value={settings.serial.parity}
           />
           <Select
@@ -382,7 +373,6 @@ function SerialParametersSection({
                 }));
               }
             }}
-            styles={darkSelectStyles}
             value={settings.serial.flowControl}
           />
           <Select
@@ -397,7 +387,6 @@ function SerialParametersSection({
                 },
               }))
             }
-            styles={darkSelectStyles}
             value={String(settings.serial.stopBits)}
           />
         </div>
@@ -472,7 +461,6 @@ function QzParametersSection({
               }))
             }
             placeholder="localhost"
-            styles={darkInputStyles}
             value={settings.qz.host}
           />
 
@@ -493,7 +481,6 @@ function QzParametersSection({
                   }))
                 }
                 placeholder="Predeterminada de QZ"
-                styles={darkSelectStyles}
                 value={settings.qz.printerName ?? ""}
               />
               <Button
@@ -754,7 +741,6 @@ function NumberField({
       label={label}
       onChange={(event) => onChange(event.target.value)}
       placeholder={placeholder}
-      styles={darkInputStyles}
       type="number"
       value={value}
     />

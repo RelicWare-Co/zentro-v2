@@ -1,7 +1,6 @@
 import { Button, Group, Modal, Textarea, TextInput } from "@mantine/core";
 import { useState } from "react";
 import { useProductsPage } from "@/features/products/products-page-context";
-import { darkInputStyles, darkModalStyles } from "@/lib/mantine-dark";
 import { getErrorMessage } from "@/lib/utils";
 
 function CategoryDialogContent({
@@ -29,7 +28,6 @@ function CategoryDialogContent({
       centered
       onClose={() => onOpenChange(false)}
       opened={open}
-      styles={darkModalStyles}
       title={category ? "Editar categoría" : "Crear categoría"}
     >
       <form
@@ -47,7 +45,6 @@ function CategoryDialogContent({
           onChange={(event) => setName(event.target.value)}
           placeholder="Ej. Bebidas"
           required
-          styles={darkInputStyles}
           value={name}
           withAsterisk
         />
@@ -56,7 +53,6 @@ function CategoryDialogContent({
           minRows={3}
           onChange={(event) => setDescription(event.target.value)}
           placeholder="Descripción opcional…"
-          styles={darkInputStyles}
           value={description}
         />
         {error ? (

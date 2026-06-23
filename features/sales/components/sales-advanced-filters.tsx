@@ -2,7 +2,6 @@ import { Select, TextInput } from "@mantine/core";
 import { ALL_FILTER_VALUE } from "@/features/listing/listing.constants.shared";
 import { SalesFilterField } from "@/features/sales/components/sales-ui-primitives";
 import { useSalesPage } from "@/features/sales/sales-page-context";
-import { darkInputStyles, darkSelectStyles } from "@/lib/mantine-dark";
 import { formatMoneyInput, sanitizeMoneyInput } from "@/lib/utils";
 
 function SalesAdvancedFiltersFields({
@@ -38,7 +37,6 @@ function SalesAdvancedFiltersFields({
           }
           placeholder="Todos"
           size={size}
-          styles={darkSelectStyles}
           value={filters.paymentMethod || ALL_FILTER_VALUE}
         />
       </SalesFilterField>
@@ -63,7 +61,6 @@ function SalesAdvancedFiltersFields({
           }
           placeholder="Todos"
           size={size}
-          styles={darkSelectStyles}
           value={filters.cashierId || ALL_FILTER_VALUE}
         />
       </SalesFilterField>
@@ -88,7 +85,6 @@ function SalesAdvancedFiltersFields({
           }
           placeholder="Todas"
           size={size}
-          styles={darkSelectStyles}
           value={filters.terminalName || ALL_FILTER_VALUE}
         />
       </SalesFilterField>
@@ -111,7 +107,6 @@ function SalesAdvancedFiltersFields({
           }
           placeholder="Todos"
           size={size}
-          styles={darkSelectStyles}
           value={filters.balanceStatus || ALL_FILTER_VALUE}
         />
       </SalesFilterField>
@@ -129,7 +124,6 @@ function SalesAdvancedFiltersFields({
           }
           placeholder="Ej. 5.000…"
           size={size}
-          styles={darkInputStyles}
           type="text"
           value={formatMoneyInput(filters.amountMin)}
         />
@@ -148,7 +142,6 @@ function SalesAdvancedFiltersFields({
           }
           placeholder="Ej. 25.000…"
           size={size}
-          styles={darkInputStyles}
           type="text"
           value={formatMoneyInput(filters.amountMax)}
         />
@@ -178,7 +171,6 @@ function SalesAdvancedFiltersFields({
               id={`${idPrefix}${meta.fieldIds.startDate}`}
               onChange={(event) => actions.setStartDate(event.target.value)}
               size={size}
-              styles={darkInputStyles}
               type="date"
               value={filters.startDate}
             />
@@ -192,7 +184,6 @@ function SalesAdvancedFiltersFields({
               id={`${idPrefix}${meta.fieldIds.endDate}`}
               onChange={(event) => actions.setEndDate(event.target.value)}
               size={size}
-              styles={darkInputStyles}
               type="date"
               value={filters.endDate}
             />

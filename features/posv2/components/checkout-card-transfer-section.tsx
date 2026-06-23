@@ -1,7 +1,10 @@
 import { TextInput } from "@mantine/core";
 import { useId } from "react";
 import { usePosPage } from "@/features/pos/pos-page-context";
-import { posV2OrderInputClassName } from "@/features/posv2/components/pos-v2-order-styles";
+import {
+  posV2MutedText,
+  posV2OrderInputClassName,
+} from "@/features/posv2/components/pos-v2-order-styles";
 import { cn, formatMoneyInput, sanitizeMoneyInput } from "@/lib/utils";
 
 export function CardTransferCheckoutSection() {
@@ -16,7 +19,7 @@ export function CardTransferCheckoutSection() {
     <div className="space-y-2">
       <div>
         <label
-          className="mb-1.5 block font-medium text-[#6b6b6b] text-xs"
+          className={cn("mb-1.5 block font-medium text-xs", posV2MutedText)}
           htmlFor={`${amountReceivedId}-amount`}
         >
           Monto

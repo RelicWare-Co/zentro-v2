@@ -11,7 +11,6 @@ import {
   salesDateTimeFormatter,
 } from "@/features/sales/sales-formatters.shared";
 import { useSalesPage } from "@/features/sales/sales-page-context";
-import { darkSelectStyles } from "@/lib/mantine-dark";
 
 export function SalesListPanel() {
   const { state, actions, meta } = useSalesPage();
@@ -143,7 +142,6 @@ export function SalesListPanel() {
                   }
                 }}
                 size="xs"
-                styles={darkSelectStyles}
                 value={`${state.pageSize}`}
                 w={70}
               />

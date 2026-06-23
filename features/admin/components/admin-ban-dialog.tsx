@@ -17,11 +17,6 @@ import {
 } from "@/features/admin/admin.shared";
 import { useAdminPage } from "@/features/admin/admin-page-context";
 import { useAdminUserActions } from "@/features/admin/hooks/use-admin-user-actions";
-import {
-  darkInputStyles,
-  darkModalStyles,
-  darkSelectStyles,
-} from "@/lib/mantine-dark";
 import { getErrorMessage } from "@/lib/utils";
 
 function AdminBanDialogContent({ user }: { user: AdminPanelUser }) {
@@ -63,14 +58,12 @@ function AdminBanDialogContent({ user }: { user: AdminPanelUser }) {
           onChange={(value) =>
             setDuration((value ?? "permanent") as AdminBanDurationValue)
           }
-          styles={darkSelectStyles}
           value={duration}
         />
         <Textarea
           label="Motivo (opcional)"
           onChange={(event) => setBanReason(event.target.value)}
           placeholder="Ej. Uso indebido de la cuenta"
-          styles={darkInputStyles}
           value={banReason}
         />
         <Group justify="flex-end">
@@ -106,7 +99,6 @@ export function AdminBanDialog() {
       centered
       onClose={actions.closeOverlay}
       opened={isOpen}
-      styles={darkModalStyles}
       title="Suspender usuario"
     >
       {user ? <AdminBanDialogContent key={user.id} user={user} /> : null}

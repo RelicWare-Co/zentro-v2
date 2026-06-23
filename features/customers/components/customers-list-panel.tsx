@@ -5,7 +5,6 @@ import { TableCell, TableHead, TableRow } from "@/components/ui/table";
 import { VirtualTable } from "@/components/ui/virtual-table";
 import { formatCustomerDocumentLabel } from "@/features/customers/customers-formatters.shared";
 import { useCustomersPage } from "@/features/customers/customers-page-context";
-import { darkInputStyles } from "@/lib/mantine-dark";
 
 export function CustomersListPanel() {
   const { state, actions } = useCustomersPage();
@@ -22,7 +21,6 @@ export function CustomersListPanel() {
           rightSection={
             state.isSearching ? <Loader color="gray" size="xs" /> : null
           }
-          styles={darkInputStyles}
           value={state.searchQuery}
         />
       </div>

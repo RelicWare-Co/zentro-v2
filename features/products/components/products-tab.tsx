@@ -8,7 +8,6 @@ import {
   UNCATEGORIZED_FILTER_VALUE,
 } from "@/features/products/products-page.constants.shared";
 import { useProductsPage } from "@/features/products/products-page-context";
-import { darkInputStyles, darkSelectStyles } from "@/lib/mantine-dark";
 
 const STOCK_FILTER_LABELS: Record<ProductStockFilterValue, string> = {
   all: "Todos los estados",
@@ -28,7 +27,6 @@ export function ProductsTab() {
             leftSection={<Search className="size-4 text-zinc-500" />}
             onChange={(event) => actions.setQuery(event.target.value)}
             placeholder="Buscar por nombre, SKU o código..."
-            styles={darkInputStyles}
             value={state.filters.query}
           />
         </div>
@@ -48,7 +46,6 @@ export function ProductsTab() {
             }
           }}
           placeholder="Todas las categorías"
-          styles={darkSelectStyles}
           value={state.filters.categoryFilter}
         />
         <Select
@@ -63,7 +60,6 @@ export function ProductsTab() {
             }
           }}
           placeholder="Estado de stock"
-          styles={darkSelectStyles}
           value={state.filters.stockFilter}
         />
         {state.isBarcodeScannerConnected ? (

@@ -2,7 +2,6 @@ import { Button, Select, TextInput } from "@mantine/core";
 import { Plus, XIcon } from "lucide-react";
 import { useId, useRef } from "react";
 import { usePosPage } from "@/features/pos/pos-page-context";
-import { darkSelectStyles } from "@/lib/mantine-dark";
 import { cn, formatMoneyInput, sanitizeMoneyInput } from "@/lib/utils";
 
 const paymentFieldClassName =
@@ -101,7 +100,6 @@ export function CheckoutPaymentsSection({
                     actions.updatePayment(index, "method", value ?? "")
                   }
                   placeholder="Método"
-                  styles={darkSelectStyles}
                   value={payment.method}
                 />
 

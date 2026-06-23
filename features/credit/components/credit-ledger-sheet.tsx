@@ -9,7 +9,6 @@ import {
   getCreditTransactionTypeBadgeClass,
 } from "@/features/credit/credit-formatters.shared";
 import { useCreditPage } from "@/features/credit/credit-page-context";
-import { darkDrawerStyles } from "@/lib/mantine-dark";
 
 function CreditLedgerTransactions() {
   const { meta } = useCreditPage();
@@ -85,7 +84,6 @@ export function CreditLedgerSheet() {
       opened={isOpen}
       position="right"
       size={640}
-      styles={darkDrawerStyles}
       title="Historial de crédito"
     >
       <div className="flex h-full flex-col">

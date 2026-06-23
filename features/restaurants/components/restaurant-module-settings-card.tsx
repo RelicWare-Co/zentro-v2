@@ -11,7 +11,6 @@ import {
   useUpdateRestaurantTableMutation,
 } from "@/features/restaurants/hooks/use-restaurants";
 import type { OrganizationSettings } from "@/features/settings/settings.shared";
-import { darkInputStyles } from "@/lib/mantine-dark";
 
 interface RestaurantModuleSettingsCardProps {
   canManageSettings: boolean;
@@ -237,7 +236,6 @@ export function RestaurantModuleSettingsCard(
               name="new-area-name"
               onChange={(event) => setNewAreaName(event.target.value)}
               placeholder="Ej. Salón, Terraza, Barra…"
-              styles={darkInputStyles}
               value={newAreaName}
             />
             <Button
@@ -351,7 +349,6 @@ export function RestaurantModuleSettingsCard(
                       }))
                     }
                     placeholder="Nueva mesa…"
-                    styles={darkInputStyles}
                     value={newTableDrafts[area.id]?.name ?? ""}
                   />
                   <TextInput
@@ -369,7 +366,6 @@ export function RestaurantModuleSettingsCard(
                       }))
                     }
                     placeholder="Puestos"
-                    styles={darkInputStyles}
                     type="number"
                     value={newTableDrafts[area.id]?.seats ?? ""}
                   />

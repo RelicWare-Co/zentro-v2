@@ -2,7 +2,6 @@ import { Button, Select } from "@mantine/core";
 import { LIST_PAGE_SIZE_OPTIONS } from "@/features/listing/listing.constants.shared";
 import { ShiftListItemCard } from "@/features/shifts/components/shift-list-item";
 import { useShiftsPage } from "@/features/shifts/shifts-page-context";
-import { darkSelectStyles } from "@/lib/mantine-dark";
 
 function ShiftsListContent() {
   const { state, meta } = useShiftsPage();
@@ -79,7 +78,6 @@ export function ShiftsListPanel() {
                 }
               }}
               size="xs"
-              styles={darkSelectStyles}
               value={`${state.pageSize}`}
               w={70}
             />

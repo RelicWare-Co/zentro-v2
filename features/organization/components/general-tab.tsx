@@ -13,7 +13,6 @@ import {
 } from "@/features/organization/hooks/use-organization";
 import { organizationDateFormatter } from "@/features/organization/organization-formatters.shared";
 import { useOrganizationPage } from "@/features/organization/organization-page-context";
-import { darkInputStyles } from "@/lib/mantine-dark";
 import { formatOrganizationRoleLabel } from "@/lib/organization-shared";
 import { getErrorMessage } from "@/lib/utils";
 
@@ -83,7 +82,6 @@ export function GeneralTab() {
                 label="Nombre"
                 onChange={(e) => setEditName(e.target.value)}
                 placeholder="Ej. Tienda Principal"
-                styles={darkInputStyles}
                 value={editName}
               />
               <TextInput
@@ -95,7 +93,6 @@ export function GeneralTab() {
                   )
                 }
                 placeholder="tienda-principal"
-                styles={darkInputStyles}
                 value={editSlug}
               />
             </div>

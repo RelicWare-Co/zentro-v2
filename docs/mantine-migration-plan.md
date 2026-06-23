@@ -1,19 +1,21 @@
 # Plan de migración shadcn → Mantine
 
-> **Estado:** Migración funcional completa (rama `feat/mantine-migration`); pendiente verificación visual.
-> **Decisiones del usuario:** migración **incremental por feature**; el eje **Tailwind (eliminar vs. coexistir)** se decide tras un POC comparativo.
-> **Stack relevante:** React 19, Vike (`ssr: false`, client-rendered), Tailwind v4, Mantine **9.3.2** instalado.
+> **Estado:** Migración funcional completa; documentación y convenciones futuras actualizadas.
+> **Decisión final:** Mantine es el sistema de componentes y theme. Tailwind v4 coexiste como capa utilitaria/layout y aliases de tokens legacy.
+> **Stack relevante:** React 19, Vike (`ssr: false`, client-rendered), Mantine **9.3.2**, Tailwind v4.
 
 ## Registro de progreso
 
-- **Fase 1 (fundación) — ✅** `MantineProvider` (forceColorScheme light) en `pages/+Layout.tsx`,
-  `lib/mantine-theme.ts` (escalas `voltage`/`carbon`, radius 0.625rem), `postcss.config.cjs`
+- **Fase 1 (fundación) — ✅** `MantineProvider` (`forceColorScheme="light"`) en `pages/+Layout.tsx`,
+  `lib/mantine-theme.ts` (escalas `voltage`/`carbon`, radius 0.625rem, overrides `theme.components`,
+  `mantineCssVariablesResolver`), `postcss.config.cjs`
   con `postcss-preset-mantine` (pipeline propio, separado de `@tailwindcss/vite`).
   `@mantine/core/styles.css` importado antes de `tailwind.css`.
 - **Decisión del eje — Modalidad A (coexistencia).** El POC de `customers` confirmó que Mantine
   (estructura/comportamiento) + Tailwind (layout/spacing) conviven sin conflicto de reset en
-  build. El tema dark (void/carbon/voltage) se preserva con overrides `styles` centralizados en
-  `lib/mantine-dark.ts` (darkInput/Select/Drawer/Modal). Se mantiene `sonner` por ahora.
+  build. Los estilos oscuros puntuales de superficies POS/modales se preservan con overrides
+  centralizados en `lib/mantine-theme.ts` (`theme.components`, `classNames`, `styles`).
+  Se mantiene `sonner` por ahora.
 - **Fase 3 — ✅ completa.** Todas las features del plan migradas a Mantine (Modalidad A):
   `customers`, `credit`, `restaurants`, `auth` (no-op: 100% Tailwind), `settings`, `products`,
   `organization`, `dashboard` (charts siguen en recharts), `pos`/`posv2` (flujo crítico).
@@ -24,16 +26,20 @@
   móvil → Mantine `Drawer position="bottom"`; `Button asChild`+Link → `Button component={Link}`.
 
 - **Features fuera de la tabla del plan — ✅** `shifts`, `sales`, `admin` migradas (mismos patrones).
-  `admin` mantiene el `Table` shadcn por dentro (era el único punto pendiente, ver abajo);
+  `admin` mantiene un helper local de tabla por dentro (era el único punto pendiente, ver abajo);
   `dropdown-menu`→`Menu` de Mantine en `admin-users-table`.
 - **Misceláneos — ✅** `zero-connection-boundary` (Button) y `data-table-pagination`
   (ActionIcon/Select) migrados a Mantine.
 - **Fase 6 (limpieza) — ✅** Eliminados **58** archivos `components/ui/*` muertos (cierre verificado
   por closure desde el código vivo). `sidebar.tsx` resultó ser **código muerto**: el layout real
   (`app-layout.tsx`) ya era Tailwind puro, así que **no hizo falta** el rebuild a `AppShell`.
-  Deps removidas: `radix-ui`, `cmdk`, `vaul`, `react-day-picker`, `embla-carousel-react`,
-  `input-otp`, `class-variance-authority`, `react-resizable-panels`, `recharts` (sin uso real),
-  más `components.json`. El árbol de UI vivo es ahora **100% Mantine + Tailwind**.
+  Deps removidas: `shadcn`, `@base-ui/react`, `radix-ui`, `cmdk`, `vaul`, `react-day-picker`,
+  `embla-carousel-react`, `input-otp`, `class-variance-authority`, `react-resizable-panels`,
+  `tw-animate-css`, imports `shadcn/tailwind.css`, imports `tw-animate-css`, y `components.json`.
+  El árbol de UI vivo es ahora **Mantine + Tailwind**.
+- **Fase 7 (documentación/convenios) — ✅** `AGENTS.md`, `README.md` y este plan documentan que
+  Mantine reemplaza a shadcn como sistema de UI. `components/ui` queda solo para helpers locales
+  vivos y no debe usarse como registry/generador shadcn.
 
 ### Pendiente
 - **Helpers locales sin deps externas (se conservan):** `components/ui/{table, virtual-table,
@@ -44,14 +50,44 @@
   fidelidad visual primero).
 - **Verificación visual pendiente:** todo se validó de forma estática (tsc + ultracite + `vike build`).
   Falta un pase visual + `bun run e2e:playwright:smoke` antes de mergear.
-- **Patrones establecidos:** `lib/mantine-dark.ts` (darkInput/Select/Drawer/Modal); `Card`/`CardHeader`
+- **Patrones establecidos:** `lib/mantine-theme.ts` centraliza `brandColors`, `brandColorCssVars`,
+  `mantineTheme`, `mantineCssVariablesResolver` y overrides de `theme.components`; `Card`/`CardHeader`
   shadcn → contenedor Tailwind o helper local (`SettingsCard`); `Dialog`→`Modal`, `Sheet`→`Drawer`,
   `Select` shadcn→`Select` Mantine (`data`), `Switch.onCheckedChange`→`onChange(e.currentTarget.checked)`,
   `Tabs`→`Tabs` Mantine, `Empty`→div, `Button asChild`→`component="a"`, `Badge tt="none"`.
   La capa de primitivas (Fase 2a) se descarta — la migración directa por feature resulta más fiel
   porque cada feature pasa estilos de marca propios vía `className`/`styles`.
 
-## 1. Diagnóstico (medido sobre el repo)
+## Convenciones futuras
+
+- **Mantine primero.** Para nueva UI, usa componentes de `@mantine/core` y configura comportamiento
+  visual compartido en `lib/mantine-theme.ts`. No generes nuevos primitivos shadcn ni reintroduzcas
+  `components.json`, el script `shadcn`, `@base-ui/react`, `tw-animate-css`, `shadcn/tailwind.css`
+  o imports de `tw-animate-css`.
+- **Provider único.** `pages/+Layout.tsx` monta `MantineProvider` con `theme={mantineTheme}`,
+  `cssVariablesResolver={mantineCssVariablesResolver}` y `forceColorScheme="light"`. Mantine
+  components deben renderizar dentro de ese provider.
+- **Theme y Styles API.** Usa `createTheme`, `theme.components` y `Component.extend` para defaults
+  globales. Para ajustes locales usa props Mantine (`className`, `classNames`, `style`, `styles`)
+  y los selectores documentados de Styles API. Las props `styles` sirven para objetos inline;
+  usa `classNames`/CSS cuando necesites pseudo-clases, media queries o estados complejos.
+- **CSS variables públicas.** Define variables propias mediante `mantineCssVariablesResolver`
+  cuando deban salir del theme hacia CSS global/Tailwind. No dependas de variables privadas de
+  Mantine (`--_*`): son API interna y pueden cambiar o desaparecer en releases menores/parches.
+- **Tailwind en coexistencia.** Tailwind v4 queda para layout, spacing, sizing, responsive utilities
+  y aliases de tokens legacy. `pages/tailwind.css` mapea `--color-*` a variables Mantine/Zentro con
+  fallback porque `desktop/src/renderer/styles.css` lo importa sin `MantineProvider`.
+- **`components/ui` no es shadcn.** Solo conserva helpers locales cross-cutting todavía vivos
+  (`table`, `virtual-table`, `virtual-list`, `data-table-pagination`, `sonner`). Nuevos componentes
+  compartidos deben preferir Mantine; si un helper local sigue siendo necesario, documenta por qué
+  no encaja como composición directa de Mantine.
+- **`cn()` sigue existiendo.** `tailwind-merge`, `clsx` y `cn()` permanecen por helpers locales y
+  composición condicional de clases. No los elimines como parte de la limpieza shadcn.
+
+## 1. Diagnóstico histórico
+
+Esta sección conserva el snapshot inicial que guio la migración. Para trabajo nuevo, la fuente
+vigente es `Convenciones futuras` y el registro de progreso de arriba.
 
 | Métrica | Valor |
 | --- | --- |
@@ -87,7 +123,10 @@
 
 > **POC (Fase 0):** migrar `customers` en Modalidad A + reescribir un formulario en Modalidad B, correr ambos y comparar antes de comprometer el eje.
 
-## 3. Fases
+## 3. Fases históricas
+
+Las fases siguientes documentan cómo se ejecutó la migración. No deben leerse como instrucciones
+para crear UI nueva.
 
 ### Fase 0 — POC y decisión
 - Rama `poc/mantine-customers`. Instalar Mantine, montar provider/theme.
@@ -132,11 +171,17 @@ Por cada feature: migrar componentes → reescribir classNames según modalidad 
 - **`command` (cmdk) → Spotlight/Combobox**, **`input-otp` → PinInput**, **`drawer` (vaul) → Drawer**, **`resizable`:** mantener `react-resizable-panels` (Mantine no tiene equivalente).
 
 ### Fase 5 — Ejecución del eje Tailwind
-- Si **Tailwind-out:** barrido feature por feature de los `className` restantes → props/CSS Modules; mover tokens de marca; eliminar `tailwindcss`, `tw-animate-css`, `@tailwindcss/vite`, `tailwind-merge`, `class-variance-authority`, `clsx` y `cn()`.
-- Si **Coexistencia:** mantener Tailwind solo para layout; documentar la frontera (Mantine = componentes, Tailwind = spacing/grid).
+- **Decisión ejecutada: Coexistencia.** Mantine = componentes, theme y Styles API. Tailwind = layout,
+  spacing/grid/sizing, responsive utilities y aliases de tokens legacy.
+- `tailwind-merge`, `clsx` y `cn()` se conservan mientras existan helpers locales y composición
+  condicional de clases.
 
 ### Fase 6 — Limpieza y deps
-Eliminar según alcance: `shadcn`, `radix-ui`, `@base-ui/react`, `cmdk`, `vaul`, `sonner`, `input-otp`, `react-day-picker`, `embla-carousel-react`, `class-variance-authority`, `tailwind-merge`, `cn()` y los 63 archivos `components/ui`. Borrar `components.json` y el script `shadcn`. Actualizar `AGENTS.md` (sección UI) y este doc a "completado".
+Completado: eliminados `shadcn`, `@base-ui/react`, `radix-ui`, `cmdk`, `vaul`, `input-otp`,
+`react-day-picker`, `embla-carousel-react`, `class-variance-authority`, `tw-animate-css`,
+imports `shadcn/tailwind.css`, imports `tw-animate-css`, `components.json` y el script `shadcn`.
+Se conservan `sonner`, `tailwind-merge`, `clsx`, `cn()` y helpers locales vivos bajo
+`components/ui`.
 
 ## 4. Riesgos
 - **Conflicto de reset CSS** Tailwind preflight ↔ Mantine: validar en Fase 1; puede requerir desactivar preflight o aislar capas.
@@ -154,13 +199,17 @@ Eliminar según alcance: `shadcn`, `radix-ui`, `@base-ui/react`, `cmdk`, `vaul`,
 - **Total orientativo:** 3–5 semanas de trabajo enfocado en Tailwind-out; ~2–3 en coexistencia.
 
 ## 6. Checklist por feature
-1. [ ] Mapear componentes shadcn usados → Mantine (ver tabla §7).
-2. [ ] Migrar imports/JSX de componentes.
-3. [ ] Resolver `className` según modalidad.
-4. [ ] Portar lógica de formularios a `@mantine/form` si aplica.
-5. [ ] `bunx tsc --noEmit` + `bun run check`.
+
+Checklist histórico usado durante la migración. Antes de mergear esta rama todavía falta el pase
+visual/smoke indicado abajo y el commit final de los cambios actuales.
+
+1. [x] Mapear componentes shadcn usados → Mantine (ver tabla §7).
+2. [x] Migrar imports/JSX de componentes.
+3. [x] Resolver `className` según modalidad.
+4. [x] Portar lógica de formularios a `@mantine/form` si aplica.
+5. [x] `bunx tsc --noEmit` + `bun run check`.
 6. [ ] Verificación visual + `bun run e2e:playwright:smoke`.
-7. [ ] Commit por feature (rama incremental).
+7. [ ] Commit final de la rama antes de mergear.
 
 ## 7. Mapeo de componentes (shadcn → Mantine)
 

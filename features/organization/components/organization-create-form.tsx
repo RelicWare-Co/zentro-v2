@@ -2,7 +2,6 @@ import { Button, TextInput } from "@mantine/core";
 import { Plus } from "lucide-react";
 import { OrgCard } from "@/features/organization/components/organization-ui-primitives";
 import { useOrganizationSelectionPage } from "@/features/organization/organization-selection-context";
-import { darkInputStyles } from "@/lib/mantine-dark";
 
 export function OrganizationCreateForm() {
   const { state, actions, meta } = useOrganizationSelectionPage();
@@ -22,7 +21,6 @@ export function OrganizationCreateForm() {
         name="organizationName"
         onChange={(event) => actions.setNewOrgName(event.target.value)}
         placeholder="Ej. Tienda Principal..."
-        styles={darkInputStyles}
         value={state.newOrgName}
       />
       <div>
@@ -34,7 +32,6 @@ export function OrganizationCreateForm() {
           name="organizationSlug"
           onChange={(event) => actions.setNewOrgSlug(event.target.value)}
           placeholder="tienda-principal"
-          styles={darkInputStyles}
           value={state.newOrgSlug}
         />
         <p className="mt-1 text-xs text-zinc-500">

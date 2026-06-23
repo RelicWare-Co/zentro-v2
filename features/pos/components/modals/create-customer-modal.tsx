@@ -1,11 +1,6 @@
 import { Button, Group, Modal, Select, TextInput } from "@mantine/core";
 import { usePosPage } from "@/features/pos/pos-page-context";
 import { isPosModalOpen } from "@/features/pos/pos-page-modals.shared";
-import {
-  darkInputStyles,
-  darkModalStyles,
-  darkSelectStyles,
-} from "@/lib/mantine-dark";
 
 const DOCUMENT_TYPE_DATA = [
   { value: "CC", label: "CC" },
@@ -23,7 +18,6 @@ export function CreateCustomerModal() {
       centered
       onClose={actions.closeActiveModal}
       opened={isPosModalOpen(state.activeModal, "create-customer")}
-      styles={darkModalStyles}
       title="Crear cliente rápido"
     >
       <div className="space-y-4 py-2">
@@ -33,7 +27,6 @@ export function CreateCustomerModal() {
             createCustomerModal.setNewCustomerName(event.target.value)
           }
           placeholder="Nombre del cliente"
-          styles={darkInputStyles}
           value={createCustomerModal.newCustomerName}
         />
 
@@ -43,7 +36,6 @@ export function CreateCustomerModal() {
             createCustomerModal.setNewCustomerPhone(event.target.value)
           }
           placeholder="Opcional"
-          styles={darkInputStyles}
           value={createCustomerModal.newCustomerPhone}
         />
 
@@ -55,7 +47,6 @@ export function CreateCustomerModal() {
               createCustomerModal.setNewCustomerDocumentType(value ?? "")
             }
             placeholder="Tipo doc"
-            styles={darkSelectStyles}
             value={createCustomerModal.newCustomerDocumentType}
           />
 
@@ -67,7 +58,6 @@ export function CreateCustomerModal() {
               )
             }
             placeholder="Opcional"
-            styles={darkInputStyles}
             value={createCustomerModal.newCustomerDocumentNumber}
           />
         </div>

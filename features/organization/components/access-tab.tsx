@@ -13,7 +13,6 @@ import {
 } from "@/features/organization/hooks/use-organization";
 import { organizationDateTimeFormatter } from "@/features/organization/organization-formatters.shared";
 import { useOrganizationPage } from "@/features/organization/organization-page-context";
-import { darkInputStyles, darkSelectStyles } from "@/lib/mantine-dark";
 import {
   isJoinLinkActive,
   JOIN_LINK_EXPIRY_OPTIONS,
@@ -104,7 +103,6 @@ export function AccessTab() {
                   name="joinLinkLabel"
                   onChange={(event) => setJoinLinkLabel(event.target.value)}
                   placeholder="Ej. Sucursal centro"
-                  styles={darkInputStyles}
                   value={joinLinkLabel}
                 />
                 <Select
@@ -117,7 +115,6 @@ export function AccessTab() {
                   label="Vigencia"
                   onChange={(value) => setExpiresInDays(value ?? "7")}
                   placeholder="Selecciona"
-                  styles={darkSelectStyles}
                   value={expiresInDays}
                 />
               </div>
@@ -141,11 +138,7 @@ export function AccessTab() {
               <p className="font-medium text-sm text-white">
                 Último enlace generado
               </p>
-              <TextInput
-                readOnly
-                styles={darkInputStyles}
-                value={latestJoinUrl}
-              />
+              <TextInput readOnly value={latestJoinUrl} />
             </div>
           ) : null}
         </OrgCard>

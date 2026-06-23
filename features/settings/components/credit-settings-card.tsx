@@ -5,7 +5,6 @@ import {
   SettingsToggleRow,
 } from "@/features/settings/components/settings-ui-primitives";
 import { useSettingsPage } from "@/features/settings/settings-page-context";
-import { darkInputStyles } from "@/lib/mantine-dark";
 
 export function CreditSettingsCard() {
   const { actions, state } = useSettingsPage();
@@ -40,7 +39,6 @@ export function CreditSettingsCard() {
           })
         }
         placeholder="0"
-        styles={darkInputStyles}
         type="number"
         value={draftSettings.credit.defaultInterestRate}
       />

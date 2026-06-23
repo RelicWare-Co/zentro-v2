@@ -15,7 +15,6 @@ import type {
   RestaurantTableDetail,
 } from "@/features/restaurants/restaurants.shared";
 import { getOrderItemStatusLabel } from "@/features/restaurants/restaurants-ui.shared";
-import { darkInputStyles } from "@/lib/mantine-dark";
 
 interface Product {
   categoryName: string;
@@ -300,7 +299,6 @@ export function RestaurantServiceView({
                   }
                   onChange={(event) => onSearchChange(event.target.value)}
                   placeholder="Buscar producto…"
-                  styles={darkInputStyles}
                   value={searchQuery}
                 />
               </div>
@@ -314,7 +312,6 @@ export function RestaurantServiceView({
                   })),
                 ]}
                 onChange={(event) => onCategoryChange(event.target.value)}
-                styles={darkInputStyles}
                 value={activeCategoryId}
               />
             </div>
@@ -364,7 +361,6 @@ export function RestaurantServiceView({
                 min={0}
                 onChange={(event) => onGuestCountChange(event.target.value)}
                 placeholder="2"
-                styles={darkInputStyles}
                 type="number"
                 value={guestCountInput}
               />
@@ -374,7 +370,6 @@ export function RestaurantServiceView({
                 label="Notas"
                 onChange={(event) => onNotesChange(event.target.value)}
                 placeholder="Preferencias, alergias, celebración…"
-                styles={darkInputStyles}
                 value={orderNotes}
               />
               <Button
@@ -447,7 +442,6 @@ export function RestaurantServiceView({
                       onChange={(event) =>
                         onPaymentMethodChange(event.target.value)
                       }
-                      styles={darkInputStyles}
                       value={paymentMethod}
                     />
                     <TextInput
@@ -457,7 +451,6 @@ export function RestaurantServiceView({
                         onPaymentReferenceChange(event.target.value)
                       }
                       placeholder="Voucher, transferencia…"
-                      styles={darkInputStyles}
                       value={paymentReference}
                     />
                     <Button
