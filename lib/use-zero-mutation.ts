@@ -1,5 +1,6 @@
 import { useZero } from "@rocicorp/zero/react";
 import { type UseMutationOptions, useMutation } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 export type ZeroMutationDetails =
   | { readonly type: "success" }
@@ -25,10 +26,13 @@ export async function waitForZeroMutation(result: ZeroMutationResult) {
     throw toZeroMutationError(clientResult);
   }
 
-  const serverResult = await result.server;
-  if (serverResult.type === "error") {
-    throw toZeroMutationError(serverResult);
-  }
+  result.server.then((serverResult) => {
+    if (serverResult.type === "error") {
+      toast.error("El servidor rechazó el cambio", {
+        description: serverResult.error.message || "Zero revertirá el cambio.",
+      });
+    }
+  });
 }
 
 export function getZeroQueryError(status: {
