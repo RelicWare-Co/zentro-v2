@@ -41,6 +41,14 @@ if (typeof globalThis.document === "undefined") {
 
   const state = { html: "" };
 
+  function createTestElement() {
+    return {
+      innerHTML: "",
+      appendChild: () => undefined,
+      querySelector: () => null,
+    };
+  }
+
   const body = {
     get innerHTML() {
       return state.html;
@@ -50,8 +58,13 @@ if (typeof globalThis.document === "undefined") {
     },
   };
 
+  const head = {
+    appendChild: () => undefined,
+  };
+
   Object.defineProperty(globalThis, "document", {
     value: {
+      head,
       get body() {
         return body;
       },
@@ -60,7 +73,8 @@ if (typeof globalThis.document === "undefined") {
         return querySelectorIn(elements, selector);
       },
       documentElement: body,
-      createElement: () => ({ innerHTML: "", querySelector: () => null }),
+      createElement: createTestElement,
+      createTextNode: () => ({}),
     },
     writable: true,
     configurable: true,

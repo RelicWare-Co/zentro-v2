@@ -67,6 +67,7 @@
     "dev:docker:down": "docker compose -f docker-compose.yml -f docker-compose.dev.yml down",
     "dev:docker:install": "docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm app bun install",
     "dev:docker:reset": "docker compose -f docker-compose.yml -f docker-compose.dev.yml down -v && docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build -V",
+    "docker:publish": "./scripts/publish-ghcr.sh",
     "build": "vike build",
     "start": "bun ./dist/server/index.mjs",
     "preview": "vike build && vike preview",
