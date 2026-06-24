@@ -1,5 +1,13 @@
 import { useVirtualizer, type VirtualItem } from "@tanstack/react-virtual";
-import { type CSSProperties, type ReactNode, useRef } from "react";
+import {
+  type ComponentType,
+  type CSSProperties,
+  memo,
+  type ReactNode,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
 import { cn } from "@/lib/utils";
 
 const virtualListOuterStyle: CSSProperties = {
@@ -20,15 +28,15 @@ interface VirtualListRowProps<T> {
   data: T[];
   estimateSize: number;
   measureElement: (node: Element | null) => void;
-  renderItem: (item: T, index: number) => ReactNode;
+  RowComponent: ComponentType<{ data: T; index: number }>;
   virtualRow: VirtualItem;
 }
 
-function VirtualListRow<T>({
+const VirtualListRow = memo(function VirtualListRow<T>({
   data,
   estimateSize,
   measureElement,
-  renderItem,
+  RowComponent,
   virtualRow,
 }: VirtualListRowProps<T>) {
   const item = data[virtualRow.index];
@@ -43,10 +51,10 @@ function VirtualListRow<T>({
       ref={measureElement}
       style={{ minHeight: estimateSize }}
     >
-      {renderItem(item, virtualRow.index)}
+      <RowComponent data={item} index={virtualRow.index} />
     </div>
   );
-}
+}) as <T>(props: VirtualListRowProps<T>) => ReactNode;
 
 interface VirtualListProps<T> {
   className?: string;
@@ -57,12 +65,13 @@ interface VirtualListProps<T> {
   getItemKey?: (item: T, index: number) => string;
   innerClassName?: string;
   overscan?: number;
-  renderItem: (item: T, index: number) => ReactNode;
+  /** Component rendered per row. Receives `data` (the item) and `index`. */
+  RowComponent: ComponentType<{ data: T; index: number }>;
 }
 
 export function VirtualList<T>({
   data,
-  renderItem,
+  RowComponent,
   getItemKey,
   estimateSize = 64,
   overscan = 5,
@@ -73,17 +82,27 @@ export function VirtualList<T>({
 }: VirtualListProps<T>) {
   const parentRef = useRef<HTMLDivElement>(null);
 
+  const getScrollElement = useCallback(() => parentRef.current, []);
+  const estimateSizeFn = useCallback(() => estimateSize, [estimateSize]);
+
+  const stableGetItemKey = useMemo(
+    () =>
+      getItemKey
+        ? (index: number) => getItemKey(data[index], index)
+        : undefined,
+    [getItemKey, data]
+  );
+
   const virtualizer = useVirtualizer({
     count: data.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => estimateSize,
+    getScrollElement,
+    estimateSize: estimateSizeFn,
     overscan,
-    getItemKey: getItemKey
-      ? (index) => getItemKey(data[index], index)
-      : undefined,
+    getItemKey: stableGetItemKey,
   });
 
   const virtualItems = virtualizer.getVirtualItems();
+  const measureElement = virtualizer.measureElement;
 
   if (data.length === 0 && emptyState) {
     return <div className={className}>{emptyState}</div>;
@@ -110,8 +129,8 @@ export function VirtualList<T>({
               data={data}
               estimateSize={estimateSize}
               key={virtualRow.key}
-              measureElement={virtualizer.measureElement}
-              renderItem={renderItem}
+              measureElement={measureElement}
+              RowComponent={RowComponent}
               virtualRow={virtualRow}
             />
           ))}

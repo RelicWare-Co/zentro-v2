@@ -1,10 +1,67 @@
 import { ActionIcon, TextInput } from "@mantine/core";
 import { History, Plus, Search, Wallet } from "lucide-react";
-import { useId } from "react";
+import { memo, useId } from "react";
 import { TableCell, TableHead, TableRow } from "@/components/ui/table";
 import { VirtualTable } from "@/components/ui/virtual-table";
+import type { CreditAccount } from "@/features/credit/credit.shared";
 import { creditCurrencyFormatter } from "@/features/credit/credit-formatters.shared";
 import { useCreditPage } from "@/features/credit/credit-page-context";
+
+const CreditAccountRow = memo(function CreditAccountRow({
+  data: account,
+}: {
+  data: CreditAccount;
+  index: number;
+}) {
+  const { actions } = useCreditPage();
+
+  return (
+    <>
+      <TableCell className="px-4">
+        <div className="min-w-0">
+          <p className="truncate font-medium text-white">
+            {account.customerName}
+          </p>
+        </div>
+      </TableCell>
+      <TableCell className="text-sm text-zinc-300">
+        {account.customerDocument ?? <span className="text-zinc-500">-</span>}
+      </TableCell>
+      <TableCell className="text-sm text-zinc-300">
+        {account.customerPhone ?? <span className="text-zinc-500">-</span>}
+      </TableCell>
+      <TableCell className="text-right">
+        <p
+          className={`font-semibold tabular-nums ${account.balance > 0 ? "text-[var(--color-voltage)]" : "text-zinc-400"}`}
+        >
+          {creditCurrencyFormatter.format(account.balance)}
+        </p>
+      </TableCell>
+      <TableCell className="text-right">
+        <div className="flex justify-end gap-2">
+          <ActionIcon
+            aria-label="Ver historial"
+            color="gray"
+            onClick={() => actions.openLedger(account)}
+            variant="outline"
+          >
+            <History className="size-3.5" />
+          </ActionIcon>
+          {account.balance > 0 ? (
+            <ActionIcon
+              aria-label="Registrar abono"
+              color="teal"
+              onClick={() => actions.openPayment(account)}
+              variant="outline"
+            >
+              <Plus className="size-3.5" />
+            </ActionIcon>
+          ) : null}
+        </div>
+      </TableCell>
+    </>
+  );
+});
 
 export function CreditAccountsPanel() {
   const { state, actions } = useCreditPage();
@@ -50,56 +107,7 @@ export function CreditAccountsPanel() {
           </TableRow>
         }
         maxHeight={600}
-        renderRow={(account) => (
-          <>
-            <TableCell className="px-4">
-              <div className="min-w-0">
-                <p className="truncate font-medium text-white">
-                  {account.customerName}
-                </p>
-              </div>
-            </TableCell>
-            <TableCell className="text-sm text-zinc-300">
-              {account.customerDocument ?? (
-                <span className="text-zinc-500">-</span>
-              )}
-            </TableCell>
-            <TableCell className="text-sm text-zinc-300">
-              {account.customerPhone ?? (
-                <span className="text-zinc-500">-</span>
-              )}
-            </TableCell>
-            <TableCell className="text-right">
-              <p
-                className={`font-semibold tabular-nums ${account.balance > 0 ? "text-[var(--color-voltage)]" : "text-zinc-400"}`}
-              >
-                {creditCurrencyFormatter.format(account.balance)}
-              </p>
-            </TableCell>
-            <TableCell className="text-right">
-              <div className="flex justify-end gap-2">
-                <ActionIcon
-                  aria-label="Ver historial"
-                  color="gray"
-                  onClick={() => actions.openLedger(account)}
-                  variant="outline"
-                >
-                  <History className="size-3.5" />
-                </ActionIcon>
-                {account.balance > 0 ? (
-                  <ActionIcon
-                    aria-label="Registrar abono"
-                    color="teal"
-                    onClick={() => actions.openPayment(account)}
-                    variant="outline"
-                  >
-                    <Plus className="size-3.5" />
-                  </ActionIcon>
-                ) : null}
-              </div>
-            </TableCell>
-          </>
-        )}
+        RowComponent={CreditAccountRow}
       />
     </>
   );

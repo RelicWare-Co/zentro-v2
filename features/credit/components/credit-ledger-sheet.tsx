@@ -1,6 +1,8 @@
 import { Badge, Button, Drawer, Loader } from "@mantine/core";
 import { History, Plus, Receipt } from "lucide-react";
+import { memo } from "react";
 import { VirtualList } from "@/components/ui/virtual-list";
+import type { CreditTransaction } from "@/features/credit/credit.shared";
 import {
   creditCurrencyFormatter,
   creditDateTimeFormatter,
@@ -9,6 +11,45 @@ import {
   getCreditTransactionTypeBadgeClass,
 } from "@/features/credit/credit-formatters.shared";
 import { useCreditPage } from "@/features/credit/credit-page-context";
+
+const CreditTransactionRow = memo(function CreditTransactionRow({
+  data: tx,
+}: {
+  data: CreditTransaction;
+  index: number;
+}) {
+  return (
+    <div className="flex items-center justify-between rounded-xl border border-zinc-800 bg-black/10 p-4">
+      <div className="min-w-0 space-y-1">
+        <div className="flex items-center gap-2">
+          <Badge
+            className={`${getCreditTransactionTypeBadgeClass(tx.type)} border-0`}
+            size="sm"
+          >
+            {formatCreditTransactionType(tx.type)}
+          </Badge>
+          {tx.saleId ? (
+            <span className="text-xs text-zinc-500">
+              <Receipt className="inline size-3" /> {tx.saleId.slice(0, 8)}…
+            </span>
+          ) : null}
+        </div>
+        {tx.notes ? <p className="text-sm text-zinc-400">{tx.notes}</p> : null}
+        <p className="text-xs text-zinc-500">
+          {creditDateTimeFormatter.format(tx.createdAt)}
+        </p>
+      </div>
+      <div className="shrink-0 pl-4 text-right">
+        <p
+          className={`font-semibold tabular-nums ${getCreditTransactionAmountClass(tx.type)}`}
+        >
+          {tx.type === "payment" ? "-" : "+"}
+          {creditCurrencyFormatter.format(tx.amount)}
+        </p>
+      </div>
+    </div>
+  );
+});
 
 function CreditLedgerTransactions() {
   const { meta } = useCreditPage();
@@ -37,39 +78,7 @@ function CreditLedgerTransactions() {
       estimateSize={80}
       gap={12}
       getItemKey={(tx) => tx.id}
-      renderItem={(tx) => (
-        <div className="flex items-center justify-between rounded-xl border border-zinc-800 bg-black/10 p-4">
-          <div className="min-w-0 space-y-1">
-            <div className="flex items-center gap-2">
-              <Badge
-                className={`${getCreditTransactionTypeBadgeClass(tx.type)} border-0`}
-                size="sm"
-              >
-                {formatCreditTransactionType(tx.type)}
-              </Badge>
-              {tx.saleId ? (
-                <span className="text-xs text-zinc-500">
-                  <Receipt className="inline size-3" /> {tx.saleId.slice(0, 8)}…
-                </span>
-              ) : null}
-            </div>
-            {tx.notes ? (
-              <p className="text-sm text-zinc-400">{tx.notes}</p>
-            ) : null}
-            <p className="text-xs text-zinc-500">
-              {creditDateTimeFormatter.format(tx.createdAt)}
-            </p>
-          </div>
-          <div className="shrink-0 pl-4 text-right">
-            <p
-              className={`font-semibold tabular-nums ${getCreditTransactionAmountClass(tx.type)}`}
-            >
-              {tx.type === "payment" ? "-" : "+"}
-              {creditCurrencyFormatter.format(tx.amount)}
-            </p>
-          </div>
-        </div>
-      )}
+      RowComponent={CreditTransactionRow}
     />
   );
 }

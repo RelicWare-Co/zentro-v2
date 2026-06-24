@@ -1,10 +1,67 @@
 import { ActionIcon, Badge, Button, Loader, TextInput } from "@mantine/core";
 import { Edit3, Plus, Search, Trash2, Users } from "lucide-react";
-import { useId } from "react";
+import { memo, useId } from "react";
 import { TableCell, TableHead, TableRow } from "@/components/ui/table";
 import { VirtualTable } from "@/components/ui/virtual-table";
 import { formatCustomerDocumentLabel } from "@/features/customers/customers-formatters.shared";
 import { useCustomersPage } from "@/features/customers/customers-page-context";
+import type { Customer } from "@/features/customers/hooks/use-customers";
+
+const CustomerRow = memo(function CustomerRow({
+  data: customer,
+}: {
+  data: Customer;
+  index: number;
+}) {
+  const { actions } = useCustomersPage();
+
+  return (
+    <>
+      <TableCell className="px-4">
+        <div className="min-w-0">
+          <p className="truncate font-medium text-white">{customer.name}</p>
+          {customer.type ? (
+            <Badge className="mt-1" color="gray" size="sm" variant="default">
+              {customer.type === "juridica" ? "Jurídica" : "Natural"}
+            </Badge>
+          ) : null}
+        </div>
+      </TableCell>
+      <TableCell className="text-sm text-zinc-300">
+        {formatCustomerDocumentLabel(
+          customer.documentType,
+          customer.documentNumber
+        ) ?? <span className="text-zinc-500">-</span>}
+      </TableCell>
+      <TableCell className="text-sm text-zinc-300">
+        {customer.phone ?? <span className="text-zinc-500">-</span>}
+      </TableCell>
+      <TableCell className="text-sm text-zinc-300">
+        {customer.email ?? <span className="text-zinc-500">-</span>}
+      </TableCell>
+      <TableCell className="text-right">
+        <div className="flex justify-end gap-2">
+          <ActionIcon
+            aria-label="Editar cliente"
+            color="gray"
+            onClick={() => actions.openEdit(customer)}
+            variant="outline"
+          >
+            <Edit3 className="size-3.5" />
+          </ActionIcon>
+          <ActionIcon
+            aria-label="Eliminar cliente"
+            color="red"
+            onClick={() => actions.openDelete(customer)}
+            variant="outline"
+          >
+            <Trash2 className="size-3.5" />
+          </ActionIcon>
+        </div>
+      </TableCell>
+    </>
+  );
+});
 
 export function CustomersListPanel() {
   const { state, actions } = useCustomersPage();
@@ -62,59 +119,7 @@ export function CustomersListPanel() {
           </TableRow>
         }
         maxHeight={600}
-        renderRow={(customer) => (
-          <>
-            <TableCell className="px-4">
-              <div className="min-w-0">
-                <p className="truncate font-medium text-white">
-                  {customer.name}
-                </p>
-                {customer.type ? (
-                  <Badge
-                    className="mt-1"
-                    color="gray"
-                    size="sm"
-                    variant="default"
-                  >
-                    {customer.type === "juridica" ? "Jurídica" : "Natural"}
-                  </Badge>
-                ) : null}
-              </div>
-            </TableCell>
-            <TableCell className="text-sm text-zinc-300">
-              {formatCustomerDocumentLabel(
-                customer.documentType,
-                customer.documentNumber
-              ) ?? <span className="text-zinc-500">-</span>}
-            </TableCell>
-            <TableCell className="text-sm text-zinc-300">
-              {customer.phone ?? <span className="text-zinc-500">-</span>}
-            </TableCell>
-            <TableCell className="text-sm text-zinc-300">
-              {customer.email ?? <span className="text-zinc-500">-</span>}
-            </TableCell>
-            <TableCell className="text-right">
-              <div className="flex justify-end gap-2">
-                <ActionIcon
-                  aria-label="Editar cliente"
-                  color="gray"
-                  onClick={() => actions.openEdit(customer)}
-                  variant="outline"
-                >
-                  <Edit3 className="size-3.5" />
-                </ActionIcon>
-                <ActionIcon
-                  aria-label="Eliminar cliente"
-                  color="red"
-                  onClick={() => actions.openDelete(customer)}
-                  variant="outline"
-                >
-                  <Trash2 className="size-3.5" />
-                </ActionIcon>
-              </div>
-            </TableCell>
-          </>
-        )}
+        RowComponent={CustomerRow}
       />
     </>
   );

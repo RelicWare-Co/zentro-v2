@@ -3,10 +3,12 @@ import {
   createColumnHelper,
   flexRender,
   getCoreRowModel,
+  type PaginationState,
+  type Updater,
   useReactTable,
 } from "@tanstack/react-table";
 import { Edit3, Trash2 } from "lucide-react";
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { DataTablePagination } from "@/components/ui/data-table-pagination";
 import {
   Table,
@@ -120,16 +122,26 @@ export function ProductsTable() {
     [actions, state.lowStockThreshold]
   );
 
+  const coreRowModel = useMemo(() => getCoreRowModel(), []);
+
+  const tableState = useMemo(
+    () => ({ pagination: state.pagination }),
+    [state.pagination]
+  );
+
+  const handlePaginationChange = useCallback(
+    (updater: Updater<PaginationState>) => actions.setPagination(updater),
+    [actions.setPagination]
+  );
+
   const table = useReactTable({
     data: state.products,
     columns,
-    getCoreRowModel: getCoreRowModel(),
+    getCoreRowModel: coreRowModel,
     manualPagination: true,
     rowCount: state.total,
-    onPaginationChange: actions.setPagination,
-    state: {
-      pagination: state.pagination,
-    },
+    onPaginationChange: handlePaginationChange,
+    state: tableState,
   });
 
   return (
