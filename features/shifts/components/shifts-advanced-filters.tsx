@@ -13,6 +13,7 @@ function ShiftsAdvancedFiltersFields({
   const isMobile = layout === "mobile";
   const idPrefix = isMobile ? "mobile-" : "";
   const size = isMobile ? "md" : "sm";
+  const comboboxProps = isMobile ? undefined : { withinPortal: false };
 
   return (
     <div className={isMobile ? "space-y-4" : "grid gap-4 md:grid-cols-2"}>
@@ -21,6 +22,7 @@ function ShiftsAdvancedFiltersFields({
         label="Cajero"
       >
         <Select
+          comboboxProps={comboboxProps}
           data={[
             { value: ALL_FILTER_VALUE, label: "Todos" },
             ...state.filterOptions.cashiers.map((cashier) => ({
@@ -45,6 +47,7 @@ function ShiftsAdvancedFiltersFields({
         label="Terminal"
       >
         <Select
+          comboboxProps={comboboxProps}
           data={[
             { value: ALL_FILTER_VALUE, label: "Todas" },
             ...state.filterOptions.terminals.map((terminal) => ({
@@ -69,6 +72,7 @@ function ShiftsAdvancedFiltersFields({
         label="Metodo"
       >
         <Select
+          comboboxProps={comboboxProps}
           data={[
             { value: ALL_FILTER_VALUE, label: "Todos" },
             ...state.filterOptions.paymentMethods.map((paymentMethod) => ({
@@ -93,6 +97,7 @@ function ShiftsAdvancedFiltersFields({
         label="Diferencia"
       >
         <Select
+          comboboxProps={comboboxProps}
           data={[
             { value: ALL_FILTER_VALUE, label: "Todas" },
             { value: "short", label: "Faltante" },
@@ -116,6 +121,7 @@ function ShiftsAdvancedFiltersFields({
         label="Movimientos"
       >
         <Select
+          comboboxProps={comboboxProps}
           data={[
             { value: ALL_FILTER_VALUE, label: "Todos" },
             { value: "yes", label: "Con movimientos" },

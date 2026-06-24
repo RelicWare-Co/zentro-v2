@@ -145,7 +145,7 @@ function OrganizationsTable({
                   onClick={() => actions.openOrganization(org.id)}
                   variant="outline"
                 >
-                  <ExternalLink className="size-3.5" />
+                  <ExternalLink aria-hidden="true" className="size-3.5" />
                 </ActionIcon>
               </TableCell>
             </TableRow>
@@ -208,7 +208,8 @@ export function AdminOrganizationsTab() {
         <div className="space-y-4">
           <div className="max-w-sm">
             <TextInput
-              leftSection={<Search className="size-4" />}
+              aria-label="Buscar organizaciones"
+              leftSection={<Search aria-hidden="true" className="size-4" />}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Buscar por nombre o slug…"
               value={search}

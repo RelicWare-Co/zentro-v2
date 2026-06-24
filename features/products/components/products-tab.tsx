@@ -24,13 +24,17 @@ export function ProductsTab() {
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
         <div className="w-full sm:max-w-sm">
           <TextInput
-            leftSection={<Search className="size-4 text-zinc-500" />}
+            aria-label="Buscar productos"
+            leftSection={
+              <Search aria-hidden="true" className="size-4 text-zinc-500" />
+            }
             onChange={(event) => actions.setQuery(event.target.value)}
             placeholder="Buscar por nombre, SKU o código..."
             value={state.filters.query}
           />
         </div>
         <Select
+          aria-label="Filtrar por categoría"
           className="w-full sm:w-[240px]"
           data={[
             { value: ALL_FILTER_VALUE, label: "Todas las categorías" },
@@ -49,6 +53,7 @@ export function ProductsTab() {
           value={state.filters.categoryFilter}
         />
         <Select
+          aria-label="Filtrar por estado de stock"
           className="w-full sm:w-[220px]"
           data={PRODUCT_STOCK_FILTER_VALUES.map((value) => ({
             value,
@@ -64,7 +69,7 @@ export function ProductsTab() {
         />
         {state.isBarcodeScannerConnected ? (
           <span className="inline-flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-emerald-200 text-xs">
-            <Barcode className="size-3.5" />
+            <Barcode aria-hidden="true" className="size-3.5" />
             Escáner listo
           </span>
         ) : null}

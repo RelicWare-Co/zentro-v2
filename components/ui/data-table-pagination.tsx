@@ -28,6 +28,7 @@ export function DataTablePagination<TData>({
           </p>
           <Select
             allowDeselect={false}
+            aria-label="Filas por página"
             comboboxProps={{ position: "top" }}
             data={pageSizeOptions.map((pageSize) => `${pageSize}`)}
             onChange={(value) => {

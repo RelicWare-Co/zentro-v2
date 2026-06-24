@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from "react";
 import type { Product } from "@/features/pos/types";
+import { hasOpenOverlay } from "@/lib/overlay-detection.shared";
 
 const SCANNER_MIN_LENGTH = 6;
 const SCANNER_MAX_AVERAGE_INTERVAL_MS = 45;
@@ -194,7 +195,7 @@ export function usePosBarcodeScanner({
     if (
       !shouldAutoFocusSearch ||
       typeof document === "undefined" ||
-      hasBlockingLayer()
+      hasOpenOverlay()
     ) {
       return;
     }
@@ -232,7 +233,7 @@ export function usePosBarcodeScanner({
       if (target === searchInputRef.current) {
         return;
       }
-      if (isEditableElement(target) || hasBlockingLayer()) {
+      if (isEditableElement(target) || hasOpenOverlay()) {
         return;
       }
 
@@ -250,7 +251,7 @@ export function usePosBarcodeScanner({
         target === searchInputRef.current ||
         isEditableElement(target) ||
         target.closest("[data-search-clear-button]") ||
-        hasBlockingLayer()
+        hasOpenOverlay()
       ) {
         return;
       }
@@ -361,23 +362,6 @@ export function usePosBarcodeScanner({
   };
 }
 
-function hasBlockingLayer() {
-  if (typeof document === "undefined") {
-    return false;
-  }
-
-  return Boolean(
-    document.querySelector(
-      [
-        "[data-slot='dialog-content']",
-        "[data-slot='drawer-content']",
-        "[data-slot='popover-content']",
-        "[data-slot='alert-dialog-content']",
-      ].join(", ")
-    )
-  );
-}
-
 function isEditableElement(target: EventTarget | null) {
   if (!(target instanceof Element)) {
     return false;
@@ -391,8 +375,6 @@ function isEditableElement(target: EventTarget | null) {
         "select",
         "[contenteditable='true']",
         "[role='textbox']",
-        "[data-slot='input']",
-        "[cmdk-input]",
       ].join(", ")
     )
   );

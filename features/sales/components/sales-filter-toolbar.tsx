@@ -34,6 +34,7 @@ export function SalesFilterToolbar() {
       <div className="flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
         <div className="w-full sm:max-w-xs md:max-w-sm">
           <TextInput
+            aria-label="Buscar ventas"
             autoComplete="off"
             id={meta.fieldIds.search}
             leftSection={<Search aria-hidden="true" className="size-4" />}
@@ -45,6 +46,7 @@ export function SalesFilterToolbar() {
 
         <div className="w-full sm:w-[200px]">
           <Select
+            aria-label="Filtrar por estado"
             data={[
               { value: ALL_FILTER_VALUE, label: "Todos" },
               { value: "completed", label: "Pagada" },
@@ -88,19 +90,7 @@ export function SalesFilterToolbar() {
           </div>
         </Drawer>
 
-        <Popover
-          position="bottom-start"
-          shadow="xl"
-          styles={{
-            dropdown: {
-              backgroundColor: "var(--color-carbon)",
-              borderColor: "#27272a",
-              color: "#fff",
-            },
-          }}
-          width={600}
-          withinPortal
-        >
+        <Popover position="bottom-start" shadow="xl" width={600} withinPortal>
           <Popover.Target>
             <Button
               className="hidden sm:inline-flex"

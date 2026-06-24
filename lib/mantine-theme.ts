@@ -1,4 +1,5 @@
 import {
+  Combobox,
   type CSSVariablesResolver,
   createTheme,
   Drawer,
@@ -86,7 +87,7 @@ const darkInputClassNames = {
 const darkSelectClassNames = {
   ...darkInputClassNames,
   dropdown:
-    "[--zentro-mantine-select-bg:var(--color-carbon)] [--zentro-mantine-select-border:#27272a] border-[var(--zentro-mantine-select-border)] bg-[var(--zentro-mantine-select-bg)] text-white",
+    "zentro-overlay [--zentro-mantine-select-bg:var(--color-carbon)] [--zentro-mantine-select-border:#27272a] border-[var(--zentro-mantine-select-border)] bg-[var(--zentro-mantine-select-bg)] text-white",
   option: "text-white",
 } as const;
 
@@ -109,12 +110,20 @@ export const mantineTheme = createTheme({
     Select: Select.extend({ classNames: darkSelectClassNames }),
     NativeSelect: NativeSelect.extend({ classNames: darkSelectClassNames }),
     Modal: Modal.extend({
+      classNames: { content: "zentro-overlay" },
+      defaultProps: {
+        closeButtonProps: { "aria-label": "Cerrar diálogo" },
+      },
       styles: {
         content: { backgroundColor: darkSurface, color: textOnDark },
         header: { backgroundColor: darkSurface, color: textOnDark },
       },
     }),
     Drawer: Drawer.extend({
+      classNames: { content: "zentro-overlay" },
+      defaultProps: {
+        closeButtonProps: { "aria-label": "Cerrar panel" },
+      },
       styles: {
         content: {
           backgroundColor: darkSurface,
@@ -132,6 +141,7 @@ export const mantineTheme = createTheme({
       },
     }),
     Popover: Popover.extend({
+      classNames: { dropdown: "zentro-overlay" },
       styles: {
         dropdown: {
           backgroundColor: darkSurface,
@@ -141,6 +151,7 @@ export const mantineTheme = createTheme({
       },
     }),
     Menu: Menu.extend({
+      classNames: { dropdown: "zentro-overlay" },
       styles: {
         dropdown: {
           backgroundColor: darkSurface,
@@ -149,6 +160,9 @@ export const mantineTheme = createTheme({
         },
         item: { color: textOnDark },
       },
+    }),
+    Combobox: Combobox.extend({
+      classNames: { dropdown: "zentro-overlay" },
     }),
   },
 });

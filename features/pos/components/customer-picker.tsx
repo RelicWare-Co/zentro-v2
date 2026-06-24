@@ -79,7 +79,10 @@ export function CustomerPicker({
               {selectedCustomerMeta}
             </span>
           </span>
-          <ChevronsUpDown className="ml-2 size-4 shrink-0 text-zinc-500" />
+          <ChevronsUpDown
+            aria-hidden="true"
+            className="ml-2 size-4 shrink-0 text-zinc-500"
+          />
         </button>
       </Combobox.Target>
 

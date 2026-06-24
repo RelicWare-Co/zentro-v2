@@ -120,7 +120,7 @@ function UserRowActions({ user }: { user: AdminPanelUser }) {
           color="gray"
           variant="outline"
         >
-          <MoreHorizontal className="size-4" />
+          <MoreHorizontal aria-hidden="true" className="size-4" />
         </ActionIcon>
       </Menu.Target>
       <Menu.Dropdown>
@@ -205,7 +205,8 @@ export function AdminUsersTable() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="w-full sm:max-w-sm">
           <TextInput
-            leftSection={<Search className="size-4" />}
+            aria-label="Buscar usuarios"
+            leftSection={<Search aria-hidden="true" className="size-4" />}
             onChange={(event) => actions.setSearchQuery(event.target.value)}
             placeholder={
               state.searchField === "email"
@@ -222,6 +223,7 @@ export function AdminUsersTable() {
         </div>
         <Select
           allowDeselect={false}
+          aria-label="Campo de búsqueda"
           className="w-full sm:w-40"
           data={SEARCH_FIELD_OPTIONS}
           onChange={(value) =>

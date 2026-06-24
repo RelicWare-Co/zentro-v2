@@ -100,6 +100,7 @@ export function CatalogToolbar({
   return (
     <div className="shrink-0 space-y-3 px-4 pb-2 md:px-6">
       <TextInput
+        aria-label="Buscar producto"
         classNames={{
           input: cn(
             "h-11 rounded-xl md:h-12",
@@ -107,7 +108,9 @@ export function CatalogToolbar({
             posV2OrderInputClassName
           ),
         }}
-        leftSection={<Search className={cn("size-4", posV2MutedText)} />}
+        leftSection={
+          <Search aria-hidden="true" className={cn("size-4", posV2MutedText)} />
+        }
         onChange={(event) => actions.setSearchQuery(event.target.value)}
         placeholder="Buscar producto por nombre, SKU o código... (/)"
         ref={searchInputRef}
@@ -115,6 +118,7 @@ export function CatalogToolbar({
           <div className="flex items-center">
             {state.searchQuery ? (
               <button
+                aria-label="Limpiar búsqueda"
                 className={cn(
                   "inline-flex size-7 items-center justify-center rounded-md transition-colors hover:text-white",
                   posV2MutedText,
@@ -141,7 +145,7 @@ export function CatalogToolbar({
                   : "Escáner de código de barras desconectado · no disponible"
               }
             >
-              <Barcode className="size-4" />
+              <Barcode aria-hidden="true" className="size-4" />
             </span>
           </div>
         }
@@ -183,6 +187,7 @@ export function CatalogToolbar({
           )}
         >
           <button
+            aria-label="Vista de cuadrícula"
             className={cn(
               "flex items-center gap-2 px-4 py-2 font-medium text-sm transition-all",
               state.viewMode === "grid"
@@ -192,10 +197,11 @@ export function CatalogToolbar({
             onClick={() => actions.setViewMode("grid")}
             type="button"
           >
-            <LayoutGrid className="size-4" />
+            <LayoutGrid aria-hidden="true" className="size-4" />
             <span className="hidden sm:inline">Cuadrícula</span>
           </button>
           <button
+            aria-label="Vista de lista"
             className={cn(
               "flex items-center gap-2 border-l px-4 py-2 font-medium text-sm transition-all",
               posV2OrderBorderStrong,
@@ -206,7 +212,7 @@ export function CatalogToolbar({
             onClick={() => actions.setViewMode("list")}
             type="button"
           >
-            <List className="size-4" />
+            <List aria-hidden="true" className="size-4" />
             <span className="hidden sm:inline">Lista</span>
           </button>
         </div>

@@ -88,11 +88,12 @@ export function PosV1Layout() {
       {isMobile && (
         <>
           <Button
+            aria-label={`Abrir carrito${state.totalItems > 0 ? `, ${state.totalItems} productos` : ""}`}
             className="fixed right-4 bottom-4 z-50 size-14 rounded-full bg-[var(--color-voltage)] p-0 text-black shadow-lg hover:bg-[#c9e605]"
             onClick={() => actions.setIsMobileCartOpen(true)}
           >
             <span className="relative">
-              <ShoppingCart className="size-5" />
+              <ShoppingCart aria-hidden="true" className="size-5" />
               {state.totalItems > 0 && (
                 <span className="absolute -top-2 -right-2 flex size-5 items-center justify-center rounded-full bg-red-500 font-bold text-[10px] text-white">
                   {state.totalItems}

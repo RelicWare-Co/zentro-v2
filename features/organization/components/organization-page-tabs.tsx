@@ -33,6 +33,7 @@ export function OrganizationPageTabs({ children }: { children: ReactNode }) {
       <div className="flex justify-center sm:hidden">
         <Select
           allowDeselect={false}
+          aria-label="Seleccionar pestaña"
           data={MOBILE_TAB_DATA}
           onChange={selectTab}
           value={state.activeTab}

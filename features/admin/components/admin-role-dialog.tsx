@@ -36,6 +36,7 @@ function AdminRoleDialogContent({ user }: { user: AdminPanelUser }) {
       </Text>
       <Select
         allowDeselect={false}
+        aria-label="Rol del usuario"
         data={ADMIN_ROLE_OPTIONS.map((option) => ({
           value: option.value,
           label: option.label,
