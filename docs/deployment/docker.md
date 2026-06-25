@@ -50,6 +50,8 @@ docker buildx build \
 From this repository, use `bun run docker:publish` instead. It derives the
 GHCR namespace from the authenticated `gh` session, logs Docker into GHCR with
 `gh auth token`, and publishes `ghcr.io/<owner>/zentro-app:sha-<full-commit>`.
+The GHCR login uses a temporary `DOCKER_CONFIG`, so the publish flow does not
+modify the user's global Docker config or macOS Keychain credentials.
 Set `PUBLISH_LATEST=true` only when a convenience `latest` tag is also wanted.
 The active GitHub token needs `write:packages`; refresh the local CLI session
 with `gh auth refresh -h github.com -s write:packages` if necessary.

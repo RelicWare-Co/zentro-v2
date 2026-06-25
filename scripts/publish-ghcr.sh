@@ -3,7 +3,8 @@ set -euo pipefail
 
 # Build and publish the production app image for Bunny Magic Containers.
 # Authentication comes from the active GitHub CLI session; the token is never
-# written to stdout or stored in this repository.
+# written to stdout or stored in this repository. Docker credentials are written
+# only to a temporary Docker config directory for this publish run.
 #
 # Usage:
 #   bun run docker:publish
@@ -14,6 +15,14 @@ fail() {
   echo "[ERROR] $*" >&2
   exit 1
 }
+
+docker_config_dir=""
+cleanup() {
+  if [[ -n "$docker_config_dir" && -d "$docker_config_dir" ]]; then
+    rm -rf "$docker_config_dir"
+  fi
+}
+trap cleanup EXIT
 
 command -v gh >/dev/null || fail "GitHub CLI (gh) is required."
 command -v docker >/dev/null || fail "Docker is required."
@@ -54,6 +63,9 @@ echo "[INFO] Publishing ${image}:${tag} for linux/amd64"
 if [[ "${PUBLISH_LATEST:-false}" == "true" ]]; then
   echo "[INFO] Also publishing ${image}:latest"
 fi
+
+docker_config_dir="$(mktemp -d)"
+export DOCKER_CONFIG="$docker_config_dir"
 
 gh auth token --hostname github.com \
   | docker login ghcr.io --username "$owner" --password-stdin
