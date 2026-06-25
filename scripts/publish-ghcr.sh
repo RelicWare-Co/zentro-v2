@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Build and publish the production app image for Bunny Magic Containers.
 # Authentication comes from the active GitHub CLI session; the token is never
-# written to stdout or stored in this repository. Docker credentials are written
+# written to stdout or stored in this repository. Docker registry auth is written
 # only to a temporary Docker config directory for this publish run.
 #
 # Usage:
@@ -66,9 +66,12 @@ fi
 
 docker_config_dir="$(mktemp -d)"
 export DOCKER_CONFIG="$docker_config_dir"
-
-gh auth token --hostname github.com \
-  | docker login ghcr.io --username "$owner" --password-stdin
+registry_token="$(gh auth token --hostname github.com)"
+registry_auth="$(printf '%s:%s' "$owner" "$registry_token" | base64 | tr -d '\n')"
+unset registry_token
+umask 077
+printf '{"auths":{"ghcr.io":{"auth":"%s"}}}\n' "$registry_auth" > "${DOCKER_CONFIG}/config.json"
+unset registry_auth
 
 docker buildx build \
   --platform linux/amd64 \
