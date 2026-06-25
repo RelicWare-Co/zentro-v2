@@ -5,8 +5,8 @@ import {
   Select,
   TextInput,
 } from "@mantine/core";
+import { notifications } from "@mantine/notifications";
 import { type FormEvent, useState } from "react";
-import { toast } from "sonner";
 import {
   ADMIN_ROLE_OPTIONS,
   type AdminPanelUser,
@@ -48,7 +48,7 @@ function AdminUserFormSheetContent({
             email: form.email.trim(),
           },
         });
-        toast.success("Usuario actualizado.");
+        notifications.show({ message: "Usuario actualizado.", color: "green" });
       } else {
         await adminActions.createUser.mutateAsync({
           name: form.name.trim(),
@@ -56,7 +56,7 @@ function AdminUserFormSheetContent({
           password: form.password,
           role: form.role,
         });
-        toast.success("Usuario creado.");
+        notifications.show({ message: "Usuario creado.", color: "green" });
       }
       actions.closeOverlay();
     } catch (error) {

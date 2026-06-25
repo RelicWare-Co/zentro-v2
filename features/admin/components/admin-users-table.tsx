@@ -7,6 +7,7 @@ import {
   Select,
   TextInput,
 } from "@mantine/core";
+import { notifications } from "@mantine/notifications";
 import {
   ChevronLeft,
   ChevronRight,
@@ -23,7 +24,6 @@ import {
   UserX,
   VenetianMask,
 } from "lucide-react";
-import { toast } from "sonner";
 import {
   Table,
   TableBody,
@@ -99,16 +99,25 @@ function UserRowActions({ user }: { user: AdminPanelUser }) {
       await adminActions.impersonateUser.mutateAsync({ userId: user.id });
       window.location.href = "/dashboard";
     } catch (error) {
-      toast.error(getErrorMessage(error, "No se pudo suplantar al usuario."));
+      notifications.show({
+        message: getErrorMessage(error, "No se pudo suplantar al usuario."),
+        color: "red",
+      });
     }
   };
 
   const handleUnban = async () => {
     try {
       await adminActions.unbanUser.mutateAsync({ userId: user.id });
-      toast.success(`${user.name} fue reactivado.`);
+      notifications.show({
+        message: `${user.name} fue reactivado.`,
+        color: "green",
+      });
     } catch (error) {
-      toast.error(getErrorMessage(error, "No se pudo reactivar al usuario."));
+      notifications.show({
+        message: getErrorMessage(error, "No se pudo reactivar al usuario."),
+        color: "red",
+      });
     }
   };
 

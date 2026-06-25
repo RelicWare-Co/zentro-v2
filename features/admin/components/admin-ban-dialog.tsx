@@ -7,8 +7,8 @@ import {
   Text,
   Textarea,
 } from "@mantine/core";
+import { notifications } from "@mantine/notifications";
 import { type FormEvent, useState } from "react";
-import { toast } from "sonner";
 import {
   ADMIN_BAN_DURATION_OPTIONS,
   type AdminBanDurationValue,
@@ -34,10 +34,16 @@ function AdminBanDialogContent({ user }: { user: AdminPanelUser }) {
         ...(banReason.trim() ? { banReason: banReason.trim() } : {}),
         ...(banExpiresIn ? { banExpiresIn } : {}),
       });
-      toast.success(`${user.name} fue suspendido.`);
+      notifications.show({
+        message: `${user.name} fue suspendido.`,
+        color: "green",
+      });
       actions.closeOverlay();
     } catch (error) {
-      toast.error(getErrorMessage(error, "No se pudo suspender al usuario."));
+      notifications.show({
+        message: getErrorMessage(error, "No se pudo suspender al usuario."),
+        color: "red",
+      });
     }
   };
 

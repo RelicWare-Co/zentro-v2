@@ -1,6 +1,6 @@
 import { ActionIcon, Badge, Button, Drawer, Loader } from "@mantine/core";
+import { notifications } from "@mantine/notifications";
 import { MonitorSmartphone, ShieldOff, X } from "lucide-react";
-import { toast } from "sonner";
 import {
   type AdminPanelSession,
   type AdminPanelUser,
@@ -19,9 +19,12 @@ function SessionRow({ session }: { session: AdminPanelSession }) {
       await adminActions.revokeUserSession.mutateAsync({
         sessionToken: session.token,
       });
-      toast.success("Sesión revocada.");
+      notifications.show({ message: "Sesión revocada.", color: "green" });
     } catch (error) {
-      toast.error(getErrorMessage(error, "No se pudo revocar la sesión."));
+      notifications.show({
+        message: getErrorMessage(error, "No se pudo revocar la sesión."),
+        color: "red",
+      });
     }
   };
 
@@ -71,11 +74,15 @@ function AdminSessionsSheetContent({ user }: { user: AdminPanelUser }) {
   const handleRevokeAll = async () => {
     try {
       await adminActions.revokeUserSessions.mutateAsync({ userId: user.id });
-      toast.success(`Sesiones de ${user.name} revocadas.`);
+      notifications.show({
+        message: `Sesiones de ${user.name} revocadas.`,
+        color: "green",
+      });
     } catch (error) {
-      toast.error(
-        getErrorMessage(error, "No se pudieron revocar las sesiones.")
-      );
+      notifications.show({
+        message: getErrorMessage(error, "No se pudieron revocar las sesiones."),
+        color: "red",
+      });
     }
   };
 

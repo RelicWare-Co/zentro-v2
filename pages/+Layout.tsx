@@ -1,12 +1,13 @@
 // Mantine base styles must load before Tailwind so Tailwind utilities win in
 // coexistence mode.
 import "@mantine/core/styles.css";
+import "@mantine/notifications/styles.css";
 import "./tailwind.css";
 import { MantineProvider } from "@mantine/core";
+import { Notifications } from "@mantine/notifications";
 import type { ReactNode } from "react";
 import { usePageContext } from "vike-react/usePageContext";
 import { AppLayout } from "@/components/app-layout";
-import { Toaster } from "@/components/ui/sonner";
 import { OrganizationTransitionProvider } from "@/features/organization/organization-transition-context";
 import { mantineCssVariablesResolver, mantineTheme } from "@/lib/mantine-theme";
 import { TanstackQueryProvider } from "@/lib/query-provider";
@@ -39,7 +40,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <OrganizationTransitionProvider>
           {content}
         </OrganizationTransitionProvider>
-        <Toaster richColors />
+        <Notifications position="top-right" />
       </TanstackQueryProvider>
     </MantineProvider>
   );

@@ -1,6 +1,6 @@
 import { Button, Group, Modal, Select, Stack, Text } from "@mantine/core";
+import { notifications } from "@mantine/notifications";
 import { useState } from "react";
-import { toast } from "sonner";
 import {
   ADMIN_ROLE_OPTIONS,
   type AdminPanelUser,
@@ -21,10 +21,16 @@ function AdminRoleDialogContent({ user }: { user: AdminPanelUser }) {
   const handleSubmit = async () => {
     try {
       await adminActions.setRole.mutateAsync({ userId: user.id, role });
-      toast.success(`Rol de ${user.name} actualizado.`);
+      notifications.show({
+        message: `Rol de ${user.name} actualizado.`,
+        color: "green",
+      });
       actions.closeOverlay();
     } catch (error) {
-      toast.error(getErrorMessage(error, "No se pudo cambiar el rol."));
+      notifications.show({
+        message: getErrorMessage(error, "No se pudo cambiar el rol."),
+        color: "red",
+      });
     }
   };
 

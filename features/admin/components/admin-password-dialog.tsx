@@ -6,8 +6,8 @@ import {
   Stack,
   Text,
 } from "@mantine/core";
+import { notifications } from "@mantine/notifications";
 import { type FormEvent, useState } from "react";
-import { toast } from "sonner";
 import type { AdminPanelUser } from "@/features/admin/admin.shared";
 import { useAdminPage } from "@/features/admin/admin-page-context";
 import { useAdminUserActions } from "@/features/admin/hooks/use-admin-user-actions";
@@ -25,10 +25,16 @@ function AdminPasswordDialogContent({ user }: { user: AdminPanelUser }) {
         userId: user.id,
         newPassword,
       });
-      toast.success(`Contraseña de ${user.name} actualizada.`);
+      notifications.show({
+        message: `Contraseña de ${user.name} actualizada.`,
+        color: "green",
+      });
       actions.closeOverlay();
     } catch (error) {
-      toast.error(getErrorMessage(error, "No se pudo cambiar la contraseña."));
+      notifications.show({
+        message: getErrorMessage(error, "No se pudo cambiar la contraseña."),
+        color: "red",
+      });
     }
   };
 

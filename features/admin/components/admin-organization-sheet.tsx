@@ -1,4 +1,5 @@
 import { Badge, Drawer, Loader, Switch } from "@mantine/core";
+import { notifications } from "@mantine/notifications";
 import {
   Boxes,
   Building2,
@@ -7,7 +8,6 @@ import {
   Users,
   Wallet,
 } from "lucide-react";
-import { toast } from "sonner";
 import {
   Table,
   TableBody,
@@ -103,13 +103,17 @@ function ModuleRow({
         moduleKey: module.key,
         status: checked ? "granted" : "blocked",
       });
-      toast.success(
-        checked
+      notifications.show({
+        message: checked
           ? `Módulo "${module.label}" habilitado.`
-          : `Módulo "${module.label}" bloqueado.`
-      );
+          : `Módulo "${module.label}" bloqueado.`,
+        color: "green",
+      });
     } catch (error) {
-      toast.error(getErrorMessage(error, "No se pudo actualizar el módulo."));
+      notifications.show({
+        message: getErrorMessage(error, "No se pudo actualizar el módulo."),
+        color: "red",
+      });
     }
   };
 

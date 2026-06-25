@@ -1,3 +1,4 @@
+import { notifications } from "@mantine/notifications";
 import type { KeyboardBarcodeScannerEvent } from "@point-of-sale/keyboard-barcode-scanner";
 import {
   createContext,
@@ -7,7 +8,6 @@ import {
   useMemo,
   useState,
 } from "react";
-import { toast } from "sonner";
 import { useCreditAccountsSearch } from "@/features/credit/hooks/use-credit";
 import { useCreateCustomerModal } from "@/features/pos/hooks/use-create-customer-modal";
 import { useModifierModal } from "@/features/pos/hooks/use-modifier-modal";
@@ -544,7 +544,10 @@ export function PosPageProvider({
           (sum, payment) => sum + payment.amount,
           0
         );
-        toast.success(`${tableName} cobrada y liberada`);
+        notifications.show({
+          message: `${tableName} cobrada y liberada`,
+          color: "green",
+        });
         closeActiveModal();
         checkout.resetPayments();
         setTableDiscountInput("0");
@@ -568,17 +571,21 @@ export function PosPageProvider({
             snapshot: receiptSnapshot,
           })
         ).catch((error) => {
-          toast.error("La mesa se cobró, pero no se pudo imprimir el ticket", {
-            description:
+          notifications.show({
+            title: "La mesa se cobró, pero no se pudo imprimir el ticket",
+            message:
               error instanceof Error
                 ? error.message
                 : "Revisa la impresora e intenta reimprimir.",
+            color: "red",
           });
         });
       } catch (error) {
-        toast.error("No se pudo cobrar la mesa", {
-          description:
+        notifications.show({
+          title: "No se pudo cobrar la mesa",
+          message:
             error instanceof Error ? error.message : "Inténtalo de nuevo.",
+          color: "red",
         });
       }
     },

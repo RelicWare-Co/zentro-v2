@@ -242,7 +242,7 @@ visual/smoke indicado abajo y el commit final de los cambios actuales.
 | carousel | `@mantine/carousel` | ⚠️ |
 | command | `@mantine/spotlight` / Combobox | ⚠️ |
 | input-otp | PinInput | ⚠️ |
-| sonner | `@mantine/notifications` | ⚠️ |
+| sonner | `@mantine/notifications` | ✅ migrado |
 | sidebar | AppShell (reconstrucción) | ❌ |
 | resizable | `react-resizable-panels` (mantener) | ❌ |
 | virtual-* | `@tanstack/react-virtual` (mantener, re-estilar) | ❌ |

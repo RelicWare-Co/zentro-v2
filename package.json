@@ -5,6 +5,7 @@
   "dependencies": {
     "@mantine/core": "^9.3.2",
     "@mantine/hooks": "^9.3.2",
+    "@mantine/notifications": "^9.4.0",
     "@medibase/webusb-receipt-printer": "^1.0.9",
     "@point-of-sale/keyboard-barcode-scanner": "^1.1.4",
     "@point-of-sale/receipt-printer-encoder": "^3.0.3",
@@ -29,7 +30,6 @@
     "qz-tray": "^2.2.6",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
-    "sonner": "^2.0.7",
     "tailwind-merge": "^3.6.0",
     "vike": "0.4.259",
     "vike-react": "^0.6.24",

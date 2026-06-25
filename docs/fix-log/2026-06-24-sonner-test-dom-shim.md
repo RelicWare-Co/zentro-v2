@@ -13,8 +13,10 @@ tests. Its presence made Sonner treat the test process as a browser, but the
 shim did not provide the `head`, `createTextNode`, or append-child surface used
 by Sonner's module-level CSS insertion.
 
-Sonner remains an active dependency: it is used by the global toaster and POS,
-admin, and product notifications. Removing it would break production behavior.
+Sonner was removed on 2026-06-24. All `toast.x()` calls were migrated to
+`@mantine/notifications` (`notifications.show({ ... })`). The `<Notifications />`
+component is mounted in `pages/+Layout.tsx`. The DOM shim extensions added for
+sonner's CSS bootstrap are no longer needed but were left in place harmlessly.
 
 ## Solution
 

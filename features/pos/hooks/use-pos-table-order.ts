@@ -1,6 +1,6 @@
+import { notifications } from "@mantine/notifications";
 import { useQuery as useZeroQuery } from "@rocicorp/zero/react";
 import { useCallback, useMemo, useState } from "react";
-import { toast } from "sonner";
 import type { CartItem, CartItemModifier, Product } from "@/features/pos/types";
 import { calculateCartTotals } from "@/features/pos/utils";
 import {
@@ -130,8 +130,10 @@ export function usePosTableOrder(
           })),
         });
       } catch (error) {
-        toast.error("No se pudo agregar el producto a la mesa", {
-          description: getErrorDescription(error, "Inténtalo de nuevo."),
+        notifications.show({
+          title: "No se pudo agregar el producto a la mesa",
+          message: getErrorDescription(error, "Inténtalo de nuevo."),
+          color: "red",
         });
       }
     },
@@ -147,8 +149,10 @@ export function usePosTableOrder(
         return;
       }
       if (item.status !== "draft") {
-        toast.error("Este ítem ya fue enviado a cocina", {
-          description: "Solo puedes editar ítems pendientes de envío.",
+        notifications.show({
+          title: "Este ítem ya fue enviado a cocina",
+          message: "Solo puedes editar ítems pendientes de envío.",
+          color: "red",
         });
         return;
       }
@@ -164,8 +168,10 @@ export function usePosTableOrder(
           notes: undefined,
         });
       } catch (error) {
-        toast.error("No se pudo actualizar el ítem", {
-          description: getErrorDescription(error, "Inténtalo de nuevo."),
+        notifications.show({
+          title: "No se pudo actualizar el ítem",
+          message: getErrorDescription(error, "Inténtalo de nuevo."),
+          color: "red",
         });
       }
     },
@@ -181,16 +187,20 @@ export function usePosTableOrder(
         return;
       }
       if (item.status !== "draft") {
-        toast.error("Este ítem ya fue enviado a cocina", {
-          description: "Solo puedes quitar ítems pendientes de envío.",
+        notifications.show({
+          title: "Este ítem ya fue enviado a cocina",
+          message: "Solo puedes quitar ítems pendientes de envío.",
+          color: "red",
         });
         return;
       }
       try {
         await deleteDraftItemMutation.mutateAsync({ orderItemId });
       } catch (error) {
-        toast.error("No se pudo eliminar el ítem", {
-          description: getErrorDescription(error, "Inténtalo de nuevo."),
+        notifications.show({
+          title: "No se pudo eliminar el ítem",
+          message: getErrorDescription(error, "Inténtalo de nuevo."),
+          color: "red",
         });
       }
     },
@@ -225,13 +235,18 @@ export function usePosTableOrder(
         ticketId,
       });
     } catch (error) {
-      toast.error("No se pudo enviar la comanda a cocina", {
-        description: getErrorDescription(error, "Inténtalo de nuevo."),
+      notifications.show({
+        title: "No se pudo enviar la comanda a cocina",
+        message: getErrorDescription(error, "Inténtalo de nuevo."),
+        color: "red",
       });
       return;
     }
 
-    toast.success(`Comanda de ${table.name} enviada a cocina`);
+    notifications.show({
+      message: `Comanda de ${table.name} enviada a cocina`,
+      color: "green",
+    });
 
     const kitchenSettings =
       parseOrganizationSettingsMetadata(organizationMetadata).restaurants
@@ -254,11 +269,10 @@ export function usePosTableOrder(
         activeOrganizationId
       );
     } catch (error) {
-      toast.error("La comanda se envió, pero no se pudo imprimir", {
-        description: getErrorDescription(
-          error,
-          "Revisa la impresora de cocina."
-        ),
+      notifications.show({
+        title: "La comanda se envió, pero no se pudo imprimir",
+        message: getErrorDescription(error, "Revisa la impresora de cocina."),
+        color: "red",
       });
     }
   }, [

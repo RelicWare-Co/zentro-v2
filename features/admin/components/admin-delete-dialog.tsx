@@ -1,5 +1,5 @@
 import { Button, Group, Modal, Stack, Text } from "@mantine/core";
-import { toast } from "sonner";
+import { notifications } from "@mantine/notifications";
 import { useAdminPage } from "@/features/admin/admin-page-context";
 import { useAdminUserActions } from "@/features/admin/hooks/use-admin-user-actions";
 import { getErrorMessage } from "@/lib/utils";
@@ -17,10 +17,16 @@ export function AdminDeleteDialog() {
     }
     try {
       await adminActions.removeUser.mutateAsync({ userId: user.id });
-      toast.success(`${user.name} fue eliminado.`);
+      notifications.show({
+        message: `${user.name} fue eliminado.`,
+        color: "green",
+      });
       actions.closeOverlay();
     } catch (error) {
-      toast.error(getErrorMessage(error, "No se pudo eliminar el usuario."));
+      notifications.show({
+        message: getErrorMessage(error, "No se pudo eliminar el usuario."),
+        color: "red",
+      });
     }
   };
 
