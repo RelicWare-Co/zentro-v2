@@ -27,6 +27,7 @@ trap cleanup EXIT
 command -v gh >/dev/null || fail "GitHub CLI (gh) is required."
 command -v docker >/dev/null || fail "Docker is required."
 docker buildx version >/dev/null 2>&1 || fail "Docker Buildx is required."
+source_docker_config="${DOCKER_CONFIG:-${HOME}/.docker}"
 auth_status="$(gh auth status --hostname github.com 2>&1)" \
   || fail "Log in with: gh auth login"
 if [[ "$auth_status" == *"Token scopes:"* && "$auth_status" != *"write:packages"* ]]; then
@@ -65,7 +66,12 @@ if [[ "${PUBLISH_LATEST:-false}" == "true" ]]; then
 fi
 
 docker_config_dir="$(mktemp -d)"
+if [[ -d "${source_docker_config}/cli-plugins" ]]; then
+  ln -s "${source_docker_config}/cli-plugins" "${docker_config_dir}/cli-plugins"
+fi
 export DOCKER_CONFIG="$docker_config_dir"
+docker buildx version >/dev/null 2>&1 \
+  || fail "Docker Buildx is not available with the isolated Docker config."
 registry_token="$(gh auth token --hostname github.com)"
 registry_auth="$(printf '%s:%s' "$owner" "$registry_token" | base64 | tr -d '\n')"
 unset registry_token
