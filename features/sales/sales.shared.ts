@@ -144,10 +144,11 @@ function sumPaidAmount(row: SaleWithRelations) {
   if (row.status === "cancelled") {
     return 0;
   }
-  return (row.payments ?? []).reduce(
+  const paidAmount = (row.payments ?? []).reduce(
     (total, paymentRow) => total + normalizeNumber(paymentRow.amount),
     0
   );
+  return Math.min(normalizeNumber(row.totalAmount), paidAmount);
 }
 
 function sumItemCount(row: SaleWithRelations) {
@@ -219,8 +220,9 @@ export function buildSaleDetail(row: SaleWithRelations): SaleDetail {
     (total, currentPayment) => total + currentPayment.amount,
     0
   );
-  const effectivePaidAmount = row.status === "cancelled" ? 0 : paidAmount;
   const totalAmount = normalizeNumber(row.totalAmount);
+  const effectivePaidAmount =
+    row.status === "cancelled" ? 0 : Math.min(totalAmount, paidAmount);
 
   return {
     id: row.id,

@@ -31,6 +31,7 @@ import {
   getAllPaymentMethods,
   parseOrganizationSettingsMetadata,
 } from "@/features/settings/settings.shared";
+import { buildExpectedAmountsByMethod } from "@/features/shifts/shifts.shared";
 import {
   buildZonedSaleDateKey,
   formatZonedDateKey,
@@ -129,6 +130,39 @@ function buildSalesTrend(
       salesCount: point?.salesCount ?? 0,
     };
   });
+}
+
+function buildPaymentMix(
+  rows: Array<{
+    amount: number | string | null;
+    method: string;
+    saleId: string | null;
+    saleTotalAmount: number | string | null;
+  }>
+) {
+  const expectedByMethod = buildExpectedAmountsByMethod(
+    0,
+    rows.map((row) => ({
+      method: row.method,
+      amount: normalizeNumber(row.amount),
+      saleId: row.saleId,
+      saleTotalAmount:
+        row.saleTotalAmount === null
+          ? null
+          : normalizeNumber(row.saleTotalAmount),
+    })),
+    []
+  );
+
+  return [...expectedByMethod.entries()]
+    .map(([method, amount]) => ({ method, amount }))
+    .filter((row) => row.amount > 0)
+    .toSorted((left, right) => {
+      if (right.amount !== left.amount) {
+        return right.amount - left.amount;
+      }
+      return left.method.localeCompare(right.method, "es-CO");
+    });
 }
 
 export async function runBuildDashboardOverview(
@@ -417,7 +451,9 @@ export async function runBuildDashboardOverview(
       ? db
           .select({
             method: payment.method,
-            amount: sql<number>`coalesce(sum(${payment.amount}), 0)`,
+            amount: payment.amount,
+            saleId: payment.saleId,
+            saleTotalAmount: sale.totalAmount,
           })
           .from(payment)
           .leftJoin(
@@ -434,8 +470,6 @@ export async function runBuildDashboardOverview(
               or(isNull(payment.saleId), ne(sale.status, "cancelled"))
             )
           )
-          .groupBy(payment.method)
-          .orderBy(desc(sql`sum(${payment.amount})`))
       : Promise.resolve([]),
     db
       .select({
@@ -530,6 +564,7 @@ export async function runBuildDashboardOverview(
   );
   const currentMonth = currentMonthRows[0];
   const previousMonth = previousMonthRows[0];
+  const paymentMix = buildPaymentMix(paymentMixRows);
 
   return {
     generatedAt: now.getTime(),
@@ -571,14 +606,11 @@ export async function runBuildDashboardOverview(
       })),
       today
     ),
-    paymentMix: paymentMixRows.map((row) => ({
-      method: row.method,
-      amount: normalizeNumber(row.amount),
-    })),
+    paymentMix,
     paymentMethodLabels: buildPaymentMethodLabelMap(
       buildPaymentMethodOptions(
         getAllPaymentMethods(organizationSettings),
-        paymentMixRows.map((row) => row.method)
+        paymentMix.map((row) => row.method)
       )
     ),
     topProducts: topProductsRows.map((row) => ({

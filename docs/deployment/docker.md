@@ -24,6 +24,136 @@ flowchart LR
 
 Local development uses `docker compose up -d` (Postgres + migrations + zero-cache; app on the host via `bun run dev`) or `deploy/docker-compose.local.yml` for a full containerized stack with bundled Postgres.
 
+## Bunny Magic Containers (separate pods)
+
+On Bunny, run the app and `zero-cache` as **two independent Magic Container
+Apps/pods**. Do not put them in one multi-container pod: they need independent
+deploy cadence and the app can scale without restarting Zero.
+
+| Bunny app | Image | Container port | Persistent storage | Public endpoint |
+| --- | --- | ---: | --- | --- |
+| `zentro-app` | `ghcr.io/<owner>/zentro-app:<immutable-tag>` | `3000` | None | `app.example.com` |
+| `zentro-zero` | `rocicorp/zero:1.6.2` | `4848` | `/data` | `zero.example.com` |
+
+Build the app image for Bunny's required architecture and publish an immutable
+tag to GHCR. `latest` may be published for convenience, but must not be the
+tag deployed to production:
+
+```sh
+docker buildx build \
+  --platform linux/amd64 \
+  --file deploy/app/Dockerfile \
+  --tag ghcr.io/<owner>/zentro-app:sha-<commit> \
+  --push .
+```
+
+From this repository, use `bun run docker:publish` instead. It derives the
+GHCR namespace from the authenticated `gh` session, writes the `gh auth token`
+to a temporary Docker config for Buildx, and publishes
+`ghcr.io/<owner>/zentro-app:sha-<full-commit>`. The publish flow does not run
+`docker login`, modify the user's global Docker config, or touch macOS Keychain
+credentials.
+Set `PUBLISH_LATEST=true` only when a convenience `latest` tag is also wanted.
+The active GitHub token needs `write:packages`; refresh the local CLI session
+with `gh auth refresh -h github.com -s write:packages` if necessary.
+The script refuses to publish with an uncommitted worktree so the image always
+matches the commit encoded in its tag.
+
+The public `rocicorp/zero:1.6.2` image can be used directly; it must stay in
+sync with the installed `@rocicorp/zero` version. No GHCR image is needed for
+Zero unless the image is customized.
+
+### Networking, domains, and endpoints
+
+Create a Bunny CDN endpoint for each public port. The Zero endpoint must
+support WebSockets.
+
+```txt
+https://app.example.com   -> zentro-app:3000
+https://zero.example.com  -> zentro-zero:4848
+```
+
+The pods do not share a network namespace. Consequently, Zero's callbacks
+must use the public app origin; do not use Compose service DNS (`app`) or
+`127.0.0.1`:
+
+```txt
+ZERO_QUERY_URL=https://app.example.com/api/zero/query
+ZERO_MUTATE_URL=https://app.example.com/api/zero/mutate
+```
+
+Use sibling domains under one registrable root so the browser can send the
+better-auth cookie to both origins:
+
+```txt
+BETTER_AUTH_URL=https://app.example.com
+BETTER_AUTH_COOKIE_DOMAIN=example.com
+BETTER_AUTH_TRUSTED_ORIGINS=https://app.example.com,https://zero.example.com
+ZERO_CACHE_URL=https://zero.example.com
+```
+
+Set the following on the Zero pod, in addition to the direct Postgres URL and
+the callback URLs above:
+
+```txt
+ZERO_UPSTREAM_DB=<direct PostgreSQL URL>
+ZERO_CVR_DB=<direct PostgreSQL URL>
+ZERO_CHANGE_DB=<direct PostgreSQL URL>
+ZERO_REPLICA_FILE=/data/replica.db
+ZERO_QUERY_FORWARD_COOKIES=true
+ZERO_MUTATE_FORWARD_COOKIES=true
+ZERO_ENABLE_CRUD_MUTATIONS=false
+ZERO_APP_ID=zentro
+ZERO_ADMIN_PASSWORD=<secret>
+```
+
+Attach a persistent Bunny volume to the Zero pod at `/data`. Start with one
+Zero replica; its SQLite replica must not be treated as disposable storage.
+
+### Migrations with app replicas
+
+**Do not run migrations from application replicas once the app can scale.**
+Set `RUN_MIGRATIONS=false` on every `zentro-app` pod. Allowing each replica to
+run `db:migrate` on startup creates an avoidable deployment race and makes an
+autoscaling event capable of running a production schema change.
+
+The production migration authority is a separate, serialized CI job. It uses
+the exact immutable app image that will be deployed, and has a concurrency
+lock per target database. A GitHub Actions implementation should run the
+release image directly, for example:
+
+```sh
+docker run --rm \
+  --entrypoint bun \
+  -e DATABASE_URL \
+  ghcr.io/<owner>/zentro-app:sha-<commit> \
+  run db:migrate
+```
+
+The CI runner needs network access to the direct production Postgres endpoint;
+store `DATABASE_URL` only as an environment-specific deployment secret. If
+that access cannot be granted, run the same command in a purpose-built,
+single-replica migration pod and delete/stop it immediately after success.
+It must never be an autoscaled long-running app pod.
+
+Use an expand-migrate-contract release sequence:
+
+1. Ship additive, backwards-compatible database changes: new nullable columns,
+   new tables, or non-breaking indexes.
+2. Run the single migration job and require it to succeed before deploying app
+   replicas.
+3. When a Drizzle schema changed, run `bun run zero:schema:gen`, commit the
+   generated schema, then redeploy Zero before the app when required by the
+   Zero/schema change.
+4. Roll out the app image across its replicas. Both old and new app versions
+   must work against the expanded schema during the rollout.
+5. After old clients and app revisions have drained, make a separate contract
+   release to remove or rename obsolete fields/tables.
+
+Do not combine a Zero version upgrade with a destructive schema change. For a
+Zero topology/version rollout, use this order: replication manager (if used),
+view-syncers, app API replicas, browser clients, then contract migrations.
+
 ## Docker Compose (production)
 
 Use `deploy/docker-compose.prod.yml` for reverse-proxy deployments such as Coolify. It deploys **app + zero-cache** only; Postgres stays external.
@@ -291,9 +421,14 @@ docker push your-registry/zentro-app:latest
 
 - Listens on `process.env.PORT` (default `3000`). Expose the same port on the load balancer / ingress.
 - Entrypoint: `scripts/docker-entrypoint.sh`
-  1. Runs `bun run db:migrate` when `RUN_MIGRATIONS=true` (default)
+  1. Runs `bun run db:migrate` when `RUN_MIGRATIONS=true`
   2. Starts the server with `bun run start`
 - Uses `set -euo pipefail`: any migration failure exits non-zero and the container stops.
+
+For Compose and a deliberately single-replica deployment, `RUN_MIGRATIONS=true`
+is a practical default. For independently deployed or horizontally scaled app
+pods, follow [Migrations with app replicas](#migrations-with-app-replicas) and
+set it to `false`.
 
 ### Health check
 
@@ -314,7 +449,7 @@ If the health check never passes, most platforms keep the previous healthy revis
 | `DATABASE_URL` | Yes | Direct Postgres URL from external provider |
 | `NODE_ENV` | Yes | `production` |
 | `PORT` | Yes | Match exposed port (e.g. `3000`) |
-| `RUN_MIGRATIONS` | Recommended | `true` — run Drizzle migrations before start |
+| `RUN_MIGRATIONS` | Required | `true` only for a single-replica deployment; `false` when a separate migration job is used |
 | `BETTER_AUTH_URL` | Yes | Public app origin, e.g. `https://app.example.com` |
 | `BETTER_AUTH_COOKIE_DOMAIN` | Yes | Root domain, e.g. `example.com` |
 | `BETTER_AUTH_TRUSTED_ORIGINS` | Yes | Comma-separated app + zero-cache origins |
@@ -383,15 +518,20 @@ Cookie forwarding is required because better-auth session cookies on the app API
 
 ## Database migrations
 
-Migrations run in the app container entrypoint before the server starts. This is the recommended default when the platform has no separate pre-deploy job.
+For Docker Compose and single-replica deployments, migrations can run in the
+app entrypoint before the server starts. For an independently deployed or
+scaled application, use the serialized migration job documented in
+[Migrations with app replicas](#migrations-with-app-replicas) and keep
+`RUN_MIGRATIONS=false` on app pods.
 
 Failure behavior:
 
 1. **Build stage** — `RUN bun run build` in the Dockerfile fails → image is not produced → deploy stops.
-2. **Migration stage** — `bun run db:migrate` exits non-zero → entrypoint exits → container stops → HTTP health check fails → traffic is not switched.
+2. **Migration stage** — `bun run db:migrate` exits non-zero → the migration job (or, in a single-replica deployment, the entrypoint) fails → deployment must not continue.
 3. **Runtime** — server crash or failed health check → deployment marked unhealthy / previous revision keeps traffic.
 
-Set `RUN_MIGRATIONS=false` only for temporary debugging. Never disable migrations in production unless you run them manually another way.
+Never set `RUN_MIGRATIONS=false` without a separately controlled migration
+workflow. Conversely, do not enable it on a horizontally scaled app service.
 
 For schema changes that affect Zero, regenerate the browser schema when Drizzle tables change:
 
@@ -417,12 +557,14 @@ Commit the updated `zero/schema.gen.ts` before deploying.
 
 1. Push to the tracked Git branch (or trigger redeploy / push a new image tag).
 2. Platform builds the Dockerfile; failed builds do not deploy.
-3. New container runs migrations, then starts.
-4. Health check on `/` must pass before traffic switches.
+3. For a schema change, run the serialized migration job before deployment;
+   otherwise skip this step.
+4. Start or roll out app containers.
+5. Health check on `/` must pass before traffic switches.
 
 ### Zero or schema changes
 
-1. Apply additive database migrations first (via app deploy).
+1. Apply additive database migrations first (via the single migration job).
 2. Regenerate Zero schema if Drizzle schema changed.
 3. Redeploy **zero-cache** when the Zero version or cache config changes.
 4. Redeploy the app.
@@ -544,6 +686,21 @@ Checks:
 
 ## Future scale-up
 
-The current topology runs one `zero-cache` instance. When websocket load requires horizontal scaling, split Zero into a private replication-manager (port `4849`) and public view-syncers (port `4848`) with sticky sessions. See Rocicorp self-hosting docs and `.agents/skills/zero/references/deployment-operations.md`.
+The current topology runs one `zero-cache` instance. Do not horizontally scale
+that single-container topology by cloning it: each replica needs coordinated
+replication state.
+
+When websocket load requires horizontal scaling, split Zero into:
+
+- one private replication-manager (port `4849`) with its persistent replica
+  storage and backup/restore path;
+- one or more public view-syncers (port `4848`) with sticky sessions.
+
+The replication-manager must be reachable only through private networking;
+never expose it on a Bunny CDN endpoint. Before adopting this topology, verify
+that Bunny can provide a private, stable connection from every view-syncer pod
+to the replication-manager. If it cannot, retain a single Zero pod and scale
+only the app pods. See Rocicorp self-hosting docs and
+`.agents/skills/zero/references/deployment-operations.md`.
 
 Do not expose the replication-manager publicly.

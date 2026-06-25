@@ -1,26 +1,12 @@
-import { Filter, Search } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
+  Badge,
+  Button,
+  Drawer,
   Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
   Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+  TextInput,
+} from "@mantine/core";
+import { Filter, Search } from "lucide-react";
 import { ALL_FILTER_VALUE } from "@/features/listing/listing.constants.shared";
 import {
   ShiftsAdvancedFiltersDesktop,
@@ -32,17 +18,25 @@ export function ShiftsFilterToolbar() {
   const { state, actions, meta } = useShiftsPage();
   const { filters } = state;
 
+  const filterCountBadge =
+    state.activeAdvancedFilterCount > 0 ? (
+      <Badge
+        className="ml-2 bg-[var(--color-voltage)]/20 font-mono text-[var(--color-voltage)]"
+        size="sm"
+        tt="none"
+      >
+        {state.activeAdvancedFilterCount}
+      </Badge>
+    ) : null;
+
   return (
     <div className="flex shrink-0 flex-col gap-4 border-zinc-800 border-b p-4 lg:flex-row lg:items-center lg:justify-between">
       <div className="flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-        <div className="relative w-full sm:max-w-xs md:max-w-sm">
-          <Search
-            aria-hidden="true"
-            className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-zinc-500"
-          />
-          <Input
-            className="h-10 rounded-lg border-zinc-800 bg-black/20 pl-9 focus-visible:border-[var(--color-voltage)] focus-visible:ring-[var(--color-voltage)]/20"
+        <div className="w-full sm:max-w-xs md:max-w-sm">
+          <TextInput
+            aria-label="Buscar turnos"
             id={meta.fieldIds.search}
+            leftSection={<Search aria-hidden="true" className="size-4" />}
             onChange={(event) => actions.setSearchQuery(event.target.value)}
             placeholder="Cajero, terminal o id…"
             value={filters.searchQuery}
@@ -51,60 +45,49 @@ export function ShiftsFilterToolbar() {
 
         <div className="w-full sm:w-[200px]">
           <Select
-            onValueChange={(value) =>
-              actions.setStatus(value === ALL_FILTER_VALUE ? "" : value)
+            aria-label="Filtrar por estado"
+            data={[
+              { value: ALL_FILTER_VALUE, label: "Todos" },
+              { value: "open", label: "Abierto" },
+              { value: "closed", label: "Cerrado" },
+            ]}
+            id={meta.fieldIds.status}
+            onChange={(value) =>
+              actions.setStatus(
+                !value || value === ALL_FILTER_VALUE ? "" : value
+              )
             }
+            placeholder="Estado"
             value={filters.status || ALL_FILTER_VALUE}
-          >
-            <SelectTrigger
-              className="h-10 w-full rounded-lg border-zinc-800 bg-black/20 text-white"
-              id={meta.fieldIds.status}
-            >
-              <SelectValue placeholder="Estado" />
-            </SelectTrigger>
-            <SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
-              <SelectItem value={ALL_FILTER_VALUE}>Todos</SelectItem>
-              <SelectItem value="open">Abierto</SelectItem>
-              <SelectItem value="closed">Cerrado</SelectItem>
-            </SelectContent>
-          </Select>
+          />
         </div>
 
-        <Sheet
-          onOpenChange={actions.setMobileFilterOpen}
-          open={state.isMobileFilterOpen}
+        <Button
+          className="w-full sm:hidden"
+          color="gray"
+          leftSection={<Filter aria-hidden="true" className="size-4" />}
+          onClick={() => actions.setMobileFilterOpen(true)}
+          type="button"
+          variant="outline"
         >
-          <SheetTrigger asChild>
-            <Button
-              className="h-10 w-full rounded-lg border-zinc-800 bg-black/20 text-zinc-300 hover:bg-white/5 hover:text-white sm:hidden"
-              type="button"
-              variant="outline"
-            >
-              <Filter aria-hidden="true" className="mr-2 size-4" />
-              Filtros
-              {state.activeAdvancedFilterCount > 0 ? (
-                <Badge className="ml-2 rounded-sm bg-[var(--color-voltage)]/20 px-1.5 py-0.5 font-mono text-[10px] text-[var(--color-voltage)] hover:bg-[var(--color-voltage)]/30">
-                  {state.activeAdvancedFilterCount}
-                </Badge>
-              ) : null}
-            </Button>
-          </SheetTrigger>
-          <SheetContent
-            className="h-[85vh] rounded-t-xl border-zinc-800 bg-[var(--color-carbon)] text-white"
-            showCloseButton={false}
-            side="bottom"
-          >
-            <SheetHeader className="border-zinc-800 border-b pb-4">
-              <SheetTitle className="text-zinc-200">
-                Filtros avanzados
-              </SheetTitle>
-            </SheetHeader>
+          Filtros
+          {filterCountBadge}
+        </Button>
+
+        <Drawer
+          onClose={() => actions.setMobileFilterOpen(false)}
+          opened={state.isMobileFilterOpen}
+          position="bottom"
+          size="85%"
+          title="Filtros avanzados"
+        >
+          <div className="flex h-full flex-col">
             <div className="flex-1 overflow-y-auto p-4">
               <ShiftsAdvancedFiltersMobile />
             </div>
             <div className="grid grid-cols-2 gap-3 border-zinc-800 border-t p-4">
               <Button
-                className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5 hover:text-white"
+                color="gray"
                 onClick={actions.clearFilters}
                 type="button"
                 variant="outline"
@@ -112,36 +95,31 @@ export function ShiftsFilterToolbar() {
                 Limpiar
               </Button>
               <Button
-                className="bg-[var(--color-voltage)] text-black hover:bg-[#d9f15c]"
+                c="black"
+                color="voltage.5"
                 onClick={actions.applyMobileFilters}
                 type="button"
               >
                 Aplicar
               </Button>
             </div>
-          </SheetContent>
-        </Sheet>
+          </div>
+        </Drawer>
 
-        <Popover>
-          <PopoverTrigger asChild>
+        <Popover position="bottom-start" shadow="xl" width={600} withinPortal>
+          <Popover.Target>
             <Button
-              className="hidden h-10 rounded-lg border-zinc-800 bg-black/20 text-zinc-300 hover:bg-white/5 hover:text-white sm:inline-flex"
+              className="hidden sm:inline-flex"
+              color="gray"
+              leftSection={<Filter aria-hidden="true" className="size-4" />}
               type="button"
               variant="outline"
             >
-              <Filter aria-hidden="true" className="mr-2 size-4" />
               Filtros
-              {state.activeAdvancedFilterCount > 0 ? (
-                <Badge className="ml-2 rounded-sm bg-[var(--color-voltage)]/20 px-1.5 py-0.5 font-mono text-[10px] text-[var(--color-voltage)] hover:bg-[var(--color-voltage)]/30">
-                  {state.activeAdvancedFilterCount}
-                </Badge>
-              ) : null}
+              {filterCountBadge}
             </Button>
-          </PopoverTrigger>
-          <PopoverContent
-            align="start"
-            className="z-50 w-[600px] rounded-xl border-zinc-800 bg-[var(--color-carbon)] p-4 text-white shadow-xl"
-          >
+          </Popover.Target>
+          <Popover.Dropdown>
             <div className="space-y-4">
               <h4 className="font-medium text-sm text-zinc-200">
                 Filtros avanzados
@@ -149,7 +127,8 @@ export function ShiftsFilterToolbar() {
               <ShiftsAdvancedFiltersDesktop />
               <div className="flex justify-end pt-2">
                 <Button
-                  className="bg-[var(--color-voltage)] text-black hover:bg-[#d9f15c]"
+                  c="black"
+                  color="voltage.5"
                   onClick={actions.applyDesktopFilters}
                   type="button"
                 >
@@ -157,15 +136,15 @@ export function ShiftsFilterToolbar() {
                 </Button>
               </div>
             </div>
-          </PopoverContent>
+          </Popover.Dropdown>
         </Popover>
 
         {state.activeFilterCount > 0 ? (
           <Button
-            className="h-10 text-zinc-400 hover:text-white"
+            color="gray"
             onClick={actions.clearFilters}
             type="button"
-            variant="ghost"
+            variant="subtle"
           >
             Limpiar
           </Button>

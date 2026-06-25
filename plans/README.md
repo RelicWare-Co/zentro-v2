@@ -19,6 +19,7 @@ run; the most notable unplanned candidates are listed under "Backlog" below.
 | 003 | Enforce stock invariant in sales + DB CHECK constraints | P2 | M | 001 | BLOCKED (POS v1 copy says sales can leave negative stock; needs product decision) |
 | 004 | Surface receipt-print failures to the cashier | P2 | S | — | DONE |
 | 005 | Playwright E2E for POS checkout & shift lifecycle | P2 | M | — | BLOCKED (checkout/split specs added; shift-close UI flow hits duplicate Zero mutate processing under Playwright) |
+| 006 | Reduce the production container to runtime dependencies | P1 | M | — | DONE (reviewed: 1,016 MB → 671 MB; runtime and migration smoke tests pass) |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale)
 
@@ -32,6 +33,8 @@ Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJE
   executing.
 - 004 and 005 are independent of everything else; 005's specs will exercise
   the code 004 touches, so if run concurrently, land 004 first.
+- 006 is independent of the existing plans. It must establish a container
+  runtime/migration smoke test before moving dependencies out of production.
 
 ## Backlog (vetted, real, not planned this run)
 

@@ -1,5 +1,12 @@
 import { useVirtualizer, type VirtualItem } from "@tanstack/react-virtual";
-import { type ReactNode, useRef } from "react";
+import {
+  type ComponentType,
+  memo,
+  type ReactNode,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
 import { Table, TableBody, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 
@@ -8,16 +15,16 @@ interface VirtualTableRowProps<T> {
   estimateSize: number;
   fixedSize: boolean;
   measureElement?: (node: Element | null) => void;
-  renderRow: (item: T, index: number) => ReactNode;
+  RowComponent: ComponentType<{ data: T; index: number }>;
   virtualRow: VirtualItem;
 }
 
-function VirtualTableRow<T>({
+const VirtualTableRow = memo(function VirtualTableRow<T>({
   data,
   estimateSize,
   fixedSize,
   measureElement,
-  renderRow,
+  RowComponent,
   virtualRow,
 }: VirtualTableRowProps<T>) {
   const item = data[virtualRow.index];
@@ -38,10 +45,10 @@ function VirtualTableRow<T>({
         height: fixedSize ? `${estimateSize}px` : `${virtualRow.size}px`,
       }}
     >
-      {renderRow(item, virtualRow.index)}
+      <RowComponent data={item} index={virtualRow.index} />
     </TableRow>
   );
-}
+}) as <T>(props: VirtualTableRowProps<T>) => ReactNode;
 
 interface VirtualTableProps<T> {
   className?: string;
@@ -58,13 +65,14 @@ interface VirtualTableProps<T> {
   header: ReactNode;
   maxHeight?: number | string;
   overscan?: number;
-  renderRow: (item: T, index: number) => ReactNode;
+  /** Component rendered per row. Receives `data` (the item) and `index`. */
+  RowComponent: ComponentType<{ data: T; index: number }>;
 }
 
 export function VirtualTable<T>({
   data,
   header,
-  renderRow,
+  RowComponent,
   getItemKey,
   estimateSize = 64,
   overscan = 8,
@@ -75,21 +83,35 @@ export function VirtualTable<T>({
 }: VirtualTableProps<T>) {
   const parentRef = useRef<HTMLDivElement>(null);
 
+  const getScrollElement = useCallback(() => parentRef.current, []);
+  const estimateSizeFn = useCallback(() => estimateSize, [estimateSize]);
+
+  const stableGetItemKey = useMemo(
+    () =>
+      getItemKey
+        ? (index: number) => getItemKey(data[index], index)
+        : undefined,
+    [getItemKey, data]
+  );
+
+  const dynamicMeasureElement = useCallback(
+    (el: Element) => el.getBoundingClientRect().height,
+    []
+  );
+  const measureElement = fixedSize ? undefined : dynamicMeasureElement;
+
   const virtualizer = useVirtualizer({
     count: data.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => estimateSize,
+    getScrollElement,
+    estimateSize: estimateSizeFn,
     overscan,
-    getItemKey: getItemKey
-      ? (index) => getItemKey(data[index], index)
-      : undefined,
-    measureElement: fixedSize
-      ? undefined
-      : (el) => el.getBoundingClientRect().height,
+    getItemKey: stableGetItemKey,
+    measureElement,
   });
 
   const virtualItems = virtualizer.getVirtualItems();
   const totalSize = virtualizer.getTotalSize();
+  const stableMeasureElement = virtualizer.measureElement;
 
   const paddingTop = virtualItems.length > 0 ? virtualItems[0].start : 0;
   const lastVirtualItem = virtualItems.at(-1);
@@ -128,8 +150,8 @@ export function VirtualTable<T>({
                   estimateSize={estimateSize}
                   fixedSize={fixedSize}
                   key={virtualRow.key}
-                  measureElement={virtualizer.measureElement}
-                  renderRow={renderRow}
+                  measureElement={stableMeasureElement}
+                  RowComponent={RowComponent}
                   virtualRow={virtualRow}
                 />
               ))}

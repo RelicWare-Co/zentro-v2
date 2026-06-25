@@ -172,6 +172,50 @@ describe("sale creation transactions", () => {
 
       await cleanup();
     });
+
+    test("tracked product sale is rejected when stock would become negative", async () => {
+      const { db, cleanup } = await createTestDb();
+      const { organizationId, userId } = await seedOrganizationWithMember(db);
+      const [productId, shiftId] = await Promise.all([
+        seedProduct(db, {
+          organizationId,
+          name: "Limited Item",
+          price: 10_000,
+          stock: 1,
+          trackInventory: true,
+        }),
+        seedShift(db, {
+          organizationId,
+          userId,
+          status: "open",
+        }),
+      ]);
+
+      await expect(
+        createCoreSale(
+          {
+            shiftId,
+            items: [{ productId, quantity: 2, unitPrice: 10_000 }],
+            payments: [{ method: "cash", amount: 20_000 }],
+          },
+          { db, organizationId, userId }
+        )
+      ).rejects.toThrow("No fue posible actualizar el stock");
+
+      const productRows = await db
+        .select({ stock: product.stock })
+        .from(product)
+        .where(eq(product.id, productId));
+      expect(productRows[0].stock).toBe(1);
+
+      const movementRows = await db
+        .select()
+        .from(inventoryMovement)
+        .where(eq(inventoryMovement.productId, productId));
+      expect(movementRows).toHaveLength(0);
+
+      await cleanup();
+    });
   });
 
   describe("VAL-SALE-002: sale creation validates payment totals", () => {
@@ -491,13 +535,17 @@ describe("sale creation transactions", () => {
     test("cancelling sale restores stock and records adjustment movement", async () => {
       const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const [productId, shiftId] = await Promise.all([
+      const [productId, customerId, shiftId] = await Promise.all([
         seedProduct(db, {
           organizationId,
           name: "Item",
           price: 10_000,
           stock: 20,
           trackInventory: true,
+        }),
+        seedCustomer(db, {
+          organizationId,
+          name: "Cancellation Customer",
         }),
         seedShift(db, {
           organizationId,
@@ -511,8 +559,10 @@ describe("sale creation transactions", () => {
       const saleResult = await createCoreSale(
         {
           shiftId,
+          customerId,
           items: [{ productId, quantity: 5, unitPrice: 10_000 }],
-          payments: [{ method: "cash", amount: 50_000 }],
+          payments: [],
+          isCreditSale: true,
         },
         { db, organizationId, userId }
       );
@@ -554,13 +604,17 @@ describe("sale creation transactions", () => {
     test("cancelling already cancelled sale is rejected", async () => {
       const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const [productId, shiftId] = await Promise.all([
+      const [productId, customerId, shiftId] = await Promise.all([
         seedProduct(db, {
           organizationId,
           name: "Item",
           price: 10_000,
           stock: 10,
           trackInventory: true,
+        }),
+        seedCustomer(db, {
+          organizationId,
+          name: "Already Cancelled Customer",
         }),
         seedShift(db, {
           organizationId,
@@ -574,8 +628,10 @@ describe("sale creation transactions", () => {
       const saleResult = await createCoreSale(
         {
           shiftId,
+          customerId,
           items: [{ productId, quantity: 1, unitPrice: 10_000 }],
-          payments: [{ method: "cash", amount: 10_000 }],
+          payments: [],
+          isCreditSale: true,
         },
         { db, organizationId, userId }
       );
@@ -592,6 +648,139 @@ describe("sale creation transactions", () => {
           input: { saleId: saleResult.saleId },
         })
       ).rejects.toThrow("La venta ya está anulada");
+
+      await cleanup();
+    });
+
+    test("cancelling restores stock that was tracked at sale time", async () => {
+      const { db, cleanup } = await createTestDb();
+      const { organizationId, userId } = await seedOrganizationWithMember(db);
+      const [productId, customerId, shiftId] = await Promise.all([
+        seedProduct(db, {
+          organizationId,
+          name: "Tracked Then Disabled",
+          price: 10_000,
+          stock: 20,
+          trackInventory: true,
+        }),
+        seedCustomer(db, {
+          organizationId,
+          name: "Tracked Customer",
+        }),
+        seedShift(db, {
+          organizationId,
+          userId,
+          status: "open",
+        }),
+      ]);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
+
+      const saleResult = await createCoreSale(
+        {
+          shiftId,
+          customerId,
+          items: [{ productId, quantity: 5, unitPrice: 10_000 }],
+          payments: [],
+          isCreditSale: true,
+        },
+        { db, organizationId, userId }
+      );
+
+      await db
+        .update(product)
+        .set({ trackInventory: false })
+        .where(eq(product.id, productId));
+
+      await cancelSaleViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: { saleId: saleResult.saleId },
+      });
+
+      const productRows = await db
+        .select({ stock: product.stock })
+        .from(product)
+        .where(eq(product.id, productId));
+      expect(productRows[0].stock).toBe(20);
+
+      const adjustmentRows = await db
+        .select()
+        .from(inventoryMovement)
+        .where(
+          and(
+            eq(inventoryMovement.productId, productId),
+            eq(inventoryMovement.type, "adjustment")
+          )
+        );
+      expect(adjustmentRows).toHaveLength(1);
+      expect(adjustmentRows[0].quantity).toBe(5);
+
+      await cleanup();
+    });
+
+    test("cancelling does not restore stock when sale did not move inventory", async () => {
+      const { db, cleanup } = await createTestDb();
+      const { organizationId, userId } = await seedOrganizationWithMember(db);
+      const [productId, customerId, shiftId] = await Promise.all([
+        seedProduct(db, {
+          organizationId,
+          name: "Untracked Then Enabled",
+          price: 10_000,
+          stock: 20,
+          trackInventory: false,
+        }),
+        seedCustomer(db, {
+          organizationId,
+          name: "Untracked Customer",
+        }),
+        seedShift(db, {
+          organizationId,
+          userId,
+          status: "open",
+        }),
+      ]);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
+
+      const saleResult = await createCoreSale(
+        {
+          shiftId,
+          customerId,
+          items: [{ productId, quantity: 5, unitPrice: 10_000 }],
+          payments: [],
+          isCreditSale: true,
+        },
+        { db, organizationId, userId }
+      );
+
+      await db
+        .update(product)
+        .set({ trackInventory: true })
+        .where(eq(product.id, productId));
+
+      await cancelSaleViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: { saleId: saleResult.saleId },
+      });
+
+      const productRows = await db
+        .select({ stock: product.stock })
+        .from(product)
+        .where(eq(product.id, productId));
+      expect(productRows[0].stock).toBe(20);
+
+      const adjustmentRows = await db
+        .select()
+        .from(inventoryMovement)
+        .where(
+          and(
+            eq(inventoryMovement.productId, productId),
+            eq(inventoryMovement.type, "adjustment")
+          )
+        );
+      expect(adjustmentRows).toHaveLength(0);
 
       await cleanup();
     });
@@ -627,7 +816,7 @@ describe("sale creation transactions", () => {
           shiftId,
           customerId,
           items: [{ productId, quantity: 1, unitPrice: 30_000 }],
-          payments: [{ method: "cash", amount: 5000 }],
+          payments: [],
           isCreditSale: true,
         },
         { db, organizationId, userId }
@@ -643,7 +832,7 @@ describe("sale creation transactions", () => {
             eq(creditAccount.customerId, customerId)
           )
         );
-      expect(accountBefore[0].balance).toBe(25_000);
+      expect(accountBefore[0].balance).toBe(30_000);
 
       await cancelSaleViaZero({
         zeroDb,
@@ -661,6 +850,29 @@ describe("sale creation transactions", () => {
           )
         );
       expect(accountAfter[0].balance).toBe(0);
+
+      const transactionRows = await db
+        .select({
+          amount: creditTransaction.amount,
+          saleId: creditTransaction.saleId,
+          type: creditTransaction.type,
+        })
+        .from(creditTransaction)
+        .where(eq(creditTransaction.saleId, saleResult.saleId));
+      expect(transactionRows).toEqual(
+        expect.arrayContaining([
+          {
+            amount: 30_000,
+            saleId: saleResult.saleId,
+            type: "charge",
+          },
+          {
+            amount: 30_000,
+            saleId: saleResult.saleId,
+            type: "reversal",
+          },
+        ])
+      );
 
       await cleanup();
     });
@@ -836,7 +1048,7 @@ describe("sale creation transactions", () => {
       );
 
       expect(result.totalAmount).toBe(10_000);
-      expect(result.paidAmount).toBe(12_000);
+      expect(result.paidAmount).toBe(10_000);
 
       await cleanup();
     });
@@ -1145,7 +1357,7 @@ describe("sale creation transactions", () => {
       );
 
       expect(result.totalAmount).toBe(10_000);
-      expect(result.paidAmount).toBe(14_000);
+      expect(result.paidAmount).toBe(10_000);
 
       await cleanup();
     });

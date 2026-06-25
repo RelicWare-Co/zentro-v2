@@ -1,99 +1,66 @@
+import { Select, Tabs } from "@mantine/core";
 import { Building2, Link2, Mail, Users } from "lucide-react";
 import type { ReactNode } from "react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ORGANIZATION_TAB_VALUES,
   type OrganizationTab,
 } from "@/features/organization/organization-page.constants.shared";
 import { useOrganizationPage } from "@/features/organization/organization-page-context";
 
+const MOBILE_TAB_DATA = [
+  { value: "general", label: "General" },
+  { value: "members", label: "Miembros" },
+  { value: "invitations", label: "Invitaciones" },
+  { value: "access", label: "Acceso" },
+];
+
 export function OrganizationPageTabs({ children }: { children: ReactNode }) {
   const { state, actions } = useOrganizationPage();
 
+  const selectTab = (value: string | null) => {
+    if (
+      value &&
+      ORGANIZATION_TAB_VALUES.includes(
+        value as (typeof ORGANIZATION_TAB_VALUES)[number]
+      )
+    ) {
+      actions.setActiveTab(value as OrganizationTab);
+    }
+  };
+
   return (
-    <Tabs
-      className="gap-6"
-      onValueChange={(value) => {
-        if (
-          ORGANIZATION_TAB_VALUES.includes(
-            value as (typeof ORGANIZATION_TAB_VALUES)[number]
-          )
-        ) {
-          actions.setActiveTab(value as OrganizationTab);
-        }
-      }}
-      value={state.activeTab}
-    >
+    <Tabs className="gap-6" onChange={selectTab} value={state.activeTab}>
       <div className="flex justify-center sm:hidden">
         <Select
-          onValueChange={(value) => {
-            if (
-              ORGANIZATION_TAB_VALUES.includes(
-                value as (typeof ORGANIZATION_TAB_VALUES)[number]
-              )
-            ) {
-              actions.setActiveTab(value as OrganizationTab);
-            }
-          }}
+          allowDeselect={false}
+          aria-label="Seleccionar pestaña"
+          data={MOBILE_TAB_DATA}
+          onChange={selectTab}
           value={state.activeTab}
-        >
-          <SelectTrigger className="h-10 w-auto min-w-[180px] rounded-xl border-zinc-800 bg-[var(--color-carbon)] px-5 font-medium text-sm text-white">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
-            <SelectItem value="general">
-              <div className="flex items-center gap-2">
-                <Building2 className="size-4" />
-                General
-              </div>
-            </SelectItem>
-            <SelectItem value="members">
-              <div className="flex items-center gap-2">
-                <Users className="size-4" />
-                Miembros
-              </div>
-            </SelectItem>
-            <SelectItem value="invitations">
-              <div className="flex items-center gap-2">
-                <Mail className="size-4" />
-                Invitaciones
-              </div>
-            </SelectItem>
-            <SelectItem value="access">
-              <div className="flex items-center gap-2">
-                <Link2 className="size-4" />
-                Acceso
-              </div>
-            </SelectItem>
-          </SelectContent>
-        </Select>
+          w={200}
+        />
       </div>
       <div className="hidden w-full justify-center sm:flex">
-        <TabsList className="flex-wrap">
-          <TabsTrigger value="general">
-            <Building2 className="size-4" />
+        <Tabs.List className="flex-wrap">
+          <Tabs.Tab
+            leftSection={<Building2 className="size-4" />}
+            value="general"
+          >
             General
-          </TabsTrigger>
-          <TabsTrigger value="members">
-            <Users className="size-4" />
+          </Tabs.Tab>
+          <Tabs.Tab leftSection={<Users className="size-4" />} value="members">
             Miembros
-          </TabsTrigger>
-          <TabsTrigger value="invitations">
-            <Mail className="size-4" />
+          </Tabs.Tab>
+          <Tabs.Tab
+            leftSection={<Mail className="size-4" />}
+            value="invitations"
+          >
             Invitaciones
-          </TabsTrigger>
-          <TabsTrigger value="access">
-            <Link2 className="size-4" />
+          </Tabs.Tab>
+          <Tabs.Tab leftSection={<Link2 className="size-4" />} value="access">
             Acceso
-          </TabsTrigger>
-        </TabsList>
+          </Tabs.Tab>
+        </Tabs.List>
       </div>
       {children}
     </Tabs>
@@ -105,7 +72,7 @@ export function OrganizationPageGeneralTabContent({
 }: {
   children: ReactNode;
 }) {
-  return <TabsContent value="general">{children}</TabsContent>;
+  return <Tabs.Panel value="general">{children}</Tabs.Panel>;
 }
 
 export function OrganizationPageMembersTabContent({
@@ -113,7 +80,7 @@ export function OrganizationPageMembersTabContent({
 }: {
   children: ReactNode;
 }) {
-  return <TabsContent value="members">{children}</TabsContent>;
+  return <Tabs.Panel value="members">{children}</Tabs.Panel>;
 }
 
 export function OrganizationPageInvitationsTabContent({
@@ -121,7 +88,7 @@ export function OrganizationPageInvitationsTabContent({
 }: {
   children: ReactNode;
 }) {
-  return <TabsContent value="invitations">{children}</TabsContent>;
+  return <Tabs.Panel value="invitations">{children}</Tabs.Panel>;
 }
 
 export function OrganizationPageAccessTabContent({
@@ -129,5 +96,5 @@ export function OrganizationPageAccessTabContent({
 }: {
   children: ReactNode;
 }) {
-  return <TabsContent value="access">{children}</TabsContent>;
+  return <Tabs.Panel value="access">{children}</Tabs.Panel>;
 }

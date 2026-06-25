@@ -1,22 +1,13 @@
+import { Badge, Drawer, Loader, Switch } from "@mantine/core";
+import { notifications } from "@mantine/notifications";
 import {
   Boxes,
   Building2,
-  Loader2,
   Package,
   Receipt,
   Users,
   Wallet,
 } from "lucide-react";
-import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
-import { Switch } from "@/components/ui/switch";
 import {
   Table,
   TableBody,
@@ -112,13 +103,17 @@ function ModuleRow({
         moduleKey: module.key,
         status: checked ? "granted" : "blocked",
       });
-      toast.success(
-        checked
+      notifications.show({
+        message: checked
           ? `Módulo "${module.label}" habilitado.`
-          : `Módulo "${module.label}" bloqueado.`
-      );
+          : `Módulo "${module.label}" bloqueado.`,
+        color: "green",
+      });
     } catch (error) {
-      toast.error(getErrorMessage(error, "No se pudo actualizar el módulo."));
+      notifications.show({
+        message: getErrorMessage(error, "No se pudo actualizar el módulo."),
+        color: "red",
+      });
     }
   };
 
@@ -130,7 +125,7 @@ function ModuleRow({
             {module.label}
           </p>
           {module.enabled ? (
-            <Badge className="border-[var(--color-voltage)]/20 bg-[var(--color-voltage)]/10 text-[var(--color-voltage)] hover:bg-[var(--color-voltage)]/10">
+            <Badge color="voltage.5" tt="none" variant="light">
               Activo
             </Badge>
           ) : null}
@@ -142,9 +137,10 @@ function ModuleRow({
       <Switch
         aria-label={`Permiso del módulo ${module.label}`}
         checked={isGranted}
+        color="voltage.5"
         disabled={setModule.isPending}
-        onCheckedChange={(checked) => {
-          handleToggle(checked).catch(() => undefined);
+        onChange={(event) => {
+          handleToggle(event.currentTarget.checked).catch(() => undefined);
         }}
       />
     </div>
@@ -242,12 +238,17 @@ function OrganizationMembers({ detail }: { detail: AdminOrganizationDetail }) {
               </div>
               <div className="flex shrink-0 items-center gap-2">
                 {member.banned ? (
-                  <Badge className="border-red-500/20 bg-red-500/10 text-red-200 hover:bg-red-500/10">
+                  <Badge
+                    className="border-red-500/20 bg-red-500/10 text-red-200"
+                    tt="none"
+                    variant="outline"
+                  >
                     Suspendido
                   </Badge>
                 ) : null}
                 <Badge
-                  className="border-zinc-700 bg-black/20 text-zinc-300 hover:bg-black/20"
+                  className="border-zinc-700 bg-black/20 text-zinc-300"
+                  tt="none"
                   variant="outline"
                 >
                   {formatOrganizationRoleLabel(member.role)}
@@ -298,7 +299,8 @@ function OrganizationRecentSales({
                   </TableCell>
                   <TableCell>
                     <Badge
-                      className="border-zinc-700 bg-black/20 text-zinc-300 hover:bg-black/20"
+                      className="border-zinc-700 bg-black/20 text-zinc-300"
+                      tt="none"
                       variant="outline"
                     >
                       {formatSaleStatusLabel(sale.status)}
@@ -327,7 +329,7 @@ function AdminOrganizationSheetContent({
   if (detailQuery.isPending) {
     return (
       <div className="flex h-full items-center justify-center">
-        <Loader2 className="size-7 animate-spin text-[var(--color-voltage)]" />
+        <Loader color="voltage.5" size="md" />
       </div>
     );
   }
@@ -335,12 +337,9 @@ function AdminOrganizationSheetContent({
   if (detailQuery.isError) {
     return (
       <div className="flex h-full flex-col">
-        <SheetHeader className="shrink-0 border-zinc-800 border-b p-6">
-          <SheetTitle className="font-bold text-2xl">Organización</SheetTitle>
-          <SheetDescription className="text-zinc-400">
-            No se pudo cargar el detalle.
-          </SheetDescription>
-        </SheetHeader>
+        <div className="shrink-0 border-zinc-800 border-b p-6">
+          <p className="text-zinc-400">No se pudo cargar el detalle.</p>
+        </div>
         <div className="flex-1 p-6">
           <p className="rounded-md border border-red-400/20 bg-red-400/10 p-3 font-medium text-red-300 text-sm">
             {getErrorMessage(
@@ -357,17 +356,17 @@ function AdminOrganizationSheetContent({
 
   return (
     <div className="flex h-full flex-col">
-      <SheetHeader className="shrink-0 border-zinc-800 border-b p-6">
-        <SheetTitle className="flex items-center gap-2 font-bold text-2xl">
+      <div className="shrink-0 border-zinc-800 border-b p-6">
+        <h2 className="flex items-center gap-2 font-bold text-2xl text-white">
           <Building2 className="size-5 text-[var(--color-voltage)]" />
           {detail.organization.name}
-        </SheetTitle>
-        <SheetDescription className="text-zinc-400">
+        </h2>
+        <p className="mt-1 text-zinc-400">
           {detail.organization.slug} · Creada{" "}
           {formatAdminDateTime(detail.organization.createdAt)} ·{" "}
           {formatCompactCurrency(detail.metrics.totalRevenue)} históricos
-        </SheetDescription>
-      </SheetHeader>
+        </p>
+      </div>
 
       <div className="flex-1 space-y-6 overflow-y-auto p-6">
         <OrganizationMetrics detail={detail} />
@@ -389,22 +388,19 @@ export function AdminOrganizationSheet() {
       : null;
 
   return (
-    <Sheet
-      onOpenChange={(open) => {
-        if (!open) {
-          actions.closeOverlay();
-        }
-      }}
-      open={isOpen}
+    <Drawer
+      onClose={actions.closeOverlay}
+      opened={isOpen}
+      position="right"
+      size={640}
+      title="Detalle de organización"
     >
-      <SheetContent className="!w-full !max-w-full sm:!w-[640px] overflow-hidden border-zinc-800 border-l bg-[var(--color-carbon)] p-0 text-white">
-        {organizationId ? (
-          <AdminOrganizationSheetContent
-            key={organizationId}
-            organizationId={organizationId}
-          />
-        ) : null}
-      </SheetContent>
-    </Sheet>
+      {organizationId ? (
+        <AdminOrganizationSheetContent
+          key={organizationId}
+          organizationId={organizationId}
+        />
+      ) : null}
+    </Drawer>
   );
 }

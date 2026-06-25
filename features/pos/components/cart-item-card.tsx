@@ -1,5 +1,5 @@
+import { TextInput } from "@mantine/core";
 import { Minus, Plus, Trash2 } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import { cn, formatMoneyInput, sanitizeMoneyInput } from "@/lib/utils";
 import type { CartItem } from "../types";
 import { calculateItemTotal, formatCurrency } from "../utils";
@@ -74,23 +74,23 @@ export function CartItemCard({
             >
               Descuento ítem
             </label>
-            <div className="relative mt-1">
-              <span className="absolute top-1/2 left-2 -translate-y-1/2 text-xs text-zinc-500">
-                $
-              </span>
-              <Input
-                autoComplete="off"
-                className="h-9 touch-manipulation border-zinc-800/80 bg-black/50 pl-6 text-base md:h-8 md:text-xs"
-                id={`item-discount-${item.id}`}
-                inputMode="numeric"
-                onChange={(event) =>
-                  onUpdateDiscount(sanitizeMoneyInput(event.target.value))
-                }
-                placeholder="0"
-                type="text"
-                value={formatMoneyInput(item.discountAmount)}
-              />
-            </div>
+            <TextInput
+              autoComplete="off"
+              classNames={{
+                input:
+                  "h-9 touch-manipulation border-zinc-800/80 bg-black/50 text-base md:h-8 md:text-xs",
+              }}
+              id={`item-discount-${item.id}`}
+              inputMode="numeric"
+              leftSection={<span className="text-xs text-zinc-500">$</span>}
+              mt={4}
+              onChange={(event) =>
+                onUpdateDiscount(sanitizeMoneyInput(event.target.value))
+              }
+              placeholder="0"
+              type="text"
+              value={formatMoneyInput(item.discountAmount)}
+            />
           </div>
         ) : null}
 

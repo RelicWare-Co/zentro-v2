@@ -1,7 +1,5 @@
+import { Alert, Button } from "@mantine/core";
 import type { ReactNode } from "react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   useKitchenBoard,
   useUpdateRestaurantOrderItemStatusMutation,
@@ -17,41 +15,32 @@ export default function KitchenPage() {
 
   if (isError) {
     boardContent = (
-      <Alert
-        className="border-red-500/20 bg-red-500/10 text-red-100"
-        variant="destructive"
-      >
-        <AlertTitle>Acceso denegado</AlertTitle>
-        <AlertDescription>
-          {error instanceof Error
-            ? error.message
-            : "No tienes acceso a la pantalla de cocina."}
-        </AlertDescription>
+      <Alert color="red" title="Acceso denegado" variant="light">
+        {error instanceof Error
+          ? error.message
+          : "No tienes acceso a la pantalla de cocina."}
       </Alert>
     );
   } else if (tickets.length === 0) {
     boardContent = (
-      <Alert className="border-zinc-700 bg-[var(--color-carbon)] text-[var(--color-photon)]">
-        <AlertTitle>Sin comandas</AlertTitle>
-        <AlertDescription>
-          No hay tickets pendientes en este momento.
-        </AlertDescription>
+      <Alert color="gray" title="Sin comandas">
+        No hay tickets pendientes en este momento.
       </Alert>
     );
   } else {
     boardContent = (
       <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
         {tickets.map((ticket) => (
-          <Card
-            className="border-zinc-800 bg-[var(--color-carbon)] shadow-none"
+          <div
+            className="rounded-xl border border-zinc-800 bg-[var(--color-carbon)] text-[var(--color-photon)]"
             key={ticket.id}
           >
-            <CardHeader className="border-zinc-800 border-b pb-4">
-              <CardTitle className="text-base">
+            <div className="border-zinc-800 border-b p-6 pb-4">
+              <h3 className="font-semibold text-base">
                 Orden #{ticket.orderNumber} · {ticket.table.name}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 pt-5">
+              </h3>
+            </div>
+            <div className="space-y-3 p-6 pt-5">
               <div className="text-sm text-zinc-400">
                 {ticket.table.areaName} · Ticket {ticket.sequenceNumber}
               </div>
@@ -78,7 +67,7 @@ export default function KitchenPage() {
                   <div className="mt-3 flex gap-2">
                     {item.status === "sent" ? (
                       <Button
-                        className="border-zinc-700 bg-transparent text-zinc-100 hover:bg-white/5"
+                        color="gray"
                         disabled={updateStatusMutation.isPending}
                         onClick={() =>
                           updateStatusMutation.mutate({
@@ -86,6 +75,7 @@ export default function KitchenPage() {
                             status: "ready",
                           })
                         }
+                        size="sm"
                         type="button"
                         variant="outline"
                       >
@@ -93,7 +83,7 @@ export default function KitchenPage() {
                       </Button>
                     ) : null}
                     <Button
-                      className="border-zinc-700 bg-transparent text-zinc-100 hover:bg-white/5"
+                      color="gray"
                       disabled={updateStatusMutation.isPending}
                       onClick={() =>
                         updateStatusMutation.mutate({
@@ -101,6 +91,7 @@ export default function KitchenPage() {
                           status: "served",
                         })
                       }
+                      size="sm"
                       type="button"
                       variant="outline"
                     >
@@ -109,8 +100,8 @@ export default function KitchenPage() {
                   </div>
                 </div>
               ))}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         ))}
       </div>
     );

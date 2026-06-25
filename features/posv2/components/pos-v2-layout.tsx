@@ -5,10 +5,12 @@ import { isPosOverlayBlockingCatalog } from "@/features/pos/pos-page-modals.shar
 import { openPosCashDrawer } from "@/features/pos/printing/print-sale-receipt.client";
 import { CartPanelV2 } from "@/features/posv2/components/cart-panel-v2";
 import { PosV2Header } from "@/features/posv2/components/pos-v2-header";
+import { posV2OrderCanvasBg } from "@/features/posv2/components/pos-v2-order-styles";
 import { ProductCatalog } from "@/features/posv2/components/product-catalog";
 import { useKeyboardBarcodeScanner } from "@/features/posv2/hooks/use-keyboard-barcode-scanner.client";
 import { buildPosV2BarcodeScanPayload } from "@/features/posv2/posv2-barcode.shared";
 import { RestaurantPosTables } from "@/features/restaurants/components/restaurant-pos-overlay";
+import { cn } from "@/lib/utils";
 
 export function PosV2Layout() {
   const { state, actions, meta } = usePosPage();
@@ -83,7 +85,12 @@ export function PosV2Layout() {
   ]);
 
   return (
-    <div className="grid h-full min-h-0 grid-rows-[auto_minmax(0,1fr)] overflow-hidden bg-[#0a0a0a] text-white">
+    <div
+      className={cn(
+        "grid h-full min-h-0 grid-rows-[auto_minmax(0,1fr)] overflow-hidden text-white",
+        posV2OrderCanvasBg
+      )}
+    >
       <PosV2Header
         activeShift={state.activeShift}
         defaultTerminalName={meta.defaultTerminalName}

@@ -1,6 +1,6 @@
+import { Tabs } from "@mantine/core";
 import { Building2, LayoutDashboard, Users } from "lucide-react";
 import type { ReactNode } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AdminPageProvider,
   useAdminPage,
@@ -45,29 +45,32 @@ function AdminPageLayout() {
       <AdminPageRoot>
         <AdminPageHeader />
         <Tabs className="space-y-6" defaultValue="overview">
-          <TabsList className="border border-zinc-800 bg-[var(--color-carbon)]">
-            <TabsTrigger value="overview">
-              <LayoutDashboard className="size-4" />
+          <Tabs.List>
+            <Tabs.Tab
+              leftSection={<LayoutDashboard className="size-4" />}
+              value="overview"
+            >
               Resumen
-            </TabsTrigger>
-            <TabsTrigger value="organizations">
-              <Building2 className="size-4" />
+            </Tabs.Tab>
+            <Tabs.Tab
+              leftSection={<Building2 className="size-4" />}
+              value="organizations"
+            >
               Organizaciones
-            </TabsTrigger>
-            <TabsTrigger value="users">
-              <Users className="size-4" />
+            </Tabs.Tab>
+            <Tabs.Tab leftSection={<Users className="size-4" />} value="users">
               Usuarios
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="overview">
+            </Tabs.Tab>
+          </Tabs.List>
+          <Tabs.Panel value="overview">
             <AdminOverviewTab />
-          </TabsContent>
-          <TabsContent value="organizations">
+          </Tabs.Panel>
+          <Tabs.Panel value="organizations">
             <AdminOrganizationsTab />
-          </TabsContent>
-          <TabsContent value="users">
+          </Tabs.Panel>
+          <Tabs.Panel value="users">
             <AdminUsersTab />
-          </TabsContent>
+          </Tabs.Panel>
         </Tabs>
       </AdminPageRoot>
       <AdminUserFormSheet />

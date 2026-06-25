@@ -1,15 +1,6 @@
-import { Loader2, MonitorSmartphone, ShieldOff, X } from "lucide-react";
-import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { ActionIcon, Badge, Button, Drawer, Loader } from "@mantine/core";
+import { notifications } from "@mantine/notifications";
+import { MonitorSmartphone, ShieldOff, X } from "lucide-react";
 import {
   type AdminPanelSession,
   type AdminPanelUser,
@@ -28,9 +19,12 @@ function SessionRow({ session }: { session: AdminPanelSession }) {
       await adminActions.revokeUserSession.mutateAsync({
         sessionToken: session.token,
       });
-      toast.success("Sesión revocada.");
+      notifications.show({ message: "Sesión revocada.", color: "green" });
     } catch (error) {
-      toast.error(getErrorMessage(error, "No se pudo revocar la sesión."));
+      notifications.show({
+        message: getErrorMessage(error, "No se pudo revocar la sesión."),
+        color: "red",
+      });
     }
   };
 
@@ -48,24 +42,26 @@ function SessionRow({ session }: { session: AdminPanelSession }) {
           {formatAdminDateTime(session.expiresAt)}
         </p>
         {session.impersonatedBy ? (
-          <Badge className="border-amber-400/20 bg-amber-400/10 text-amber-200 hover:bg-amber-400/10">
+          <Badge
+            className="border-amber-400/20 bg-amber-400/10 text-amber-200"
+            tt="none"
+            variant="outline"
+          >
             Suplantación activa
           </Badge>
         ) : null}
       </div>
-      <Button
+      <ActionIcon
         aria-label="Revocar sesión"
-        className="border-red-500/30 bg-transparent text-red-200 hover:bg-red-500/10"
+        color="red"
         disabled={adminActions.revokeUserSession.isPending}
         onClick={() => {
           handleRevoke().catch(() => undefined);
         }}
-        size="sm"
-        type="button"
         variant="outline"
       >
         <X className="size-3.5" />
-      </Button>
+      </ActionIcon>
     </div>
   );
 }
@@ -78,11 +74,15 @@ function AdminSessionsSheetContent({ user }: { user: AdminPanelUser }) {
   const handleRevokeAll = async () => {
     try {
       await adminActions.revokeUserSessions.mutateAsync({ userId: user.id });
-      toast.success(`Sesiones de ${user.name} revocadas.`);
+      notifications.show({
+        message: `Sesiones de ${user.name} revocadas.`,
+        color: "green",
+      });
     } catch (error) {
-      toast.error(
-        getErrorMessage(error, "No se pudieron revocar las sesiones.")
-      );
+      notifications.show({
+        message: getErrorMessage(error, "No se pudieron revocar las sesiones."),
+        color: "red",
+      });
     }
   };
 
@@ -90,7 +90,7 @@ function AdminSessionsSheetContent({ user }: { user: AdminPanelUser }) {
   if (sessionsQuery.isPending) {
     sessionsContent = (
       <div className="flex items-center justify-center p-10">
-        <Loader2 className="size-6 animate-spin text-zinc-500" />
+        <Loader color="gray" size="sm" />
       </div>
     );
   } else if (sessionsQuery.isError) {
@@ -123,33 +123,33 @@ function AdminSessionsSheetContent({ user }: { user: AdminPanelUser }) {
 
   return (
     <div className="flex h-full flex-col">
-      <SheetHeader className="shrink-0 border-zinc-800 border-b p-6">
-        <SheetTitle className="font-bold text-2xl">Sesiones activas</SheetTitle>
-        <SheetDescription className="text-zinc-400">
+      <div className="shrink-0 border-zinc-800 border-b p-6">
+        <p className="text-sm text-zinc-400">
           Sesiones abiertas de {user.name} ({user.email}).
-        </SheetDescription>
-      </SheetHeader>
+        </p>
+      </div>
 
       <div className="flex-1 overflow-y-auto p-6">{sessionsContent}</div>
 
-      <SheetFooter className="shrink-0 border-zinc-800 border-t bg-black/30 p-6">
+      <div className="shrink-0 border-zinc-800 border-t bg-black/30 p-6">
         <Button
-          className="border-red-500/30 bg-transparent text-red-200 hover:bg-red-500/10"
+          color="red"
           disabled={
             adminActions.revokeUserSessions.isPending || sessions.length === 0
           }
+          fullWidth
+          leftSection={<ShieldOff className="size-4" />}
           onClick={() => {
             handleRevokeAll().catch(() => undefined);
           }}
           type="button"
           variant="outline"
         >
-          <ShieldOff className="size-4" />
           {adminActions.revokeUserSessions.isPending
             ? "Revocando…"
             : "Revocar todas las sesiones"}
         </Button>
-      </SheetFooter>
+      </div>
     </div>
   );
 }
@@ -161,17 +161,14 @@ export function AdminSessionsSheet() {
     state.activeOverlay?.type === "sessions" ? state.activeOverlay.user : null;
 
   return (
-    <Sheet
-      onOpenChange={(open) => {
-        if (!open) {
-          actions.closeOverlay();
-        }
-      }}
-      open={isOpen}
+    <Drawer
+      onClose={actions.closeOverlay}
+      opened={isOpen}
+      position="right"
+      size={540}
+      title="Sesiones activas"
     >
-      <SheetContent className="!w-full !max-w-full sm:!w-[540px] overflow-hidden border-zinc-800 border-l bg-[var(--color-carbon)] p-0 text-white">
-        {user ? <AdminSessionsSheetContent key={user.id} user={user} /> : null}
-      </SheetContent>
-    </Sheet>
+      {user ? <AdminSessionsSheetContent key={user.id} user={user} /> : null}
+    </Drawer>
   );
 }

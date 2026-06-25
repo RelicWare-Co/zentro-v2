@@ -1,6 +1,5 @@
+import { Badge, Button } from "@mantine/core";
 import { Plus } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { useCustomersPage } from "@/features/customers/customers-page-context";
 
 export function CustomersPageHeader() {
@@ -11,7 +10,7 @@ export function CustomersPageHeader() {
       <div className="space-y-2">
         <div className="flex items-center gap-3">
           <h1 className="font-semibold text-3xl tracking-tight">Clientes</h1>
-          <Badge className="border-[var(--color-voltage)]/20 bg-[var(--color-voltage)]/10 text-[var(--color-voltage)] hover:bg-[var(--color-voltage)]/10">
+          <Badge color="voltage" radius="xl" variant="light">
             {state.total} clientes
           </Badge>
         </div>
@@ -20,11 +19,12 @@ export function CustomersPageHeader() {
         </p>
       </div>
       <Button
-        className="bg-[var(--color-voltage)] text-black hover:bg-[#d9f15c]"
+        c="black"
+        color="voltage.5"
+        leftSection={<Plus className="size-4" />}
         onClick={actions.openCreate}
         type="button"
       >
-        <Plus className="size-4" />
         Crear cliente
       </Button>
     </section>

@@ -11,6 +11,11 @@ COPY package.json bun.lock ./
 COPY desktop/package.json ./desktop/package.json
 RUN bun install --frozen-lockfile --ignore-scripts
 
+FROM base AS production-install
+COPY package.json bun.lock ./
+COPY desktop/package.json ./desktop/package.json
+RUN bun install --frozen-lockfile --production --ignore-scripts
+
 # --- Dev stage (used by docker-compose.dev.yml) ---
 # Installs deps (incl. devDependencies) into the image. At runtime the repo is
 # bind-mounted over /app, but an anonymous volume keeps this container-built
@@ -42,7 +47,7 @@ CMD ["bun", "run", "db:migrate"]
 FROM base AS release
 ENV NODE_ENV=production
 COPY package.json bun.lock ./
-COPY --from=install /app/node_modules node_modules
+COPY --from=production-install /app/node_modules node_modules
 COPY --from=build /app/dist dist
 COPY --from=build /app/database database
 COPY --from=build /app/scripts scripts

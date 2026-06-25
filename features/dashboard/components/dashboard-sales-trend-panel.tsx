@@ -1,4 +1,4 @@
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@mantine/core";
 import {
   DashboardPanelShell,
   EmptyState,
@@ -38,6 +38,7 @@ export function DashboardSalesTrendPanel() {
       headerAside={
         <Badge
           className="self-start border-zinc-700 bg-black/20 text-zinc-300 sm:self-auto"
+          tt="none"
           variant="outline"
         >
           {formatCurrency(weeklyRevenue)}

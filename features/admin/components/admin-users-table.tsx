@@ -1,8 +1,17 @@
 import {
+  ActionIcon,
+  Badge,
+  Button,
+  Loader,
+  Menu,
+  Select,
+  TextInput,
+} from "@mantine/core";
+import { notifications } from "@mantine/notifications";
+import {
   ChevronLeft,
   ChevronRight,
   KeyRound,
-  Loader2,
   MonitorSmartphone,
   MoreHorizontal,
   Pencil,
@@ -15,24 +24,6 @@ import {
   UserX,
   VenetianMask,
 } from "lucide-react";
-import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -53,26 +44,43 @@ import { useAdminUserActions } from "@/features/admin/hooks/use-admin-user-actio
 import type { AdminUsersSearchField } from "@/features/admin/hooks/use-admin-users";
 import { getErrorMessage } from "@/lib/utils";
 
+const darkMenuStyles = {
+  dropdown: {
+    backgroundColor: "var(--color-carbon)",
+    borderColor: "#27272a",
+  },
+  item: { color: "#e4e4e7" },
+} as const;
+
 function UserStatusBadges({ user }: { user: AdminPanelUser }) {
   const isBanned = isUserCurrentlyBanned(user);
 
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       {isAdminUser(user) ? (
-        <Badge className="border-[var(--color-voltage)]/20 bg-[var(--color-voltage)]/10 text-[var(--color-voltage)] hover:bg-[var(--color-voltage)]/10">
-          <ShieldCheck className="size-3" />
+        <Badge
+          color="voltage.5"
+          leftSection={<ShieldCheck className="size-3" />}
+          tt="none"
+          variant="light"
+        >
           Admin
         </Badge>
       ) : (
         <Badge
           className="border-zinc-700 bg-zinc-800/80 text-zinc-300"
+          tt="none"
           variant="outline"
         >
           {formatUserRoleLabel(user.role)}
         </Badge>
       )}
       {isBanned ? (
-        <Badge className="border-red-500/20 bg-red-500/10 text-red-300 hover:bg-red-500/10">
+        <Badge
+          className="border-red-500/20 bg-red-500/10 text-red-300"
+          tt="none"
+          variant="outline"
+        >
           Suspendido
         </Badge>
       ) : null}
@@ -91,94 +99,104 @@ function UserRowActions({ user }: { user: AdminPanelUser }) {
       await adminActions.impersonateUser.mutateAsync({ userId: user.id });
       window.location.href = "/dashboard";
     } catch (error) {
-      toast.error(getErrorMessage(error, "No se pudo suplantar al usuario."));
+      notifications.show({
+        message: getErrorMessage(error, "No se pudo suplantar al usuario."),
+        color: "red",
+      });
     }
   };
 
   const handleUnban = async () => {
     try {
       await adminActions.unbanUser.mutateAsync({ userId: user.id });
-      toast.success(`${user.name} fue reactivado.`);
+      notifications.show({
+        message: `${user.name} fue reactivado.`,
+        color: "green",
+      });
     } catch (error) {
-      toast.error(getErrorMessage(error, "No se pudo reactivar al usuario."));
+      notifications.show({
+        message: getErrorMessage(error, "No se pudo reactivar al usuario."),
+        color: "red",
+      });
     }
   };
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
+    <Menu position="bottom-end" styles={darkMenuStyles} withinPortal>
+      <Menu.Target>
+        <ActionIcon
           aria-label={`Acciones para ${user.name}`}
-          className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5"
-          size="sm"
-          type="button"
+          color="gray"
           variant="outline"
         >
-          <MoreHorizontal className="size-4" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align="end"
-        className="border-zinc-800 bg-[var(--color-carbon)] text-zinc-200"
-      >
-        <DropdownMenuItem onSelect={() => actions.openEdit(user)}>
-          <Pencil className="size-4" />
-          Editar datos
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          disabled={isSelf}
-          onSelect={() => actions.openRole(user)}
+          <MoreHorizontal aria-hidden="true" className="size-4" />
+        </ActionIcon>
+      </Menu.Target>
+      <Menu.Dropdown>
+        <Menu.Item
+          leftSection={<Pencil className="size-4" />}
+          onClick={() => actions.openEdit(user)}
         >
-          <UserCog className="size-4" />
-          Cambiar rol
-        </DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => actions.openPassword(user)}>
-          <KeyRound className="size-4" />
-          Cambiar contraseña
-        </DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => actions.openSessions(user)}>
-          <MonitorSmartphone className="size-4" />
-          Ver sesiones
-        </DropdownMenuItem>
-        <DropdownMenuSeparator className="bg-zinc-800" />
-        <DropdownMenuItem
+          Editar datos
+        </Menu.Item>
+        <Menu.Item
           disabled={isSelf}
-          onSelect={() => {
+          leftSection={<UserCog className="size-4" />}
+          onClick={() => actions.openRole(user)}
+        >
+          Cambiar rol
+        </Menu.Item>
+        <Menu.Item
+          leftSection={<KeyRound className="size-4" />}
+          onClick={() => actions.openPassword(user)}
+        >
+          Cambiar contraseña
+        </Menu.Item>
+        <Menu.Item
+          leftSection={<MonitorSmartphone className="size-4" />}
+          onClick={() => actions.openSessions(user)}
+        >
+          Ver sesiones
+        </Menu.Item>
+        <Menu.Divider />
+        <Menu.Item
+          disabled={isSelf}
+          leftSection={<VenetianMask className="size-4" />}
+          onClick={() => {
             handleImpersonate().catch(() => undefined);
           }}
         >
-          <VenetianMask className="size-4" />
           Suplantar usuario
-        </DropdownMenuItem>
-        <DropdownMenuSeparator className="bg-zinc-800" />
+        </Menu.Item>
+        <Menu.Divider />
         {isBanned ? (
-          <DropdownMenuItem
-            onSelect={() => {
+          <Menu.Item
+            leftSection={<UserCheck className="size-4" />}
+            onClick={() => {
               handleUnban().catch(() => undefined);
             }}
           >
-            <UserCheck className="size-4" />
             Reactivar usuario
-          </DropdownMenuItem>
+          </Menu.Item>
         ) : (
-          <DropdownMenuItem
+          <Menu.Item
             disabled={isSelf}
-            onSelect={() => actions.openBan(user)}
+            leftSection={<UserX className="size-4" />}
+            onClick={() => actions.openBan(user)}
           >
-            <UserX className="size-4" />
             Suspender usuario
-          </DropdownMenuItem>
+          </Menu.Item>
         )}
-        <DropdownMenuItem
-          className="text-red-300 focus:text-red-200"
+        <Menu.Item
+          color="red"
           disabled={isSelf}
-          onSelect={() => actions.openDelete(user)}
+          leftSection={<Trash2 className="size-4" />}
+          onClick={() => actions.openDelete(user)}
         >
-          <Trash2 className="size-4" />
           Eliminar usuario
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+        </Menu.Item>
+      </Menu.Dropdown>
+    </Menu>
   );
 }
 
@@ -194,39 +212,34 @@ export function AdminUsersTable() {
   return (
     <section className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="relative w-full sm:max-w-sm">
-          <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-zinc-500" />
-          <Input
-            className="border-zinc-800 bg-black/20 pl-9"
+        <div className="w-full sm:max-w-sm">
+          <TextInput
+            aria-label="Buscar usuarios"
+            leftSection={<Search aria-hidden="true" className="size-4" />}
             onChange={(event) => actions.setSearchQuery(event.target.value)}
             placeholder={
               state.searchField === "email"
                 ? "Buscar por email…"
                 : "Buscar por nombre…"
             }
+            rightSection={
+              state.isFetching && !state.isPending ? (
+                <Loader color="gray" size="xs" />
+              ) : null
+            }
             value={state.searchQuery}
           />
-          {state.isFetching && !state.isPending ? (
-            <Loader2 className="absolute top-1/2 right-3 size-4 -translate-y-1/2 animate-spin text-zinc-500" />
-          ) : null}
         </div>
         <Select
-          onValueChange={(value) =>
-            actions.setSearchField(value as AdminUsersSearchField)
+          allowDeselect={false}
+          aria-label="Campo de búsqueda"
+          className="w-full sm:w-40"
+          data={SEARCH_FIELD_OPTIONS}
+          onChange={(value) =>
+            actions.setSearchField((value ?? "email") as AdminUsersSearchField)
           }
           value={state.searchField}
-        >
-          <SelectTrigger className="w-full border-zinc-700 bg-black/20 text-white sm:w-40">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
-            {SEARCH_FIELD_OPTIONS.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        />
       </div>
 
       <div className="overflow-hidden rounded-xl border border-zinc-800 bg-[var(--color-carbon)]">
@@ -306,26 +319,26 @@ export function AdminUsersTable() {
         </p>
         <div className="flex gap-2">
           <Button
-            className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5"
+            color="gray"
             disabled={state.page <= 1}
+            leftSection={<ChevronLeft className="size-4" />}
             onClick={() => actions.setPage(state.page - 1)}
-            size="sm"
+            size="xs"
             type="button"
             variant="outline"
           >
-            <ChevronLeft className="size-4" />
             Anterior
           </Button>
           <Button
-            className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5"
+            color="gray"
             disabled={state.page >= state.totalPages}
             onClick={() => actions.setPage(state.page + 1)}
-            size="sm"
+            rightSection={<ChevronRight className="size-4" />}
+            size="xs"
             type="button"
             variant="outline"
           >
             Siguiente
-            <ChevronRight className="size-4" />
           </Button>
         </div>
       </div>

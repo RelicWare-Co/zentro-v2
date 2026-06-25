@@ -1,19 +1,12 @@
-import { Check, Loader2, Pencil, Trash2 } from "lucide-react";
-import { useId, useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Badge, Button, TextInput } from "@mantine/core";
+import { Check, Pencil, Trash2 } from "lucide-react";
+import { useState } from "react";
 import { parseRoleList } from "@/features/organization/access-control.shared";
 import { OrganizationDeleteDialog } from "@/features/organization/components/organization-delete-dialog";
-import { Detail } from "@/features/organization/components/organization-ui-primitives";
+import {
+  Detail,
+  OrgCard,
+} from "@/features/organization/components/organization-ui-primitives";
 import {
   useDeleteOrganizationMutation,
   useUpdateOrganizationMutation,
@@ -31,8 +24,6 @@ export function GeneralTab() {
   const [editName, setEditName] = useState(data?.organization.name ?? "");
   const [editSlug, setEditSlug] = useState(data?.organization.slug ?? "");
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const orgNameId = useId();
-  const orgSlugId = useId();
 
   const updateMutation = useUpdateOrganizationMutation();
   const deleteMutation = useDeleteOrganizationMutation();
@@ -64,121 +55,97 @@ export function GeneralTab() {
 
   return (
     <div className="space-y-6">
-      <Card className="border-zinc-800 bg-[var(--color-carbon)] shadow-none">
-        <CardHeader>
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <CardTitle>Información General</CardTitle>
-              <CardDescription className="text-zinc-400">
-                Detalles básicos de la organización activa.
-              </CardDescription>
-            </div>
+      <OrgCard
+        description="Detalles básicos de la organización activa."
+        title={
+          <div className="flex w-full items-center justify-between gap-4">
+            <span>Información General</span>
             {data.viewer.canManageAccess && !isEditing && (
               <Button
-                className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5"
+                color="gray"
+                leftSection={<Pencil className="size-3.5" />}
                 onClick={() => setIsEditing(true)}
                 size="sm"
                 variant="outline"
               >
-                <Pencil className="mr-1.5 size-3.5" />
                 Editar
               </Button>
             )}
           </div>
-        </CardHeader>
-        <CardContent>
-          {isEditing ? (
-            <form className="space-y-4" onSubmit={handleSave}>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor={orgNameId}>Nombre</Label>
-                  <Input
-                    className="border-zinc-800 bg-black/30"
-                    disabled={updateMutation.isPending}
-                    id={orgNameId}
-                    onChange={(e) => setEditName(e.target.value)}
-                    placeholder="Ej. Tienda Principal"
-                    value={editName}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor={orgSlugId}>Slug</Label>
-                  <Input
-                    className="border-zinc-800 bg-black/30"
-                    disabled={updateMutation.isPending}
-                    id={orgSlugId}
-                    onChange={(e) =>
-                      setEditSlug(
-                        e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "")
-                      )
-                    }
-                    placeholder="tienda-principal"
-                    value={editSlug}
-                  />
-                </div>
-              </div>
-              <div className="flex flex-col-reverse gap-3 sm:flex-row">
-                <Button
-                  className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5"
-                  disabled={updateMutation.isPending}
-                  onClick={() => {
-                    setIsEditing(false);
-                    setEditName(data.organization.name);
-                    setEditSlug(data.organization.slug);
-                  }}
-                  type="button"
-                  variant="outline"
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  className="bg-[var(--color-voltage)] text-black hover:bg-[#d9f15c]"
-                  disabled={updateMutation.isPending}
-                  type="submit"
-                >
-                  {updateMutation.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 size-4 animate-spin" />
-                      Guardando…
-                    </>
-                  ) : (
-                    <>
-                      <Check className="mr-2 size-4" />
-                      Guardar
-                    </>
-                  )}
-                </Button>
-              </div>
-            </form>
-          ) : (
+        }
+      >
+        {isEditing ? (
+          <form className="space-y-4" onSubmit={handleSave}>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Detail label="Nombre" value={data.organization.name} />
-              <Detail label="Slug" value={`/${data.organization.slug}`} />
-              <Detail label="ID" mono value={data.organization.id} />
-              <Detail
-                label="Creada"
-                value={
-                  data.organization.createdAt
-                    ? organizationDateFormatter.format(
-                        data.organization.createdAt
-                      )
-                    : "N/A"
+              <TextInput
+                disabled={updateMutation.isPending}
+                label="Nombre"
+                onChange={(e) => setEditName(e.target.value)}
+                placeholder="Ej. Tienda Principal"
+                value={editName}
+              />
+              <TextInput
+                disabled={updateMutation.isPending}
+                label="Slug"
+                onChange={(e) =>
+                  setEditSlug(
+                    e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "")
+                  )
                 }
+                placeholder="tienda-principal"
+                value={editSlug}
               />
             </div>
-          )}
-        </CardContent>
-      </Card>
+            <div className="flex flex-col-reverse gap-3 sm:flex-row">
+              <Button
+                color="gray"
+                disabled={updateMutation.isPending}
+                onClick={() => {
+                  setIsEditing(false);
+                  setEditName(data.organization.name);
+                  setEditSlug(data.organization.slug);
+                }}
+                type="button"
+                variant="outline"
+              >
+                Cancelar
+              </Button>
+              <Button
+                c="black"
+                color="voltage.5"
+                leftSection={<Check className="size-4" />}
+                loading={updateMutation.isPending}
+                type="submit"
+              >
+                Guardar
+              </Button>
+            </div>
+          </form>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Detail label="Nombre" value={data.organization.name} />
+            <Detail label="Slug" value={`/${data.organization.slug}`} />
+            <Detail label="ID" mono value={data.organization.id} />
+            <Detail
+              label="Creada"
+              value={
+                data.organization.createdAt
+                  ? organizationDateFormatter.format(
+                      data.organization.createdAt
+                    )
+                  : "N/A"
+              }
+            />
+          </div>
+        )}
+      </OrgCard>
 
-      <Card className="border-zinc-800 bg-[var(--color-carbon)] shadow-none">
-        <CardHeader>
-          <CardTitle>Permisos Actuales</CardTitle>
-          <CardDescription className="text-zinc-400">
-            Tu rol determina qué acciones puedes realizar.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-wrap gap-2">
-          <Badge className="border-zinc-700 text-zinc-300" variant="outline">
+      <OrgCard
+        description="Tu rol determina qué acciones puedes realizar."
+        title="Permisos Actuales"
+      >
+        <div className="flex flex-wrap gap-2">
+          <Badge color="gray" tt="none" variant="outline">
             {formatOrganizationRoleLabel(data.viewer.role)}
           </Badge>
           <Badge
@@ -187,40 +154,37 @@ export function GeneralTab() {
                 ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-200"
                 : "border-zinc-700 bg-zinc-800 text-zinc-400"
             }
+            tt="none"
             variant="outline"
           >
             {data.viewer.canManageAccess
               ? "Puede gestionar acceso"
               : "Acceso de lectura"}
           </Badge>
-        </CardContent>
-      </Card>
+        </div>
+      </OrgCard>
 
       {isOwner && (
-        <Card className="border-red-500/20 bg-red-500/5 shadow-none">
-          <CardHeader>
-            <CardTitle className="text-red-200">Zona de Peligro</CardTitle>
-            <CardDescription className="text-red-200/60">
+        <OrgCard
+          className="border-red-500/20 bg-red-500/5"
+          description={
+            <span className="text-red-200/60">
               Eliminar la organización es irreversible.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button
-              className="border-red-500/30 bg-transparent text-red-200 hover:bg-red-500/10"
-              disabled={deleteMutation.isPending}
-              onClick={() => setShowDeleteDialog(true)}
-              size="sm"
-              variant="outline"
-            >
-              {deleteMutation.isPending ? (
-                <Loader2 className="mr-2 size-4 animate-spin" />
-              ) : (
-                <Trash2 className="mr-2 size-4" />
-              )}
-              Eliminar Organización
-            </Button>
-          </CardContent>
-        </Card>
+            </span>
+          }
+          title={<span className="text-red-200">Zona de Peligro</span>}
+        >
+          <Button
+            color="red"
+            leftSection={<Trash2 className="size-4" />}
+            loading={deleteMutation.isPending}
+            onClick={() => setShowDeleteDialog(true)}
+            size="sm"
+            variant="outline"
+          >
+            Eliminar Organización
+          </Button>
+        </OrgCard>
       )}
 
       <OrganizationDeleteDialog

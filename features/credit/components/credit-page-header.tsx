@@ -1,4 +1,4 @@
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@mantine/core";
 import { creditCurrencyFormatter } from "@/features/credit/credit-formatters.shared";
 import { useCreditPage } from "@/features/credit/credit-page-context";
 
@@ -10,7 +10,7 @@ export function CreditPageHeader() {
       <div className="space-y-2">
         <div className="flex items-center gap-3">
           <h1 className="font-semibold text-3xl tracking-tight">Crédito</h1>
-          <Badge className="border-[var(--color-voltage)]/20 bg-[var(--color-voltage)]/10 text-[var(--color-voltage)] hover:bg-[var(--color-voltage)]/10">
+          <Badge color="voltage" radius="xl" variant="light">
             {state.totalAccounts} cuentas
           </Badge>
         </div>

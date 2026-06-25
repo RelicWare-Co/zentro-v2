@@ -1,21 +1,6 @@
+import { Button, Group, Modal, Select, Stack, Text } from "@mantine/core";
+import { notifications } from "@mantine/notifications";
 import { useState } from "react";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   ADMIN_ROLE_OPTIONS,
   type AdminPanelUser,
@@ -36,49 +21,48 @@ function AdminRoleDialogContent({ user }: { user: AdminPanelUser }) {
   const handleSubmit = async () => {
     try {
       await adminActions.setRole.mutateAsync({ userId: user.id, role });
-      toast.success(`Rol de ${user.name} actualizado.`);
+      notifications.show({
+        message: `Rol de ${user.name} actualizado.`,
+        color: "green",
+      });
       actions.closeOverlay();
     } catch (error) {
-      toast.error(getErrorMessage(error, "No se pudo cambiar el rol."));
+      notifications.show({
+        message: getErrorMessage(error, "No se pudo cambiar el rol."),
+        color: "red",
+      });
     }
   };
 
   return (
-    <>
-      <DialogHeader>
-        <DialogTitle>Cambiar rol</DialogTitle>
-        <DialogDescription className="text-zinc-400">
-          Define el rol de plataforma de {user.name}. Los administradores tienen
-          control total sobre los usuarios.
-        </DialogDescription>
-      </DialogHeader>
+    <Stack gap="md">
+      <Text c="dimmed" size="sm">
+        Define el rol de plataforma de {user.name}. Los administradores tienen
+        control total sobre los usuarios.
+      </Text>
       <Select
-        onValueChange={(value) => setRole(value as AdminRoleValue)}
+        allowDeselect={false}
+        aria-label="Rol del usuario"
+        data={ADMIN_ROLE_OPTIONS.map((option) => ({
+          value: option.value,
+          label: option.label,
+        }))}
+        onChange={(value) => setRole((value ?? "user") as AdminRoleValue)}
         value={role}
-      >
-        <SelectTrigger className="w-full border-zinc-700 bg-black/20 text-white">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
-          {ADMIN_ROLE_OPTIONS.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
-              {option.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <DialogFooter>
+      />
+      <Group justify="flex-end">
         <Button
-          className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5"
+          color="gray"
           onClick={actions.closeOverlay}
           type="button"
-          variant="outline"
+          variant="default"
         >
           Cancelar
         </Button>
         <Button
-          className="bg-[var(--color-voltage)] text-black hover:bg-[#d9f15c]"
-          disabled={adminActions.setRole.isPending}
+          c="black"
+          color="voltage.5"
+          loading={adminActions.setRole.isPending}
           onClick={() => {
             handleSubmit().catch(() => undefined);
           }}
@@ -86,8 +70,8 @@ function AdminRoleDialogContent({ user }: { user: AdminPanelUser }) {
         >
           {adminActions.setRole.isPending ? "Guardando…" : "Guardar rol"}
         </Button>
-      </DialogFooter>
-    </>
+      </Group>
+    </Stack>
   );
 }
 
@@ -98,17 +82,13 @@ export function AdminRoleDialog() {
     state.activeOverlay?.type === "role" ? state.activeOverlay.user : null;
 
   return (
-    <Dialog
-      onOpenChange={(open) => {
-        if (!open) {
-          actions.closeOverlay();
-        }
-      }}
-      open={isOpen}
+    <Modal
+      centered
+      onClose={actions.closeOverlay}
+      opened={isOpen}
+      title="Cambiar rol"
     >
-      <DialogContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
-        {user ? <AdminRoleDialogContent key={user.id} user={user} /> : null}
-      </DialogContent>
-    </Dialog>
+      {user ? <AdminRoleDialogContent key={user.id} user={user} /> : null}
+    </Modal>
   );
 }

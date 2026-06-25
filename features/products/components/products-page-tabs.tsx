@@ -1,6 +1,6 @@
+import { Tabs } from "@mantine/core";
 import { History, Package } from "lucide-react";
 import type { ReactNode } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   PRODUCTS_TAB_VALUES,
   type ProductsTab,
@@ -13,8 +13,9 @@ export function ProductsPageTabs({ children }: { children: ReactNode }) {
   return (
     <Tabs
       className="space-y-6"
-      onValueChange={(value) => {
+      onChange={(value) => {
         if (
+          value &&
           PRODUCTS_TAB_VALUES.includes(
             value as (typeof PRODUCTS_TAB_VALUES)[number]
           )
@@ -25,19 +26,25 @@ export function ProductsPageTabs({ children }: { children: ReactNode }) {
       value={state.activeTab}
     >
       <div className="mb-6 flex w-full justify-center">
-        <TabsList>
-          <TabsTrigger className="flex-1 sm:flex-none" value="products">
-            <Package className="size-4" />
+        <Tabs.List>
+          <Tabs.Tab
+            className="flex-1 sm:flex-none"
+            leftSection={<Package className="size-4" />}
+            value="products"
+          >
             Productos
-          </TabsTrigger>
-          <TabsTrigger className="flex-1 sm:flex-none" value="categories">
+          </Tabs.Tab>
+          <Tabs.Tab className="flex-1 sm:flex-none" value="categories">
             Categorías
-          </TabsTrigger>
-          <TabsTrigger className="flex-1 sm:flex-none" value="kardex">
-            <History className="size-4" />
+          </Tabs.Tab>
+          <Tabs.Tab
+            className="flex-1 sm:flex-none"
+            leftSection={<History className="size-4" />}
+            value="kardex"
+          >
             Kardex
-          </TabsTrigger>
-        </TabsList>
+          </Tabs.Tab>
+        </Tabs.List>
       </div>
       {children}
     </Tabs>
@@ -50,9 +57,9 @@ export function ProductsPageProductsTabContent({
   children: ReactNode;
 }) {
   return (
-    <TabsContent className="space-y-6" value="products">
+    <Tabs.Panel className="space-y-6" value="products">
       {children}
-    </TabsContent>
+    </Tabs.Panel>
   );
 }
 
@@ -62,9 +69,9 @@ export function ProductsPageCategoriesTabContent({
   children: ReactNode;
 }) {
   return (
-    <TabsContent className="space-y-6" value="categories">
+    <Tabs.Panel className="space-y-6" value="categories">
       {children}
-    </TabsContent>
+    </Tabs.Panel>
   );
 }
 
@@ -74,8 +81,8 @@ export function ProductsPageKardexTabContent({
   children: ReactNode;
 }) {
   return (
-    <TabsContent className="space-y-6" value="kardex">
+    <Tabs.Panel className="space-y-6" value="kardex">
       {children}
-    </TabsContent>
+    </Tabs.Panel>
   );
 }

@@ -1,21 +1,6 @@
+import { ActionIcon, Badge, Select } from "@mantine/core";
 import { Check, Pencil, UserX, XCircle } from "lucide-react";
-import { useId, useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { useState } from "react";
 import {
   Table,
   TableBody,
@@ -46,7 +31,6 @@ export function MembersTab() {
     memberId: string;
     name: string;
   } | null>(null);
-  const roleSelectId = useId();
 
   const updateRoleMutation = useUpdateMemberRoleMutation();
   const removeMutation = useRemoveMemberMutation();
@@ -82,164 +66,154 @@ export function MembersTab() {
   const canEditMembers = data.viewer.canManageAccess;
 
   return (
-    <Card className="border-zinc-800 bg-[var(--color-carbon)] shadow-none">
-      <CardHeader>
-        <CardTitle>Miembros Activos</CardTitle>
-        <CardDescription className="text-zinc-400">
+    <div className="overflow-hidden rounded-xl border border-zinc-800 bg-[var(--color-carbon)] text-[var(--color-photon)]">
+      <div className="space-y-1.5 p-6">
+        <h3 className="font-semibold">Miembros Activos</h3>
+        <p className="text-sm text-zinc-400">
           Listado de usuarios con acceso a esta organización.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="p-0">
-        <Table>
-          <TableHeader>
-            <TableRow className="border-zinc-800 hover:bg-transparent">
-              <TableHead className="px-4 text-zinc-400">Miembro</TableHead>
-              <TableHead className="text-zinc-400">Rol</TableHead>
-              <TableHead className="text-zinc-400">Ingreso</TableHead>
-              {canEditMembers && (
-                <TableHead className="text-right text-zinc-400">
-                  Acciones
-                </TableHead>
-              )}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {data.members.map((member) => {
-              const isSelf = member.userId === data.viewer.userId;
-              const isEditing = editingMemberId === member.memberId;
-              const memberRoles = parseRoleList(member.role);
-              const isMemberOwner = memberRoles.includes("owner");
-              const canEditThis =
-                canEditMembers && (viewerIsOwner || !isMemberOwner) && !isSelf;
-              const canRemoveThis =
-                canEditMembers && !isSelf && (viewerIsOwner || !isMemberOwner);
+        </p>
+      </div>
+      <Table>
+        <TableHeader>
+          <TableRow className="border-zinc-800 hover:bg-transparent">
+            <TableHead className="px-4 text-zinc-400">Miembro</TableHead>
+            <TableHead className="text-zinc-400">Rol</TableHead>
+            <TableHead className="text-zinc-400">Ingreso</TableHead>
+            {canEditMembers && (
+              <TableHead className="text-right text-zinc-400">
+                Acciones
+              </TableHead>
+            )}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {data.members.map((member) => {
+            const isSelf = member.userId === data.viewer.userId;
+            const isEditing = editingMemberId === member.memberId;
+            const memberRoles = parseRoleList(member.role);
+            const isMemberOwner = memberRoles.includes("owner");
+            const canEditThis =
+              canEditMembers && (viewerIsOwner || !isMemberOwner) && !isSelf;
+            const canRemoveThis =
+              canEditMembers && !isSelf && (viewerIsOwner || !isMemberOwner);
 
-              return (
-                <TableRow
-                  className="border-zinc-800 hover:bg-white/5"
-                  key={member.memberId}
-                >
-                  <TableCell className="px-4">
-                    <div className="flex min-w-0 items-center gap-3">
-                      <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-zinc-800">
-                        <span className="font-medium text-sm text-zinc-400">
-                          {member.name.charAt(0).toUpperCase()}
-                        </span>
-                      </div>
-                      <div className="min-w-0">
-                        <p className="truncate font-medium text-sm text-white">
-                          {member.name}
-                        </p>
-                        <p className="truncate text-xs text-zinc-500">
-                          {member.email}
-                        </p>
-                      </div>
+            return (
+              <TableRow
+                className="border-zinc-800 hover:bg-white/5"
+                key={member.memberId}
+              >
+                <TableCell className="px-4">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-zinc-800">
+                      <span className="font-medium text-sm text-zinc-400">
+                        {member.name.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate font-medium text-sm text-white">
+                        {member.name}
+                      </p>
+                      <p className="truncate text-xs text-zinc-500">
+                        {member.email}
+                      </p>
+                    </div>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  {isEditing ? (
+                    <div className="flex items-center gap-2">
+                      <Select
+                        data={ORGANIZATION_ROLE_OPTIONS.map((r) => ({
+                          value: r.value,
+                          label: r.label,
+                        }))}
+                        disabled={updateRoleMutation.isPending}
+                        onChange={(value) => setPendingRole(value ?? "")}
+                        size="xs"
+                        value={pendingRole}
+                        w={128}
+                      />
+                      <ActionIcon
+                        aria-label="Guardar rol"
+                        color="teal"
+                        disabled={updateRoleMutation.isPending}
+                        onClick={() => {
+                          saveRole(member.memberId).catch(() => undefined);
+                        }}
+                        variant="subtle"
+                      >
+                        <Check className="size-4" />
+                      </ActionIcon>
+                      <ActionIcon
+                        aria-label="Cancelar edición"
+                        color="gray"
+                        onClick={() => setEditingMemberId(null)}
+                        variant="subtle"
+                      >
+                        <XCircle className="size-4" />
+                      </ActionIcon>
+                    </div>
+                  ) : (
+                    <Badge color="gray" tt="none" variant="outline">
+                      {formatOrganizationRoleLabel(member.role)}
+                    </Badge>
+                  )}
+                </TableCell>
+                <TableCell className="text-sm text-zinc-400">
+                  {member.joinedAt
+                    ? organizationDateFormatter.format(member.joinedAt)
+                    : "N/A"}
+                </TableCell>
+                {canEditMembers && (
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      {canEditThis && !isEditing && (
+                        <ActionIcon
+                          aria-label="Editar rol"
+                          color="gray"
+                          onClick={() =>
+                            startEditRole(member.memberId, member.role)
+                          }
+                          variant="subtle"
+                        >
+                          <Pencil className="size-4" />
+                        </ActionIcon>
+                      )}
+                      {canRemoveThis && (
+                        <ActionIcon
+                          aria-label="Remover miembro"
+                          color="red"
+                          disabled={removeMutation.isPending}
+                          onClick={() =>
+                            setConfirmRemoveMember({
+                              memberId: member.memberId,
+                              name: member.name,
+                            })
+                          }
+                          variant="subtle"
+                        >
+                          <UserX className="size-4" />
+                        </ActionIcon>
+                      )}
                     </div>
                   </TableCell>
-                  <TableCell>
-                    {isEditing ? (
-                      <div className="flex items-center gap-2">
-                        <Select
-                          disabled={updateRoleMutation.isPending}
-                          onValueChange={setPendingRole}
-                          value={pendingRole}
-                        >
-                          <SelectTrigger
-                            className="h-8 w-32 border-zinc-800 bg-black/30 text-xs"
-                            id={roleSelectId}
-                          >
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {ORGANIZATION_ROLE_OPTIONS.map((r) => (
-                              <SelectItem key={r.value} value={r.value}>
-                                {r.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <Button
-                          className="text-emerald-400 hover:text-emerald-300"
-                          disabled={updateRoleMutation.isPending}
-                          onClick={() => {
-                            saveRole(member.memberId).catch(() => undefined);
-                          }}
-                          size="icon-sm"
-                          variant="ghost"
-                        >
-                          <Check className="size-4" />
-                        </Button>
-                        <Button
-                          className="text-zinc-400 hover:text-zinc-300"
-                          onClick={() => setEditingMemberId(null)}
-                          size="icon-sm"
-                          variant="ghost"
-                        >
-                          <XCircle className="size-4" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <Badge className="text-zinc-300" variant="outline">
-                        {formatOrganizationRoleLabel(member.role)}
-                      </Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-sm text-zinc-400">
-                    {member.joinedAt
-                      ? organizationDateFormatter.format(member.joinedAt)
-                      : "N/A"}
-                  </TableCell>
-                  {canEditMembers && (
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        {canEditThis && !isEditing && (
-                          <Button
-                            className="text-zinc-400 hover:text-white"
-                            onClick={() =>
-                              startEditRole(member.memberId, member.role)
-                            }
-                            size="icon-sm"
-                            variant="ghost"
-                          >
-                            <Pencil className="size-4" />
-                          </Button>
-                        )}
-                        {canRemoveThis && (
-                          <Button
-                            className="text-red-400 hover:text-red-300"
-                            disabled={removeMutation.isPending}
-                            onClick={() =>
-                              setConfirmRemoveMember({
-                                memberId: member.memberId,
-                                name: member.name,
-                              })
-                            }
-                            size="icon-sm"
-                            variant="ghost"
-                          >
-                            <UserX className="size-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  )}
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-        {data.members.length === 0 ? (
-          <div className="p-8 text-center text-sm text-zinc-500">
-            No hay miembros en la organización.
-          </div>
-        ) : null}
-      </CardContent>
+                )}
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+      {data.members.length === 0 ? (
+        <div className="p-8 text-center text-sm text-zinc-500">
+          No hay miembros en la organización.
+        </div>
+      ) : null}
 
       <MemberRemoveDialog
         member={confirmRemoveMember}
         onOpenChange={() => setConfirmRemoveMember(null)}
         open={!!confirmRemoveMember}
       />
-    </Card>
+    </div>
   );
 }

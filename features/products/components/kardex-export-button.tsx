@@ -1,8 +1,8 @@
+import { Button } from "@mantine/core";
+import { notifications } from "@mantine/notifications";
 import { useZero } from "@rocicorp/zero/react";
 import { Download } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import type { InventoryMovementsListParams } from "@/features/products/hooks/use-inventory-movements";
 import {
   buildInventoryMovementsCsv,
@@ -32,9 +32,9 @@ export function KardexExportButton({
       });
 
       if (rows.length === 0) {
-        toast.message(
-          "No hay movimientos para exportar con los filtros actuales."
-        );
+        notifications.show({
+          message: "No hay movimientos para exportar con los filtros actuales.",
+        });
         return;
       }
 
@@ -43,31 +43,39 @@ export function KardexExportButton({
       downloadInventoryMovementsCsv(`kardex-${stamp}.csv`, csv);
 
       if (truncated) {
-        toast.warning(
-          "Se exportó el máximo de 10.000 filas. Ajusta el rango de fechas para ver el resto."
-        );
+        notifications.show({
+          message:
+            "Se exportó el máximo de 10.000 filas. Ajusta el rango de fechas para ver el resto.",
+          color: "yellow",
+        });
         return;
       }
 
-      toast.success(`Exportados ${rows.length} movimientos.`);
+      notifications.show({
+        message: `Exportados ${rows.length} movimientos.`,
+        color: "green",
+      });
     } catch {
-      toast.error("No se pudo exportar el Kardex.");
+      notifications.show({
+        message: "No se pudo exportar el Kardex.",
+        color: "red",
+      });
     }
     setIsExporting(false);
   };
 
   return (
     <Button
-      className="border-zinc-800 bg-[var(--color-carbon)] text-zinc-300 hover:bg-white/5 hover:text-white"
-      disabled={isExporting}
+      color="gray"
+      leftSection={<Download className="size-4" />}
+      loading={isExporting}
       onClick={() => {
         handleExport().catch(() => undefined);
       }}
       type="button"
       variant="outline"
     >
-      <Download className="size-4" />
-      {isExporting ? "Exportando..." : "Exportar CSV"}
+      Exportar CSV
     </Button>
   );
 }

@@ -1,13 +1,6 @@
+import { Button, Drawer } from "@mantine/core";
 import { ShoppingCart } from "lucide-react";
 import { useCallback, useState } from "react";
-import { Button } from "@/components/ui/button";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "@/components/ui/drawer";
 import { CartPanel } from "@/features/pos/components/cart-panel";
 import { PosHeader } from "@/features/pos/components/pos-header";
 import { ProductGrid } from "@/features/pos/components/product-grid";
@@ -93,28 +86,29 @@ export function PosV1Layout() {
       </div>
 
       {isMobile && (
-        <Drawer
-          onOpenChange={actions.setIsMobileCartOpen}
-          open={state.isMobileCartOpen}
-        >
-          <DrawerTrigger asChild>
-            <Button
-              className="fixed right-4 bottom-4 z-50 size-14 rounded-full bg-[var(--color-voltage)] text-black shadow-lg hover:bg-[#c9e605]"
-              size="icon"
-            >
-              <ShoppingCart className="size-5" />
+        <>
+          <Button
+            aria-label={`Abrir carrito${state.totalItems > 0 ? `, ${state.totalItems} productos` : ""}`}
+            className="fixed right-4 bottom-4 z-50 size-14 rounded-full bg-[var(--color-voltage)] p-0 text-black shadow-lg hover:bg-[#c9e605]"
+            onClick={() => actions.setIsMobileCartOpen(true)}
+          >
+            <span className="relative">
+              <ShoppingCart aria-hidden="true" className="size-5" />
               {state.totalItems > 0 && (
-                <span className="absolute -top-1 -right-1 flex size-5 items-center justify-center rounded-full bg-red-500 font-bold text-[10px] text-white">
+                <span className="absolute -top-2 -right-2 flex size-5 items-center justify-center rounded-full bg-red-500 font-bold text-[10px] text-white">
                   {state.totalItems}
                 </span>
               )}
-            </Button>
-          </DrawerTrigger>
-          <DrawerContent className="max-h-[85dvh] border-zinc-800 bg-[var(--color-carbon)] text-white">
-            <DrawerHeader className="border-zinc-800 border-b">
-              <DrawerTitle>Orden Actual</DrawerTitle>
-            </DrawerHeader>
-            <div className="flex h-[calc(85dvh-80px)] flex-col">
+            </span>
+          </Button>
+          <Drawer
+            onClose={() => actions.setIsMobileCartOpen(false)}
+            opened={state.isMobileCartOpen}
+            position="bottom"
+            size="85%"
+            title="Orden Actual"
+          >
+            <div className="flex h-full flex-col">
               <CartPanel
                 cart={state.cart}
                 className="w-full flex-1 border-l-0"
@@ -133,8 +127,8 @@ export function PosV1Layout() {
                 totals={state.totals}
               />
             </div>
-          </DrawerContent>
-        </Drawer>
+          </Drawer>
+        </>
       )}
     </div>
   );

@@ -1,6 +1,5 @@
+import { Badge, Button } from "@mantine/core";
 import { Save } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { useSettingsPage } from "@/features/settings/settings-page-context";
 
 export function SettingsPageHeader() {
@@ -10,7 +9,7 @@ export function SettingsPageHeader() {
   return (
     <section className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
       <div className="space-y-3">
-        <Badge className="border-[var(--color-voltage)]/20 bg-[var(--color-voltage)]/10 text-[var(--color-voltage)] hover:bg-[var(--color-voltage)]/10">
+        <Badge color="voltage" radius="xl" tt="none" variant="light">
           Configuración
         </Badge>
         <div className="space-y-2">
@@ -25,7 +24,7 @@ export function SettingsPageHeader() {
 
       <div className="flex flex-col gap-3 sm:flex-row">
         <Button
-          className="border-zinc-700 bg-[var(--color-carbon)] text-zinc-200 hover:bg-white/5 hover:text-white"
+          color="gray"
           disabled={!(canManageSettings && hasChanges) || isSaving}
           onClick={actions.resetDraft}
           type="button"
@@ -34,15 +33,17 @@ export function SettingsPageHeader() {
           Restablecer
         </Button>
         <Button
-          className="bg-[var(--color-voltage)] text-black hover:bg-[#d9f15c]"
-          disabled={!(canManageSettings && hasChanges) || isSaving}
+          c="black"
+          color="voltage.5"
+          disabled={!(canManageSettings && hasChanges)}
+          leftSection={<Save className="size-4" />}
+          loading={isSaving}
           onClick={() => {
             actions.save().catch(() => undefined);
           }}
           type="button"
         >
-          <Save className="size-4" />
-          {isSaving ? "Guardando..." : "Guardar cambios"}
+          Guardar cambios
         </Button>
       </div>
     </section>

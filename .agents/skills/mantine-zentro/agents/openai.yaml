@@ -1,0 +1,4 @@
+interface:
+  display_name: "Mantine Zentro"
+  short_description: "Mantine UI patterns for Zentro"
+  default_prompt: "Use $mantine-zentro to implement this UI change with Mantine conventions."

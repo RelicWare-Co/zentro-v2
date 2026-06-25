@@ -1,49 +1,42 @@
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { Button, Group, Modal, Stack, Text } from "@mantine/core";
 import { useSalesPage } from "@/features/sales/sales-page-context";
 
 export function SalesCancelDialog() {
   const { state, actions } = useSalesPage();
 
   return (
-    <AlertDialog
-      onOpenChange={actions.setCancelDialogOpen}
-      open={state.isCancelDialogOpen}
+    <Modal
+      centered
+      onClose={() => actions.setCancelDialogOpen(false)}
+      opened={state.isCancelDialogOpen}
+      title="Anular venta"
     >
-      <AlertDialogContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
-        <AlertDialogHeader>
-          <AlertDialogTitle>Anular venta</AlertDialogTitle>
-          <AlertDialogDescription className="text-zinc-400">
-            Esta venta quedará anulada. Sus pagos dejarán de contar para caja y
-            sus valores no sumarán en ventas. Esta acción no se puede deshacer.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel
-            className="border-zinc-700 bg-transparent text-zinc-300 hover:bg-white/5 hover:text-white"
+      <Stack gap="lg">
+        <Text c="dimmed" size="sm">
+          Solo se pueden anular ventas sin cobros registrados. La anulación
+          revertirá inventario y saldos de crédito pendientes, y no se puede
+          deshacer.
+        </Text>
+        <Group justify="flex-end">
+          <Button
+            color="gray"
             disabled={state.isCancelling}
+            onClick={() => actions.setCancelDialogOpen(false)}
+            variant="default"
           >
             Volver
-          </AlertDialogCancel>
-          <AlertDialogAction
-            className="border-none bg-rose-500 text-white hover:bg-rose-600"
-            disabled={state.isCancelling}
+          </Button>
+          <Button
+            color="red"
+            loading={state.isCancelling}
             onClick={() => {
               actions.confirmCancelSale().catch(() => undefined);
             }}
           >
             {state.isCancelling ? "Anulando…" : "Confirmar anulación"}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+          </Button>
+        </Group>
+      </Stack>
+    </Modal>
   );
 }

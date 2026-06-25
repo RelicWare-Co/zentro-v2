@@ -1,3 +1,4 @@
+import { Button, Textarea } from "@mantine/core";
 import {
   Check,
   LogOut,
@@ -6,8 +7,6 @@ import {
   Trash2,
   UtensilsCrossed,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { buildTableItemStatusBadge } from "@/features/pos/components/table-item-status.shared";
 import {
   type PosTableSessionState,
@@ -16,8 +15,16 @@ import {
 import { formatCurrency } from "@/features/pos/utils";
 import { CheckoutSectionV2 } from "@/features/posv2/components/checkout-section-v2";
 import {
+  posV2AccentText,
+  posV2ButtonOutlineClassName,
+  posV2IconText,
+  posV2MutedColor,
+  posV2MutedText,
   posV2OrderBorder,
+  posV2OrderBorderSubtle,
   posV2OrderPanelBg,
+  posV2PlaceholderText,
+  posV2SurfaceButtonClassName,
 } from "@/features/posv2/components/pos-v2-order-styles";
 import { cn } from "@/lib/utils";
 import { CartItemCardV2 } from "./cart-item-card-v2";
@@ -46,13 +53,13 @@ function CartPanelV2Header({
           <div className="flex items-center gap-2">
             <UtensilsCrossed
               aria-hidden="true"
-              className="size-4 shrink-0 text-[#dfff06]"
+              className={cn("size-4 shrink-0", posV2AccentText)}
             />
             <h2 className="truncate font-semibold text-base text-white leading-none">
               {tableSession.tableName}
             </h2>
           </div>
-          <p className="mt-1 truncate text-[#6b6b6b] text-xs">
+          <p className={cn("mt-1 truncate text-xs", posV2MutedText)}>
             {tableSession.areaName}
             {tableSession.orderNumber
               ? ` · Orden #${tableSession.orderNumber}`
@@ -62,11 +69,12 @@ function CartPanelV2Header({
         </div>
         <Button
           aria-label="Salir de la mesa"
-          className="h-8 shrink-0 rounded-lg px-2 font-medium text-xs text-zinc-400 transition-all hover:bg-white/5 hover:text-white"
+          className="shrink-0 text-zinc-400 hover:bg-white/5 hover:text-white"
+          leftSection={<LogOut className="size-4" />}
           onClick={onExitTable}
-          variant="ghost"
+          size="compact-sm"
+          variant="subtle"
         >
-          <LogOut className="mr-1 size-4" />
           Salir
         </Button>
       </>
@@ -79,16 +87,20 @@ function CartPanelV2Header({
         <h2 className="font-semibold text-base text-white leading-none">
           Orden Actual
         </h2>
-        <p className="mt-1 text-[#6b6b6b] text-xs">{totalItems} artículos</p>
+        <p className={cn("mt-1 text-xs", posV2MutedText)}>
+          {totalItems} artículos
+        </p>
       </div>
       <Button
         aria-label="Limpiar carrito"
-        className="h-8 rounded-lg px-2 font-medium text-red-400 text-xs transition-all hover:bg-red-400/10 hover:text-red-300"
+        className="text-red-400 hover:bg-red-400/10 hover:text-red-300"
+        color="red"
         disabled={!hasItems}
+        leftSection={<Trash2 className="size-4" />}
         onClick={onClearCart}
-        variant="ghost"
+        size="compact-sm"
+        variant="subtle"
       >
-        <Trash2 className="mr-1 size-4" />
         Limpiar
       </Button>
     </>
@@ -105,15 +117,16 @@ function CartPanelV2FooterAction({
   if (tableSession) {
     return (
       <Button
-        className="h-9 w-full rounded-lg border border-[rgba(255,255,255,0.12)] bg-transparent font-semibold text-white text-xs shadow-none transition-all hover:border-[rgba(255,255,255,0.2)] hover:bg-[#1a1a1a] disabled:opacity-40"
+        className={posV2ButtonOutlineClassName}
         disabled={
           tableSession.draftItemsCount === 0 || tableSession.isSendingToKitchen
         }
+        fullWidth
+        leftSection={<Send className="size-3.5" />}
         onClick={actions.sendTableOrderToKitchen}
         type="button"
         variant="outline"
       >
-        <Send className="mr-1.5 size-3.5" />
         {tableSession.isSendingToKitchen
           ? "Enviando a cocina..."
           : `Enviar a cocina${
@@ -126,22 +139,21 @@ function CartPanelV2FooterAction({
   }
 
   return (
-    <div className="space-y-1.5">
-      <label
-        className="font-medium text-[#6b6b6b] text-xs"
-        htmlFor="pos-v2-delivery-info"
-      >
-        Info domicilio
-      </label>
-      <Textarea
-        className="min-h-14 resize-none border-[rgba(255,255,255,0.08)] bg-[#101010] text-white text-xs placeholder:text-[#4b4b4b]"
-        id="pos-v2-delivery-info"
-        maxLength={280}
-        onChange={(event) => actions.setDeliveryInfo(event.target.value)}
-        placeholder="Dirección, referencia o instrucciones"
-        value={state.deliveryInfo}
-      />
-    </div>
+    <Textarea
+      classNames={{
+        input: `resize-none text-white text-xs ${posV2PlaceholderText} ${posV2OrderBorder} ${posV2OrderPanelBg}`,
+      }}
+      id="pos-v2-delivery-info"
+      label="Info domicilio"
+      maxLength={280}
+      minRows={2}
+      onChange={(event) => actions.setDeliveryInfo(event.target.value)}
+      placeholder="Dirección, referencia o instrucciones"
+      styles={{
+        label: { color: posV2MutedColor, fontSize: "0.75rem" },
+      }}
+      value={state.deliveryInfo}
+    />
   );
 }
 
@@ -161,7 +173,8 @@ export function CartPanelV2({ className }: CartPanelV2Props) {
   return (
     <div
       className={cn(
-        "grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden border-[rgba(255,255,255,0.06)] border-l",
+        "grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden border-l",
+        posV2OrderBorderSubtle,
         posV2OrderPanelBg,
         className
       )}
@@ -210,12 +223,22 @@ export function CartPanelV2({ className }: CartPanelV2Props) {
           })}
 
           {state.cart.length === 0 && (
-            <div className="flex h-40 flex-col items-center justify-center gap-2 text-[#6b6b6b]">
-              <div className="flex size-10 items-center justify-center rounded-full border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.04)]">
+            <div
+              className={cn(
+                "flex h-40 flex-col items-center justify-center gap-2",
+                posV2MutedText
+              )}
+            >
+              <div
+                className={cn(
+                  "flex size-10 items-center justify-center rounded-full border bg-[color-mix(in_srgb,white_4%,transparent)]",
+                  posV2OrderBorderSubtle
+                )}
+              >
                 {tableSession ? (
-                  <UtensilsCrossed className="size-4 text-[#3d3d3d]" />
+                  <UtensilsCrossed className={cn("size-4", posV2IconText)} />
                 ) : (
-                  <Search className="size-4 text-[#3d3d3d]" />
+                  <Search className={cn("size-4", posV2IconText)} />
                 )}
               </div>
               <p className="text-sm">{emptyCartMessage}</p>
@@ -227,20 +250,24 @@ export function CartPanelV2({ className }: CartPanelV2Props) {
       {state.cart.length > 0 ? (
         <div
           className={cn(
-            "border-t shadow-[0_-4px_16px_rgba(0,0,0,0.25)]",
+            "border-t shadow-[0_-4px_16px_color-mix(in_srgb,black_25%,transparent)]",
             posV2OrderBorder,
             posV2OrderPanelBg
           )}
         >
           <div className="space-y-2.5 px-3 pt-3 pb-2">
             <div className="space-y-1.5">
-              <div className="flex justify-between text-[#6b6b6b] text-sm">
+              <div
+                className={cn("flex justify-between text-sm", posV2MutedText)}
+              >
                 <span>Subtotal</span>
                 <span className="text-white tabular-nums">
                   {formatCurrency(subTotal)}
                 </span>
               </div>
-              <div className="flex justify-between text-[#6b6b6b] text-sm">
+              <div
+                className={cn("flex justify-between text-sm", posV2MutedText)}
+              >
                 <span>Impuestos</span>
                 <span className="text-white tabular-nums">
                   {formatCurrency(tax)}
@@ -262,7 +289,12 @@ export function CartPanelV2({ className }: CartPanelV2Props) {
                 )}
               >
                 <span className="font-semibold text-sm text-white">Total</span>
-                <span className="font-bold text-[#dfff06] text-lg tabular-nums">
+                <span
+                  className={cn(
+                    "font-bold text-lg tabular-nums",
+                    posV2AccentText
+                  )}
+                >
                   {formatCurrency(totalAmount)}
                 </span>
               </div>
@@ -275,15 +307,15 @@ export function CartPanelV2({ className }: CartPanelV2Props) {
 
           <div className="px-3 pb-2">
             <Button
-              className="h-9 w-full rounded-lg border border-[rgba(255,255,255,0.12)] bg-[#151515] font-semibold text-white text-xs shadow-none transition-all hover:border-[rgba(255,255,255,0.2)] hover:bg-[#1a1a1a] disabled:opacity-40"
-              disabled={!state.canFinalizeSale || state.isProcessingCheckout}
+              className={posV2SurfaceButtonClassName}
+              disabled={!state.canFinalizeSale}
+              fullWidth
+              leftSection={<Check className="size-3.5" />}
+              loading={state.isProcessingCheckout}
               onClick={actions.finalizeSale}
               type="button"
             >
-              <Check className="mr-1.5 size-3.5" />
-              {state.isProcessingCheckout
-                ? "Procesando..."
-                : `${tableSession ? "Cobrar mesa" : "Cobrar"} — ${formatCurrency(totalAmount)}`}
+              {`${tableSession ? "Cobrar mesa" : "Cobrar"} — ${formatCurrency(totalAmount)}`}
             </Button>
           </div>
         </div>

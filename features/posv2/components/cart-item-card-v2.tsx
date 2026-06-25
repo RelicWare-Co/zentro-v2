@@ -1,11 +1,16 @@
+import { TextInput } from "@mantine/core";
 import { Minus, Plus, Trash2 } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import type { CartItem } from "@/features/pos/types";
 import { calculateItemTotal, formatCurrency } from "@/features/pos/utils";
 import {
+  posV2MutedText,
   posV2OrderBorder,
+  posV2OrderHoverBorder,
+  posV2OrderHoverSurface,
   posV2OrderInputClassName,
+  posV2OrderPanelBg,
   posV2OrderSurfaceClassName,
+  posV2SubtleText,
 } from "@/features/posv2/components/pos-v2-order-styles";
 import { cn, formatMoneyInput, sanitizeMoneyInput } from "@/lib/utils";
 
@@ -33,7 +38,8 @@ export function CartItemCardV2({
   return (
     <div
       className={cn(
-        "group p-3 transition-colors hover:border-[rgba(255,255,255,0.15)]",
+        "group p-3 transition-colors",
+        posV2OrderHoverBorder,
         posV2OrderSurfaceClassName
       )}
     >
@@ -44,7 +50,12 @@ export function CartItemCardV2({
               {item.product.name}
             </h4>
             <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
-              <span className="font-medium text-[#6b6b6b] text-xs tabular-nums">
+              <span
+                className={cn(
+                  "font-medium text-xs tabular-nums",
+                  posV2MutedText
+                )}
+              >
                 {formatCurrency(item.product.price)} / un
               </span>
               {statusBadge ? (
@@ -63,9 +74,10 @@ export function CartItemCardV2({
                 {item.modifiers.map((modifier) => (
                   <span
                     className={cn(
-                      "rounded px-1.5 py-0.5 text-[#a0a0a0] text-[10px]",
+                      "rounded px-1.5 py-0.5 text-[10px]",
+                      posV2SubtleText,
                       posV2OrderBorder,
-                      "bg-[#111111]"
+                      posV2OrderPanelBg
                     )}
                     key={`${item.id}-${modifier.id}`}
                   >
@@ -84,38 +96,44 @@ export function CartItemCardV2({
           {showDiscount && !readOnly ? (
             <div className="flex min-w-0 flex-1 items-center gap-1.5">
               <label
-                className="shrink-0 text-[#6b6b6b] text-[10px]"
+                className={cn("shrink-0 text-[10px]", posV2MutedText)}
                 htmlFor={`item-discount-${item.id}`}
               >
                 Desc.
               </label>
-              <div className="relative min-w-0 flex-1">
-                <span className="absolute top-1/2 left-2 -translate-y-1/2 text-[#6b6b6b] text-xs">
-                  $
-                </span>
-                <Input
-                  autoComplete="off"
-                  className={cn(
-                    "h-8 touch-manipulation pl-6 md:text-xs",
+              <TextInput
+                autoComplete="off"
+                className="min-w-0 flex-1"
+                classNames={{
+                  input: cn(
+                    "h-8 touch-manipulation md:text-xs",
                     posV2OrderInputClassName
-                  )}
-                  id={`item-discount-${item.id}`}
-                  inputMode="numeric"
-                  onChange={(event) =>
-                    onUpdateDiscount(sanitizeMoneyInput(event.target.value))
-                  }
-                  placeholder="0"
-                  type="text"
-                  value={formatMoneyInput(item.discountAmount)}
-                />
-              </div>
+                  ),
+                }}
+                id={`item-discount-${item.id}`}
+                inputMode="numeric"
+                leftSection={
+                  <span className={cn("text-xs", posV2MutedText)}>$</span>
+                }
+                onChange={(event) =>
+                  onUpdateDiscount(sanitizeMoneyInput(event.target.value))
+                }
+                placeholder="0"
+                type="text"
+                value={formatMoneyInput(item.discountAmount)}
+              />
             </div>
           ) : (
             <div className="min-w-0 flex-1" />
           )}
 
           {readOnly ? (
-            <div className="px-2 font-semibold text-[#a0a0a0] text-sm tabular-nums">
+            <div
+              className={cn(
+                "px-2 font-semibold text-sm tabular-nums",
+                posV2SubtleText
+              )}
+            >
               x{item.quantity}
             </div>
           ) : (
@@ -124,12 +142,16 @@ export function CartItemCardV2({
                 className={cn(
                   "flex items-center rounded-lg",
                   posV2OrderBorder,
-                  "bg-[#111111]"
+                  posV2OrderPanelBg
                 )}
               >
                 <button
                   aria-label="Disminuir cantidad"
-                  className="flex h-7 w-8 items-center justify-center rounded-l-lg text-[#6b6b6b] transition-colors hover:bg-[rgba(255,255,255,0.08)] hover:text-white disabled:opacity-50"
+                  className={cn(
+                    "flex h-7 w-8 items-center justify-center rounded-l-lg transition-colors hover:text-white disabled:opacity-50",
+                    posV2MutedText,
+                    posV2OrderHoverSurface
+                  )}
                   onClick={() => onUpdateQuantity(-1)}
                   type="button"
                 >
@@ -140,7 +162,11 @@ export function CartItemCardV2({
                 </div>
                 <button
                   aria-label="Aumentar cantidad"
-                  className="flex h-7 w-8 items-center justify-center rounded-r-lg text-[#6b6b6b] transition-colors hover:bg-[rgba(255,255,255,0.08)] hover:text-white"
+                  className={cn(
+                    "flex h-7 w-8 items-center justify-center rounded-r-lg transition-colors hover:text-white",
+                    posV2MutedText,
+                    posV2OrderHoverSurface
+                  )}
                   onClick={() => onUpdateQuantity(1)}
                   type="button"
                 >
@@ -149,7 +175,10 @@ export function CartItemCardV2({
               </div>
               <button
                 aria-label="Eliminar producto"
-                className="rounded-lg p-1.5 text-[#6b6b6b] transition-colors hover:bg-red-400/10 hover:text-red-400"
+                className={cn(
+                  "rounded-lg p-1.5 transition-colors hover:bg-red-400/10 hover:text-red-400",
+                  posV2MutedText
+                )}
                 onClick={onRemove}
                 type="button"
               >

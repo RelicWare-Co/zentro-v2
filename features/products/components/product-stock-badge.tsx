@@ -1,4 +1,4 @@
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@mantine/core";
 import {
   getStockStatus,
   STOCK_STATUS_LABELS,
@@ -36,7 +36,7 @@ export function ProductStockBadge({
   return (
     <div className="flex items-center gap-2">
       <span className="font-medium text-zinc-200">{product.stock}</span>
-      <Badge className={classNameByStatus[status]} variant="outline">
+      <Badge className={classNameByStatus[status]} tt="none" variant="outline">
         {STOCK_STATUS_LABELS[status]}
       </Badge>
     </div>

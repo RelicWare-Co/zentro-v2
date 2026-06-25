@@ -3,8 +3,14 @@ import {
   type PosV2PaymentMode,
 } from "@/features/posv2/components/payment-method-grid-v2.shared";
 import {
+  posV2AccentBorder,
+  posV2AccentSoftBg,
+  posV2AccentText,
+  posV2MutedText,
   posV2OrderBorder,
+  posV2OrderHoverBorder,
   posV2OrderSurfaceBg,
+  posV2SubtleHoverText,
 } from "@/features/posv2/components/pos-v2-order-styles";
 import { cn } from "@/lib/utils";
 
@@ -24,7 +30,12 @@ export function PaymentMethodGridV2({
 }: PaymentMethodGridV2Props) {
   return (
     <div className={className}>
-      <p className="mb-2 font-semibold text-[#6b6b6b] text-[10px] uppercase tracking-[0.14em]">
+      <p
+        className={cn(
+          "mb-2 font-semibold text-[10px] uppercase tracking-[0.14em]",
+          posV2MutedText
+        )}
+      >
         Método de pago
       </p>
       <div className="grid grid-cols-3 gap-2">
@@ -39,11 +50,13 @@ export function PaymentMethodGridV2({
               className={cn(
                 "flex flex-col items-center justify-center gap-1 rounded-lg border px-2 py-2.5 transition-all",
                 isActive
-                  ? "border-[#dfff06] bg-[rgba(223,255,6,0.06)] text-[#dfff06]"
+                  ? `${posV2AccentBorder} ${posV2AccentSoftBg} ${posV2AccentText}`
                   : cn(
                       posV2OrderBorder,
                       posV2OrderSurfaceBg,
-                      "text-[#6b6b6b] hover:border-[rgba(255,255,255,0.15)] hover:text-[#a0a0a0]"
+                      posV2MutedText,
+                      posV2OrderHoverBorder,
+                      posV2SubtleHoverText
                     )
               )}
               key={mode}

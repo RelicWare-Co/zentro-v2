@@ -1,8 +1,7 @@
+import { Button, Tabs } from "@mantine/core";
 import { Clock3, Receipt, Store, Wallet } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link } from "@/components/link";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SalesDetailSheet } from "@/features/sales/components/sale-detail-sheet";
 import { SalesCancelDialog } from "@/features/sales/components/sales-cancel-dialog";
 import { SalesFilterToolbar } from "@/features/sales/components/sales-filter-toolbar";
@@ -35,20 +34,23 @@ function SalesPageHeader() {
 
       <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
         <Button
-          asChild
-          className="h-10 w-full shrink-0 rounded-lg border-zinc-800 bg-[var(--color-carbon)] px-4 py-2 text-zinc-300 hover:bg-white/5 hover:text-white sm:w-auto"
+          className="w-full shrink-0 sm:w-auto"
+          color="gray"
+          component={Link}
+          href="/dashboard"
           variant="outline"
         >
-          <Link href="/dashboard">Ver dashboard</Link>
+          Ver dashboard
         </Button>
         <Button
-          asChild
-          className="h-10 w-full shrink-0 rounded-lg bg-[var(--color-voltage)] px-4 py-2 font-semibold text-black hover:bg-[#c9e605] sm:w-auto"
+          c="black"
+          className="w-full shrink-0 sm:w-auto"
+          color="voltage.5"
+          component={Link}
+          href="/pos"
+          leftSection={<Store aria-hidden="true" className="size-4" />}
         >
-          <Link href="/pos">
-            <Store aria-hidden="true" className="mr-2 size-4" />
-            Ir al POS
-          </Link>
+          Ir al POS
         </Button>
       </div>
     </div>
@@ -61,8 +63,9 @@ function SalesPageViewTabs({ children }: { children: ReactNode }) {
   return (
     <Tabs
       className="w-full"
-      onValueChange={(value) => {
+      onChange={(value) => {
         if (
+          value &&
           SALES_VIEW_VALUES.includes(
             value as (typeof SALES_VIEW_VALUES)[number]
           )
@@ -73,10 +76,10 @@ function SalesPageViewTabs({ children }: { children: ReactNode }) {
       value={state.activeView}
     >
       <div className="mb-6 flex w-full justify-center">
-        <TabsList>
-          <TabsTrigger value="today">Ventas de hoy</TabsTrigger>
-          <TabsTrigger value="history">Historial de ventas</TabsTrigger>
-        </TabsList>
+        <Tabs.List>
+          <Tabs.Tab value="today">Ventas de hoy</Tabs.Tab>
+          <Tabs.Tab value="history">Historial de ventas</Tabs.Tab>
+        </Tabs.List>
       </div>
       {children}
     </Tabs>

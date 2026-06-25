@@ -1,5 +1,5 @@
+import { notifications } from "@mantine/notifications";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
 import { useCreateSaleMutation } from "@/features/sales/hooks/use-sales";
 import { parseMoneyInput } from "@/lib/utils";
 import type { CartItem, CartTotals, PaymentMethod } from "../types";
@@ -36,11 +36,13 @@ function canCompleteSaleWithCashChange(
 }
 
 function notifyPrintFailure(error: unknown) {
-  toast.error("La venta se registró, pero no se pudo imprimir el ticket", {
-    description:
+  notifications.show({
+    title: "La venta se registró, pero no se pudo imprimir el ticket",
+    message:
       error instanceof Error
         ? error.message
         : "Revisa la impresora e intenta reimprimir.",
+    color: "red",
   });
 }
 

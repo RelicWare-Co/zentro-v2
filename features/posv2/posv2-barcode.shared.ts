@@ -1,5 +1,6 @@
 import type { KeyboardBarcodeScannerEvent } from "@point-of-sale/keyboard-barcode-scanner";
 import type { Product } from "@/features/pos/types";
+import { hasOpenOverlay } from "@/lib/overlay-detection.shared";
 
 export interface PosV2BarcodeScanPayload {
   gtin: string | null;
@@ -133,18 +134,5 @@ export function findProductByBarcodeScan(
 }
 
 export function isPosV2ScannerBlocked(): boolean {
-  if (typeof document === "undefined") {
-    return false;
-  }
-
-  return Boolean(
-    document.querySelector(
-      [
-        "[data-slot='dialog-content']",
-        "[data-slot='drawer-content']",
-        "[data-slot='popover-content']",
-        "[data-slot='alert-dialog-content']",
-      ].join(", ")
-    )
-  );
+  return hasOpenOverlay();
 }

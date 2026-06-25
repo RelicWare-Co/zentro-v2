@@ -1,11 +1,4 @@
-import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Button, Select } from "@mantine/core";
 import { LIST_PAGE_SIZE_OPTIONS } from "@/features/listing/listing.constants.shared";
 import { ShiftListItemCard } from "@/features/shifts/components/shift-list-item";
 import { useShiftsPage } from "@/features/shifts/shifts-page-context";
@@ -30,7 +23,8 @@ function ShiftsListContent() {
           {shiftsQuery.error?.message ?? "Intenta de nuevo más tarde."}
         </p>
         <Button
-          className="mt-4 border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5 hover:text-white"
+          color="gray"
+          mt="md"
           onClick={() => shiftsQuery.refetch()}
           type="button"
           variant="outline"
@@ -76,20 +70,17 @@ export function ShiftsListPanel() {
           <div className="flex items-center gap-2">
             <span>Mostrar</span>
             <Select
-              onValueChange={(value) => actions.setPageSize(Number(value))}
+              allowDeselect={false}
+              data={LIST_PAGE_SIZE_OPTIONS.map((size) => `${size}`)}
+              onChange={(value) => {
+                if (value) {
+                  actions.setPageSize(Number(value));
+                }
+              }}
+              size="xs"
               value={`${state.pageSize}`}
-            >
-              <SelectTrigger className="h-8 w-[70px] rounded-md border-zinc-700 bg-[var(--color-carbon)] text-white">
-                <SelectValue placeholder={state.pageSize} />
-              </SelectTrigger>
-              <SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
-                {LIST_PAGE_SIZE_OPTIONS.map((size) => (
-                  <SelectItem key={size} value={`${size}`}>
-                    {size}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              w={70}
+            />
             <span>filas</span>
           </div>
           <div className="hidden tabular-nums sm:block">{state.rangeLabel}</div>
@@ -97,22 +88,22 @@ export function ShiftsListPanel() {
 
         <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
           <Button
-            className="h-8 rounded-md border-zinc-700 bg-[var(--color-carbon)] px-3 text-zinc-300 hover:bg-white/5 hover:text-white"
+            color="gray"
             disabled={state.pageIndex === 0}
             onClick={actions.goToPreviousPage}
-            size="sm"
+            size="xs"
             type="button"
             variant="outline"
           >
             Anterior
           </Button>
           <Button
-            className="h-8 rounded-md border-none bg-[var(--color-voltage)] px-4 font-medium text-black hover:bg-[#c9e605]"
+            c="black"
+            color="voltage.5"
             disabled={state.nextCursor === null}
             onClick={actions.goToNextPage}
-            size="sm"
+            size="xs"
             type="button"
-            variant="default"
           >
             Siguiente
           </Button>

@@ -1,14 +1,6 @@
-import { Loader2, Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button, TextInput } from "@mantine/core";
+import { Plus } from "lucide-react";
+import { OrgCard } from "@/features/organization/components/organization-ui-primitives";
 import { useOrganizationSelectionPage } from "@/features/organization/organization-selection-context";
 
 export function OrganizationCreateForm() {
@@ -21,38 +13,35 @@ export function OrganizationCreateForm() {
         actions.submitCreateOrganization(event).catch(() => undefined);
       }}
     >
-      <div className="space-y-2">
-        <Label htmlFor={meta.orgNameInputId}>Nombre de la organización</Label>
-        <Input
+      <TextInput
+        autoComplete="off"
+        disabled={state.isSubmitting}
+        id={meta.orgNameInputId}
+        label="Nombre de la organización"
+        name="organizationName"
+        onChange={(event) => actions.setNewOrgName(event.target.value)}
+        placeholder="Ej. Tienda Principal..."
+        value={state.newOrgName}
+      />
+      <div>
+        <TextInput
           autoComplete="off"
-          className="border-zinc-800 bg-black/30"
-          disabled={state.isSubmitting}
-          id={meta.orgNameInputId}
-          name="organizationName"
-          onChange={(event) => actions.setNewOrgName(event.target.value)}
-          placeholder="Ej. Tienda Principal..."
-          value={state.newOrgName}
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor={meta.orgSlugInputId}>Identificador único</Label>
-        <Input
-          autoComplete="off"
-          className="border-zinc-800 bg-black/30"
           disabled={state.isSubmitting}
           id={meta.orgSlugInputId}
+          label="Identificador único"
           name="organizationSlug"
           onChange={(event) => actions.setNewOrgSlug(event.target.value)}
           placeholder="tienda-principal"
           value={state.newOrgSlug}
         />
-        <p className="text-xs text-zinc-500">
+        <p className="mt-1 text-xs text-zinc-500">
           Se usará en URLs y selección interna.
         </p>
       </div>
       <div className="flex flex-col-reverse gap-3 sm:flex-row">
         <Button
-          className="flex-1 border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5 hover:text-white"
+          className="flex-1"
+          color="gray"
           disabled={state.isSubmitting}
           onClick={actions.closeCreateForm}
           type="button"
@@ -61,18 +50,13 @@ export function OrganizationCreateForm() {
           Cancelar
         </Button>
         <Button
-          className="flex-1 bg-[var(--color-voltage)] text-black hover:bg-[#d9f15c]"
-          disabled={state.isSubmitting}
+          c="black"
+          className="flex-1"
+          color="voltage.5"
+          loading={state.isSubmitting}
           type="submit"
         >
-          {state.isSubmitting ? (
-            <>
-              <Loader2 className="size-4 animate-spin" />
-              Creando…
-            </>
-          ) : (
-            "Crear y Entrar"
-          )}
+          Crear y Entrar
         </Button>
       </div>
     </form>
@@ -84,12 +68,13 @@ export function OrganizationCreatePrompt() {
 
   return (
     <Button
-      className="h-12 w-full border-zinc-700 border-dashed bg-transparent text-zinc-200 hover:bg-white/5 hover:text-white"
+      className="h-12 w-full border-dashed"
+      color="gray"
+      leftSection={<Plus className="size-4" />}
       onClick={actions.openCreateForm}
       type="button"
       variant="outline"
     >
-      <Plus className="size-4" />
       Crear Nueva Organización
     </Button>
   );
@@ -99,23 +84,16 @@ export function OrganizationCreateCard() {
   const { state } = useOrganizationSelectionPage();
 
   return (
-    <Card className="border-zinc-800 bg-[var(--color-carbon)] text-[var(--color-photon)] shadow-none">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Plus className="size-4 text-[var(--color-voltage)]" />
-          Crear Organización
-        </CardTitle>
-        <CardDescription className="text-zinc-400">
-          Usa este flujo solo si no tienes invitación ni join link.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {state.isCreating ? (
-          <OrganizationCreateForm />
-        ) : (
-          <OrganizationCreatePrompt />
-        )}
-      </CardContent>
-    </Card>
+    <OrgCard
+      description="Usa este flujo solo si no tienes invitación ni join link."
+      icon={Plus}
+      title="Crear Organización"
+    >
+      {state.isCreating ? (
+        <OrganizationCreateForm />
+      ) : (
+        <OrganizationCreatePrompt />
+      )}
+    </OrgCard>
   );
 }

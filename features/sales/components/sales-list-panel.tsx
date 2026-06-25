@@ -1,14 +1,6 @@
+import { Badge, Button, Select } from "@mantine/core";
 import { ArrowRight, UserRound } from "lucide-react";
 import { Link } from "@/components/link";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { LIST_PAGE_SIZE_OPTIONS } from "@/features/listing/listing.constants.shared";
 import {
   formatItemCountLabel,
@@ -29,11 +21,13 @@ export function SalesListPanel() {
         <div className="rounded-xl border border-zinc-800 border-dashed px-4 py-16 text-center">
           <p className="text-zinc-400">{state.viewSummary.emptyTitle}</p>
           <Button
-            asChild
-            className="mt-4 border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5 hover:text-white"
+            color="gray"
+            component={Link}
+            href="/pos"
+            mt="md"
             variant="outline"
           >
-            <Link href="/pos">Registrar una venta</Link>
+            Registrar una venta
           </Button>
         </div>
       </div>
@@ -111,7 +105,9 @@ export function SalesListPanel() {
                     <Badge
                       className={`${getSaleStatusBadgeClass(
                         sale.status
-                      )} border-0 px-2 py-0.5 text-xs`}
+                      )} border-0`}
+                      size="sm"
+                      tt="none"
                     >
                       {formatSaleStatus(sale.status)}
                     </Badge>
@@ -138,20 +134,17 @@ export function SalesListPanel() {
             <div className="flex items-center gap-2">
               <span>Mostrar</span>
               <Select
-                onValueChange={(value) => actions.setPageSize(Number(value))}
+                allowDeselect={false}
+                data={LIST_PAGE_SIZE_OPTIONS.map((size) => `${size}`)}
+                onChange={(value) => {
+                  if (value) {
+                    actions.setPageSize(Number(value));
+                  }
+                }}
+                size="xs"
                 value={`${state.pageSize}`}
-              >
-                <SelectTrigger className="h-8 w-[70px] rounded-md border-zinc-700 bg-[var(--color-carbon)] text-white">
-                  <SelectValue placeholder={state.pageSize} />
-                </SelectTrigger>
-                <SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
-                  {LIST_PAGE_SIZE_OPTIONS.map((size) => (
-                    <SelectItem key={size} value={`${size}`}>
-                      {size}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                w={70}
+              />
               <span>filas</span>
             </div>
             <div className="hidden tabular-nums sm:block">
@@ -161,20 +154,20 @@ export function SalesListPanel() {
 
           <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
             <Button
-              className="h-8 rounded-md border-zinc-700 bg-[var(--color-carbon)] px-3 text-zinc-300 hover:bg-white/5 hover:text-white"
+              color="gray"
               disabled={state.pageIndex === 0}
               onClick={actions.goToPreviousPage}
-              size="sm"
+              size="xs"
               variant="outline"
             >
               Anterior
             </Button>
             <Button
-              className="h-8 rounded-md border-none bg-[var(--color-voltage)] px-4 font-medium text-black hover:bg-[#c9e605]"
+              c="black"
+              color="voltage.5"
               disabled={state.nextCursor === null}
               onClick={actions.goToNextPage}
-              size="sm"
-              variant="default"
+              size="xs"
             >
               Siguiente
             </Button>

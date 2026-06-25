@@ -1,7 +1,17 @@
+import { TextInput } from "@mantine/core";
 import { Barcode, LayoutGrid, List, Search, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Input } from "@/components/ui/input";
 import { usePosPage } from "@/features/pos/pos-page-context";
+import {
+  posV2AccentBg,
+  posV2AccentBorder,
+  posV2AccentText,
+  posV2MutedPlaceholderText,
+  posV2MutedText,
+  posV2OrderBorderStrong,
+  posV2OrderHoverSurface,
+  posV2OrderInputClassName,
+} from "@/features/posv2/components/pos-v2-order-styles";
 import { cn } from "@/lib/utils";
 
 export function CatalogToolbar({
@@ -89,47 +99,59 @@ export function CatalogToolbar({
 
   return (
     <div className="shrink-0 space-y-3 px-4 pb-2 md:px-6">
-      <div className="relative">
-        <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-[#6b6b6b]" />
-        <Input
-          className="h-11 rounded-xl border-[rgba(255,255,255,0.08)] bg-[#111111] pr-10 pl-10 text-sm text-white placeholder:text-[#6b6b6b] focus-visible:border-[#dfff06]/30 focus-visible:ring-1 focus-visible:ring-[#dfff06]/20 md:h-12"
-          onChange={(event) => actions.setSearchQuery(event.target.value)}
-          placeholder="Buscar producto por nombre, SKU o código... (/)"
-          ref={searchInputRef}
-          value={state.searchQuery}
-        />
-        {state.searchQuery ? (
-          <button
-            className="absolute top-1/2 right-10 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-md text-[#6b6b6b] transition-colors hover:bg-[rgba(255,255,255,0.06)] hover:text-white"
-            onClick={() => {
-              actions.setSearchQuery("");
-              searchInputRef.current?.focus();
-            }}
-            type="button"
-          >
-            <X className="size-4" />
-          </button>
-        ) : null}
-        <button
-          aria-label={
-            isBarcodeScannerConnected
-              ? "Escáner de código de barras conectado"
-              : "Escáner de código de barras desconectado"
-          }
-          className={cn(
-            "absolute top-1/2 right-2.5 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-md transition-colors",
-            isBarcodeScannerConnected ? "text-[#dfff06]" : "text-[#6b6b6b]"
-          )}
-          title={
-            isBarcodeScannerConnected
-              ? "Escáner listo"
-              : "Escáner no disponible"
-          }
-          type="button"
-        >
-          <Barcode className="size-4" />
-        </button>
-      </div>
+      <TextInput
+        aria-label="Buscar producto"
+        classNames={{
+          input: cn(
+            "h-11 rounded-xl md:h-12",
+            posV2MutedPlaceholderText,
+            posV2OrderInputClassName
+          ),
+        }}
+        leftSection={
+          <Search aria-hidden="true" className={cn("size-4", posV2MutedText)} />
+        }
+        onChange={(event) => actions.setSearchQuery(event.target.value)}
+        placeholder="Buscar producto por nombre, SKU o código... (/)"
+        ref={searchInputRef}
+        rightSection={
+          <div className="flex items-center">
+            {state.searchQuery ? (
+              <button
+                aria-label="Limpiar búsqueda"
+                className={cn(
+                  "inline-flex size-7 items-center justify-center rounded-md transition-colors hover:text-white",
+                  posV2MutedText,
+                  posV2OrderHoverSurface
+                )}
+                onClick={() => {
+                  actions.setSearchQuery("");
+                  searchInputRef.current?.focus();
+                }}
+                type="button"
+              >
+                <X className="size-4" />
+              </button>
+            ) : null}
+            <span
+              className={cn(
+                "inline-flex size-7 items-center justify-center rounded-md",
+                isBarcodeScannerConnected ? posV2AccentText : posV2MutedText
+              )}
+              role="img"
+              title={
+                isBarcodeScannerConnected
+                  ? "Escáner de código de barras conectado · listo"
+                  : "Escáner de código de barras desconectado · no disponible"
+              }
+            >
+              <Barcode aria-hidden="true" className="size-4" />
+            </span>
+          </div>
+        }
+        rightSectionWidth={state.searchQuery ? 64 : 36}
+        value={state.searchQuery}
+      />
 
       <div className="flex items-center gap-2">
         <div
@@ -145,8 +167,8 @@ export function CatalogToolbar({
                 className={cn(
                   "shrink-0 rounded-full border px-3.5 py-1.5 font-medium text-xs transition-all md:text-sm",
                   isActive
-                    ? "border-[#dfff06] bg-[#dfff06] text-black"
-                    : "border-[rgba(255,255,255,0.12)] bg-transparent text-[#6b6b6b] hover:border-[rgba(255,255,255,0.25)] hover:text-white"
+                    ? `${posV2AccentBorder} ${posV2AccentBg} text-black`
+                    : `${posV2OrderBorderStrong} bg-transparent ${posV2MutedText} hover:border-[color-mix(in_srgb,white_25%,transparent)] hover:text-white`
                 )}
                 key={category.id}
                 onClick={() => actions.setActiveCategoryId(category.id)}
@@ -158,31 +180,39 @@ export function CatalogToolbar({
           })}
         </div>
 
-        <div className="ml-auto flex shrink-0 items-center overflow-hidden rounded-xl border border-[rgba(255,255,255,0.12)]">
+        <div
+          className={cn(
+            "ml-auto flex shrink-0 items-center overflow-hidden rounded-xl border",
+            posV2OrderBorderStrong
+          )}
+        >
           <button
+            aria-label="Vista de cuadrícula"
             className={cn(
               "flex items-center gap-2 px-4 py-2 font-medium text-sm transition-all",
               state.viewMode === "grid"
-                ? "bg-[#dfff06] text-black"
-                : "text-[#6b6b6b] hover:text-white"
+                ? `${posV2AccentBg} text-black`
+                : `${posV2MutedText} hover:text-white`
             )}
             onClick={() => actions.setViewMode("grid")}
             type="button"
           >
-            <LayoutGrid className="size-4" />
+            <LayoutGrid aria-hidden="true" className="size-4" />
             <span className="hidden sm:inline">Cuadrícula</span>
           </button>
           <button
+            aria-label="Vista de lista"
             className={cn(
-              "flex items-center gap-2 border-[rgba(255,255,255,0.12)] border-l px-4 py-2 font-medium text-sm transition-all",
+              "flex items-center gap-2 border-l px-4 py-2 font-medium text-sm transition-all",
+              posV2OrderBorderStrong,
               state.viewMode === "list"
-                ? "bg-[#dfff06] text-black"
-                : "text-[#6b6b6b] hover:text-white"
+                ? `${posV2AccentBg} text-black`
+                : `${posV2MutedText} hover:text-white`
             )}
             onClick={() => actions.setViewMode("list")}
             type="button"
           >
-            <List className="size-4" />
+            <List aria-hidden="true" className="size-4" />
             <span className="hidden sm:inline">Lista</span>
           </button>
         </div>

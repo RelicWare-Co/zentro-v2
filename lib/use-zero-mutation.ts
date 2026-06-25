@@ -1,3 +1,4 @@
+import { notifications } from "@mantine/notifications";
 import { useZero } from "@rocicorp/zero/react";
 import { type UseMutationOptions, useMutation } from "@tanstack/react-query";
 
@@ -25,10 +26,15 @@ export async function waitForZeroMutation(result: ZeroMutationResult) {
     throw toZeroMutationError(clientResult);
   }
 
-  const serverResult = await result.server;
-  if (serverResult.type === "error") {
-    throw toZeroMutationError(serverResult);
-  }
+  result.server.then((serverResult) => {
+    if (serverResult.type === "error") {
+      notifications.show({
+        title: "El servidor rechazó el cambio",
+        message: serverResult.error.message || "Zero revertirá el cambio.",
+        color: "red",
+      });
+    }
+  });
 }
 
 export function getZeroQueryError(status: {

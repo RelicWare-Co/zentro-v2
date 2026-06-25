@@ -1,3 +1,4 @@
+import { ActionIcon, Select } from "@mantine/core";
 import type { Table } from "@tanstack/react-table";
 import {
   ChevronLeft,
@@ -5,15 +6,6 @@ import {
   ChevronsLeft,
   ChevronsRight,
 } from "lucide-react";
-
-import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 interface DataTablePaginationProps<TData> {
   pageSizeOptions?: number[];
@@ -35,70 +27,63 @@ export function DataTablePagination<TData>({
             Filas por página
           </p>
           <Select
-            onValueChange={(value) => {
-              table.setPageSize(Number(value));
+            allowDeselect={false}
+            aria-label="Filas por página"
+            comboboxProps={{ position: "top" }}
+            data={pageSizeOptions.map((pageSize) => `${pageSize}`)}
+            onChange={(value) => {
+              if (value) {
+                table.setPageSize(Number(value));
+              }
             }}
+            size="xs"
             value={`${table.getState().pagination.pageSize}`}
-          >
-            <SelectTrigger className="h-8 w-[4.5rem] border-zinc-700 bg-black/20 text-white">
-              <SelectValue placeholder={table.getState().pagination.pageSize} />
-            </SelectTrigger>
-            <SelectContent
-              className="border-zinc-800 bg-[var(--color-carbon)] text-white"
-              side="top"
-            >
-              {pageSizeOptions.map((pageSize) => (
-                <SelectItem key={pageSize} value={`${pageSize}`}>
-                  {pageSize}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            w={72}
+          />
         </div>
         <div className="flex items-center justify-center font-medium text-sm text-zinc-300">
           Página {(table.getState().pagination.pageIndex + 1).toLocaleString()}{" "}
           de {table.getPageCount().toLocaleString()}
         </div>
         <div className="flex items-center gap-2">
-          <Button
+          <ActionIcon
             aria-label="Primera página"
-            className="hidden size-8 border-zinc-700 bg-transparent p-0 text-zinc-200 hover:bg-white/5 lg:flex"
+            className="hidden lg:flex"
+            color="gray"
             disabled={!table.getCanPreviousPage()}
             onClick={() => table.setPageIndex(0)}
             variant="outline"
           >
             <ChevronsLeft aria-hidden="true" className="size-4" />
-          </Button>
-          <Button
+          </ActionIcon>
+          <ActionIcon
             aria-label="Página anterior"
-            className="size-8 border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5"
+            color="gray"
             disabled={!table.getCanPreviousPage()}
             onClick={() => table.previousPage()}
-            size="icon"
             variant="outline"
           >
             <ChevronLeft aria-hidden="true" className="size-4" />
-          </Button>
-          <Button
+          </ActionIcon>
+          <ActionIcon
             aria-label="Página siguiente"
-            className="size-8 border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5"
+            color="gray"
             disabled={!table.getCanNextPage()}
             onClick={() => table.nextPage()}
-            size="icon"
             variant="outline"
           >
             <ChevronRight aria-hidden="true" className="size-4" />
-          </Button>
-          <Button
+          </ActionIcon>
+          <ActionIcon
             aria-label="Última página"
-            className="hidden size-8 border-zinc-700 bg-transparent p-0 text-zinc-200 hover:bg-white/5 lg:flex"
+            className="hidden lg:flex"
+            color="gray"
             disabled={!table.getCanNextPage()}
             onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-            size="icon"
             variant="outline"
           >
             <ChevronsRight aria-hidden="true" className="size-4" />
-          </Button>
+          </ActionIcon>
         </div>
       </div>
     </div>

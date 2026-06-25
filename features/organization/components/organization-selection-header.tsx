@@ -1,6 +1,5 @@
+import { Badge, Button } from "@mantine/core";
 import { LogOut } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { useOrganizationSelectionPage } from "@/features/organization/organization-selection-context";
 
 export function OrganizationSelectionHeader() {
@@ -10,7 +9,8 @@ export function OrganizationSelectionHeader() {
     <>
       <div className="flex items-start justify-end">
         <Button
-          className="border-zinc-700 bg-transparent text-zinc-300 hover:bg-white/5 hover:text-white"
+          color="gray"
+          leftSection={<LogOut className="size-4" />}
           onClick={() => {
             actions.signOut().catch(() => undefined);
           }}
@@ -18,13 +18,12 @@ export function OrganizationSelectionHeader() {
           type="button"
           variant="outline"
         >
-          <LogOut className="mr-2 size-4" />
           Cerrar sesión
         </Button>
       </div>
 
       <div className="space-y-3 text-center">
-        <Badge className="border-[var(--color-voltage)]/20 bg-[var(--color-voltage)]/10 text-[var(--color-voltage)] hover:bg-[var(--color-voltage)]/10">
+        <Badge color="voltage" radius="xl" tt="none" variant="light">
           Acceso a organizaciones
         </Badge>
         <h1 className="text-balance font-semibold text-3xl tracking-tight md:text-4xl">

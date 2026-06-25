@@ -64,10 +64,10 @@ export default function Page() {
   };
 
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-[#0f0f0f] p-4 text-white md:p-8">
+    <div className="flex min-h-[100dvh] items-center justify-center bg-void p-4 text-white md:p-8">
       <div className="w-full max-w-2xl space-y-6">
         <div className="space-y-3 text-center">
-          <span className="inline-flex items-center rounded-full border border-[#dfff06]/20 bg-[#dfff06]/10 px-2 py-0.5 font-medium text-[#dfff06] text-xs">
+          <span className="inline-flex items-center rounded-full border border-[color-mix(in_srgb,var(--color-voltage)_20%,transparent)] bg-[color-mix(in_srgb,var(--color-voltage)_10%,transparent)] px-2 py-0.5 font-medium text-voltage text-xs">
             Join Link
           </span>
           <h1 className="text-balance font-semibold text-3xl tracking-tight">
@@ -86,10 +86,10 @@ export default function Page() {
           </div>
         ) : null}
 
-        <div className="rounded-2xl border border-zinc-800 bg-[#1c1c1c] shadow-none">
+        <div className="rounded-2xl border border-zinc-800 bg-carbon shadow-none">
           <div className="border-zinc-800 border-b p-6">
             <div className="flex items-center gap-2 font-semibold text-lg">
-              <Building2 className="size-4 text-[#dfff06]" />
+              <Building2 className="size-4 text-voltage" />
               Detalle del acceso
             </div>
             <p className="mt-1 text-sm text-zinc-400">
@@ -144,7 +144,7 @@ export default function Page() {
                 </div>
                 <div className="flex flex-col gap-3 sm:flex-row">
                   <button
-                    className="inline-flex h-9 cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-[#dfff06] px-3 font-medium text-black text-sm transition-colors hover:bg-[#c9e605] disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex h-9 cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-voltage px-3 font-medium text-black text-sm transition-colors hover:bg-[var(--color-voltage-hover)] disabled:cursor-not-allowed disabled:opacity-50"
                     disabled={
                       isSessionPending || isJoining || !preview?.canJoin
                     }
@@ -183,7 +183,7 @@ export default function Page() {
                 </p>
                 <div className="flex flex-col gap-3 sm:flex-row">
                   <a
-                    className="inline-flex h-9 items-center justify-center rounded-lg bg-[#dfff06] px-3 font-medium text-black text-sm transition-colors hover:bg-[#c9e605]"
+                    className="inline-flex h-9 items-center justify-center rounded-lg bg-voltage px-3 font-medium text-black text-sm transition-colors hover:bg-[var(--color-voltage-hover)]"
                     href={`/login?token=${encodeURIComponent(token ?? "")}`}
                   >
                     Continuar

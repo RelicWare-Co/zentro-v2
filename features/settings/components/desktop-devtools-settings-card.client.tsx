@@ -1,15 +1,9 @@
 "use client";
 
+import { Button } from "@mantine/core";
 import { Code2 } from "lucide-react";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { SettingsCard } from "@/features/settings/components/settings-ui-primitives";
 import {
   openZentroDesktopDevTools,
   useIsZentroDesktop,
@@ -31,27 +25,20 @@ export function DesktopDevtoolsSettingsCard() {
   };
 
   return (
-    <Card className="border-zinc-800 bg-[var(--color-carbon)] text-[var(--color-photon)] shadow-none">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Code2 className="size-4 text-[var(--color-voltage)]" />
-          App de escritorio
-        </CardTitle>
-        <CardDescription className="text-zinc-400">
-          Herramientas de depuración para la ventana de Zentro Desktop.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Button
-          className="border-zinc-700 bg-black/20"
-          disabled={isOpening}
-          onClick={handleOpenDevTools}
-          type="button"
-          variant="outline"
-        >
-          {isOpening ? "Abriendo…" : "Abrir herramientas de desarrollo"}
-        </Button>
-      </CardContent>
-    </Card>
+    <SettingsCard
+      description="Herramientas de depuración para la ventana de Zentro Desktop."
+      icon={Code2}
+      title="App de escritorio"
+    >
+      <Button
+        color="gray"
+        loading={isOpening}
+        onClick={handleOpenDevTools}
+        type="button"
+        variant="outline"
+      >
+        Abrir herramientas de desarrollo
+      </Button>
+    </SettingsCard>
   );
 }

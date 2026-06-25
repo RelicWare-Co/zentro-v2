@@ -1,23 +1,6 @@
+import { Alert, Button, Drawer, Select, TextInput } from "@mantine/core";
 import { CalendarClock } from "lucide-react";
-import { type FormEvent, useId, useState } from "react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
-import { CreditFormField } from "@/features/credit/components/credit-ui-primitives";
+import { type FormEvent, useState } from "react";
 import { creditCurrencyFormatter } from "@/features/credit/credit-formatters.shared";
 import { useCreditPage } from "@/features/credit/credit-page-context";
 import {
@@ -34,11 +17,6 @@ function CreditPaymentSheetForm() {
   const [saleId, setSaleId] = useState("");
   const [reference, setReference] = useState("");
   const [notes, setNotes] = useState("");
-  const amountId = useId();
-  const methodId = useId();
-  const saleIdInputId = useId();
-  const referenceId = useId();
-  const notesId = useId();
 
   const maxAmount = state.selectedAccount?.balance ?? 0;
   const parsedAmount = parseMoneyInput(amount);
@@ -47,6 +25,13 @@ function CreditPaymentSheetForm() {
   const selectedMethod = meta.paymentMethods.find(
     (paymentMethod) => paymentMethod.id === method
   );
+
+  const methodData = meta.paymentMethods.map((paymentMethod) => ({
+    value: paymentMethod.id,
+    label: paymentMethod.requiresReference
+      ? `${paymentMethod.label} (requiere ref.)`
+      : paymentMethod.label,
+  }));
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -64,19 +49,16 @@ function CreditPaymentSheetForm() {
 
   return (
     <form className="flex h-full flex-col" onSubmit={handleSubmit}>
-      <SheetHeader className="shrink-0 border-zinc-800 border-b p-6">
-        <SheetTitle className="font-bold text-2xl">Registrar abono</SheetTitle>
-        <SheetDescription className="text-zinc-400">
+      <div className="flex-1 space-y-6 overflow-y-auto p-6">
+        <p className="text-sm text-zinc-400">
           {state.selectedAccount?.customerName}: Saldo pendiente:{" "}
           <span className="font-semibold text-[var(--color-voltage)]">
             {creditCurrencyFormatter.format(
               state.selectedAccount?.balance ?? 0
             )}
           </span>
-        </SheetDescription>
-      </SheetHeader>
+        </p>
 
-      <div className="flex-1 space-y-6 overflow-y-auto p-6">
         {meta.activeShift ? (
           <div className="flex items-center gap-2 rounded-xl border border-zinc-800 bg-black/10 p-3 text-sm text-zinc-300">
             <CalendarClock className="size-4 text-zinc-500" />
@@ -88,24 +70,17 @@ function CreditPaymentSheetForm() {
             </span>
           </div>
         ) : (
-          <Alert
-            className="border-red-500/20 bg-red-500/10 text-red-100"
-            variant="destructive"
-          >
-            <AlertTitle>No hay turno abierto</AlertTitle>
-            <AlertDescription>
-              Debes abrir un turno para registrar abonos.
-            </AlertDescription>
+          <Alert color="red" title="No hay turno abierto" variant="light">
+            Debes abrir un turno para registrar abonos.
           </Alert>
         )}
 
         <div className="grid gap-4">
-          <CreditFormField htmlFor={amountId} label="Monto" required>
-            <Input
+          <div>
+            <TextInput
               autoComplete="off"
-              className="border-zinc-700 bg-black/20"
-              id={amountId}
               inputMode="numeric"
+              label="Monto"
               onChange={(event) =>
                 setAmount(sanitizeMoneyInput(event.target.value))
               }
@@ -113,86 +88,52 @@ function CreditPaymentSheetForm() {
               required
               type="text"
               value={formatMoneyInput(amount)}
+              withAsterisk
             />
             {isOverpayment ? (
-              <p className="text-red-400 text-sm">
+              <p className="mt-1 text-red-400 text-sm">
                 El monto no puede superar el saldo pendiente (
                 {creditCurrencyFormatter.format(maxAmount)}).
               </p>
             ) : null}
-          </CreditFormField>
+          </div>
 
-          <CreditFormField htmlFor={methodId} label="Método de pago" required>
-            <Select onValueChange={setMethod} value={method}>
-              <SelectTrigger
-                className="w-full border-zinc-700 bg-black/20 text-white"
-                id={methodId}
-              >
-                <SelectValue placeholder="Selecciona método" />
-              </SelectTrigger>
-              <SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
-                {meta.paymentMethods.map((paymentMethod) => (
-                  <SelectItem key={paymentMethod.id} value={paymentMethod.id}>
-                    {paymentMethod.label}
-                    {paymentMethod.requiresReference ? (
-                      <span className="ml-1 text-xs text-zinc-500">
-                        (requiere ref.)
-                      </span>
-                    ) : null}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </CreditFormField>
+          <Select
+            data={methodData}
+            label="Método de pago"
+            onChange={(value) => setMethod(value ?? "")}
+            placeholder="Selecciona método"
+            required
+            value={method}
+            withAsterisk
+          />
 
-          <CreditFormField
-            htmlFor={saleIdInputId}
+          <TextInput
             label="Venta asociada (opcional)"
-          >
-            <Input
-              className="border-zinc-700 bg-black/20"
-              id={saleIdInputId}
-              onChange={(event) => setSaleId(event.target.value)}
-              placeholder="ID de venta"
-              value={saleId}
-            />
-          </CreditFormField>
+            onChange={(event) => setSaleId(event.target.value)}
+            placeholder="ID de venta"
+            value={saleId}
+          />
 
-          {selectedMethod?.requiresReference ? (
-            <CreditFormField htmlFor={referenceId} label="Referencia" required>
-              <Input
-                className="border-zinc-700 bg-black/20"
-                id={referenceId}
-                onChange={(event) => setReference(event.target.value)}
-                placeholder="Número de referencia"
-                required
-                value={reference}
-              />
-            </CreditFormField>
-          ) : (
-            <CreditFormField
-              htmlFor={referenceId}
-              label="Referencia (opcional)"
-            >
-              <Input
-                className="border-zinc-700 bg-black/20"
-                id={referenceId}
-                onChange={(event) => setReference(event.target.value)}
-                placeholder="Número de referencia"
-                value={reference}
-              />
-            </CreditFormField>
-          )}
+          <TextInput
+            label={
+              selectedMethod?.requiresReference
+                ? "Referencia"
+                : "Referencia (opcional)"
+            }
+            onChange={(event) => setReference(event.target.value)}
+            placeholder="Número de referencia"
+            required={selectedMethod?.requiresReference}
+            value={reference}
+            withAsterisk={selectedMethod?.requiresReference}
+          />
 
-          <CreditFormField htmlFor={notesId} label="Notas (opcional)">
-            <Input
-              className="border-zinc-700 bg-black/20"
-              id={notesId}
-              onChange={(event) => setNotes(event.target.value)}
-              placeholder="Observaciones"
-              value={notes}
-            />
-          </CreditFormField>
+          <TextInput
+            label="Notas (opcional)"
+            onChange={(event) => setNotes(event.target.value)}
+            placeholder="Observaciones"
+            value={notes}
+          />
         </div>
 
         {meta.paymentError ? (
@@ -207,17 +148,17 @@ function CreditPaymentSheetForm() {
 
       <div className="shrink-0 border-zinc-800 border-t bg-black/30 p-6">
         <Button
-          className="w-full bg-[var(--color-voltage)] text-black hover:bg-[#d9f15c]"
+          c="black"
+          color="voltage.5"
           disabled={
-            meta.isPaymentPending ||
-            !isValidAmount ||
-            !method ||
-            !meta.activeShift ||
+            !(isValidAmount && method && meta.activeShift) ||
             (selectedMethod?.requiresReference && !reference.trim())
           }
+          fullWidth
+          loading={meta.isPaymentPending}
           type="submit"
         >
-          {meta.isPaymentPending ? "Registrando…" : "Registrar abono"}
+          Registrar abono
         </Button>
       </div>
     </form>
@@ -229,19 +170,16 @@ export function CreditPaymentSheet() {
   const isOpen = state.activeOverlay?.type === "payment";
 
   return (
-    <Sheet
-      onOpenChange={(open) => {
-        if (!open) {
-          actions.closeOverlay();
-        }
-      }}
-      open={isOpen}
+    <Drawer
+      onClose={actions.closeOverlay}
+      opened={isOpen}
+      position="right"
+      size={480}
+      title="Registrar abono"
     >
-      <SheetContent className="!w-full !max-w-full sm:!w-[480px] overflow-hidden border-zinc-800 border-l bg-[var(--color-carbon)] p-0 text-white">
-        <CreditPaymentSheetForm
-          key={isOpen ? (state.selectedAccount?.id ?? "new") : "closed"}
-        />
-      </SheetContent>
-    </Sheet>
+      <CreditPaymentSheetForm
+        key={isOpen ? (state.selectedAccount?.id ?? "new") : "closed"}
+      />
+    </Drawer>
   );
 }

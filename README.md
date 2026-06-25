@@ -25,7 +25,7 @@ Sistema de gestión comercial con punto de venta (POS), inventario, ventas, clie
 | Lecturas efímeras | TanStack Query (dashboard, preview de join link) |
 | Base de datos | [Drizzle ORM](https://orm.drizzle.team) sobre PostgreSQL |
 | Auth | [better-auth](https://www.better-auth.com) con soporte multi-organización |
-| UI | Tailwind CSS v4 + shadcn/ui |
+| UI | Mantine + Tailwind CSS v4 utilities |
 | Runtime | [Bun](https://bun.sh) |
 | Desktop | Electron Forge + Vite (wrapper de la web) |
 | Logging | [evlog](https://evlog.dev) |
@@ -239,7 +239,7 @@ zero/               Schema, composition roots y provider de Zero
 features/           UI, lógica y slices Zero por dominio (pos, sales, products, …)
 server/             Hono: auth, Zero handlers, REST auxiliares
 database/drizzle/   Schema y migraciones PostgreSQL
-components/ui/      Componentes shadcn/ui
+components/ui/      Helpers UI locales compartidos (no registry shadcn)
 tests/e2e/          Playwright E2E
 deploy/             Dockerfiles y Compose de producción
 desktop/            App Electron Forge que envuelve la versión web

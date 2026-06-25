@@ -1,12 +1,5 @@
+import { Select, TextInput } from "@mantine/core";
 import { Barcode, Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { ALL_FILTER_VALUE } from "@/features/listing/listing.constants.shared";
 import { ProductsTable } from "@/features/products/components/products-table";
 import type { ProductStockFilterValue } from "@/features/products/products-page.constants.shared";
@@ -29,56 +22,54 @@ export function ProductsTab() {
   return (
     <>
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-        <div className="relative w-full sm:max-w-sm">
-          <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-zinc-500" />
-          <Input
-            className="border-zinc-800 bg-black/20 pl-9"
+        <div className="w-full sm:max-w-sm">
+          <TextInput
+            aria-label="Buscar productos"
+            leftSection={
+              <Search aria-hidden="true" className="size-4 text-zinc-500" />
+            }
             onChange={(event) => actions.setQuery(event.target.value)}
             placeholder="Buscar por nombre, SKU o código..."
             value={state.filters.query}
           />
         </div>
         <Select
-          onValueChange={actions.setCategoryFilter}
+          aria-label="Filtrar por categoría"
+          className="w-full sm:w-[240px]"
+          data={[
+            { value: ALL_FILTER_VALUE, label: "Todas las categorías" },
+            { value: UNCATEGORIZED_FILTER_VALUE, label: "Sin categoría" },
+            ...state.categories.map((category) => ({
+              value: category.id,
+              label: category.name,
+            })),
+          ]}
+          onChange={(value) => {
+            if (value) {
+              actions.setCategoryFilter(value);
+            }
+          }}
+          placeholder="Todas las categorías"
           value={state.filters.categoryFilter}
-        >
-          <SelectTrigger className="w-full border-zinc-800 bg-black/20 text-white sm:w-[240px]">
-            <SelectValue placeholder="Todas las categorías" />
-          </SelectTrigger>
-          <SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
-            <SelectItem value={ALL_FILTER_VALUE}>
-              Todas las categorías
-            </SelectItem>
-            <SelectItem value={UNCATEGORIZED_FILTER_VALUE}>
-              Sin categoría
-            </SelectItem>
-            {state.categories.map((category) => (
-              <SelectItem key={category.id} value={category.id}>
-                {category.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        />
         <Select
-          onValueChange={(value) =>
-            actions.setStockFilter(value as ProductStockFilterValue)
-          }
+          aria-label="Filtrar por estado de stock"
+          className="w-full sm:w-[220px]"
+          data={PRODUCT_STOCK_FILTER_VALUES.map((value) => ({
+            value,
+            label: STOCK_FILTER_LABELS[value],
+          }))}
+          onChange={(value) => {
+            if (value) {
+              actions.setStockFilter(value as ProductStockFilterValue);
+            }
+          }}
+          placeholder="Estado de stock"
           value={state.filters.stockFilter}
-        >
-          <SelectTrigger className="w-full border-zinc-800 bg-black/20 text-white sm:w-[220px]">
-            <SelectValue placeholder="Estado de stock" />
-          </SelectTrigger>
-          <SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
-            {PRODUCT_STOCK_FILTER_VALUES.map((value) => (
-              <SelectItem key={value} value={value}>
-                {STOCK_FILTER_LABELS[value]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        />
         {state.isBarcodeScannerConnected ? (
           <span className="inline-flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-emerald-200 text-xs">
-            <Barcode className="size-3.5" />
+            <Barcode aria-hidden="true" className="size-3.5" />
             Escáner listo
           </span>
         ) : null}

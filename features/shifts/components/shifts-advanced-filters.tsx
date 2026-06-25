@@ -1,11 +1,4 @@
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, TextInput } from "@mantine/core";
 import { ALL_FILTER_VALUE } from "@/features/listing/listing.constants.shared";
 import { ShiftsFilterField } from "@/features/shifts/components/shifts-ui-primitives";
 import { useShiftsPage } from "@/features/shifts/shifts-page-context";
@@ -19,12 +12,8 @@ function ShiftsAdvancedFiltersFields({
   const { filters } = state;
   const isMobile = layout === "mobile";
   const idPrefix = isMobile ? "mobile-" : "";
-  const inputClassName = `${
-    isMobile ? "h-11" : "h-9"
-  } border-zinc-700 bg-black/20 text-white placeholder:text-zinc-500`;
-  const selectClassName = `${
-    isMobile ? "h-11" : "h-9"
-  } w-full border-zinc-700 bg-black/20 text-white`;
+  const size = isMobile ? "md" : "sm";
+  const comboboxProps = isMobile ? undefined : { withinPortal: false };
 
   return (
     <div className={isMobile ? "space-y-4" : "grid gap-4 md:grid-cols-2"}>
@@ -33,26 +22,24 @@ function ShiftsAdvancedFiltersFields({
         label="Cajero"
       >
         <Select
-          onValueChange={(value) =>
-            actions.setCashierId(value === ALL_FILTER_VALUE ? "" : value)
+          comboboxProps={comboboxProps}
+          data={[
+            { value: ALL_FILTER_VALUE, label: "Todos" },
+            ...state.filterOptions.cashiers.map((cashier) => ({
+              value: cashier.id,
+              label: cashier.name,
+            })),
+          ]}
+          id={`${idPrefix}${meta.fieldIds.cashier}`}
+          onChange={(value) =>
+            actions.setCashierId(
+              !value || value === ALL_FILTER_VALUE ? "" : value
+            )
           }
+          placeholder="Todos"
+          size={size}
           value={filters.cashierId || ALL_FILTER_VALUE}
-        >
-          <SelectTrigger
-            className={selectClassName}
-            id={`${idPrefix}${meta.fieldIds.cashier}`}
-          >
-            <SelectValue placeholder="Todos" />
-          </SelectTrigger>
-          <SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
-            <SelectItem value={ALL_FILTER_VALUE}>Todos</SelectItem>
-            {state.filterOptions.cashiers.map((cashier) => (
-              <SelectItem key={cashier.id} value={cashier.id}>
-                {cashier.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        />
       </ShiftsFilterField>
 
       <ShiftsFilterField
@@ -60,26 +47,24 @@ function ShiftsAdvancedFiltersFields({
         label="Terminal"
       >
         <Select
-          onValueChange={(value) =>
-            actions.setTerminalName(value === ALL_FILTER_VALUE ? "" : value)
+          comboboxProps={comboboxProps}
+          data={[
+            { value: ALL_FILTER_VALUE, label: "Todas" },
+            ...state.filterOptions.terminals.map((terminal) => ({
+              value: terminal,
+              label: terminal,
+            })),
+          ]}
+          id={`${idPrefix}${meta.fieldIds.terminal}`}
+          onChange={(value) =>
+            actions.setTerminalName(
+              !value || value === ALL_FILTER_VALUE ? "" : value
+            )
           }
+          placeholder="Todas"
+          size={size}
           value={filters.terminalName || ALL_FILTER_VALUE}
-        >
-          <SelectTrigger
-            className={selectClassName}
-            id={`${idPrefix}${meta.fieldIds.terminal}`}
-          >
-            <SelectValue placeholder="Todas" />
-          </SelectTrigger>
-          <SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
-            <SelectItem value={ALL_FILTER_VALUE}>Todas</SelectItem>
-            {state.filterOptions.terminals.map((terminal) => (
-              <SelectItem key={terminal} value={terminal}>
-                {terminal}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        />
       </ShiftsFilterField>
 
       <ShiftsFilterField
@@ -87,26 +72,24 @@ function ShiftsAdvancedFiltersFields({
         label="Metodo"
       >
         <Select
-          onValueChange={(value) =>
-            actions.setPaymentMethod(value === ALL_FILTER_VALUE ? "" : value)
+          comboboxProps={comboboxProps}
+          data={[
+            { value: ALL_FILTER_VALUE, label: "Todos" },
+            ...state.filterOptions.paymentMethods.map((paymentMethod) => ({
+              value: paymentMethod.id,
+              label: paymentMethod.label,
+            })),
+          ]}
+          id={`${idPrefix}${meta.fieldIds.paymentMethod}`}
+          onChange={(value) =>
+            actions.setPaymentMethod(
+              !value || value === ALL_FILTER_VALUE ? "" : value
+            )
           }
+          placeholder="Todos"
+          size={size}
           value={filters.paymentMethod || ALL_FILTER_VALUE}
-        >
-          <SelectTrigger
-            className={selectClassName}
-            id={`${idPrefix}${meta.fieldIds.paymentMethod}`}
-          >
-            <SelectValue placeholder="Todos" />
-          </SelectTrigger>
-          <SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
-            <SelectItem value={ALL_FILTER_VALUE}>Todos</SelectItem>
-            {state.filterOptions.paymentMethods.map((paymentMethod) => (
-              <SelectItem key={paymentMethod.id} value={paymentMethod.id}>
-                {paymentMethod.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        />
       </ShiftsFilterField>
 
       <ShiftsFilterField
@@ -114,24 +97,23 @@ function ShiftsAdvancedFiltersFields({
         label="Diferencia"
       >
         <Select
-          onValueChange={(value) =>
-            actions.setDifferenceStatus(value === ALL_FILTER_VALUE ? "" : value)
+          comboboxProps={comboboxProps}
+          data={[
+            { value: ALL_FILTER_VALUE, label: "Todas" },
+            { value: "short", label: "Faltante" },
+            { value: "over", label: "Sobrante" },
+            { value: "balanced", label: "Cuadrada" },
+          ]}
+          id={`${idPrefix}${meta.fieldIds.differenceStatus}`}
+          onChange={(value) =>
+            actions.setDifferenceStatus(
+              !value || value === ALL_FILTER_VALUE ? "" : value
+            )
           }
+          placeholder="Todas"
+          size={size}
           value={filters.differenceStatus || ALL_FILTER_VALUE}
-        >
-          <SelectTrigger
-            className={selectClassName}
-            id={`${idPrefix}${meta.fieldIds.differenceStatus}`}
-          >
-            <SelectValue placeholder="Todas" />
-          </SelectTrigger>
-          <SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
-            <SelectItem value={ALL_FILTER_VALUE}>Todas</SelectItem>
-            <SelectItem value="short">Faltante</SelectItem>
-            <SelectItem value="over">Sobrante</SelectItem>
-            <SelectItem value="balanced">Cuadrada</SelectItem>
-          </SelectContent>
-        </Select>
+        />
       </ShiftsFilterField>
 
       <ShiftsFilterField
@@ -139,33 +121,32 @@ function ShiftsAdvancedFiltersFields({
         label="Movimientos"
       >
         <Select
-          onValueChange={(value) =>
-            actions.setHasMovements(value === ALL_FILTER_VALUE ? "" : value)
+          comboboxProps={comboboxProps}
+          data={[
+            { value: ALL_FILTER_VALUE, label: "Todos" },
+            { value: "yes", label: "Con movimientos" },
+            { value: "no", label: "Sin movimientos" },
+          ]}
+          id={`${idPrefix}${meta.fieldIds.hasMovements}`}
+          onChange={(value) =>
+            actions.setHasMovements(
+              !value || value === ALL_FILTER_VALUE ? "" : value
+            )
           }
+          placeholder="Todos"
+          size={size}
           value={filters.hasMovements || ALL_FILTER_VALUE}
-        >
-          <SelectTrigger
-            className={selectClassName}
-            id={`${idPrefix}${meta.fieldIds.hasMovements}`}
-          >
-            <SelectValue placeholder="Todos" />
-          </SelectTrigger>
-          <SelectContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
-            <SelectItem value={ALL_FILTER_VALUE}>Todos</SelectItem>
-            <SelectItem value="yes">Con movimientos</SelectItem>
-            <SelectItem value="no">Sin movimientos</SelectItem>
-          </SelectContent>
-        </Select>
+        />
       </ShiftsFilterField>
 
       <ShiftsFilterField
         htmlFor={`${idPrefix}${meta.fieldIds.startDate}`}
         label="Desde"
       >
-        <Input
-          className={inputClassName}
+        <TextInput
           id={`${idPrefix}${meta.fieldIds.startDate}`}
           onChange={(event) => actions.setStartDate(event.target.value)}
+          size={size}
           type="date"
           value={filters.startDate}
         />
@@ -175,10 +156,10 @@ function ShiftsAdvancedFiltersFields({
         htmlFor={`${idPrefix}${meta.fieldIds.endDate}`}
         label="Hasta"
       >
-        <Input
-          className={inputClassName}
+        <TextInput
           id={`${idPrefix}${meta.fieldIds.endDate}`}
           onChange={(event) => actions.setEndDate(event.target.value)}
+          size={size}
           type="date"
           value={filters.endDate}
         />

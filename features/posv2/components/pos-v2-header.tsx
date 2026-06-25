@@ -1,6 +1,14 @@
+import { ActionIcon } from "@mantine/core";
 import { ArrowLeftRight, Lock, Printer } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import type { ActiveShift } from "@/features/pos/types";
+import {
+  posV2AccentSoftBg,
+  posV2AccentText,
+  posV2MutedText,
+  posV2OrderCanvasBg,
+  posV2OrderHoverSurface,
+} from "@/features/posv2/components/pos-v2-order-styles";
+import { cn } from "@/lib/utils";
 
 interface PosV2HeaderProps {
   activeShift: ActiveShift | null;
@@ -18,44 +26,63 @@ export function PosV2Header({
   onCloseShift,
 }: PosV2HeaderProps) {
   return (
-    <header className="shrink-0 bg-[#0a0a0a] px-4 py-3 md:px-6 md:py-4">
+    <header
+      className={cn("shrink-0 px-4 py-3 md:px-6 md:py-4", posV2OrderCanvasBg)}
+    >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="font-extrabold text-white text-xl tracking-tight md:text-2xl">
             Zentro
           </span>
-          <span className="rounded bg-[#dfff06]/10 px-1.5 py-0.5 font-bold text-[#dfff06] text-[10px] uppercase tracking-wider md:text-xs">
+          <span
+            className={cn(
+              "rounded px-1.5 py-0.5 font-bold text-[10px] uppercase tracking-wider md:text-xs",
+              posV2AccentSoftBg,
+              posV2AccentText
+            )}
+          >
             POS
           </span>
         </div>
 
         <div className="flex items-center gap-2">
-          <Button
-            className="size-9 rounded-lg text-[#6b6b6b] hover:bg-[rgba(255,255,255,0.06)] hover:text-white disabled:opacity-40 md:h-10 md:w-10"
+          <ActionIcon
+            aria-label="Movimiento de efectivo"
+            className={cn(
+              "size-9 hover:text-white md:h-10 md:w-10",
+              posV2MutedText,
+              posV2OrderHoverSurface
+            )}
+            color="gray"
             disabled={!activeShift}
             onClick={onCashMovement}
-            size="icon"
-            variant="ghost"
+            variant="subtle"
           >
             <ArrowLeftRight className="size-4 md:h-5 md:w-5" />
-          </Button>
-          <Button
-            className="size-9 rounded-lg text-[#6b6b6b] hover:bg-[rgba(255,255,255,0.06)] hover:text-white disabled:opacity-40 md:h-10 md:w-10"
+          </ActionIcon>
+          <ActionIcon
+            aria-label="Imprimir"
+            className={cn(
+              "size-9 hover:text-white md:h-10 md:w-10",
+              posV2MutedText,
+              posV2OrderHoverSurface
+            )}
+            color="gray"
             onClick={onOpenDrawer}
-            size="icon"
-            variant="ghost"
+            variant="subtle"
           >
             <Printer className="size-4 md:h-5 md:w-5" />
-          </Button>
-          <Button
-            className="size-9 rounded-lg text-[#ef4444] hover:bg-[rgba(239,68,68,0.1)] hover:text-red-400 disabled:opacity-40 md:h-10 md:w-10"
+          </ActionIcon>
+          <ActionIcon
+            aria-label="Cerrar turno"
+            className="size-9 text-[#ef4444] hover:bg-[rgba(239,68,68,0.1)] hover:text-red-400 md:h-10 md:w-10"
+            color="red"
             disabled={!activeShift}
             onClick={onCloseShift}
-            size="icon"
-            variant="ghost"
+            variant="subtle"
           >
             <Lock className="size-4 md:h-5 md:w-5" />
-          </Button>
+          </ActionIcon>
         </div>
       </div>
     </header>

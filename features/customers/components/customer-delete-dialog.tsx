@@ -1,13 +1,4 @@
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { Button, Group, Modal, Stack, Text } from "@mantine/core";
 import { useCustomersPage } from "@/features/customers/customers-page-context";
 
 export function CustomerDeleteDialog() {
@@ -15,35 +6,31 @@ export function CustomerDeleteDialog() {
   const isOpen = state.activeOverlay?.type === "delete";
 
   return (
-    <AlertDialog
-      onOpenChange={(open) => {
-        if (!open) {
-          actions.closeOverlay();
-        }
-      }}
-      open={isOpen}
+    <Modal
+      centered
+      onClose={actions.closeOverlay}
+      opened={isOpen}
+      title="¿Eliminar cliente?"
     >
-      <AlertDialogContent className="border-zinc-800 bg-[var(--color-carbon)] text-white">
-        <AlertDialogHeader>
-          <AlertDialogTitle>¿Eliminar cliente?</AlertDialogTitle>
-          <AlertDialogDescription className="text-zinc-400">
-            {state.customerToDelete?.name} será removido de la lista activa.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel className="border-zinc-700 bg-transparent text-zinc-200 hover:bg-white/5">
+      <Stack gap="lg">
+        <Text c="dimmed" size="sm">
+          {state.customerToDelete?.name} será removido de la lista activa.
+        </Text>
+        <Group justify="flex-end">
+          <Button color="gray" onClick={actions.closeOverlay} variant="default">
             Cancelar
-          </AlertDialogCancel>
-          <AlertDialogAction
-            className="bg-red-500 text-white hover:bg-red-600"
+          </Button>
+          <Button
+            color="red"
+            loading={meta.isDeletePending}
             onClick={() => {
               actions.confirmDelete().catch(() => undefined);
             }}
           >
-            {meta.isDeletePending ? "Eliminando…" : "Eliminar"}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+            Eliminar
+          </Button>
+        </Group>
+      </Stack>
+    </Modal>
   );
 }

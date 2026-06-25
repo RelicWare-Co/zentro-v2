@@ -21,6 +21,7 @@ import {
   searchCreditAccountsViaZero,
 } from "./helpers/zero-credit";
 import {
+  cancelSaleViaZero,
   createSaleViaZero,
   getSaleDetailViaZero,
   listSalesViaZero,
@@ -83,7 +84,7 @@ describe("cross-area end-to-end flows", () => {
 
       expect(saleResult.status).toBe("completed");
       expect(saleResult.totalAmount).toBe(24_000);
-      expect(saleResult.paidAmount).toBe(25_000);
+      expect(saleResult.paidAmount).toBe(24_000);
       expect(saleResult.balanceDue).toBe(0);
 
       // Step 4: Verify stock decremented
@@ -129,7 +130,7 @@ describe("cross-area end-to-end flows", () => {
       expect(salesList.data[0].id).toBe(saleResult.saleId);
       expect(salesList.data[0].status).toBe("completed");
       expect(salesList.data[0].totalAmount).toBe(24_000);
-      expect(salesList.data[0].paidAmount).toBe(25_000);
+      expect(salesList.data[0].paidAmount).toBe(24_000);
       expect(salesList.data[0].balanceDue).toBe(0);
       expect(salesList.data[0].itemCount).toBe(2);
       expect(salesList.data[0].paymentMethods).toContain("cash");
@@ -209,7 +210,7 @@ describe("cross-area end-to-end flows", () => {
       expect(saleDetail).not.toBeNull();
       expect(saleDetail?.status).toBe("completed");
       expect(saleDetail?.totalAmount).toBe(24_000);
-      expect(saleDetail?.paidAmount).toBe(25_000);
+      expect(saleDetail?.paidAmount).toBe(24_000);
       expect(saleDetail?.balanceDue).toBe(0);
       expect(saleDetail?.shift?.id).toBe(shiftId);
       expect(saleDetail?.items.length).toBe(1);
@@ -218,6 +219,103 @@ describe("cross-area end-to-end flows", () => {
       expect(saleDetail?.payments.length).toBe(1);
       expect(saleDetail?.payments[0].method).toBe("cash");
       expect(saleDetail?.payments[0].amount).toBe(25_000);
+
+      await cleanup();
+    });
+
+    test("cash sale with change cannot be cancelled without an explicit refund flow", async () => {
+      const { db, cleanup } = await createTestDb();
+      const { organizationId, userId } = await seedOrganizationWithMember(db);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
+
+      const shiftOpen = await openShiftViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: { startingCash: 10_000 },
+      });
+      const shiftId = shiftOpen.id;
+
+      const productId = await seedProduct(db, {
+        organizationId,
+        name: "Coffee Mug",
+        price: 12_000,
+        stock: 30,
+        trackInventory: true,
+      });
+
+      const saleResult = await createSaleViaZero({
+        db,
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          shiftId,
+          items: [{ productId, quantity: 2, unitPrice: 12_000 }],
+          payments: [{ method: "cash", amount: 25_000 }],
+        },
+      });
+      expect(saleResult.totalAmount).toBe(24_000);
+
+      await expect(
+        cancelSaleViaZero({
+          zeroDb,
+          ctx: zeroCtx,
+          input: { saleId: saleResult.saleId },
+        })
+      ).rejects.toThrow("No se puede anular una venta con cobros registrados");
+
+      const salesList = await listSalesViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: { limit: 10 },
+      });
+      expect(salesList.data).toHaveLength(1);
+      expect(salesList.data[0].status).toBe("completed");
+      expect(salesList.data[0].totalAmount).toBe(24_000);
+      expect(salesList.data[0].paidAmount).toBe(24_000);
+      expect(salesList.data[0].balanceDue).toBe(0);
+
+      const shiftDetail = await getShiftDetailViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        shiftId,
+      });
+      expect(shiftDetail.operations.paidSalesCount).toBe(1);
+      expect(shiftDetail.operations.paidSalesAmount).toBe(24_000);
+      expect(shiftDetail.operations.cancelledSalesCount).toBe(0);
+      expect(shiftDetail.operations.cancelledSalesAmount).toBe(0);
+      expect(shiftDetail.totals.totalPayments).toBe(25_000);
+      expect(shiftDetail.totals.totalExpected).toBe(34_000);
+      expect(shiftDetail.paymentBreakdown).toEqual([
+        { method: "cash", amount: 34_000 },
+      ]);
+
+      const closeSummary = await getShiftCloseSummaryViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        shiftId,
+      });
+      expect(closeSummary.totalExpected).toBe(34_000);
+
+      const closeResult = await closeShiftViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          shiftId,
+          closures: [{ paymentMethod: "cash", actualAmount: 34_000 }],
+        },
+      });
+      expect(closeResult.closures[0].expectedAmount).toBe(34_000);
+      expect(closeResult.closures[0].difference).toBe(0);
+
+      const saleDetail = await getSaleDetailViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        saleId: saleResult.saleId,
+      });
+      expect(saleDetail?.status).toBe("completed");
+      expect(saleDetail?.paidAmount).toBe(24_000);
+      expect(saleDetail?.balanceDue).toBe(0);
 
       await cleanup();
     });
