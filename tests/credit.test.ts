@@ -5,7 +5,7 @@ import {
   creditTransaction,
 } from "@/database/drizzle/schema/credit.schema";
 import { customer } from "@/database/drizzle/schema/customer.schema";
-import { sale } from "@/database/drizzle/schema/sales.schema";
+import { payment, sale } from "@/database/drizzle/schema/sales.schema";
 import { createCoreSale } from "@/features/sales/create-sale.server";
 import {
   seedCustomer,
@@ -518,6 +518,122 @@ describe("credit ledger", () => {
         );
       expect(transactionRows.length).toBe(1);
       expect(transactionRows[0].saleId).toBeNull();
+
+      await cleanup();
+    });
+
+    test("payment without saleId allocates to outstanding sale debts", async () => {
+      const { db, cleanup } = await createTestDb();
+      const { organizationId, userId } = await seedOrganizationWithMember(db);
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
+      const [productId, customerId, shiftId] = await Promise.all([
+        seedProduct(db, {
+          organizationId,
+          name: "Widget",
+          price: 10_000,
+          stock: 10,
+          trackInventory: true,
+        }),
+        seedCustomer(db, {
+          organizationId,
+          name: "Allocation Customer",
+        }),
+        seedShift(db, {
+          organizationId,
+          userId,
+          status: "open",
+        }),
+      ]);
+
+      const firstSale = await createCoreSale(
+        {
+          shiftId,
+          customerId,
+          items: [{ productId, quantity: 1, unitPrice: 10_000 }],
+          payments: [],
+          isCreditSale: true,
+        },
+        { db, organizationId, userId }
+      );
+      const secondSale = await createCoreSale(
+        {
+          shiftId,
+          customerId,
+          items: [{ productId, quantity: 1, unitPrice: 10_000 }],
+          payments: [],
+          isCreditSale: true,
+        },
+        { db, organizationId, userId }
+      );
+
+      const [accountRow] = await db
+        .select()
+        .from(creditAccount)
+        .where(
+          and(
+            eq(creditAccount.organizationId, organizationId),
+            eq(creditAccount.customerId, customerId)
+          )
+        )
+        .limit(1);
+      expect(accountRow.balance).toBe(20_000);
+
+      await registerCreditPaymentViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          shiftId,
+          creditAccountId: accountRow.id,
+          amount: 20_000,
+          method: "cash",
+        },
+      });
+
+      const [afterAccount] = await db
+        .select()
+        .from(creditAccount)
+        .where(eq(creditAccount.id, accountRow.id))
+        .limit(1);
+      expect(afterAccount.balance).toBe(0);
+
+      const saleRows = await db
+        .select({ id: sale.id, status: sale.status })
+        .from(sale)
+        .where(eq(sale.customerId, customerId));
+      expect(saleRows).toHaveLength(2);
+      expect(saleRows.every((row) => row.status === "completed")).toBe(true);
+
+      const paymentRows = await db
+        .select({ saleId: payment.saleId, amount: payment.amount })
+        .from(payment)
+        .where(eq(payment.organizationId, organizationId));
+      expect(paymentRows).toEqual(
+        expect.arrayContaining([
+          { saleId: firstSale.saleId, amount: 10_000 },
+          { saleId: secondSale.saleId, amount: 10_000 },
+        ])
+      );
+
+      const transactionRows = await db
+        .select({
+          saleId: creditTransaction.saleId,
+          amount: creditTransaction.amount,
+          type: creditTransaction.type,
+        })
+        .from(creditTransaction)
+        .where(
+          and(
+            eq(creditTransaction.creditAccountId, accountRow.id),
+            eq(creditTransaction.type, "payment")
+          )
+        );
+      expect(transactionRows).toEqual(
+        expect.arrayContaining([
+          { saleId: firstSale.saleId, amount: 10_000, type: "payment" },
+          { saleId: secondSale.saleId, amount: 10_000, type: "payment" },
+        ])
+      );
 
       await cleanup();
     });

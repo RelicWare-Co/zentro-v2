@@ -1,4 +1,4 @@
-import { and, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, isNull, sql } from "drizzle-orm";
 import { createError } from "evlog";
 import type { z } from "zod";
 import type { Database, dbSqlite } from "@/database/drizzle/db";
@@ -594,7 +594,10 @@ async function updateInventory(
           and(
             eq(product.id, productId),
             eq(product.organizationId, organizationId),
-            isNull(product.deletedAt)
+            isNull(product.deletedAt),
+            deltaQuantity < 0
+              ? gte(product.stock, Math.abs(deltaQuantity))
+              : undefined
           )
         )
         .returning({ id: product.id })
@@ -768,6 +771,7 @@ export async function runCreateSale(
   );
 
   const saleStatus = isCreditSale ? "credit" : "completed";
+  const appliedPaidAmount = Math.min(paidAmount, totalAmount);
 
   await insertSaleRecords(
     tx,
@@ -793,7 +797,7 @@ export async function runCreateSale(
     createdAt
   );
 
-  const balanceDue = Math.max(totalAmount - paidAmount, 0);
+  const balanceDue = Math.max(totalAmount - appliedPaidAmount, 0);
   await handleCreditAccount(
     tx,
     isCreditSale,
@@ -812,7 +816,7 @@ export async function runCreateSale(
     taxAmount,
     discountAmount,
     totalAmount,
-    paidAmount,
+    paidAmount: appliedPaidAmount,
     balanceDue,
   };
 }

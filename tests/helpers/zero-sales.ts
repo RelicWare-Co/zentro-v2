@@ -78,10 +78,11 @@ export async function createSaleViaZero({
     throw new Error(`Venta no encontrada después de create: ${saleId}`);
   }
 
-  const paidAmount = (input.payments ?? []).reduce(
+  const tenderedAmount = (input.payments ?? []).reduce(
     (sum, payment) => sum + payment.amount,
     0
   );
+  const paidAmount = Math.min(saleRow.totalAmount, tenderedAmount);
 
   return {
     saleId: saleRow.id,

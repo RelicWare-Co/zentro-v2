@@ -1,4 +1,4 @@
-import { and, eq, gte, sql } from "drizzle-orm";
+import { and, asc, eq, gte, sql } from "drizzle-orm";
 import type { z } from "zod";
 import type { Database } from "@/database/drizzle/db";
 import { organization } from "@/database/drizzle/schema/auth.schema";
@@ -57,6 +57,19 @@ function toPositiveInteger(value: number, fieldName: string) {
   }
 
   return Math.round(value);
+}
+
+function normalizeNumber(value: number | string | null | undefined) {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : 0;
+  }
+
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  return 0;
 }
 
 function resolveDate(input: number | undefined, fieldName: string) {
@@ -166,15 +179,15 @@ async function fetchAndValidateSaleForPayment(
   amount: number
 ) {
   const [saleRow] = await tx
-    .select({
+    .update(sale)
+    .set({ status: sql`${sale.status}` })
+    .where(and(eq(sale.id, saleId), eq(sale.organizationId, organizationId)))
+    .returning({
       id: sale.id,
       customerId: sale.customerId,
       status: sale.status,
       totalAmount: sale.totalAmount,
-    })
-    .from(sale)
-    .where(and(eq(sale.id, saleId), eq(sale.organizationId, organizationId)))
-    .limit(1);
+    });
 
   if (!saleRow) {
     throw new Error("Venta no encontrada para la organización activa");
@@ -212,6 +225,77 @@ async function fetchAndValidateSaleForPayment(
   }
 
   return { saleRow, saleBalanceDue };
+}
+
+async function buildAccountPaymentAllocations(
+  tx: CreditPaymentDbExecutor,
+  organizationId: string,
+  customerId: string,
+  amount: number
+) {
+  let remainingAmount = amount;
+  const allocations: Array<{
+    amount: number;
+    remainingSaleBalance: number | null;
+    saleId: string | null;
+  }> = [];
+
+  const outstandingSaleRows = await tx
+    .select({
+      id: sale.id,
+      totalAmount: sale.totalAmount,
+      paidAmount: sql<number>`coalesce(sum(${payment.amount}), 0)`,
+    })
+    .from(sale)
+    .leftJoin(
+      payment,
+      and(
+        eq(payment.saleId, sale.id),
+        eq(payment.organizationId, organizationId)
+      )
+    )
+    .where(
+      and(
+        eq(sale.organizationId, organizationId),
+        eq(sale.customerId, customerId),
+        eq(sale.status, "credit")
+      )
+    )
+    .groupBy(sale.id, sale.totalAmount, sale.createdAt)
+    .orderBy(asc(sale.createdAt), asc(sale.id));
+
+  for (const saleRow of outstandingSaleRows) {
+    if (remainingAmount <= 0) {
+      break;
+    }
+
+    const saleBalanceDue = Math.max(
+      normalizeNumber(saleRow.totalAmount) -
+        normalizeNumber(saleRow.paidAmount),
+      0
+    );
+    if (saleBalanceDue <= 0) {
+      continue;
+    }
+
+    const allocatedAmount = Math.min(remainingAmount, saleBalanceDue);
+    allocations.push({
+      saleId: saleRow.id,
+      amount: allocatedAmount,
+      remainingSaleBalance: saleBalanceDue - allocatedAmount,
+    });
+    remainingAmount -= allocatedAmount;
+  }
+
+  if (remainingAmount > 0) {
+    allocations.push({
+      saleId: null,
+      amount: remainingAmount,
+      remainingSaleBalance: null,
+    });
+  }
+
+  return allocations;
 }
 
 export async function runRegisterCreditPayment(
@@ -261,17 +345,6 @@ export async function runRegisterCreditPayment(
     saleBalanceDue = result.saleBalanceDue;
   }
 
-  await tx.insert(payment).values({
-    id: input.paymentId,
-    organizationId: context.organizationId,
-    saleId,
-    shiftId: input.shiftId,
-    method,
-    reference,
-    amount,
-    createdAt,
-  });
-
   const updatedAccounts = await tx
     .update(creditAccount)
     .set({
@@ -293,28 +366,62 @@ export async function runRegisterCreditPayment(
   }
   const newBalance = updatedAccount.balance;
 
-  await tx.insert(creditTransaction).values({
-    id: input.transactionId,
-    organizationId: context.organizationId,
-    creditAccountId: input.creditAccountId,
-    saleId,
-    paymentId: input.paymentId,
-    type: "payment",
-    amount,
-    notes,
-    createdAt,
-  });
+  const paymentAllocations =
+    targetSale && saleBalanceDue !== null
+      ? [
+          {
+            saleId: targetSale.id,
+            amount,
+            remainingSaleBalance: saleBalanceDue - amount,
+          },
+        ]
+      : await buildAccountPaymentAllocations(
+          tx,
+          context.organizationId,
+          accountRow.customerId,
+          amount
+        );
 
-  if (targetSale && saleBalanceDue !== null) {
-    const remainingSaleBalance = saleBalanceDue - amount;
+  const paymentRows = paymentAllocations.map((allocation, index) => ({
+    id: index === 0 ? input.paymentId : crypto.randomUUID(),
+    organizationId: context.organizationId,
+    saleId: allocation.saleId,
+    shiftId: input.shiftId,
+    method,
+    reference,
+    amount: allocation.amount,
+    createdAt,
+  }));
+
+  await tx.insert(payment).values(paymentRows);
+
+  await tx.insert(creditTransaction).values(
+    paymentRows.map((paymentRow, index) => ({
+      id: index === 0 ? input.transactionId : crypto.randomUUID(),
+      organizationId: context.organizationId,
+      creditAccountId: input.creditAccountId,
+      saleId: paymentRow.saleId,
+      paymentId: paymentRow.id,
+      type: "payment",
+      amount: paymentRow.amount,
+      notes,
+      createdAt,
+    }))
+  );
+
+  for (const allocation of paymentAllocations) {
+    if (!allocation.saleId || allocation.remainingSaleBalance === null) {
+      continue;
+    }
+
     await tx
       .update(sale)
       .set({
-        status: remainingSaleBalance > 0 ? "credit" : "completed",
+        status: allocation.remainingSaleBalance > 0 ? "credit" : "completed",
       })
       .where(
         and(
-          eq(sale.id, targetSale.id),
+          eq(sale.id, allocation.saleId),
           eq(sale.organizationId, context.organizationId)
         )
       );
@@ -322,7 +429,7 @@ export async function runRegisterCreditPayment(
 
   return {
     creditAccountId: input.creditAccountId,
-    saleId,
+    saleId: paymentAllocations[0]?.saleId ?? null,
     paymentId: input.paymentId,
     transactionId: input.transactionId,
     amount,

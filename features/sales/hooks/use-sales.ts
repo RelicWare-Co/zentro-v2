@@ -234,10 +234,11 @@ export function useCreateSaleMutation() {
       )
     );
 
-    const paidAmount = (saleInput.payments ?? []).reduce(
+    const tenderedAmount = (saleInput.payments ?? []).reduce(
       (sum, payment) => sum + payment.amount,
       0
     );
+    const paidAmount = Math.min(receiptTotals.totalAmount, tenderedAmount);
     const isCreditSale = saleInput.isCreditSale ?? false;
     const status = isCreditSale ? "credit" : "completed";
 

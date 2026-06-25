@@ -37,6 +37,17 @@ export function buildPosProduct(row: PosProductWithCategory): Product {
   };
 }
 
+export function resolveAppliedSalePaidAmount(
+  totalAmount: number,
+  payments: Array<{ amount: number }>
+) {
+  const tenderedAmount = payments.reduce(
+    (sum, payment) => sum + payment.amount,
+    0
+  );
+  return Math.min(totalAmount, tenderedAmount);
+}
+
 function normalizePosSearchQuery(searchQuery?: string | null) {
   return searchQuery?.trim().toLowerCase() ?? "";
 }

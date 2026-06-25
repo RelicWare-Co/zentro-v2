@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { zeroDrizzle } from "@rocicorp/zero/server/adapters/drizzle";
 import { eq } from "drizzle-orm";
 import { product } from "@/database/drizzle/schema/inventory.schema";
+import { resolveAppliedSalePaidAmount } from "@/features/pos/pos.shared";
 import { serverMutators } from "@/zero/mutators.server";
 import { queries } from "@/zero/queries";
 import { schema as zeroSchema } from "@/zero/schema";
@@ -28,6 +29,14 @@ import {
 } from "./helpers/zero-shifts";
 
 describe("POS checkout", () => {
+  describe("POS accounting helpers", () => {
+    test("cash change is not counted as sale paid amount", () => {
+      expect(resolveAppliedSalePaidAmount(24_000, [{ amount: 25_000 }])).toBe(
+        24_000
+      );
+    });
+  });
+
   describe("VAL-POS-001: shift open prevents duplicate for same user", () => {
     test("opening a second shift for same user is rejected", async () => {
       const { db, cleanup } = await createTestDb();

@@ -13,8 +13,9 @@ export function SalesCancelDialog() {
     >
       <Stack gap="lg">
         <Text c="dimmed" size="sm">
-          Esta venta quedará anulada. Sus pagos dejarán de contar para caja y
-          sus valores no sumarán en ventas. Esta acción no se puede deshacer.
+          Solo se pueden anular ventas sin cobros registrados. La anulación
+          revertirá inventario y saldos de crédito pendientes, y no se puede
+          deshacer.
         </Text>
         <Group justify="flex-end">
           <Button

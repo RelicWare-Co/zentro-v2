@@ -1,4 +1,4 @@
-import { and, eq, gte, sql } from "drizzle-orm";
+import { and, eq, gte, ne, sql } from "drizzle-orm";
 import type { z } from "zod";
 import type { Database } from "@/database/drizzle/db";
 import {
@@ -10,11 +10,7 @@ import {
   product,
 } from "@/database/drizzle/schema/inventory.schema";
 import { shift } from "@/database/drizzle/schema/pos.schema";
-import {
-  sale,
-  saleItem,
-  saleItemModifier,
-} from "@/database/drizzle/schema/sales.schema";
+import { payment, sale } from "@/database/drizzle/schema/sales.schema";
 import type {
   CancelSaleInputSchema,
   CancelSaleResultSchema,
@@ -86,9 +82,14 @@ function validateCreditTransactionRules(
     creditAccountId: string;
     amount: number;
   }>,
+  paymentRows: Array<{ id: string }>,
   paymentTransactions: Array<{ id: string }>,
   targetSale: { status: string; id: string }
 ) {
+  if (paymentRows.length > 0) {
+    throw new Error("No se puede anular una venta con cobros registrados");
+  }
+
   if (paymentTransactions.length > 0) {
     throw new Error("No se puede anular una venta con abonos registrados");
   }
@@ -101,40 +102,27 @@ function validateCreditTransactionRules(
 }
 
 function buildStockRestorations(
-  saleItemRows: Array<{
+  saleMovementRows: Array<{
     productId: string;
     quantity: number;
     productName: string;
-    trackInventory: boolean;
-  }>,
-  saleModifierRows: Array<{
-    productId: string;
-    baseQuantity: number;
-    modifierQuantity: number;
-    productName: string;
-    trackInventory: boolean;
   }>
 ) {
   const stockRestorations = new Map<
     string,
-    { quantity: number; productName: string; trackInventory: boolean }
+    { quantity: number; productName: string }
   >();
-  for (const itemRow of saleItemRows) {
-    stockRestorations.set(itemRow.productId, {
+  for (const movementRow of saleMovementRows) {
+    const restorationQuantity = Math.max(-movementRow.quantity, 0);
+    if (restorationQuantity <= 0) {
+      continue;
+    }
+
+    stockRestorations.set(movementRow.productId, {
       quantity:
-        (stockRestorations.get(itemRow.productId)?.quantity ?? 0) +
-        itemRow.quantity,
-      productName: itemRow.productName,
-      trackInventory: itemRow.trackInventory,
-    });
-  }
-  for (const modifierRow of saleModifierRows) {
-    stockRestorations.set(modifierRow.productId, {
-      quantity:
-        (stockRestorations.get(modifierRow.productId)?.quantity ?? 0) +
-        modifierRow.baseQuantity * modifierRow.modifierQuantity,
-      productName: modifierRow.productName,
-      trackInventory: modifierRow.trackInventory,
+        (stockRestorations.get(movementRow.productId)?.quantity ?? 0) +
+        restorationQuantity,
+      productName: movementRow.productName,
     });
   }
   return stockRestorations;
@@ -147,7 +135,6 @@ function restoreProductStock(
     restoration: {
       quantity: number;
       productName: string;
-      trackInventory: boolean;
     };
   }>,
   organizationId: string
@@ -186,6 +173,7 @@ async function reverseCreditCharges(
     amount: number;
   }>,
   organizationId: string,
+  saleId: string,
   cancelledAt: Date
 ) {
   await Promise.all(
@@ -225,6 +213,17 @@ async function reverseCreditCharges(
           "La cuenta de crédito ya no coincide con la deuda de esta venta"
         );
       }
+
+      await tx.insert(creditTransaction).values({
+        id: crypto.randomUUID(),
+        organizationId,
+        creditAccountId: chargeTransaction.creditAccountId,
+        saleId,
+        type: "reversal",
+        amount: chargeTransaction.amount,
+        notes: `Anulacion venta ${saleId}`,
+        createdAt: cancelledAt,
+      });
     })
   );
 }
@@ -246,108 +245,101 @@ export async function runCancelSale(
     userId
   );
 
-  const [chargeTransactions, paymentTransactions] = await Promise.all([
-    tx
-      .select({
-        id: creditTransaction.id,
-        creditAccountId: creditTransaction.creditAccountId,
-        amount: creditTransaction.amount,
-      })
-      .from(creditTransaction)
-      .where(
-        and(
-          eq(creditTransaction.organizationId, organizationId),
-          eq(creditTransaction.saleId, targetSale.id),
-          eq(creditTransaction.type, "charge")
+  const [chargeTransactions, salePaymentRows, paymentTransactions] =
+    await Promise.all([
+      tx
+        .select({
+          id: creditTransaction.id,
+          creditAccountId: creditTransaction.creditAccountId,
+          amount: creditTransaction.amount,
+        })
+        .from(creditTransaction)
+        .where(
+          and(
+            eq(creditTransaction.organizationId, organizationId),
+            eq(creditTransaction.saleId, targetSale.id),
+            eq(creditTransaction.type, "charge")
+          )
+        ),
+      tx
+        .select({ id: payment.id })
+        .from(payment)
+        .where(
+          and(
+            eq(payment.organizationId, organizationId),
+            eq(payment.saleId, targetSale.id)
+          )
         )
-      ),
-    tx
-      .select({ id: creditTransaction.id })
-      .from(creditTransaction)
-      .where(
-        and(
-          eq(creditTransaction.organizationId, organizationId),
-          eq(creditTransaction.saleId, targetSale.id),
-          eq(creditTransaction.type, "payment")
+        .limit(1),
+      tx
+        .select({ id: creditTransaction.id })
+        .from(creditTransaction)
+        .where(
+          and(
+            eq(creditTransaction.organizationId, organizationId),
+            eq(creditTransaction.saleId, targetSale.id),
+            eq(creditTransaction.type, "payment")
+          )
         )
-      )
-      .limit(1),
-  ]);
+        .limit(1),
+    ]);
 
   validateCreditTransactionRules(
     chargeTransactions,
+    salePaymentRows,
     paymentTransactions,
     targetSale
   );
 
-  const [saleItemRows, saleModifierRows] = await Promise.all([
-    tx
-      .select({
-        productId: saleItem.productId,
-        quantity: saleItem.quantity,
-        productName: product.name,
-        trackInventory: product.trackInventory,
-      })
-      .from(saleItem)
-      .innerJoin(
-        product,
-        and(
-          eq(product.id, saleItem.productId),
-          eq(product.organizationId, organizationId)
-        )
+  const cancelledRows = await tx
+    .update(sale)
+    .set({ status: "cancelled" })
+    .where(
+      and(
+        eq(sale.id, targetSale.id),
+        eq(sale.organizationId, organizationId),
+        ne(sale.status, "cancelled")
       )
-      .where(
-        and(
-          eq(saleItem.organizationId, organizationId),
-          eq(saleItem.saleId, targetSale.id)
-        )
-      ),
-    tx
-      .select({
-        productId: saleItemModifier.modifierProductId,
-        baseQuantity: saleItem.quantity,
-        modifierQuantity: saleItemModifier.quantity,
-        productName: product.name,
-        trackInventory: product.trackInventory,
-      })
-      .from(saleItemModifier)
-      .innerJoin(
-        saleItem,
-        and(
-          eq(saleItem.id, saleItemModifier.saleItemId),
-          eq(saleItem.organizationId, organizationId)
-        )
-      )
-      .innerJoin(
-        product,
-        and(
-          eq(product.id, saleItemModifier.modifierProductId),
-          eq(product.organizationId, organizationId)
-        )
-      )
-      .where(
-        and(
-          eq(saleItemModifier.organizationId, organizationId),
-          eq(saleItem.saleId, targetSale.id)
-        )
-      ),
-  ]);
+    )
+    .returning({ id: sale.id });
 
-  const stockRestorations = buildStockRestorations(
-    saleItemRows,
-    saleModifierRows
-  );
+  if (cancelledRows.length === 0) {
+    throw new Error("La venta ya está anulada");
+  }
+
+  const saleMovementRows = await tx
+    .select({
+      productId: inventoryMovement.productId,
+      quantity: inventoryMovement.quantity,
+      productName: product.name,
+    })
+    .from(inventoryMovement)
+    .innerJoin(
+      product,
+      and(
+        eq(product.id, inventoryMovement.productId),
+        eq(product.organizationId, organizationId)
+      )
+    )
+    .where(
+      and(
+        eq(inventoryMovement.organizationId, organizationId),
+        eq(inventoryMovement.type, "sale"),
+        eq(inventoryMovement.notes, `Venta ${targetSale.id}`)
+      )
+    );
+
+  const stockRestorations = buildStockRestorations(saleMovementRows);
 
   const entriesToRestore: Array<{
     productId: string;
     restoration: {
       quantity: number;
       productName: string;
-      trackInventory: boolean;
     };
   }> = [];
   for (const [productId, restoration] of stockRestorations.entries()) {
-    if (!restoration.trackInventory || restoration.quantity <= 0) {
+    if (restoration.quantity <= 0) {
       continue;
     }
     entriesToRestore.push({ productId, restoration });
@@ -379,15 +371,9 @@ export async function runCancelSale(
     tx,
     chargeTransactions,
     organizationId,
+    targetSale.id,
     cancelledAt
   );
-
-  await tx
-    .update(sale)
-    .set({ status: "cancelled" })
-    .where(
-      and(eq(sale.id, targetSale.id), eq(sale.organizationId, organizationId))
-    );
 
   return {
     saleId: targetSale.id,

@@ -30,6 +30,7 @@ import {
   type PosTableOrderItemStatus,
   usePosTableOrder,
 } from "@/features/pos/hooks/use-pos-table-order";
+import { resolveAppliedSalePaidAmount } from "@/features/pos/pos.shared";
 import type { PosActiveModal } from "@/features/pos/pos-page-modals.shared";
 import { isPosModalOpen } from "@/features/pos/pos-page-modals.shared";
 import { printSaleReceipt } from "@/features/pos/printing/print-sale-receipt.client";
@@ -540,9 +541,9 @@ export function PosPageProvider({
           payments: salePayments,
         });
 
-        const paidAmount = salePayments.reduce(
-          (sum, payment) => sum + payment.amount,
-          0
+        const paidAmount = resolveAppliedSalePaidAmount(
+          receiptSnapshot.totals.totalAmount,
+          salePayments
         );
         notifications.show({
           message: `${tableName} cobrada y liberada`,
