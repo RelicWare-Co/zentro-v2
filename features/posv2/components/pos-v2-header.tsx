@@ -75,7 +75,7 @@ export function PosV2Header({
           </ActionIcon>
           <ActionIcon
             aria-label="Cerrar turno"
-            className="size-9 text-[#ef4444] hover:bg-[rgba(239,68,68,0.1)] hover:text-red-400 md:h-10 md:w-10"
+            className="size-9 text-[#ef4444]! hover:bg-[rgba(239,68,68,0.1)] hover:text-red-400! md:h-10 md:w-10"
             color="red"
             disabled={!activeShift}
             onClick={onCloseShift}

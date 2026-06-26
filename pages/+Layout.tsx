@@ -33,7 +33,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <MantineProvider
       cssVariablesResolver={mantineCssVariablesResolver}
-      forceColorScheme="light"
+      forceColorScheme="dark"
       theme={mantineTheme}
     >
       <TanstackQueryProvider>

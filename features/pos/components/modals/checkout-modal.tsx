@@ -71,7 +71,6 @@ export function CheckoutModal() {
                 onChange={(event) =>
                   actions.setIsCreditSale(event.currentTarget.checked)
                 }
-                styles={{ label: { color: "#a1a1aa", cursor: "pointer" } }}
               />
             ) : (
               <span className="text-sm text-zinc-500">
@@ -105,12 +104,7 @@ export function CheckoutModal() {
       </div>
 
       <Group grow mt="md">
-        <Button
-          color="gray"
-          onClick={actions.closeActiveModal}
-          size="md"
-          variant="outline"
-        >
+        <Button onClick={actions.closeActiveModal} size="md" variant="outline">
           Cancelar
         </Button>
         <Button

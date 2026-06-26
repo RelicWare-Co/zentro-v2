@@ -74,7 +74,7 @@ export function CheckoutDiscountSection({
           autoComplete="off"
           classNames={{
             input: cn(
-              "h-10 touch-manipulation border-zinc-700 bg-[#151515] text-base focus-visible:border-[var(--color-voltage)] md:text-sm",
+              "h-10 touch-manipulation border-zinc-700! bg-[#151515]! text-base text-white! focus-visible:border-[var(--color-voltage)]! md:text-sm",
               inputClassName
             ),
           }}

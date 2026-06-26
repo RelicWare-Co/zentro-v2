@@ -88,7 +88,6 @@ export function ProductsTable() {
           <div className="flex justify-end gap-2">
             {row.original.trackInventory ? (
               <Button
-                color="gray"
                 onClick={() => actions.openInventoryForProduct(row.original)}
                 size="xs"
                 type="button"
@@ -99,7 +98,6 @@ export function ProductsTable() {
             ) : null}
             <ActionIcon
               aria-label="Editar producto"
-              color="gray"
               onClick={() => actions.openEditProduct(row.original)}
               type="button"
               variant="outline"

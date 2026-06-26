@@ -70,11 +70,7 @@ export function CreateCustomerModal() {
       </div>
 
       <Group justify="flex-end">
-        <Button
-          color="gray"
-          onClick={actions.closeActiveModal}
-          variant="subtle"
-        >
+        <Button onClick={actions.closeActiveModal} variant="subtle">
           Cancelar
         </Button>
         <Button

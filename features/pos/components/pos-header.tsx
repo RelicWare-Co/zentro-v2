@@ -68,7 +68,7 @@ export function PosHeader({
               selectedCustomerId={selectedCustomerId}
             />
             <Button
-              className="shrink-0 text-[var(--color-voltage)] hover:bg-[var(--color-voltage)]/10 hover:text-[var(--color-voltage)]"
+              className="shrink-0 text-[var(--color-voltage)]! hover:bg-[var(--color-voltage)]/10 hover:text-[var(--color-voltage)]!"
               leftSection={<Plus className="size-3.5" />}
               onClick={onCreateCustomer}
               size="compact-sm"
@@ -85,8 +85,8 @@ export function PosHeader({
             className={cn(
               "h-9 w-9 shrink-0 p-0",
               isQuickSaleMode
-                ? "border-[var(--color-voltage)]/40 bg-[var(--color-voltage)]/15 text-[var(--color-voltage)] hover:bg-[var(--color-voltage)]/25"
-                : "border-zinc-700 bg-zinc-900/50 text-zinc-500 hover:border-zinc-600 hover:bg-zinc-800 hover:text-zinc-300"
+                ? "border-[var(--color-voltage)]/40! bg-[var(--color-voltage)]/15! text-[var(--color-voltage)]! hover:bg-[var(--color-voltage)]/25"
+                : "border-zinc-700! bg-zinc-900/50! text-zinc-500! hover:border-zinc-600 hover:bg-zinc-800 hover:text-zinc-300"
             )}
             onClick={onToggleQuickSaleMode}
             size="sm"
@@ -100,7 +100,7 @@ export function PosHeader({
             <Zap className="size-4" />
           </Button>
           <Button
-            className="whitespace-nowrap border-zinc-700 bg-zinc-900/50 text-zinc-300 hover:border-zinc-600 hover:bg-zinc-800 hover:text-white"
+            className="whitespace-nowrap border-zinc-700! bg-zinc-900/50! text-zinc-300! hover:border-zinc-600 hover:bg-zinc-800 hover:text-white!"
             disabled={!activeShift}
             leftSection={<ArrowLeftRight className="size-4" />}
             onClick={onCashMovement}
@@ -111,7 +111,7 @@ export function PosHeader({
             <span className="hidden sm:inline">Movimiento de Caja</span>
           </Button>
           <Button
-            className="whitespace-nowrap border-zinc-700 bg-zinc-900/50 text-zinc-300 hover:border-zinc-600 hover:bg-zinc-800 hover:text-white"
+            className="whitespace-nowrap border-zinc-700! bg-zinc-900/50! text-zinc-300! hover:border-zinc-600 hover:bg-zinc-800 hover:text-white!"
             leftSection={<Printer className="size-4" />}
             onClick={onOpenDrawer}
             size="sm"
@@ -124,8 +124,8 @@ export function PosHeader({
             className={cn(
               "whitespace-nowrap",
               activeShift
-                ? "border-red-900/30 bg-red-900/10 text-red-400 hover:border-red-900/50 hover:bg-red-900/30 hover:text-red-300"
-                : "border-[var(--color-voltage)]/40 bg-[var(--color-voltage)]/10 text-[var(--color-voltage)] hover:bg-[var(--color-voltage)]/20"
+                ? "border-red-900/30! bg-red-900/10! text-red-400! hover:border-red-900/50 hover:bg-red-900/30 hover:text-red-300!"
+                : "border-[var(--color-voltage)]/40! bg-[var(--color-voltage)]/10! text-[var(--color-voltage)]! hover:bg-[var(--color-voltage)]/20"
             )}
             leftSection={
               activeShift ? (
