@@ -1,0 +1,48 @@
+<svg
+  fill="none"
+  height="630"
+  viewBox="0 0 1200 630"
+  width="1200"
+  xmlns="http://www.w3.org/2000/svg"
+>
+  <title>Zentro — Sistema POS inteligente</title>
+  <rect fill="#0a0e14" height="630" width="1200" />
+  <rect fill="#d6ff00" height="148" rx="28" width="148" x="96" y="116" />
+  <path
+    d="M137.6 164.4h62.1l-62.1 68.5v24.6h98.5v-24.6h-62.5l62.5-70v-22.7h-98.5v24.2Z"
+    fill="#0a0e14"
+  />
+  <text
+    fill="#ffffff"
+    font-family="Inter, Arial, sans-serif"
+    font-size="92"
+    font-weight="800"
+    letter-spacing="0"
+    x="96"
+    y="390"
+  >
+    Zentro
+  </text>
+  <text
+    fill="#d6ff00"
+    font-family="Inter, Arial, sans-serif"
+    font-size="42"
+    font-weight="700"
+    letter-spacing="0"
+    x="96"
+    y="462"
+  >
+    Sistema POS inteligente
+  </text>
+  <text
+    fill="#d4d4d8"
+    font-family="Inter, Arial, sans-serif"
+    font-size="31"
+    font-weight="500"
+    letter-spacing="0"
+    x="96"
+    y="524"
+  >
+    Ventas, inventario, turnos, cocina, clientes y crédito.
+  </text>
+</svg>

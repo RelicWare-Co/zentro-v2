@@ -1,0 +1,17 @@
+User-agent: *
+Allow: /login
+Disallow: /api/
+Disallow: /join
+Disallow: /organization
+Disallow: /admin
+Disallow: /credit
+Disallow: /customers
+Disallow: /dashboard
+Disallow: /kitchen
+Disallow: /pos
+Disallow: /posv2
+Disallow: /products
+Disallow: /restaurants
+Disallow: /sales
+Disallow: /settings
+Disallow: /shifts

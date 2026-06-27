@@ -1,0 +1,11 @@
+<svg
+  aria-hidden="true"
+  viewBox="0 0 1024 1024"
+  xmlns="http://www.w3.org/2000/svg"
+>
+  <rect fill="#d6ff00" height="1024" rx="149" width="1024" />
+  <path
+    d="M287.89 355.33h282.59L287.89 666.96V778.8h448.22V666.96h-284.3l284.3-318.46V245.2H287.89v110.13Z"
+    fill="#0a0e14"
+  />
+</svg>

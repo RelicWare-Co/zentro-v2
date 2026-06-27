@@ -87,6 +87,7 @@ better-auth cookie to both origins:
 
 ```txt
 BETTER_AUTH_URL=https://app.example.com
+PUBLIC_SITE_URL=https://app.example.com
 BETTER_AUTH_COOKIE_DOMAIN=example.com
 BETTER_AUTH_TRUSTED_ORIGINS=https://app.example.com,https://zero.example.com
 ZERO_CACHE_URL=https://zero.example.com
@@ -237,6 +238,7 @@ Magic URLs for sibling domains (service names `app` and `zero-cache`):
 
 ```txt
 BETTER_AUTH_URL=${SERVICE_URL_APP_3000}
+PUBLIC_SITE_URL=${SERVICE_URL_APP_3000}
 ZERO_CACHE_URL=${SERVICE_URL_ZERO-CACHE_4848}
 BETTER_AUTH_TRUSTED_ORIGINS=${SERVICE_URL_APP_3000},${SERVICE_URL_ZERO-CACHE_4848}
 BETTER_AUTH_COOKIE_DOMAIN=example.com
@@ -321,6 +323,7 @@ Then set:
 
 ```txt
 BETTER_AUTH_URL=${SERVICE_URL_APP_3000}
+PUBLIC_SITE_URL=${SERVICE_URL_APP_3000}
 ZERO_CACHE_URL=${SERVICE_URL_ZERO-CACHE_4848}
 BETTER_AUTH_TRUSTED_ORIGINS=${SERVICE_URL_APP_3000},${SERVICE_URL_ZERO-CACHE_4848}
 BETTER_AUTH_COOKIE_DOMAIN=qa.example.com
@@ -451,6 +454,7 @@ If the health check never passes, most platforms keep the previous healthy revis
 | `PORT` | Yes | Match exposed port (e.g. `3000`) |
 | `RUN_MIGRATIONS` | Required | `true` only for a single-replica deployment; `false` when a separate migration job is used |
 | `BETTER_AUTH_URL` | Yes | Public app origin, e.g. `https://app.example.com` |
+| `PUBLIC_SITE_URL` | No | Canonical public app origin for SEO tags; falls back to request/proxy headers, then `BETTER_AUTH_URL` |
 | `BETTER_AUTH_COOKIE_DOMAIN` | Yes | Root domain, e.g. `example.com` |
 | `BETTER_AUTH_TRUSTED_ORIGINS` | Yes | Comma-separated app + zero-cache origins |
 | `BETTER_AUTH_SECRET` | Yes | Long random secret |

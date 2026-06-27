@@ -1,14 +1,8 @@
-import { redirect } from "vike/abort";
-import type { PageContextServer } from "vike/types";
+// The root path "/" is permanently redirected to "/dashboard" via +redirects
+// in the root +config.ts, so this guard is a no-op fallback.
+// Auth and org checks are handled by the (app)/+guard.ts group guard.
 
-export const guard = (pageContext: PageContextServer) => {
-  if (!pageContext.user) {
-    throw redirect("/login");
-  }
-
-  if (!pageContext.zeroContext?.orgID) {
-    throw redirect("/organization");
-  }
-
-  throw redirect("/dashboard");
+export const guard = () => {
+  // No-op: "/" is redirected to "/dashboard" via +redirects in +config.ts.
+  // Auth and org checks are handled by the (app)/+guard.ts group guard.
 };

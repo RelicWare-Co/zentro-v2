@@ -1,0 +1,19 @@
+{
+  "background_color": "#0a0e14",
+  "description": "Sistema POS inteligente para ventas, inventario, turnos, cocina, clientes y crédito.",
+  "display": "standalone",
+  "icons": [
+    {
+      "purpose": "any maskable",
+      "sizes": "any",
+      "src": "/favicon.svg",
+      "type": "image/svg+xml"
+    }
+  ],
+  "lang": "es-CO",
+  "name": "Zentro",
+  "scope": "/",
+  "short_name": "Zentro",
+  "start_url": "/login",
+  "theme_color": "#0a0e14"
+}
