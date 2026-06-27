@@ -1,10 +1,8 @@
-import { defineQuery } from "@rocicorp/zero";
 import { z } from "zod";
 import { ShiftsListQueryArgsSchema } from "@/features/shifts/shifts.schema";
 import { parseDateBoundary as parseShiftDateBoundary } from "@/features/shifts/shifts.shared";
-import "@/zero/context";
-import { hasOrgContext } from "@/zero/queries.shared";
 import { zql } from "@/zero/schema";
+import { defineZentroQuery, denyQuery, hasOrgContext } from "@/zero/sdk";
 
 const shiftByIdArgsSchema = z.object({
   shiftId: z.string().trim().optional().nullable(),
@@ -124,9 +122,9 @@ function buildShiftsListQuery(
 
 export const shiftsQueries = {
   shifts: {
-    active: defineQuery(({ ctx }) => {
+    active: defineZentroQuery(({ ctx }) => {
       if (!hasOrgContext(ctx)) {
-        return zql.shift.where(({ cmpLit }) => cmpLit(false, "=", true));
+        return denyQuery(zql.shift);
       }
 
       return zql.shift
@@ -137,17 +135,17 @@ export const shiftsQueries = {
         .orderBy("id", "desc")
         .limit(1);
     }),
-    list: defineQuery(ShiftsListQueryArgsSchema, ({ args, ctx }) => {
+    list: defineZentroQuery(ShiftsListQueryArgsSchema, ({ args, ctx }) => {
       if (!hasOrgContext(ctx)) {
-        return zql.shift.where(({ cmpLit }) => cmpLit(false, "=", true));
+        return denyQuery(zql.shift);
       }
 
       return buildShiftsListQuery(ctx.orgID, args);
     }),
-    byId: defineQuery(shiftByIdArgsSchema, ({ args, ctx }) => {
+    byId: defineZentroQuery(shiftByIdArgsSchema, ({ args, ctx }) => {
       const normalizedShiftId = args.shiftId?.trim() ?? "";
       if (!(hasOrgContext(ctx) && normalizedShiftId)) {
-        return zql.shift.where(({ cmpLit }) => cmpLit(false, "=", true));
+        return denyQuery(zql.shift);
       }
 
       return buildShiftDetailQuery(normalizedShiftId, ctx.orgID);

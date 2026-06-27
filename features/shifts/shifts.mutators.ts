@@ -1,17 +1,16 @@
-import { defineMutator } from "@rocicorp/zero";
-import { getEnabledPaymentMethods } from "@/features/settings/settings.shared";
-import "@/zero/context";
 import { z as zod } from "zod";
+import { getEnabledPaymentMethods } from "@/features/settings/settings.shared";
+import { zql } from "@/zero/schema";
 import {
   assertOrgZeroContext,
+  defineZentroMutator,
   getOrganizationSettingsFromTx,
   normalizeOptionalString,
   normalizeRequiredString,
   resolveTimestamp,
   toNonNegativeInteger,
   toPositiveInteger,
-} from "@/zero/mutators.shared";
-import { zql } from "@/zero/schema";
+} from "@/zero/sdk";
 
 export const openShiftArgsSchema = zod.object({
   id: zod.string().trim().min(1),
@@ -46,60 +45,63 @@ export const registerCashMovementArgsSchema = zod.object({
 
 export const shiftsMutators = {
   shifts: {
-    open: defineMutator(openShiftArgsSchema, async ({ args, ctx, tx }) => {
-      const zeroContext = assertOrgZeroContext(ctx);
-      const startingCash = toNonNegativeInteger(
-        args.startingCash,
-        "startingCash"
-      );
-      const terminalId = normalizeOptionalString(args.terminalId);
-      const notes = normalizeOptionalString(args.notes);
-      const openedAt = resolveTimestamp(args.openedAt);
-      const organizationSettings = await getOrganizationSettingsFromTx({
-        organizationId: zeroContext.orgID,
-        tx,
-      });
-      const terminalName =
-        normalizeOptionalString(args.terminalName) ??
-        organizationSettings.pos.defaultTerminalName;
+    open: defineZentroMutator(
+      openShiftArgsSchema,
+      async ({ args, ctx, tx }) => {
+        const zeroContext = assertOrgZeroContext(ctx);
+        const startingCash = toNonNegativeInteger(
+          args.startingCash,
+          "startingCash"
+        );
+        const terminalId = normalizeOptionalString(args.terminalId);
+        const notes = normalizeOptionalString(args.notes);
+        const openedAt = resolveTimestamp(args.openedAt);
+        const organizationSettings = await getOrganizationSettingsFromTx({
+          organizationId: zeroContext.orgID,
+          tx,
+        });
+        const terminalName =
+          normalizeOptionalString(args.terminalName) ??
+          organizationSettings.pos.defaultTerminalName;
 
-      const userOpenShifts = await tx.run(
-        zql.shift
-          .where("organizationId", zeroContext.orgID)
-          .where("userId", zeroContext.id)
-          .where("status", "open")
-          .limit(1)
-      );
-      if (userOpenShifts.length > 0) {
-        throw new Error("El usuario ya tiene un turno abierto");
-      }
-
-      if (terminalId) {
-        const terminalOpenShifts = await tx.run(
+        const userOpenShifts = await tx.run(
           zql.shift
             .where("organizationId", zeroContext.orgID)
+            .where("userId", zeroContext.id)
             .where("status", "open")
-            .where("terminalId", terminalId)
             .limit(1)
         );
-        if (terminalOpenShifts.length > 0) {
-          throw new Error("La terminal indicada ya tiene un turno abierto");
+        if (userOpenShifts.length > 0) {
+          throw new Error("El usuario ya tiene un turno abierto");
         }
-      }
 
-      await tx.mutate.shift.insert({
-        id: args.id,
-        organizationId: zeroContext.orgID,
-        userId: zeroContext.id,
-        terminalId,
-        terminalName,
-        status: "open",
-        startingCash,
-        openedAt,
-        notes,
-      });
-    }),
-    cashMovement: defineMutator(
+        if (terminalId) {
+          const terminalOpenShifts = await tx.run(
+            zql.shift
+              .where("organizationId", zeroContext.orgID)
+              .where("status", "open")
+              .where("terminalId", terminalId)
+              .limit(1)
+          );
+          if (terminalOpenShifts.length > 0) {
+            throw new Error("La terminal indicada ya tiene un turno abierto");
+          }
+        }
+
+        await tx.mutate.shift.insert({
+          id: args.id,
+          organizationId: zeroContext.orgID,
+          userId: zeroContext.id,
+          terminalId,
+          terminalName,
+          status: "open",
+          startingCash,
+          openedAt,
+          notes,
+        });
+      }
+    ),
+    cashMovement: defineZentroMutator(
       registerCashMovementArgsSchema,
       async ({ args, ctx, tx }) => {
         const zeroContext = assertOrgZeroContext(ctx);
@@ -165,7 +167,7 @@ export const shiftsMutators = {
         });
       }
     ),
-    close: defineMutator(closeShiftArgsSchema, async () => {
+    close: defineZentroMutator(closeShiftArgsSchema, async () => {
       // Server-only close. The authoritative override runs in
       // `features/shifts/shifts.mutators.server.ts` so client-side local reads
       // cannot compute a close from an incomplete cached shift graph.

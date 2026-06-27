@@ -1,7 +1,10 @@
-import { defineQuery } from "@rocicorp/zero";
-import "@/zero/context";
-import { denyAllMembers, hasOrgContext } from "@/zero/queries.shared";
 import { zql } from "@/zero/schema";
+import {
+  defineZentroQuery,
+  denyAllMembers,
+  denyQuery,
+  hasOrgContext,
+} from "@/zero/sdk";
 
 export const organizationQueries = {
   /**
@@ -12,7 +15,7 @@ export const organizationQueries = {
    * Logged-out clients receive an empty result via the `cmpLit(false, '=', true)`
    * permission gate (Zero's idiomatic "deny everything" predicate).
    */
-  myMembership: defineQuery(({ ctx }) => {
+  myMembership: defineZentroQuery(({ ctx }) => {
     if (!hasOrgContext(ctx)) {
       return denyAllMembers();
     }
@@ -21,16 +24,16 @@ export const organizationQueries = {
       .where("organizationId", ctx.orgID);
   }),
   organization: {
-    current: defineQuery(({ ctx }) => {
+    current: defineZentroQuery(({ ctx }) => {
       if (!hasOrgContext(ctx)) {
-        return zql.organization.where(({ cmpLit }) => cmpLit(false, "=", true));
+        return denyQuery(zql.organization);
       }
 
       return zql.organization.where("id", ctx.orgID).limit(1);
     }),
-    selection: defineQuery(({ ctx }) => {
+    selection: defineZentroQuery(({ ctx }) => {
       if (!ctx) {
-        return zql.invitation.where(({ cmpLit }) => cmpLit(false, "=", true));
+        return denyQuery(zql.invitation);
       }
 
       return zql.invitation
@@ -39,9 +42,9 @@ export const organizationQueries = {
         .related("organization")
         .orderBy("createdAt", "desc");
     }),
-    management: defineQuery(({ ctx }) => {
+    management: defineZentroQuery(({ ctx }) => {
       if (!hasOrgContext(ctx)) {
-        return zql.organization.where(({ cmpLit }) => cmpLit(false, "=", true));
+        return denyQuery(zql.organization);
       }
 
       return zql.organization
@@ -55,9 +58,9 @@ export const organizationQueries = {
         .related("joinLinks", (query) => query.orderBy("createdAt", "desc"))
         .limit(1);
     }),
-    environment: defineQuery(({ ctx }) => {
+    environment: defineZentroQuery(({ ctx }) => {
       if (!hasOrgContext(ctx)) {
-        return zql.organization.where(({ cmpLit }) => cmpLit(false, "=", true));
+        return denyQuery(zql.organization);
       }
 
       return zql.organization
@@ -68,11 +71,9 @@ export const organizationQueries = {
         .related("customers", (query) => query.where("deletedAt", "IS", null))
         .limit(1);
     }),
-    moduleEntitlements: defineQuery(({ ctx }) => {
+    moduleEntitlements: defineZentroQuery(({ ctx }) => {
       if (!hasOrgContext(ctx)) {
-        return zql.organizationModuleEntitlement.where(({ cmpLit }) =>
-          cmpLit(false, "=", true)
-        );
+        return denyQuery(zql.organizationModuleEntitlement);
       }
 
       return zql.organizationModuleEntitlement.where(

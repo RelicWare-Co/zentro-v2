@@ -1,11 +1,10 @@
-import { defineMutator } from "@rocicorp/zero";
 import { registerCreditPaymentArgsSchema } from "@/features/credit/credit.mutators";
 import type { CreditPaymentDbExecutor } from "@/features/credit/register-payment.server";
 import { runRegisterCreditPayment } from "@/features/credit/register-payment.server";
-import { requireOrgContext } from "@/zero/mutators.shared";
+import { defineZentroMutator, requireOrgContext } from "@/zero/sdk";
 
 export const creditServerMutators = {
-  registerPayment: defineMutator(
+  registerPayment: defineZentroMutator(
     registerCreditPaymentArgsSchema,
     async ({ tx, args, ctx }) => {
       if (!ctx) {

@@ -1,10 +1,8 @@
-import { defineQuery } from "@rocicorp/zero";
 import { z } from "zod";
 import { InventoryMovementsListQueryArgsSchema } from "@/features/products/inventory-movements.schema";
 import { parseDateBoundary as parseSaleDateBoundary } from "@/features/sales/sales.shared";
-import "@/zero/context";
-import { hasOrgContext } from "@/zero/queries.shared";
 import { zql } from "@/zero/schema";
+import { defineZentroQuery, denyQuery, hasOrgContext } from "@/zero/sdk";
 
 const productsSearchArgsSchema = z.object({
   categoryId: z.string().trim().optional().nullable(),
@@ -129,9 +127,9 @@ function buildInventoryMovementsListQuery(
 
 export const productsQueries = {
   products: {
-    categories: defineQuery(({ ctx }) => {
+    categories: defineZentroQuery(({ ctx }) => {
       if (!hasOrgContext(ctx)) {
-        return zql.category.where(({ cmpLit }) => cmpLit(false, "=", true));
+        return denyQuery(zql.category);
       }
 
       return zql.category
@@ -140,9 +138,9 @@ export const productsQueries = {
         .orderBy("id", "asc")
         .limit(500);
     }),
-    search: defineQuery(productsSearchArgsSchema, ({ args, ctx }) => {
+    search: defineZentroQuery(productsSearchArgsSchema, ({ args, ctx }) => {
       if (!hasOrgContext(ctx)) {
-        return zql.product.where(({ cmpLit }) => cmpLit(false, "=", true));
+        return denyQuery(zql.product);
       }
 
       const normalizedSearch = args.searchQuery?.trim() ?? "";
@@ -174,10 +172,10 @@ export const productsQueries = {
         .orderBy("id", "asc")
         .limit(normalizeProductLimit(args.limit));
     }),
-    byId: defineQuery(productByIdArgsSchema, ({ args, ctx }) => {
+    byId: defineZentroQuery(productByIdArgsSchema, ({ args, ctx }) => {
       const normalizedProductId = args.productId?.trim() ?? "";
       if (!(hasOrgContext(ctx) && normalizedProductId)) {
-        return zql.product.where(({ cmpLit }) => cmpLit(false, "=", true));
+        return denyQuery(zql.product);
       }
 
       return zql.product
@@ -187,9 +185,9 @@ export const productsQueries = {
         .related("category")
         .limit(1);
     }),
-    modifiers: defineQuery(({ ctx }) => {
+    modifiers: defineZentroQuery(({ ctx }) => {
       if (!hasOrgContext(ctx)) {
-        return zql.product.where(({ cmpLit }) => cmpLit(false, "=", true));
+        return denyQuery(zql.product);
       }
 
       return zql.product
@@ -201,21 +199,19 @@ export const productsQueries = {
         .orderBy("id", "asc")
         .limit(500);
     }),
-    posCatalog: defineQuery(posCatalogArgsSchema, ({ args, ctx }) => {
+    posCatalog: defineZentroQuery(posCatalogArgsSchema, ({ args, ctx }) => {
       if (!hasOrgContext(ctx)) {
-        return zql.product.where(({ cmpLit }) => cmpLit(false, "=", true));
+        return denyQuery(zql.product);
       }
 
       return buildPosCatalogQuery(ctx.orgID, args);
     }),
     movements: {
-      list: defineQuery(
+      list: defineZentroQuery(
         InventoryMovementsListQueryArgsSchema,
         ({ args, ctx }) => {
           if (!hasOrgContext(ctx)) {
-            return zql.inventoryMovement.where(({ cmpLit }) =>
-              cmpLit(false, "=", true)
-            );
+            return denyQuery(zql.inventoryMovement);
           }
 
           return buildInventoryMovementsListQuery(ctx.orgID, args);

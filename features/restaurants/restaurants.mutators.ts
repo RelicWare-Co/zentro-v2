@@ -1,6 +1,5 @@
-import { defineMutator } from "@rocicorp/zero";
 import { z as zod } from "zod";
-import "@/zero/context";
+import { defineZentroMutator } from "@/zero/sdk";
 
 export const addRestaurantOrderItemArgsSchema = zod.object({
   tableId: zod.string().trim().min(1),
@@ -83,59 +82,83 @@ export const deleteRestaurantTableArgsSchema = zod.object({
 
 export const restaurantsMutators = {
   restaurants: {
-    addOrderItem: defineMutator(addRestaurantOrderItemArgsSchema, async () => {
-      // Server-only restaurant writes; client completes without optimistic writes.
-    }),
-    updateOrderMeta: defineMutator(
+    addOrderItem: defineZentroMutator(
+      addRestaurantOrderItemArgsSchema,
+      async () => {
+        // Server-only restaurant writes; client completes without optimistic writes.
+      }
+    ),
+    updateOrderMeta: defineZentroMutator(
       updateRestaurantOrderMetaArgsSchema,
       async () => {
         // Server-only restaurant writes; client completes without optimistic writes.
       }
     ),
-    updateDraftItem: defineMutator(
+    updateDraftItem: defineZentroMutator(
       updateRestaurantDraftItemArgsSchema,
       async () => {
         // Server-only restaurant writes; client completes without optimistic writes.
       }
     ),
-    deleteDraftItem: defineMutator(
+    deleteDraftItem: defineZentroMutator(
       deleteRestaurantDraftItemArgsSchema,
       async () => {
         // Server-only restaurant writes; client completes without optimistic writes.
       }
     ),
-    sendToKitchen: defineMutator(
+    sendToKitchen: defineZentroMutator(
       sendRestaurantOrderToKitchenArgsSchema,
       async () => {
         // Server-only restaurant writes; client completes without optimistic writes.
       }
     ),
-    updateItemStatus: defineMutator(
+    updateItemStatus: defineZentroMutator(
       updateRestaurantOrderItemStatusArgsSchema,
       async () => {
         // Server-only restaurant writes; client completes without optimistic writes.
       }
     ),
-    closeOrder: defineMutator(closeRestaurantOrderArgsSchema, async () => {
-      // Server-only restaurant writes; client completes without optimistic writes.
-    }),
-    createArea: defineMutator(createRestaurantAreaArgsSchema, async () => {
-      // Server-only restaurant writes; client completes without optimistic writes.
-    }),
-    updateArea: defineMutator(updateRestaurantAreaArgsSchema, async () => {
-      // Server-only restaurant writes; client completes without optimistic writes.
-    }),
-    deleteArea: defineMutator(deleteRestaurantAreaArgsSchema, async () => {
-      // Server-only restaurant writes; client completes without optimistic writes.
-    }),
-    createTable: defineMutator(createRestaurantTableArgsSchema, async () => {
-      // Server-only restaurant writes; client completes without optimistic writes.
-    }),
-    updateTable: defineMutator(updateRestaurantTableArgsSchema, async () => {
-      // Server-only restaurant writes; client completes without optimistic writes.
-    }),
-    deleteTable: defineMutator(deleteRestaurantTableArgsSchema, async () => {
-      // Server-only restaurant writes; client completes without optimistic writes.
-    }),
+    closeOrder: defineZentroMutator(
+      closeRestaurantOrderArgsSchema,
+      async () => {
+        // Server-only restaurant writes; client completes without optimistic writes.
+      }
+    ),
+    createArea: defineZentroMutator(
+      createRestaurantAreaArgsSchema,
+      async () => {
+        // Server-only restaurant writes; client completes without optimistic writes.
+      }
+    ),
+    updateArea: defineZentroMutator(
+      updateRestaurantAreaArgsSchema,
+      async () => {
+        // Server-only restaurant writes; client completes without optimistic writes.
+      }
+    ),
+    deleteArea: defineZentroMutator(
+      deleteRestaurantAreaArgsSchema,
+      async () => {
+        // Server-only restaurant writes; client completes without optimistic writes.
+      }
+    ),
+    createTable: defineZentroMutator(
+      createRestaurantTableArgsSchema,
+      async () => {
+        // Server-only restaurant writes; client completes without optimistic writes.
+      }
+    ),
+    updateTable: defineZentroMutator(
+      updateRestaurantTableArgsSchema,
+      async () => {
+        // Server-only restaurant writes; client completes without optimistic writes.
+      }
+    ),
+    deleteTable: defineZentroMutator(
+      deleteRestaurantTableArgsSchema,
+      async () => {
+        // Server-only restaurant writes; client completes without optimistic writes.
+      }
+    ),
   },
 };

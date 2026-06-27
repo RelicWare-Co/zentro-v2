@@ -1,8 +1,6 @@
-import { defineQuery } from "@rocicorp/zero";
 import { z } from "zod";
-import "@/zero/context";
-import { hasOrgContext } from "@/zero/queries.shared";
 import { zql } from "@/zero/schema";
+import { defineZentroQuery, denyQuery, hasOrgContext } from "@/zero/sdk";
 
 const creditTransactionsArgsSchema = z.object({
   creditAccountId: z.string().trim().optional().nullable(),
@@ -15,11 +13,9 @@ function normalizeCreditTransactionsLimit(limit?: number) {
 
 export const creditQueries = {
   credit: {
-    accounts: defineQuery(({ ctx }) => {
+    accounts: defineZentroQuery(({ ctx }) => {
       if (!hasOrgContext(ctx)) {
-        return zql.creditAccount.where(({ cmpLit }) =>
-          cmpLit(false, "=", true)
-        );
+        return denyQuery(zql.creditAccount);
       }
 
       return zql.creditAccount
@@ -27,20 +23,21 @@ export const creditQueries = {
         .related("customer")
         .orderBy("id", "asc");
     }),
-    transactions: defineQuery(creditTransactionsArgsSchema, ({ args, ctx }) => {
-      const normalizedCreditAccountId = args.creditAccountId?.trim() ?? "";
-      if (!(hasOrgContext(ctx) && normalizedCreditAccountId)) {
-        return zql.creditTransaction.where(({ cmpLit }) =>
-          cmpLit(false, "=", true)
-        );
-      }
+    transactions: defineZentroQuery(
+      creditTransactionsArgsSchema,
+      ({ args, ctx }) => {
+        const normalizedCreditAccountId = args.creditAccountId?.trim() ?? "";
+        if (!(hasOrgContext(ctx) && normalizedCreditAccountId)) {
+          return denyQuery(zql.creditTransaction);
+        }
 
-      return zql.creditTransaction
-        .where("organizationId", ctx.orgID)
-        .where("creditAccountId", normalizedCreditAccountId)
-        .orderBy("createdAt", "desc")
-        .orderBy("id", "desc")
-        .limit(normalizeCreditTransactionsLimit(args.limit));
-    }),
+        return zql.creditTransaction
+          .where("organizationId", ctx.orgID)
+          .where("creditAccountId", normalizedCreditAccountId)
+          .orderBy("createdAt", "desc")
+          .orderBy("id", "desc")
+          .limit(normalizeCreditTransactionsLimit(args.limit));
+      }
+    ),
   },
 };

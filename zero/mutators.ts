@@ -11,7 +11,6 @@
 // - Mutators must be idempotent: Zero rebases optimistic mutations during
 //   reconciliation, so the same mutator may execute multiple times locally.
 
-import { defineMutators } from "@rocicorp/zero";
 import { creditMutators } from "@/features/credit/credit.mutators";
 import { customersMutators } from "@/features/customers/customers.mutators";
 import { modulesMutators } from "@/features/modules/modules.mutators";
@@ -20,9 +19,9 @@ import { productsMutators } from "@/features/products/products.mutators";
 import { restaurantsMutators } from "@/features/restaurants/restaurants.mutators";
 import { salesMutators } from "@/features/sales/sales.mutators";
 import { shiftsMutators } from "@/features/shifts/shifts.mutators";
-import "./context";
+import { defineZentroMutators } from "@/zero/sdk";
 
-export const mutators = defineMutators({
+export const mutators = defineZentroMutators({
   ...customersMutators,
   ...productsMutators,
   ...creditMutators,

@@ -1,4 +1,3 @@
-import { defineMutator } from "@rocicorp/zero";
 import {
   cancelInvitationArgsSchema,
   createJoinLinkArgsSchema,
@@ -27,10 +26,10 @@ import {
 } from "@/features/organization/organization-mutations.server";
 import type { UpdateSettingsDbExecutor } from "@/features/settings/update-settings.server";
 import { runUpdateOrganizationSettings } from "@/features/settings/update-settings.server";
-import { requireOrgContext } from "@/zero/mutators.shared";
+import { defineZentroMutator, requireOrgContext } from "@/zero/sdk";
 
 export const organizationServerMutators = {
-  updateSettings: defineMutator(
+  updateSettings: defineZentroMutator(
     updateOrganizationSettingsArgsSchema,
     async ({ tx, args, ctx }) => {
       if (!ctx) {
@@ -52,7 +51,7 @@ export const organizationServerMutators = {
       );
     }
   ),
-  joinLinkCreate: defineMutator(
+  joinLinkCreate: defineZentroMutator(
     createJoinLinkArgsSchema,
     async ({ tx, args, ctx }) => {
       const orgCtx = requireOrgContext(ctx);
@@ -69,7 +68,7 @@ export const organizationServerMutators = {
       );
     }
   ),
-  joinLinkRevoke: defineMutator(
+  joinLinkRevoke: defineZentroMutator(
     revokeJoinLinkArgsSchema,
     async ({ tx, args, ctx }) => {
       const orgCtx = requireOrgContext(ctx);
@@ -86,7 +85,7 @@ export const organizationServerMutators = {
       );
     }
   ),
-  inviteMember: defineMutator(
+  inviteMember: defineZentroMutator(
     inviteMemberArgsSchema,
     async ({ tx, args, ctx }) => {
       const orgCtx = requireOrgContext(ctx);
@@ -103,7 +102,7 @@ export const organizationServerMutators = {
       );
     }
   ),
-  cancelInvitation: defineMutator(
+  cancelInvitation: defineZentroMutator(
     cancelInvitationArgsSchema,
     async ({ tx, args, ctx }) => {
       const orgCtx = requireOrgContext(ctx);
@@ -120,7 +119,7 @@ export const organizationServerMutators = {
       );
     }
   ),
-  updateMemberRole: defineMutator(
+  updateMemberRole: defineZentroMutator(
     updateMemberRoleArgsSchema,
     async ({ tx, args, ctx }) => {
       const orgCtx = requireOrgContext(ctx);
@@ -137,7 +136,7 @@ export const organizationServerMutators = {
       );
     }
   ),
-  removeMember: defineMutator(
+  removeMember: defineZentroMutator(
     removeMemberArgsSchema,
     async ({ tx, args, ctx }) => {
       const orgCtx = requireOrgContext(ctx);
@@ -154,7 +153,7 @@ export const organizationServerMutators = {
       );
     }
   ),
-  leaveOrganization: defineMutator(
+  leaveOrganization: defineZentroMutator(
     leaveOrganizationArgsSchema,
     async ({ tx, args, ctx }) => {
       if (!ctx) {
@@ -173,7 +172,7 @@ export const organizationServerMutators = {
       );
     }
   ),
-  updateOrganization: defineMutator(
+  updateOrganization: defineZentroMutator(
     updateOrganizationArgsSchema,
     async ({ tx, args, ctx }) => {
       const orgCtx = requireOrgContext(ctx);
@@ -190,7 +189,7 @@ export const organizationServerMutators = {
       );
     }
   ),
-  deleteOrganization: defineMutator(
+  deleteOrganization: defineZentroMutator(
     deleteOrganizationArgsSchema,
     async ({ tx, args, ctx }) => {
       const orgCtx = requireOrgContext(ctx);
@@ -207,7 +206,7 @@ export const organizationServerMutators = {
       );
     }
   ),
-  joinLinkRedeem: defineMutator(
+  joinLinkRedeem: defineZentroMutator(
     joinLinkRedeemArgsSchema,
     async ({ tx, args, ctx }) => {
       if (!ctx) {

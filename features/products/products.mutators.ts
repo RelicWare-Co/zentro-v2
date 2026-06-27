@@ -1,4 +1,3 @@
-import { defineMutator } from "@rocicorp/zero";
 import type { z } from "zod";
 import { ToggleProductFavoriteInputSchema } from "@/features/pos/pos.schema";
 import {
@@ -10,16 +9,16 @@ import {
   UpdateCategorySchema,
   UpdateProductSchema,
 } from "@/features/products/products.schema";
-import "@/zero/context";
+import { zql } from "@/zero/schema";
 import {
   assertOrgZeroContext,
+  defineZentroMutator,
   normalizeOptionalString,
   resolveTimestamp,
   toInteger,
   toNonNegativeInteger,
   type ZeroMutatorTransaction,
-} from "@/zero/mutators.shared";
-import { zql } from "@/zero/schema";
+} from "@/zero/sdk";
 
 interface ProductUpdatePatch {
   barcode?: string | null;
@@ -184,7 +183,7 @@ function buildProductUpdatePatch(
 
 export const productsMutators = {
   products: {
-    create: defineMutator(
+    create: defineZentroMutator(
       createProductArgsSchema,
       async ({ args, ctx, tx }) => {
         const zeroContext = assertOrgZeroContext(ctx);
@@ -226,7 +225,7 @@ export const productsMutators = {
         });
       }
     ),
-    update: defineMutator(
+    update: defineZentroMutator(
       updateProductArgsSchema,
       async ({ args, ctx, tx }) => {
         const zeroContext = assertOrgZeroContext(ctx);
@@ -251,7 +250,7 @@ export const productsMutators = {
         });
       }
     ),
-    delete: defineMutator(
+    delete: defineZentroMutator(
       deleteProductArgsSchema,
       async ({ args, ctx, tx }) => {
         const zeroContext = assertOrgZeroContext(ctx);
@@ -267,7 +266,7 @@ export const productsMutators = {
         });
       }
     ),
-    toggleFavorite: defineMutator(
+    toggleFavorite: defineZentroMutator(
       toggleProductFavoriteArgsSchema,
       async ({ args, ctx, tx }) => {
         const zeroContext = assertOrgZeroContext(ctx);
@@ -284,7 +283,7 @@ export const productsMutators = {
         });
       }
     ),
-    registerInventoryMovement: defineMutator(
+    registerInventoryMovement: defineZentroMutator(
       registerInventoryMovementArgsSchema,
       async ({ args, ctx, tx }) => {
         const zeroContext = assertOrgZeroContext(ctx);
@@ -345,7 +344,7 @@ export const productsMutators = {
         });
       }
     ),
-    createCategory: defineMutator(
+    createCategory: defineZentroMutator(
       createCategoryArgsSchema,
       async ({ args, ctx, tx }) => {
         const zeroContext = assertOrgZeroContext(ctx);
@@ -363,7 +362,7 @@ export const productsMutators = {
         });
       }
     ),
-    updateCategory: defineMutator(
+    updateCategory: defineZentroMutator(
       updateCategoryArgsSchema,
       async ({ args, ctx, tx }) => {
         const zeroContext = assertOrgZeroContext(ctx);
@@ -383,7 +382,7 @@ export const productsMutators = {
         });
       }
     ),
-    deleteCategory: defineMutator(
+    deleteCategory: defineZentroMutator(
       deleteCategoryArgsSchema,
       async ({ args, ctx, tx }) => {
         const zeroContext = assertOrgZeroContext(ctx);

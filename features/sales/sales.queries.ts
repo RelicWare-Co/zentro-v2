@@ -1,13 +1,11 @@
-import { defineQuery } from "@rocicorp/zero";
 import { z } from "zod";
 import { SalesListQueryArgsSchema } from "@/features/sales/sales.schema";
 import {
   parseDateBoundary as parseSaleDateBoundary,
   resolveAmountRange,
 } from "@/features/sales/sales.shared";
-import "@/zero/context";
-import { hasOrgContext } from "@/zero/queries.shared";
 import { zql } from "@/zero/schema";
+import { defineZentroQuery, denyQuery, hasOrgContext } from "@/zero/sdk";
 
 const SALES_TERMINAL_OPTIONS_LIMIT = 300;
 
@@ -131,16 +129,16 @@ function buildSaleDetailQuery(saleId: string, organizationId: string) {
 
 export const salesQueries = {
   sales: {
-    list: defineQuery(SalesListQueryArgsSchema, ({ args, ctx }) => {
+    list: defineZentroQuery(SalesListQueryArgsSchema, ({ args, ctx }) => {
       if (!hasOrgContext(ctx)) {
-        return zql.sale.where(({ cmpLit }) => cmpLit(false, "=", true));
+        return denyQuery(zql.sale);
       }
 
       return buildSalesListQuery(ctx.orgID, args);
     }),
-    filterOptions: defineQuery(({ ctx }) => {
+    filterOptions: defineZentroQuery(({ ctx }) => {
       if (!hasOrgContext(ctx)) {
-        return zql.member.where(({ cmpLit }) => cmpLit(false, "=", true));
+        return denyQuery(zql.member);
       }
 
       return zql.member
@@ -149,9 +147,9 @@ export const salesQueries = {
         .orderBy("createdAt", "asc")
         .orderBy("id", "asc");
     }),
-    terminalOptions: defineQuery(({ ctx }) => {
+    terminalOptions: defineZentroQuery(({ ctx }) => {
       if (!hasOrgContext(ctx)) {
-        return zql.shift.where(({ cmpLit }) => cmpLit(false, "=", true));
+        return denyQuery(zql.shift);
       }
 
       return zql.shift
@@ -160,10 +158,10 @@ export const salesQueries = {
         .orderBy("id", "desc")
         .limit(SALES_TERMINAL_OPTIONS_LIMIT);
     }),
-    byId: defineQuery(saleByIdArgsSchema, ({ args, ctx }) => {
+    byId: defineZentroQuery(saleByIdArgsSchema, ({ args, ctx }) => {
       const normalizedSaleId = args.saleId?.trim() ?? "";
       if (!(hasOrgContext(ctx) && normalizedSaleId)) {
-        return zql.sale.where(({ cmpLit }) => cmpLit(false, "=", true));
+        return denyQuery(zql.sale);
       }
 
       return buildSaleDetailQuery(normalizedSaleId, ctx.orgID);

@@ -1,16 +1,15 @@
-import { defineMutator } from "@rocicorp/zero";
 import {
   CreateCustomerSchema,
   DeleteCustomerSchema,
   UpdateCustomerSchema,
 } from "@/features/customers/customers.schema";
-import "@/zero/context";
+import { zql } from "@/zero/schema";
 import {
   assertOrgZeroContext,
+  defineZentroMutator,
   normalizeOptionalString,
   type ZeroMutatorTransaction,
-} from "@/zero/mutators.shared";
-import { zql } from "@/zero/schema";
+} from "@/zero/sdk";
 
 export const createCustomerArgsSchema = CreateCustomerSchema.extend({
   id: DeleteCustomerSchema.shape.id,
@@ -75,7 +74,7 @@ async function assertActiveCustomer({
 
 export const customersMutators = {
   customers: {
-    create: defineMutator(
+    create: defineZentroMutator(
       createCustomerArgsSchema,
       async ({ args, ctx, tx }) => {
         const zeroContext = assertOrgZeroContext(ctx);
@@ -105,7 +104,7 @@ export const customersMutators = {
         });
       }
     ),
-    update: defineMutator(
+    update: defineZentroMutator(
       updateCustomerArgsSchema,
       async ({ args, ctx, tx }) => {
         const zeroContext = assertOrgZeroContext(ctx);
@@ -165,7 +164,7 @@ export const customersMutators = {
         });
       }
     ),
-    delete: defineMutator(
+    delete: defineZentroMutator(
       deleteCustomerArgsSchema,
       async ({ args, ctx, tx }) => {
         const zeroContext = assertOrgZeroContext(ctx);

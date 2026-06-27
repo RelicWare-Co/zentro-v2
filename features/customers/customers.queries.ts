@@ -1,8 +1,6 @@
-import { defineQuery } from "@rocicorp/zero";
 import { z } from "zod";
-import "@/zero/context";
-import { hasOrgContext } from "@/zero/queries.shared";
 import { zql } from "@/zero/schema";
+import { defineZentroQuery, denyQuery, hasOrgContext } from "@/zero/sdk";
 
 const customersSearchArgsSchema = z.object({
   limit: z.number().int().min(1).max(100).optional(),
@@ -15,9 +13,9 @@ function normalizeLimit(limit?: number) {
 
 export const customersQueries = {
   customers: {
-    search: defineQuery(customersSearchArgsSchema, ({ args, ctx }) => {
+    search: defineZentroQuery(customersSearchArgsSchema, ({ args, ctx }) => {
       if (!hasOrgContext(ctx)) {
-        return zql.customer.where(({ cmpLit }) => cmpLit(false, "=", true));
+        return denyQuery(zql.customer);
       }
 
       const normalizedSearch = args.searchQuery?.trim() ?? "";

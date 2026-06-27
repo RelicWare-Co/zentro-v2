@@ -1,8 +1,6 @@
-import { defineQuery } from "@rocicorp/zero";
 import { z } from "zod";
-import "@/zero/context";
-import { hasOrgContext } from "@/zero/queries.shared";
 import { zql } from "@/zero/schema";
+import { defineZentroQuery, denyQuery, hasOrgContext } from "@/zero/sdk";
 
 const restaurantTableIdArgsSchema = z.object({
   tableId: z.string().trim().optional().nullable(),
@@ -10,11 +8,9 @@ const restaurantTableIdArgsSchema = z.object({
 
 export const restaurantsQueries = {
   restaurants: {
-    layout: defineQuery(({ ctx }) => {
+    layout: defineZentroQuery(({ ctx }) => {
       if (!hasOrgContext(ctx)) {
-        return zql.restaurantArea.where(({ cmpLit }) =>
-          cmpLit(false, "=", true)
-        );
+        return denyQuery(zql.restaurantArea);
       }
 
       return zql.restaurantArea
@@ -25,11 +21,9 @@ export const restaurantsQueries = {
         .orderBy("sortOrder", "asc")
         .orderBy("name", "asc");
     }),
-    openOrders: defineQuery(({ ctx }) => {
+    openOrders: defineZentroQuery(({ ctx }) => {
       if (!hasOrgContext(ctx)) {
-        return zql.restaurantOrder.where(({ cmpLit }) =>
-          cmpLit(false, "=", true)
-        );
+        return denyQuery(zql.restaurantOrder);
       }
 
       return zql.restaurantOrder
@@ -48,25 +42,24 @@ export const restaurantsQueries = {
           query.orderBy("sequenceNumber", "desc")
         );
     }),
-    tableById: defineQuery(restaurantTableIdArgsSchema, ({ args, ctx }) => {
-      const normalizedTableId = args.tableId?.trim() ?? "";
-      if (!(hasOrgContext(ctx) && normalizedTableId)) {
-        return zql.restaurantTable.where(({ cmpLit }) =>
-          cmpLit(false, "=", true)
-        );
-      }
+    tableById: defineZentroQuery(
+      restaurantTableIdArgsSchema,
+      ({ args, ctx }) => {
+        const normalizedTableId = args.tableId?.trim() ?? "";
+        if (!(hasOrgContext(ctx) && normalizedTableId)) {
+          return denyQuery(zql.restaurantTable);
+        }
 
-      return zql.restaurantTable
-        .where("id", normalizedTableId)
-        .where("organizationId", ctx.orgID)
-        .related("area")
-        .limit(1);
-    }),
-    kitchenBoard: defineQuery(({ ctx }) => {
+        return zql.restaurantTable
+          .where("id", normalizedTableId)
+          .where("organizationId", ctx.orgID)
+          .related("area")
+          .limit(1);
+      }
+    ),
+    kitchenBoard: defineZentroQuery(({ ctx }) => {
       if (!hasOrgContext(ctx)) {
-        return zql.restaurantKitchenTicket.where(({ cmpLit }) =>
-          cmpLit(false, "=", true)
-        );
+        return denyQuery(zql.restaurantKitchenTicket);
       }
 
       return zql.restaurantKitchenTicket

@@ -1,10 +1,10 @@
-import { defineMutator } from "@rocicorp/zero";
 import { setModuleEntitlementArgsSchema } from "@/features/modules/modules.mutators";
 import type { SetModuleEntitlementDbExecutor } from "@/features/modules/set-entitlement.server";
 import { runSetModuleEntitlement } from "@/features/modules/set-entitlement.server";
+import { defineZentroMutator } from "@/zero/sdk";
 
 export const modulesServerMutators = {
-  setEntitlement: defineMutator(
+  setEntitlement: defineZentroMutator(
     setModuleEntitlementArgsSchema,
     async ({ tx, args, ctx }) => {
       if (!ctx) {

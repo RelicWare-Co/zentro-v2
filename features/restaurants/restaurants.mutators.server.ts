@@ -1,4 +1,3 @@
-import { defineMutator } from "@rocicorp/zero";
 import type { RestaurantDbExecutor } from "@/features/restaurants/restaurant-mutations.server";
 import {
   runAddRestaurantOrderItem,
@@ -30,10 +29,10 @@ import {
   updateRestaurantOrderMetaArgsSchema,
   updateRestaurantTableArgsSchema,
 } from "@/features/restaurants/restaurants.mutators";
-import { requireOrgContext } from "@/zero/mutators.shared";
+import { defineZentroMutator, requireOrgContext } from "@/zero/sdk";
 
 export const restaurantsServerMutators = {
-  addOrderItem: defineMutator(
+  addOrderItem: defineZentroMutator(
     addRestaurantOrderItemArgsSchema,
     async ({ tx, args, ctx }) => {
       if (!ctx) {
@@ -52,7 +51,7 @@ export const restaurantsServerMutators = {
       );
     }
   ),
-  updateOrderMeta: defineMutator(
+  updateOrderMeta: defineZentroMutator(
     updateRestaurantOrderMetaArgsSchema,
     async ({ tx, args, ctx }) => {
       if (!ctx) {
@@ -71,7 +70,7 @@ export const restaurantsServerMutators = {
       );
     }
   ),
-  updateDraftItem: defineMutator(
+  updateDraftItem: defineZentroMutator(
     updateRestaurantDraftItemArgsSchema,
     async ({ tx, args, ctx }) => {
       if (!ctx) {
@@ -90,7 +89,7 @@ export const restaurantsServerMutators = {
       );
     }
   ),
-  deleteDraftItem: defineMutator(
+  deleteDraftItem: defineZentroMutator(
     deleteRestaurantDraftItemArgsSchema,
     async ({ tx, args, ctx }) => {
       if (!ctx) {
@@ -109,7 +108,7 @@ export const restaurantsServerMutators = {
       );
     }
   ),
-  sendToKitchen: defineMutator(
+  sendToKitchen: defineZentroMutator(
     sendRestaurantOrderToKitchenArgsSchema,
     async ({ tx, args, ctx }) => {
       if (!ctx) {
@@ -128,7 +127,7 @@ export const restaurantsServerMutators = {
       );
     }
   ),
-  updateItemStatus: defineMutator(
+  updateItemStatus: defineZentroMutator(
     updateRestaurantOrderItemStatusArgsSchema,
     async ({ tx, args, ctx }) => {
       if (!ctx) {
@@ -147,7 +146,7 @@ export const restaurantsServerMutators = {
       );
     }
   ),
-  closeOrder: defineMutator(
+  closeOrder: defineZentroMutator(
     closeRestaurantOrderArgsSchema,
     async ({ tx, args, ctx }) => {
       if (!ctx) {
@@ -166,7 +165,7 @@ export const restaurantsServerMutators = {
       );
     }
   ),
-  createArea: defineMutator(
+  createArea: defineZentroMutator(
     createRestaurantAreaArgsSchema,
     async ({ tx, args, ctx }) => {
       if (!ctx) {
@@ -185,7 +184,7 @@ export const restaurantsServerMutators = {
       );
     }
   ),
-  updateArea: defineMutator(
+  updateArea: defineZentroMutator(
     updateRestaurantAreaArgsSchema,
     async ({ tx, args, ctx }) => {
       if (!ctx) {
@@ -204,7 +203,7 @@ export const restaurantsServerMutators = {
       );
     }
   ),
-  deleteArea: defineMutator(
+  deleteArea: defineZentroMutator(
     deleteRestaurantAreaArgsSchema,
     async ({ tx, args, ctx }) => {
       if (!ctx) {
@@ -223,7 +222,7 @@ export const restaurantsServerMutators = {
       );
     }
   ),
-  createTable: defineMutator(
+  createTable: defineZentroMutator(
     createRestaurantTableArgsSchema,
     async ({ tx, args, ctx }) => {
       if (!ctx) {
@@ -242,7 +241,7 @@ export const restaurantsServerMutators = {
       );
     }
   ),
-  updateTable: defineMutator(
+  updateTable: defineZentroMutator(
     updateRestaurantTableArgsSchema,
     async ({ tx, args, ctx }) => {
       if (!ctx) {
@@ -261,7 +260,7 @@ export const restaurantsServerMutators = {
       );
     }
   ),
-  deleteTable: defineMutator(
+  deleteTable: defineZentroMutator(
     deleteRestaurantTableArgsSchema,
     async ({ tx, args, ctx }) => {
       if (!ctx) {

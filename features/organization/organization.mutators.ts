@@ -1,4 +1,3 @@
-import { defineMutator } from "@rocicorp/zero";
 import { z as zod } from "zod";
 import {
   CancelInvitationSchema,
@@ -12,7 +11,7 @@ import {
   UpdateOrganizationSchema,
 } from "@/features/organization/organization.schema";
 import { UpdateSettingsSchema } from "@/features/settings/settings.schema";
-import "@/zero/context";
+import { defineZentroMutator } from "@/zero/sdk";
 
 export const updateOrganizationSettingsArgsSchema = UpdateSettingsSchema;
 
@@ -34,46 +33,55 @@ export const joinLinkRedeemArgsSchema = JoinTokenSchema;
 
 export const organizationMutators = {
   organization: {
-    updateSettings: defineMutator(
+    updateSettings: defineZentroMutator(
       updateOrganizationSettingsArgsSchema,
       async () => {
         // Server-only validation; client completes without optimistic writes.
       }
     ),
-    joinLinkCreate: defineMutator(createJoinLinkArgsSchema, async () => {
+    joinLinkCreate: defineZentroMutator(createJoinLinkArgsSchema, async () => {
       // Server-only organization writes; client completes without optimistic writes.
     }),
-    joinLinkRevoke: defineMutator(revokeJoinLinkArgsSchema, async () => {
+    joinLinkRevoke: defineZentroMutator(revokeJoinLinkArgsSchema, async () => {
       // Server-only organization writes; client completes without optimistic writes.
     }),
-    inviteMember: defineMutator(inviteMemberArgsSchema, async () => {
+    inviteMember: defineZentroMutator(inviteMemberArgsSchema, async () => {
       // Server-only organization writes; client completes without optimistic writes.
     }),
-    cancelInvitation: defineMutator(cancelInvitationArgsSchema, async () => {
+    cancelInvitation: defineZentroMutator(
+      cancelInvitationArgsSchema,
+      async () => {
+        // Server-only organization writes; client completes without optimistic writes.
+      }
+    ),
+    updateMemberRole: defineZentroMutator(
+      updateMemberRoleArgsSchema,
+      async () => {
+        // Server-only organization writes; client completes without optimistic writes.
+      }
+    ),
+    removeMember: defineZentroMutator(removeMemberArgsSchema, async () => {
       // Server-only organization writes; client completes without optimistic writes.
     }),
-    updateMemberRole: defineMutator(updateMemberRoleArgsSchema, async () => {
-      // Server-only organization writes; client completes without optimistic writes.
-    }),
-    removeMember: defineMutator(removeMemberArgsSchema, async () => {
-      // Server-only organization writes; client completes without optimistic writes.
-    }),
-    leaveOrganization: defineMutator(leaveOrganizationArgsSchema, async () => {
-      // Server-only organization writes; client completes without optimistic writes.
-    }),
-    updateOrganization: defineMutator(
+    leaveOrganization: defineZentroMutator(
+      leaveOrganizationArgsSchema,
+      async () => {
+        // Server-only organization writes; client completes without optimistic writes.
+      }
+    ),
+    updateOrganization: defineZentroMutator(
       updateOrganizationArgsSchema,
       async () => {
         // Server-only organization writes; client completes without optimistic writes.
       }
     ),
-    deleteOrganization: defineMutator(
+    deleteOrganization: defineZentroMutator(
       deleteOrganizationArgsSchema,
       async () => {
         // Server-only organization writes; client completes without optimistic writes.
       }
     ),
-    joinLinkRedeem: defineMutator(joinLinkRedeemArgsSchema, async () => {
+    joinLinkRedeem: defineZentroMutator(joinLinkRedeemArgsSchema, async () => {
       // Server-only organization writes; client completes without optimistic writes.
     }),
   },

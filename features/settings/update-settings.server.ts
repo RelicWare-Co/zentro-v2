@@ -16,7 +16,7 @@ import {
   parseOrganizationSettingsMetadata,
   serializeOrganizationSettingsMetadata,
 } from "@/features/settings/settings.shared";
-import type { ZeroContext } from "@/zero/context";
+import type { ZeroContext } from "@/zero/sdk";
 
 export type UpdateSettingsDbExecutor = Pick<Database, "select" | "update">;
 

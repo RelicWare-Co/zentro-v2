@@ -11,7 +11,7 @@ import {
 import { navigate } from "vike/client/router";
 import { usePageContext } from "vike-react/usePageContext";
 import { queryClient } from "@/lib/query-client";
-import type { ZeroContext } from "@/zero/context";
+import type { ZeroContext } from "@/zero/sdk";
 
 export interface OrganizationTransitionOptions {
   destination?: string;

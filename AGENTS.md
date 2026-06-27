@@ -150,6 +150,7 @@ Zero is the primary API for app data. Migration history lives in `MIGRATION_PLAN
 - `zero/schema.gen.ts` is generated: do not edit it. Regenerate it with `bun run zero:schema:gen` after changes to `database/drizzle/schema/*.schema.ts`.
 - `zero/schema.ts` re-exports `schema`, `zql`, row types, and `ZeroContext`. Import schema symbols from here, not `schema.gen.ts`.
 - `zero/context.ts` defines `ZeroContext { id, orgID, role, systemRole }` and registers it with Zero's `DefaultTypes`.
+- `zero/sdk.ts` is the internal Zero SDK facade. Feature slices and Zero composition roots import `defineZentroQuery`, `defineZentroMutator`, typed registry helpers, and shared auth/normalization helpers from here instead of importing `defineQuery` / `defineMutator` directly from `@rocicorp/zero`.
 - `zero/queries.shared.ts` and `zero/mutators.shared.ts` hold browser-safe cross-slice helpers.
 - **Feature slices:** `features/<domain>/<domain>.queries.ts` exports `<domain>Queries`; `*.mutators.ts` exports `<domain>Mutators`; `*.mutators.server.ts` contains server-authoritative overrides when needed. See `docs/adr/0007-split-zero-registries-into-feature-slices.md`.
 - **Composition roots:** `zero/queries.ts`, `zero/mutators.ts`, and `zero/mutators.server.ts` only assemble feature slices into the registries Zero dispatches.
@@ -160,14 +161,14 @@ Zero is the primary API for app data. Migration history lives in `MIGRATION_PLAN
 
 #### Dependency and runtime boundaries
 
-- Feature slices import `@/zero/schema` and allowed shared modules (`@/zero/context`, `zero/queries.shared`, `zero/mutators.shared`). They must not import composed registries.
+- Feature slices import `@/zero/schema` plus `@/zero/sdk` for Zero definitions and shared helpers. They must not import composed registries.
 - Composition roots import feature slices and assemble the registry. Hooks and components import the composed registry, not individual slices.
 - `zero/schema.ts`, feature `*.queries.ts` / `*.mutators.ts`, the shared helpers, `zero/context.ts`, `zero/client.ts`, and `features/*/*.schema.ts` are isomorphic. Do not import Drizzle, auth, `pg`, `postgres`, or `server/**` there.
 - Drizzle/auth/log code belongs in `features/*/*.server.ts` or app-shell `*.server.ts` files. Mount the React provider through the Vike dynamic-import wrapper.
 
 #### Adding a query
 
-1. Add a `defineQuery` entry to `features/<domain>/<domain>.queries.ts`; validate arguments with Zod when it accepts input.
+1. Add a `defineZentroQuery` entry from `@/zero/sdk` to `features/<domain>/<domain>.queries.ts`; validate arguments with Zod when it accepts input.
 2. Register a new domain slice in `zero/queries.ts`.
 3. Read identity from `ctx`, never arguments. When `!ctx`, return a deny-all empty query with `cmpLit(false, "=", true)`; do not throw.
 4. The handler makes it reachable at `/api/zero/query` via `mustGetQuery(queries, name)`.
@@ -175,7 +176,7 @@ Zero is the primary API for app data. Migration history lives in `MIGRATION_PLAN
 
 #### Adding a mutator
 
-1. Add a `defineMutator` entry to `features/<domain>/<domain>.mutators.ts` and await every `tx.mutate.*` call.
+1. Add a `defineZentroMutator` entry from `@/zero/sdk` to `features/<domain>/<domain>.mutators.ts` and await every `tx.mutate.*` call.
 2. Register a new domain slice in `zero/mutators.ts`.
 3. Validate identity against `args.organizationId` (or equivalent). Throw on mismatch so Zero rolls back the optimistic write and surfaces the error.
 4. Use `features/<domain>/<domain>.mutators.server.ts` plus `zero/mutators.server.ts` for hard server checks or side effects. Delegate authoritative work to feature `*.server.ts` helpers; the Drizzle transaction is `tx.dbTransaction.wrappedTransaction`.

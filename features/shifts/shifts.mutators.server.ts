@@ -1,21 +1,20 @@
-import { defineMutator } from "@rocicorp/zero";
 import type { z } from "zod";
 import { closeShiftArgsSchema } from "@/features/shifts/shifts.mutators";
 import {
   buildExpectedAmountsByMethod,
   normalizeNumber,
 } from "@/features/shifts/shifts.shared";
-import type { ZeroContext } from "@/zero/context";
-import "@/zero/context";
+import { zql } from "@/zero/schema";
 import {
   assertOrgZeroContext,
+  defineZentroMutator,
   normalizeOptionalString,
   normalizeRequiredString,
   resolveTimestamp,
   toNonNegativeInteger,
+  type ZeroContext,
   type ZeroMutatorTransaction,
-} from "@/zero/mutators.shared";
-import { zql } from "@/zero/schema";
+} from "@/zero/sdk";
 
 export async function runCloseShiftServerMutator({
   args,
@@ -139,5 +138,5 @@ export async function runCloseShiftServerMutator({
 }
 
 export const shiftsServerMutators = {
-  close: defineMutator(closeShiftArgsSchema, runCloseShiftServerMutator),
+  close: defineZentroMutator(closeShiftArgsSchema, runCloseShiftServerMutator),
 };
