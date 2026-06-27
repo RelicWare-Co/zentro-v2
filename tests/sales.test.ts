@@ -9,7 +9,11 @@ import {
   inventoryMovement,
   product,
 } from "@/database/drizzle/schema/inventory.schema";
-import { payment } from "@/database/drizzle/schema/sales.schema";
+import {
+  payment,
+  sale,
+  saleItem,
+} from "@/database/drizzle/schema/sales.schema";
 import { createCoreSale } from "@/features/sales/create-sale.server";
 import { serializeOrganizationSettingsMetadata } from "@/features/settings/settings.shared";
 import {
@@ -1358,6 +1362,262 @@ describe("sale creation transactions", () => {
 
       expect(result.totalAmount).toBe(10_000);
       expect(result.paidAmount).toBe(10_000);
+
+      await cleanup();
+    });
+  });
+
+  describe("VAL-SALE-TAX: tax calculations in sale creation", () => {
+    test("sale with 19% tax product persists tax in sale and saleItem", async () => {
+      const { db, cleanup } = await createTestDb();
+      const { organizationId, userId } = await seedOrganizationWithMember(db);
+      const [productId, shiftId] = await Promise.all([
+        seedProduct(db, {
+          organizationId,
+          name: "Taxed Item",
+          price: 10_000,
+          taxRate: 19,
+          stock: 10,
+          trackInventory: true,
+        }),
+        seedShift(db, { organizationId, userId, status: "open" }),
+      ]);
+
+      const result = await createCoreSale(
+        {
+          shiftId,
+          items: [{ productId, quantity: 2, unitPrice: 10_000 }],
+          payments: [{ method: "cash", amount: 23_800 }],
+        },
+        { db, organizationId, userId }
+      );
+
+      expect(result.taxAmount).toBe(3800);
+      expect(result.totalAmount).toBe(23_800);
+
+      const [saleRow] = await db
+        .select()
+        .from(sale)
+        .where(eq(sale.id, result.saleId));
+      expect(saleRow?.taxAmount).toBe(3800);
+
+      const items = await db
+        .select()
+        .from(saleItem)
+        .where(eq(saleItem.saleId, result.saleId));
+      expect(items[0]?.taxRate).toBe(19);
+      expect(items[0]?.taxAmount).toBe(3800);
+
+      await cleanup();
+    });
+
+    test("sale with mixed tax rates aggregates correctly", async () => {
+      const { db, cleanup } = await createTestDb();
+      const { organizationId, userId } = await seedOrganizationWithMember(db);
+      const [prod1, prod2, shiftId] = await Promise.all([
+        seedProduct(db, {
+          organizationId,
+          name: "Taxed",
+          price: 10_000,
+          taxRate: 19,
+          stock: 10,
+        }),
+        seedProduct(db, {
+          organizationId,
+          name: "Exempt",
+          price: 5000,
+          taxRate: 0,
+          stock: 10,
+        }),
+        seedShift(db, { organizationId, userId, status: "open" }),
+      ]);
+
+      const result = await createCoreSale(
+        {
+          shiftId,
+          items: [
+            { productId: prod1, quantity: 1, unitPrice: 10_000 },
+            { productId: prod2, quantity: 2, unitPrice: 5000 },
+          ],
+          payments: [{ method: "cash", amount: 21_900 }],
+        },
+        { db, organizationId, userId }
+      );
+
+      expect(result.subtotal).toBe(20_000);
+      expect(result.taxAmount).toBe(1900);
+      expect(result.totalAmount).toBe(21_900);
+
+      await cleanup();
+    });
+
+    test("tax rate override on item is frozen in saleItem", async () => {
+      const { db, cleanup } = await createTestDb();
+      const { organizationId, userId } = await seedOrganizationWithMember(db);
+      const [productId, shiftId] = await Promise.all([
+        seedProduct(db, {
+          organizationId,
+          name: "Override Tax",
+          price: 10_000,
+          taxRate: 19,
+          stock: 10,
+        }),
+        seedShift(db, { organizationId, userId, status: "open" }),
+      ]);
+
+      const result = await createCoreSale(
+        {
+          shiftId,
+          items: [{ productId, quantity: 1, unitPrice: 10_000, taxRate: 5 }],
+          payments: [{ method: "cash", amount: 10_500 }],
+        },
+        { db, organizationId, userId }
+      );
+
+      expect(result.taxAmount).toBe(500);
+
+      const items = await db
+        .select()
+        .from(saleItem)
+        .where(eq(saleItem.saleId, result.saleId));
+      expect(items[0]?.taxRate).toBe(5);
+      expect(items[0]?.taxAmount).toBe(500);
+
+      await cleanup();
+    });
+  });
+
+  describe("VAL-SALE-DISC: discount calculations in sale creation", () => {
+    test("item-level discount persists in saleItem and sale", async () => {
+      const { db, cleanup } = await createTestDb();
+      const { organizationId, userId } = await seedOrganizationWithMember(db);
+      const [productId, shiftId] = await Promise.all([
+        seedProduct(db, {
+          organizationId,
+          name: "Discounted",
+          price: 10_000,
+          taxRate: 0,
+          stock: 10,
+        }),
+        seedShift(db, { organizationId, userId, status: "open" }),
+      ]);
+
+      const result = await createCoreSale(
+        {
+          shiftId,
+          items: [
+            { productId, quantity: 1, unitPrice: 10_000, discountAmount: 2000 },
+          ],
+          payments: [{ method: "cash", amount: 8000 }],
+        },
+        { db, organizationId, userId }
+      );
+
+      expect(result.discountAmount).toBe(2000);
+      expect(result.totalAmount).toBe(8000);
+
+      const items = await db
+        .select()
+        .from(saleItem)
+        .where(eq(saleItem.saleId, result.saleId));
+      expect(items[0]?.discountAmount).toBe(2000);
+
+      await cleanup();
+    });
+
+    test("sale-level discount persists in sale total", async () => {
+      const { db, cleanup } = await createTestDb();
+      const { organizationId, userId } = await seedOrganizationWithMember(db);
+      const [productId, shiftId] = await Promise.all([
+        seedProduct(db, {
+          organizationId,
+          name: "Sale Discount",
+          price: 10_000,
+          taxRate: 0,
+          stock: 10,
+        }),
+        seedShift(db, { organizationId, userId, status: "open" }),
+      ]);
+
+      const result = await createCoreSale(
+        {
+          shiftId,
+          items: [{ productId, quantity: 2, unitPrice: 10_000 }],
+          discountAmount: 5000,
+          payments: [{ method: "cash", amount: 15_000 }],
+        },
+        { db, organizationId, userId }
+      );
+
+      expect(result.discountAmount).toBe(5000);
+      expect(result.totalAmount).toBe(15_000);
+
+      const [saleRow] = await db
+        .select()
+        .from(sale)
+        .where(eq(sale.id, result.saleId));
+      expect(saleRow?.discountAmount).toBe(5000);
+
+      await cleanup();
+    });
+
+    test("both item and sale-level discounts sum in sale", async () => {
+      const { db, cleanup } = await createTestDb();
+      const { organizationId, userId } = await seedOrganizationWithMember(db);
+      const [productId, shiftId] = await Promise.all([
+        seedProduct(db, {
+          organizationId,
+          name: "Both Discounts",
+          price: 10_000,
+          taxRate: 0,
+          stock: 10,
+        }),
+        seedShift(db, { organizationId, userId, status: "open" }),
+      ]);
+
+      const result = await createCoreSale(
+        {
+          shiftId,
+          items: [
+            { productId, quantity: 2, unitPrice: 10_000, discountAmount: 3000 },
+          ],
+          discountAmount: 2000,
+          payments: [{ method: "cash", amount: 15_000 }],
+        },
+        { db, organizationId, userId }
+      );
+
+      expect(result.discountAmount).toBe(5000);
+      expect(result.totalAmount).toBe(15_000);
+
+      await cleanup();
+    });
+
+    test("sale-level discount exceeding total is rejected", async () => {
+      const { db, cleanup } = await createTestDb();
+      const { organizationId, userId } = await seedOrganizationWithMember(db);
+      const [productId, shiftId] = await Promise.all([
+        seedProduct(db, {
+          organizationId,
+          name: "Over Discount",
+          price: 10_000,
+          taxRate: 0,
+          stock: 10,
+        }),
+        seedShift(db, { organizationId, userId, status: "open" }),
+      ]);
+
+      await expect(
+        createCoreSale(
+          {
+            shiftId,
+            items: [{ productId, quantity: 1, unitPrice: 10_000 }],
+            discountAmount: 15_000,
+            payments: [{ method: "cash", amount: 5000 }],
+          },
+          { db, organizationId, userId }
+        )
+      ).rejects.toThrow("no puede ser negativo");
 
       await cleanup();
     });

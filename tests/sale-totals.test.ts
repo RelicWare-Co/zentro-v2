@@ -327,3 +327,303 @@ describe("validatePaymentRules", () => {
     ).toThrow("suma de los pagos debe ser igual al total");
   });
 });
+
+describe("tax calculations in buildPreparedItems", () => {
+  test("applies 19% tax rate correctly", () => {
+    const productById = new Map([
+      ["prod-1", makeProduct({ price: 10_000, taxRate: 19 })],
+    ]);
+    const result = buildPreparedItems(
+      [{ productId: "prod-1", quantity: 2, unitPrice: 10_000 }],
+      productById
+    );
+    expect(result.preparedItems[0].taxRate).toBe(19);
+    expect(result.preparedItems[0].taxAmount).toBe(3800);
+    expect(result.preparedItems[0].totalAmount).toBe(23_800);
+    expect(result.taxAmount).toBe(3800);
+  });
+
+  test("applies 5% tax rate correctly", () => {
+    const productById = new Map([
+      ["prod-1", makeProduct({ price: 1000, taxRate: 5 })],
+    ]);
+    const result = buildPreparedItems(
+      [{ productId: "prod-1", quantity: 3, unitPrice: 1000 }],
+      productById
+    );
+    expect(result.preparedItems[0].taxAmount).toBe(150);
+    expect(result.taxAmount).toBe(150);
+  });
+
+  test("tax-exempt product (taxRate=0) produces zero tax", () => {
+    const productById = new Map([
+      ["prod-1", makeProduct({ price: 5000, taxRate: 0 })],
+    ]);
+    const result = buildPreparedItems(
+      [{ productId: "prod-1", quantity: 4, unitPrice: 5000 }],
+      productById
+    );
+    expect(result.preparedItems[0].taxAmount).toBe(0);
+    expect(result.preparedItems[0].totalAmount).toBe(20_000);
+    expect(result.taxAmount).toBe(0);
+  });
+
+  test("rounds tax amount with Math.round", () => {
+    const productById = new Map([
+      ["prod-1", makeProduct({ price: 1003, taxRate: 19 })],
+    ]);
+    const result = buildPreparedItems(
+      [{ productId: "prod-1", quantity: 1, unitPrice: 1003 }],
+      productById
+    );
+    expect(result.preparedItems[0].taxAmount).toBe(
+      Math.round((1003 * 19) / 100)
+    );
+    expect(result.preparedItems[0].taxAmount).toBe(191);
+  });
+
+  test("explicit taxRate override on item takes precedence", () => {
+    const productById = new Map([
+      ["prod-1", makeProduct({ price: 10_000, taxRate: 19 })],
+    ]);
+    const result = buildPreparedItems(
+      [{ productId: "prod-1", quantity: 1, unitPrice: 10_000, taxRate: 5 }],
+      productById
+    );
+    expect(result.preparedItems[0].taxRate).toBe(5);
+    expect(result.preparedItems[0].taxAmount).toBe(500);
+  });
+
+  test("falls back to product taxRate when item omits taxRate", () => {
+    const productById = new Map([
+      ["prod-1", makeProduct({ price: 2000, taxRate: 10 })],
+    ]);
+    const result = buildPreparedItems(
+      [{ productId: "prod-1", quantity: 2 }],
+      productById
+    );
+    expect(result.preparedItems[0].taxRate).toBe(10);
+    expect(result.preparedItems[0].taxAmount).toBe(400);
+  });
+
+  test("aggregates tax across multiple items with mixed rates", () => {
+    const productById = new Map([
+      ["prod-1", makeProduct({ id: "prod-1", price: 10_000, taxRate: 19 })],
+      ["prod-2", makeProduct({ id: "prod-2", price: 5000, taxRate: 0 })],
+      ["prod-3", makeProduct({ id: "prod-3", price: 2000, taxRate: 5 })],
+    ]);
+    const result = buildPreparedItems(
+      [
+        { productId: "prod-1", quantity: 1, unitPrice: 10_000 },
+        { productId: "prod-2", quantity: 2, unitPrice: 5000 },
+        { productId: "prod-3", quantity: 3, unitPrice: 2000 },
+      ],
+      productById
+    );
+    expect(result.preparedItems[0].taxAmount).toBe(1900);
+    expect(result.preparedItems[1].taxAmount).toBe(0);
+    expect(result.preparedItems[2].taxAmount).toBe(300);
+    expect(result.taxAmount).toBe(2200);
+  });
+
+  test("tax is calculated on base line subtotal, not modifier subtotal", () => {
+    const productById = new Map([
+      ["prod-1", makeProduct({ id: "prod-1", price: 2000, taxRate: 10 })],
+      [
+        "mod-1",
+        makeProduct({
+          id: "mod-1",
+          isModifier: true,
+          name: "Extra",
+          price: 500,
+          taxRate: 10,
+        }),
+      ],
+    ]);
+    const result = buildPreparedItems(
+      [
+        {
+          productId: "prod-1",
+          quantity: 2,
+          unitPrice: 2000,
+          modifiers: [
+            { modifierProductId: "mod-1", quantity: 1, unitPrice: 500 },
+          ],
+        },
+      ],
+      productById
+    );
+    const item = result.preparedItems[0];
+    expect(item.subtotal).toBe(4000);
+    expect(item.taxAmount).toBe(400);
+    expect(item.modifiers[0].subtotal).toBe(1000);
+    expect(item.totalAmount).toBe(4000 + 1000 + 400);
+    expect(result.subtotal).toBe(5000);
+    expect(result.taxAmount).toBe(400);
+  });
+});
+
+describe("discount validation in buildPreparedItems and calculateSaleTotals", () => {
+  test("item-level discount only reduces item total", () => {
+    const productById = new Map([
+      ["prod-1", makeProduct({ price: 10_000, taxRate: 0 })],
+    ]);
+    const result = buildPreparedItems(
+      [
+        {
+          productId: "prod-1",
+          quantity: 1,
+          unitPrice: 10_000,
+          discountAmount: 2000,
+        },
+      ],
+      productById
+    );
+    expect(result.preparedItems[0].discountAmount).toBe(2000);
+    expect(result.preparedItems[0].totalAmount).toBe(8000);
+    expect(result.itemDiscountAmount).toBe(2000);
+  });
+
+  test("sale-level discount only via calculateSaleTotals", () => {
+    const result = calculateSaleTotals({
+      subtotal: 10_000,
+      taxAmount: 1000,
+      itemDiscountAmount: 0,
+      saleLevelDiscount: 3000,
+    });
+    expect(result.discountAmount).toBe(3000);
+    expect(result.totalAmount).toBe(8000);
+  });
+
+  test("both item-level and sale-level discounts sum correctly", () => {
+    const result = calculateSaleTotals({
+      subtotal: 20_000,
+      taxAmount: 2000,
+      itemDiscountAmount: 3000,
+      saleLevelDiscount: 5000,
+    });
+    expect(result.discountAmount).toBe(8000);
+    expect(result.totalAmount).toBe(14_000);
+  });
+
+  test("multi-item sale where one item discount exceeds its subtotal throws", () => {
+    const productById = new Map([
+      ["prod-1", makeProduct({ id: "prod-1", price: 1000, taxRate: 0 })],
+      ["prod-2", makeProduct({ id: "prod-2", price: 5000, taxRate: 0 })],
+    ]);
+    expect(() =>
+      buildPreparedItems(
+        [
+          {
+            productId: "prod-1",
+            quantity: 1,
+            unitPrice: 1000,
+            discountAmount: 2000,
+          },
+          { productId: "prod-2", quantity: 1, unitPrice: 5000 },
+        ],
+        productById
+      )
+    ).toThrow("no puede ser negativo");
+  });
+
+  test("zero discounts leave totals unchanged", () => {
+    const result = calculateSaleTotals({
+      subtotal: 10_000,
+      taxAmount: 1000,
+      itemDiscountAmount: 0,
+      saleLevelDiscount: 0,
+    });
+    expect(result.discountAmount).toBe(0);
+    expect(result.totalAmount).toBe(11_000);
+  });
+
+  test("discount reduces total but tax is calculated pre-discount", () => {
+    const productById = new Map([
+      ["prod-1", makeProduct({ price: 10_000, taxRate: 19 })],
+    ]);
+    const { preparedItems, subtotal, taxAmount, itemDiscountAmount } =
+      buildPreparedItems(
+        [
+          {
+            productId: "prod-1",
+            quantity: 1,
+            unitPrice: 10_000,
+            discountAmount: 2000,
+          },
+        ],
+        productById
+      );
+    expect(preparedItems[0].taxAmount).toBe(1900);
+    expect(preparedItems[0].totalAmount).toBe(10_000 + 1900 - 2000);
+
+    const totals = calculateSaleTotals({
+      subtotal,
+      taxAmount,
+      itemDiscountAmount,
+      saleLevelDiscount: 0,
+    });
+    expect(totals.totalAmount).toBe(9900);
+  });
+});
+
+describe("cash change edge cases", () => {
+  test("exact cash payment does not allow cash change", () => {
+    const result = validatePaymentRules(
+      [{ method: "cash", amount: 5000, reference: null }],
+      5000,
+      false,
+      null
+    );
+    expect(result.allowsCashChange).toBe(false);
+  });
+
+  test("pure cash overpayment allows change", () => {
+    const result = validatePaymentRules(
+      [{ method: "cash", amount: 7000, reference: null }],
+      5000,
+      false,
+      null
+    );
+    expect(result.allowsCashChange).toBe(true);
+    expect(result.paidAmount).toBe(7000);
+  });
+
+  test("two cash payments that together overpay allow change", () => {
+    const result = validatePaymentRules(
+      [
+        { method: "cash", amount: 3000, reference: null },
+        { method: "cash", amount: 3000, reference: null },
+      ],
+      5000,
+      false,
+      null
+    );
+    expect(result.allowsCashChange).toBe(true);
+    expect(result.paidAmount).toBe(6000);
+  });
+
+  test("cash overpayment with exact non-cash split allows change", () => {
+    const result = validatePaymentRules(
+      [
+        { method: "card", amount: 5000, reference: null },
+        { method: "cash", amount: 3000, reference: null },
+      ],
+      5000,
+      false,
+      null
+    );
+    expect(result.allowsCashChange).toBe(true);
+  });
+
+  test("zero-total sale rejects any cash payment", () => {
+    expect(() =>
+      validatePaymentRules(
+        [{ method: "cash", amount: 100, reference: null }],
+        0,
+        false,
+        null
+      )
+    ).toThrow("total de la venta es 0");
+  });
+});

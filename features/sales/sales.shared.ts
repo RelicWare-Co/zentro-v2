@@ -97,7 +97,9 @@ export function parseDateBoundary(value: string | null | undefined) {
   if (!value) {
     return null;
   }
-  const parsedDate = new Date(`${value}T00:00:00`);
+  const parsedDate = value.includes("T")
+    ? new Date(value)
+    : new Date(`${value}T00:00:00`);
   return Number.isNaN(parsedDate.getTime()) ? null : parsedDate.getTime();
 }
 
