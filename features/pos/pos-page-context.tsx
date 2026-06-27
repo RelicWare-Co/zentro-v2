@@ -107,6 +107,7 @@ export interface PosPageState {
   products: Product[];
   projectedCreditBalance: number;
   remainingCreditAmount: number;
+  saleSuccessToken: number | null;
   searchQuery: string;
   selectedCustomerCreditAccount: { balance: number } | null;
   selectedCustomerId: string;
@@ -213,6 +214,7 @@ export function PosPageProvider({
   const [isMobileCartOpen, setIsMobileCartOpen] = useState(false);
   const [activeModal, setActiveModal] = useState<PosActiveModal | null>(null);
   const [isQuickSaleMode, setIsQuickSaleMode] = useState(false);
+  const [saleSuccessToken, setSaleSuccessToken] = useState<number | null>(null);
   const [tableDiscountInput, setTableDiscountInput] = useState("0");
 
   const closeActiveModal = useCallback(() => {
@@ -389,6 +391,14 @@ export function PosPageProvider({
     ]
   );
 
+  const handleSaleCompleted = useCallback(
+    (payload: Parameters<typeof printReceiptForSale>[0]) => {
+      setSaleSuccessToken(Date.now());
+      return printReceiptForSale(payload);
+    },
+    [printReceiptForSale]
+  );
+
   const checkout = usePosCheckout(
     activeShift?.id,
     effectiveCart,
@@ -402,7 +412,7 @@ export function PosPageProvider({
     paymentMethodOptions,
     effectiveAllowCreditSales,
     closeActiveModal,
-    printReceiptForSale
+    handleSaleCompleted
   );
 
   const createCustomerModal = useCreateCustomerModal((customerId) => {
@@ -555,7 +565,7 @@ export function PosPageProvider({
         tableOrder.exitTable();
 
         Promise.resolve(
-          printReceiptForSale({
+          handleSaleCompleted({
             result: {
               saleId: result.saleId,
               status: "completed",
@@ -596,7 +606,7 @@ export function PosPageProvider({
       selectedCustomerId,
       closeActiveModal,
       checkout,
-      printReceiptForSale,
+      handleSaleCompleted,
     ]
   );
 
@@ -783,6 +793,7 @@ export function PosPageProvider({
         products,
         projectedCreditBalance,
         remainingCreditAmount: checkout.remainingCreditAmount,
+        saleSuccessToken,
         searchQuery,
         selectedCustomerCreditAccount,
         selectedCustomerId,
@@ -877,6 +888,7 @@ export function PosPageProvider({
       modifierQuantities,
       products,
       projectedCreditBalance,
+      saleSuccessToken,
       searchQuery,
       selectedCustomerCreditAccount,
       selectedCustomerId,

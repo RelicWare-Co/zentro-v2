@@ -78,6 +78,7 @@ export function PosV1Layout() {
             onSendToKitchen={actions.sendTableOrderToKitchen}
             onUpdateItemDiscount={actions.updateItemDiscount}
             onUpdateQuantity={actions.updateQuantity}
+            saleSuccessToken={state.saleSuccessToken}
             tableSession={state.tableSession}
             totalItems={state.totalItems}
             totals={state.totals}
@@ -122,6 +123,7 @@ export function PosV1Layout() {
                 onSendToKitchen={actions.sendTableOrderToKitchen}
                 onUpdateItemDiscount={actions.updateItemDiscount}
                 onUpdateQuantity={actions.updateQuantity}
+                saleSuccessToken={state.saleSuccessToken}
                 tableSession={state.tableSession}
                 totalItems={state.totalItems}
                 totals={state.totals}

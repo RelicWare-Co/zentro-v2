@@ -13,6 +13,7 @@ import type { PosTableSessionState } from "../pos-page-context";
 import type { CartItem, CartTotals } from "../types";
 import { formatCurrency } from "../utils";
 import { CartItemCard } from "./cart-item-card";
+import { SaleSuccessNotice } from "./sale-success-notice";
 import { buildTableItemStatusBadge } from "./table-item-status.shared";
 
 function CartPanelHeader({
@@ -100,6 +101,7 @@ interface CartPanelProps {
   onSendToKitchen?: () => void;
   onUpdateItemDiscount: (cartItemId: string, value: string) => void;
   onUpdateQuantity: (cartItemId: string, delta: number) => void;
+  saleSuccessToken: number | null;
   tableSession?: PosTableSessionState | null;
   totalItems: number;
   totals: CartTotals;
@@ -121,6 +123,7 @@ export function CartPanel({
   isQuickSaleMode,
   tableSession,
   className,
+  saleSuccessToken,
 }: CartPanelProps) {
   const { subTotal, tax, discountAmount, totalAmount } = totals;
   const hasDiscount = discountAmount > 0;
@@ -135,7 +138,7 @@ export function CartPanel({
   return (
     <div
       className={cn(
-        "flex min-h-0 w-[380px] shrink-0 flex-col overflow-hidden border-zinc-800 border-l bg-[var(--color-carbon)]",
+        "relative flex min-h-0 w-[380px] shrink-0 flex-col overflow-hidden border-zinc-800 border-l bg-[var(--color-carbon)]",
         className
       )}
     >
@@ -268,6 +271,8 @@ export function CartPanel({
           </Button>
         </div>
       </div>
+
+      <SaleSuccessNotice token={saleSuccessToken} />
     </div>
   );
 }
