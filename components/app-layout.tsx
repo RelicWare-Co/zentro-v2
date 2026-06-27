@@ -19,6 +19,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { useState } from "react";
+import { prefetch } from "vike/client/router";
 import { usePageContext } from "vike-react/usePageContext";
 import { OrganizationSelection } from "@/components/organization-selection";
 import { getImpersonatedBy } from "@/features/admin/admin.shared";
@@ -322,6 +323,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 href={item.path}
                 key={item.path}
                 onClick={() => setIsSidebarOpen(false)}
+                onMouseEnter={() => {
+                  prefetch(item.path);
+                }}
                 title={isCollapsed ? item.name : undefined}
               >
                 <Icon className="size-5 shrink-0" />
