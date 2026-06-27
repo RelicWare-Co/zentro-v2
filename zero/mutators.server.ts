@@ -1,6 +1,7 @@
 import { creditServerMutators } from "@/features/credit/credit.mutators.server";
 import { modulesServerMutators } from "@/features/modules/modules.mutators.server";
 import { organizationServerMutators } from "@/features/organization/organization.mutators.server";
+import { productsServerMutators } from "@/features/products/products.mutators.server";
 import { restaurantsServerMutators } from "@/features/restaurants/restaurants.mutators.server";
 import { salesServerMutators } from "@/features/sales/sales.mutators.server";
 import { shiftsServerMutators } from "@/features/shifts/shifts.mutators.server";
@@ -14,6 +15,7 @@ export const serverMutators = defineZentroMutators(sharedMutators, {
   modules: modulesServerMutators,
   restaurants: restaurantsServerMutators,
   shifts: shiftsServerMutators,
+  products: productsServerMutators,
 });
 
 export type ServerMutators = typeof serverMutators;

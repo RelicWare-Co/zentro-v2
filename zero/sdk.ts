@@ -29,6 +29,15 @@ export const defineZentroMutator = defineMutatorWithType<
 export const defineZentroMutators = defineMutatorsWithType<Schema>();
 
 // biome-ignore-start lint/performance/noBarrelFile: this file is the intentional internal Zero SDK facade.
+export {
+  normalizeOptionalString,
+  normalizeRequiredString,
+  resolveDate,
+  resolveTimestamp,
+  toInteger,
+  toNonNegativeInteger,
+  toPositiveInteger,
+} from "@/lib/domain-values.shared";
 export type { ZeroContext } from "@/zero/context";
 export type { Schema } from "@/zero/schema";
 export {
@@ -36,13 +45,7 @@ export {
   assertZeroContext,
   FORBIDDEN_MESSAGE,
   getOrganizationSettingsFromTx,
-  normalizeOptionalString,
-  normalizeRequiredString,
   requireOrgContext,
-  resolveTimestamp,
-  toInteger,
-  toNonNegativeInteger,
-  toPositiveInteger,
   type ZeroMutatorTransaction,
 } from "./mutators.shared";
 export {

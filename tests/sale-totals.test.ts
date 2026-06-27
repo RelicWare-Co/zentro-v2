@@ -1,0 +1,329 @@
+import { describe, expect, test } from "bun:test";
+import {
+  buildPreparedItems,
+  calculateAppliedPayments,
+  calculateSaleTotals,
+  canSettleCompletedSaleWithCashChange,
+  normalizeAndValidatePayments,
+  type ProductInfo,
+  validatePaymentRules,
+} from "@/features/sales/sale-totals.shared";
+
+function makeProduct(overrides: Partial<ProductInfo> = {}): ProductInfo {
+  return {
+    id: "prod-1",
+    isModifier: false,
+    name: "Test Product",
+    price: 1000,
+    stock: 100,
+    taxRate: 10,
+    trackInventory: true,
+    ...overrides,
+  };
+}
+
+describe("canSettleCompletedSaleWithCashChange", () => {
+  test("returns true when cash overpayment covers the difference", () => {
+    const result = canSettleCompletedSaleWithCashChange(
+      [
+        { method: "card", amount: 5000 },
+        { method: "cash", amount: 3000 },
+      ],
+      7000
+    );
+    expect(result).toBe(true);
+  });
+
+  test("returns false when paid amount equals total", () => {
+    const result = canSettleCompletedSaleWithCashChange(
+      [{ method: "cash", amount: 5000 }],
+      5000
+    );
+    expect(result).toBe(false);
+  });
+
+  test("returns false when no cash payment", () => {
+    const result = canSettleCompletedSaleWithCashChange(
+      [{ method: "card", amount: 6000 }],
+      5000
+    );
+    expect(result).toBe(false);
+  });
+
+  test("returns false when non-cash payments alone exceed total", () => {
+    const result = canSettleCompletedSaleWithCashChange(
+      [
+        { method: "card", amount: 6000 },
+        { method: "cash", amount: 1000 },
+      ],
+      5000
+    );
+    expect(result).toBe(false);
+  });
+});
+
+describe("calculateSaleTotals", () => {
+  test("computes discount and total correctly", () => {
+    const result = calculateSaleTotals({
+      subtotal: 10_000,
+      taxAmount: 1000,
+      itemDiscountAmount: 500,
+      saleLevelDiscount: 500,
+    });
+    expect(result.discountAmount).toBe(1000);
+    expect(result.totalAmount).toBe(10_000);
+  });
+
+  test("handles zero discounts", () => {
+    const result = calculateSaleTotals({
+      subtotal: 5000,
+      taxAmount: 500,
+      itemDiscountAmount: 0,
+      saleLevelDiscount: 0,
+    });
+    expect(result.discountAmount).toBe(0);
+    expect(result.totalAmount).toBe(5500);
+  });
+});
+
+describe("calculateAppliedPayments", () => {
+  test("caps paid amount at total", () => {
+    const result = calculateAppliedPayments(
+      [{ amount: 8000 }, { amount: 3000 }],
+      10_000
+    );
+    expect(result.paidAmount).toBe(11_000);
+    expect(result.appliedPaidAmount).toBe(10_000);
+    expect(result.balanceDue).toBe(0);
+  });
+
+  test("leaves balance when underpaid", () => {
+    const result = calculateAppliedPayments([{ amount: 3000 }], 10_000);
+    expect(result.paidAmount).toBe(3000);
+    expect(result.appliedPaidAmount).toBe(3000);
+    expect(result.balanceDue).toBe(7000);
+  });
+});
+
+describe("buildPreparedItems", () => {
+  test("builds a single item with tax and no modifiers", () => {
+    const productById = new Map([
+      ["prod-1", makeProduct({ price: 1000, taxRate: 10 })],
+    ]);
+    const result = buildPreparedItems(
+      [
+        {
+          productId: "prod-1",
+          quantity: 3,
+          unitPrice: 1000,
+        },
+      ],
+      productById
+    );
+    expect(result.preparedItems).toHaveLength(1);
+    const item = result.preparedItems[0];
+    expect(item.quantity).toBe(3);
+    expect(item.unitPrice).toBe(1000);
+    expect(item.subtotal).toBe(3000);
+    expect(item.taxRate).toBe(10);
+    expect(item.taxAmount).toBe(300);
+    expect(item.totalAmount).toBe(3300);
+    expect(item.modifiers).toEqual([]);
+    expect(result.subtotal).toBe(3000);
+    expect(result.taxAmount).toBe(300);
+    expect(result.itemDiscountAmount).toBe(0);
+    expect(result.stockDeltas.get("prod-1")).toBe(-3);
+  });
+
+  test("uses product default price when unitPrice is omitted", () => {
+    const productById = new Map([
+      ["prod-1", makeProduct({ price: 2500, taxRate: 0 })],
+    ]);
+    const result = buildPreparedItems(
+      [{ productId: "prod-1", quantity: 2 }],
+      productById
+    );
+    expect(result.preparedItems[0].unitPrice).toBe(2500);
+    expect(result.preparedItems[0].subtotal).toBe(5000);
+  });
+
+  test("throws when product is not found", () => {
+    expect(() =>
+      buildPreparedItems([{ productId: "missing", quantity: 1 }], new Map())
+    ).toThrow("Producto inválido en ítem 1");
+  });
+
+  test("throws when a modifier-only product is used as a base item", () => {
+    const productById = new Map([
+      ["mod-1", makeProduct({ id: "mod-1", isModifier: true, name: "Sauce" })],
+    ]);
+    expect(() =>
+      buildPreparedItems([{ productId: "mod-1", quantity: 1 }], productById)
+    ).toThrow("solo puede venderse como modificador");
+  });
+
+  test("builds item with modifiers and accumulates stock deltas", () => {
+    const productById = new Map([
+      ["prod-1", makeProduct({ id: "prod-1", price: 2000, taxRate: 0 })],
+      [
+        "mod-1",
+        makeProduct({
+          id: "mod-1",
+          isModifier: true,
+          name: "Extra",
+          price: 500,
+        }),
+      ],
+    ]);
+    const result = buildPreparedItems(
+      [
+        {
+          productId: "prod-1",
+          quantity: 2,
+          modifiers: [
+            { modifierProductId: "mod-1", quantity: 1, unitPrice: 500 },
+          ],
+        },
+      ],
+      productById
+    );
+    const item = result.preparedItems[0];
+    expect(item.modifiers).toHaveLength(1);
+    expect(item.modifiers[0].subtotal).toBe(1000);
+    expect(item.subtotal).toBe(4000);
+    expect(item.totalAmount).toBe(5000);
+    expect(result.stockDeltas.get("prod-1")).toBe(-2);
+    expect(result.stockDeltas.get("mod-1")).toBe(-2);
+  });
+
+  test("throws when item total is negative after discount", () => {
+    const productById = new Map([
+      ["prod-1", makeProduct({ price: 1000, taxRate: 0 })],
+    ]);
+    expect(() =>
+      buildPreparedItems(
+        [
+          {
+            productId: "prod-1",
+            quantity: 1,
+            unitPrice: 1000,
+            discountAmount: 2000,
+          },
+        ],
+        productById
+      )
+    ).toThrow("no puede ser negativo");
+  });
+});
+
+describe("normalizeAndValidatePayments", () => {
+  test("normalizes method to lowercase and validates against enabled set", () => {
+    const result = normalizeAndValidatePayments(
+      [{ method: "CASH", amount: 5000, reference: "ref-1" }],
+      new Set(["cash"])
+    );
+    expect(result).toEqual([
+      { method: "cash", amount: 5000, reference: "ref-1" },
+    ]);
+  });
+
+  test("throws for non-enabled payment method", () => {
+    expect(() =>
+      normalizeAndValidatePayments(
+        [{ method: "crypto", amount: 5000, reference: null }],
+        new Set(["cash", "card"])
+      )
+    ).toThrow("Método de pago no habilitado: crypto");
+  });
+
+  test("handles null payments array", () => {
+    const result = normalizeAndValidatePayments(
+      null as unknown as [],
+      new Set(["cash"])
+    );
+    expect(result).toEqual([]);
+  });
+});
+
+describe("validatePaymentRules", () => {
+  test("credit sale requires a customer", () => {
+    expect(() => validatePaymentRules([], 5000, true, null)).toThrow(
+      "requiere seleccionar un cliente"
+    );
+  });
+
+  test("credit sale rejects overpayment", () => {
+    expect(() =>
+      validatePaymentRules(
+        [{ method: "cash", amount: 6000, reference: null }],
+        5000,
+        true,
+        "cust-1"
+      )
+    ).toThrow("no pueden superar el total");
+  });
+
+  test("credit sale requires a remaining balance", () => {
+    expect(() =>
+      validatePaymentRules(
+        [{ method: "cash", amount: 5000, reference: null }],
+        5000,
+        true,
+        "cust-1"
+      )
+    ).toThrow("saldo pendiente");
+  });
+
+  test("zero-total sale rejects any payments", () => {
+    expect(() =>
+      validatePaymentRules(
+        [{ method: "cash", amount: 100, reference: null }],
+        0,
+        false,
+        null
+      )
+    ).toThrow("total de la venta es 0");
+  });
+
+  test("non-zero sale requires at least one payment", () => {
+    expect(() => validatePaymentRules([], 5000, false, null)).toThrow(
+      "al menos un pago"
+    );
+  });
+
+  test("completed sale with exact payment passes", () => {
+    const result = validatePaymentRules(
+      [{ method: "cash", amount: 5000, reference: null }],
+      5000,
+      false,
+      null
+    );
+    expect(result.paidAmount).toBe(5000);
+    expect(result.allowsCashChange).toBe(false);
+  });
+
+  test("completed sale with cash overpayment passes when cash covers change", () => {
+    const result = validatePaymentRules(
+      [
+        { method: "card", amount: 4000, reference: null },
+        { method: "cash", amount: 2000, reference: null },
+      ],
+      5000,
+      false,
+      null
+    );
+    expect(result.paidAmount).toBe(6000);
+    expect(result.allowsCashChange).toBe(true);
+  });
+
+  test("completed sale with mismatched non-cash payment fails", () => {
+    expect(() =>
+      validatePaymentRules(
+        [{ method: "card", amount: 6000, reference: null }],
+        5000,
+        false,
+        null
+      )
+    ).toThrow("suma de los pagos debe ser igual al total");
+  });
+});

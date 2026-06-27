@@ -6,47 +6,27 @@ import {
   cancelSaleArgsSchema,
   createSaleArgsSchema,
 } from "@/features/sales/sales.mutators";
-import { defineZentroMutator, requireOrgContext } from "@/zero/sdk";
+import { defineZentroServerMutator } from "@/zero/sdk.server";
 
 export const salesServerMutators = {
-  create: defineZentroMutator(
+  create: defineZentroServerMutator(
     createSaleArgsSchema,
-    async ({ tx, args, ctx }) => {
-      if (!ctx) {
-        throw new Error("No autorizado");
-      }
-
-      if (!("dbTransaction" in tx)) {
-        throw new Error(
-          "La creación de ventas solo puede ejecutarse en el servidor"
-        );
-      }
-
-      const drizzleTx = tx.dbTransaction.wrappedTransaction;
+    async ({ drizzleTx, args, auth }) => {
       await runCreateSale(drizzleTx as unknown as CreateSaleDbExecutor, args, {
-        organizationId: requireOrgContext(ctx).orgID,
-        userId: ctx.id,
+        organizationId: auth.organizationId,
+        userId: auth.userId,
       });
-    }
+    },
+    { operationName: "La creación de ventas" }
   ),
-  cancel: defineZentroMutator(
+  cancel: defineZentroServerMutator(
     cancelSaleArgsSchema,
-    async ({ tx, args, ctx }) => {
-      if (!ctx) {
-        throw new Error("No autorizado");
-      }
-
-      if (!("dbTransaction" in tx)) {
-        throw new Error(
-          "La anulación de ventas solo puede ejecutarse en el servidor"
-        );
-      }
-
-      const drizzleTx = tx.dbTransaction.wrappedTransaction;
+    async ({ drizzleTx, args, auth }) => {
       await runCancelSale(drizzleTx as unknown as CancelSaleDbExecutor, args, {
-        organizationId: requireOrgContext(ctx).orgID,
-        userId: ctx.id,
+        organizationId: auth.organizationId,
+        userId: auth.userId,
       });
-    }
+    },
+    { operationName: "La anulación de ventas" }
   ),
 };

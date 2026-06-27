@@ -1,28 +1,18 @@
 import { setModuleEntitlementArgsSchema } from "@/features/modules/modules.mutators";
 import type { SetModuleEntitlementDbExecutor } from "@/features/modules/set-entitlement.server";
 import { runSetModuleEntitlement } from "@/features/modules/set-entitlement.server";
-import { defineZentroMutator } from "@/zero/sdk";
+import { defineZentroServerMutator } from "@/zero/sdk.server";
 
 export const modulesServerMutators = {
-  setEntitlement: defineZentroMutator(
+  setEntitlement: defineZentroServerMutator(
     setModuleEntitlementArgsSchema,
-    async ({ tx, args, ctx }) => {
-      if (!ctx) {
-        throw new Error("No autorizado");
-      }
-
-      if (!("dbTransaction" in tx)) {
-        throw new Error(
-          "La actualización de entitlements solo puede ejecutarse en el servidor"
-        );
-      }
-
-      const drizzleTx = tx.dbTransaction.wrappedTransaction;
+    async ({ drizzleTx, args, auth }) => {
       await runSetModuleEntitlement(
         drizzleTx as unknown as SetModuleEntitlementDbExecutor,
         args,
-        ctx
+        auth.zeroContext
       );
-    }
+    },
+    { operationName: "La actualización de entitlements" }
   ),
 };

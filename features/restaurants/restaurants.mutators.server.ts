@@ -29,254 +29,101 @@ import {
   updateRestaurantOrderMetaArgsSchema,
   updateRestaurantTableArgsSchema,
 } from "@/features/restaurants/restaurants.mutators";
-import { defineZentroMutator, requireOrgContext } from "@/zero/sdk";
+import {
+  type DrizzleTransaction,
+  defineZentroServerMutator,
+  type ZentroServerMutatorAuth,
+} from "@/zero/sdk.server";
+
+const RESTAURANT_OP_NAME = "Las mutaciones de restaurantes";
+
+function restaurantRunner<Args>(
+  fn: (
+    tx: RestaurantDbExecutor,
+    args: Args,
+    ctx: { organizationId: string; userId: string }
+  ) => Promise<unknown>
+) {
+  return async ({
+    drizzleTx,
+    args,
+    auth,
+  }: {
+    drizzleTx: DrizzleTransaction;
+    args: Args;
+    auth: ZentroServerMutatorAuth;
+  }) => {
+    await fn(drizzleTx as RestaurantDbExecutor, args, {
+      organizationId: auth.organizationId,
+      userId: auth.userId,
+    });
+  };
+}
 
 export const restaurantsServerMutators = {
-  addOrderItem: defineZentroMutator(
+  addOrderItem: defineZentroServerMutator(
     addRestaurantOrderItemArgsSchema,
-    async ({ tx, args, ctx }) => {
-      if (!ctx) {
-        throw new Error("No autorizado");
-      }
-      if (!("dbTransaction" in tx)) {
-        throw new Error(
-          "Las mutaciones de restaurantes solo pueden ejecutarse en el servidor"
-        );
-      }
-      const drizzleTx = tx.dbTransaction.wrappedTransaction;
-      await runAddRestaurantOrderItem(
-        drizzleTx as unknown as RestaurantDbExecutor,
-        args,
-        { organizationId: requireOrgContext(ctx).orgID, userId: ctx.id }
-      );
-    }
+    restaurantRunner(runAddRestaurantOrderItem),
+    { operationName: RESTAURANT_OP_NAME }
   ),
-  updateOrderMeta: defineZentroMutator(
+  updateOrderMeta: defineZentroServerMutator(
     updateRestaurantOrderMetaArgsSchema,
-    async ({ tx, args, ctx }) => {
-      if (!ctx) {
-        throw new Error("No autorizado");
-      }
-      if (!("dbTransaction" in tx)) {
-        throw new Error(
-          "Las mutaciones de restaurantes solo pueden ejecutarse en el servidor"
-        );
-      }
-      const drizzleTx = tx.dbTransaction.wrappedTransaction;
-      await runUpdateRestaurantOrderMeta(
-        drizzleTx as unknown as RestaurantDbExecutor,
-        args,
-        { organizationId: requireOrgContext(ctx).orgID, userId: ctx.id }
-      );
-    }
+    restaurantRunner(runUpdateRestaurantOrderMeta),
+    { operationName: RESTAURANT_OP_NAME }
   ),
-  updateDraftItem: defineZentroMutator(
+  updateDraftItem: defineZentroServerMutator(
     updateRestaurantDraftItemArgsSchema,
-    async ({ tx, args, ctx }) => {
-      if (!ctx) {
-        throw new Error("No autorizado");
-      }
-      if (!("dbTransaction" in tx)) {
-        throw new Error(
-          "Las mutaciones de restaurantes solo pueden ejecutarse en el servidor"
-        );
-      }
-      const drizzleTx = tx.dbTransaction.wrappedTransaction;
-      await runUpdateRestaurantDraftItem(
-        drizzleTx as unknown as RestaurantDbExecutor,
-        args,
-        { organizationId: requireOrgContext(ctx).orgID, userId: ctx.id }
-      );
-    }
+    restaurantRunner(runUpdateRestaurantDraftItem),
+    { operationName: RESTAURANT_OP_NAME }
   ),
-  deleteDraftItem: defineZentroMutator(
+  deleteDraftItem: defineZentroServerMutator(
     deleteRestaurantDraftItemArgsSchema,
-    async ({ tx, args, ctx }) => {
-      if (!ctx) {
-        throw new Error("No autorizado");
-      }
-      if (!("dbTransaction" in tx)) {
-        throw new Error(
-          "Las mutaciones de restaurantes solo pueden ejecutarse en el servidor"
-        );
-      }
-      const drizzleTx = tx.dbTransaction.wrappedTransaction;
-      await runDeleteRestaurantDraftItem(
-        drizzleTx as unknown as RestaurantDbExecutor,
-        args,
-        { organizationId: requireOrgContext(ctx).orgID, userId: ctx.id }
-      );
-    }
+    restaurantRunner(runDeleteRestaurantDraftItem),
+    { operationName: RESTAURANT_OP_NAME }
   ),
-  sendToKitchen: defineZentroMutator(
+  sendToKitchen: defineZentroServerMutator(
     sendRestaurantOrderToKitchenArgsSchema,
-    async ({ tx, args, ctx }) => {
-      if (!ctx) {
-        throw new Error("No autorizado");
-      }
-      if (!("dbTransaction" in tx)) {
-        throw new Error(
-          "Las mutaciones de restaurantes solo pueden ejecutarse en el servidor"
-        );
-      }
-      const drizzleTx = tx.dbTransaction.wrappedTransaction;
-      await runSendRestaurantOrderToKitchen(
-        drizzleTx as unknown as RestaurantDbExecutor,
-        args,
-        { organizationId: requireOrgContext(ctx).orgID, userId: ctx.id }
-      );
-    }
+    restaurantRunner(runSendRestaurantOrderToKitchen),
+    { operationName: RESTAURANT_OP_NAME }
   ),
-  updateItemStatus: defineZentroMutator(
+  updateItemStatus: defineZentroServerMutator(
     updateRestaurantOrderItemStatusArgsSchema,
-    async ({ tx, args, ctx }) => {
-      if (!ctx) {
-        throw new Error("No autorizado");
-      }
-      if (!("dbTransaction" in tx)) {
-        throw new Error(
-          "Las mutaciones de restaurantes solo pueden ejecutarse en el servidor"
-        );
-      }
-      const drizzleTx = tx.dbTransaction.wrappedTransaction;
-      await runUpdateRestaurantOrderItemStatus(
-        drizzleTx as unknown as RestaurantDbExecutor,
-        args,
-        { organizationId: requireOrgContext(ctx).orgID, userId: ctx.id }
-      );
-    }
+    restaurantRunner(runUpdateRestaurantOrderItemStatus),
+    { operationName: RESTAURANT_OP_NAME }
   ),
-  closeOrder: defineZentroMutator(
+  closeOrder: defineZentroServerMutator(
     closeRestaurantOrderArgsSchema,
-    async ({ tx, args, ctx }) => {
-      if (!ctx) {
-        throw new Error("No autorizado");
-      }
-      if (!("dbTransaction" in tx)) {
-        throw new Error(
-          "Las mutaciones de restaurantes solo pueden ejecutarse en el servidor"
-        );
-      }
-      const drizzleTx = tx.dbTransaction.wrappedTransaction;
-      await runCloseRestaurantOrder(
-        drizzleTx as unknown as RestaurantDbExecutor,
-        args,
-        { organizationId: requireOrgContext(ctx).orgID, userId: ctx.id }
-      );
-    }
+    restaurantRunner(runCloseRestaurantOrder),
+    { operationName: RESTAURANT_OP_NAME }
   ),
-  createArea: defineZentroMutator(
+  createArea: defineZentroServerMutator(
     createRestaurantAreaArgsSchema,
-    async ({ tx, args, ctx }) => {
-      if (!ctx) {
-        throw new Error("No autorizado");
-      }
-      if (!("dbTransaction" in tx)) {
-        throw new Error(
-          "Las mutaciones de restaurantes solo pueden ejecutarse en el servidor"
-        );
-      }
-      const drizzleTx = tx.dbTransaction.wrappedTransaction;
-      await runCreateRestaurantArea(
-        drizzleTx as unknown as RestaurantDbExecutor,
-        args,
-        { organizationId: requireOrgContext(ctx).orgID, userId: ctx.id }
-      );
-    }
+    restaurantRunner(runCreateRestaurantArea),
+    { operationName: RESTAURANT_OP_NAME }
   ),
-  updateArea: defineZentroMutator(
+  updateArea: defineZentroServerMutator(
     updateRestaurantAreaArgsSchema,
-    async ({ tx, args, ctx }) => {
-      if (!ctx) {
-        throw new Error("No autorizado");
-      }
-      if (!("dbTransaction" in tx)) {
-        throw new Error(
-          "Las mutaciones de restaurantes solo pueden ejecutarse en el servidor"
-        );
-      }
-      const drizzleTx = tx.dbTransaction.wrappedTransaction;
-      await runUpdateRestaurantArea(
-        drizzleTx as unknown as RestaurantDbExecutor,
-        args,
-        { organizationId: requireOrgContext(ctx).orgID, userId: ctx.id }
-      );
-    }
+    restaurantRunner(runUpdateRestaurantArea),
+    { operationName: RESTAURANT_OP_NAME }
   ),
-  deleteArea: defineZentroMutator(
+  deleteArea: defineZentroServerMutator(
     deleteRestaurantAreaArgsSchema,
-    async ({ tx, args, ctx }) => {
-      if (!ctx) {
-        throw new Error("No autorizado");
-      }
-      if (!("dbTransaction" in tx)) {
-        throw new Error(
-          "Las mutaciones de restaurantes solo pueden ejecutarse en el servidor"
-        );
-      }
-      const drizzleTx = tx.dbTransaction.wrappedTransaction;
-      await runDeleteRestaurantArea(
-        drizzleTx as unknown as RestaurantDbExecutor,
-        args,
-        { organizationId: requireOrgContext(ctx).orgID, userId: ctx.id }
-      );
-    }
+    restaurantRunner(runDeleteRestaurantArea),
+    { operationName: RESTAURANT_OP_NAME }
   ),
-  createTable: defineZentroMutator(
+  createTable: defineZentroServerMutator(
     createRestaurantTableArgsSchema,
-    async ({ tx, args, ctx }) => {
-      if (!ctx) {
-        throw new Error("No autorizado");
-      }
-      if (!("dbTransaction" in tx)) {
-        throw new Error(
-          "Las mutaciones de restaurantes solo pueden ejecutarse en el servidor"
-        );
-      }
-      const drizzleTx = tx.dbTransaction.wrappedTransaction;
-      await runCreateRestaurantTable(
-        drizzleTx as unknown as RestaurantDbExecutor,
-        args,
-        { organizationId: requireOrgContext(ctx).orgID, userId: ctx.id }
-      );
-    }
+    restaurantRunner(runCreateRestaurantTable),
+    { operationName: RESTAURANT_OP_NAME }
   ),
-  updateTable: defineZentroMutator(
+  updateTable: defineZentroServerMutator(
     updateRestaurantTableArgsSchema,
-    async ({ tx, args, ctx }) => {
-      if (!ctx) {
-        throw new Error("No autorizado");
-      }
-      if (!("dbTransaction" in tx)) {
-        throw new Error(
-          "Las mutaciones de restaurantes solo pueden ejecutarse en el servidor"
-        );
-      }
-      const drizzleTx = tx.dbTransaction.wrappedTransaction;
-      await runUpdateRestaurantTable(
-        drizzleTx as unknown as RestaurantDbExecutor,
-        args,
-        { organizationId: requireOrgContext(ctx).orgID, userId: ctx.id }
-      );
-    }
+    restaurantRunner(runUpdateRestaurantTable),
+    { operationName: RESTAURANT_OP_NAME }
   ),
-  deleteTable: defineZentroMutator(
+  deleteTable: defineZentroServerMutator(
     deleteRestaurantTableArgsSchema,
-    async ({ tx, args, ctx }) => {
-      if (!ctx) {
-        throw new Error("No autorizado");
-      }
-      if (!("dbTransaction" in tx)) {
-        throw new Error(
-          "Las mutaciones de restaurantes solo pueden ejecutarse en el servidor"
-        );
-      }
-      const drizzleTx = tx.dbTransaction.wrappedTransaction;
-      await runDeleteRestaurantTable(
-        drizzleTx as unknown as RestaurantDbExecutor,
-        args,
-        { organizationId: requireOrgContext(ctx).orgID, userId: ctx.id }
-      );
-    }
+    restaurantRunner(runDeleteRestaurantTable),
+    { operationName: RESTAURANT_OP_NAME }
   ),
 };

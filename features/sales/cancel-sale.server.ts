@@ -1,20 +1,15 @@
-import { and, eq, gte, ne, sql } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 import type { z } from "zod";
 import type { Database } from "@/database/drizzle/db";
-import {
-  creditAccount,
-  creditTransaction,
-} from "@/database/drizzle/schema/credit.schema";
-import {
-  inventoryMovement,
-  product,
-} from "@/database/drizzle/schema/inventory.schema";
-import { shift } from "@/database/drizzle/schema/pos.schema";
+import { creditTransaction } from "@/database/drizzle/schema/credit.schema";
 import { payment, sale } from "@/database/drizzle/schema/sales.schema";
+import { reverseCreditSaleCharges } from "@/features/credit/credit-operations.server";
+import { restoreSaleInventory } from "@/features/inventory/inventory-operations.server";
 import type {
   CancelSaleInputSchema,
   CancelSaleResultSchema,
 } from "@/features/sales/sales.schema";
+import { assertOpenShiftForCancellation } from "@/features/shifts/shift-operations.server";
 
 export type CancelSaleDbExecutor = Pick<
   Database,
@@ -48,30 +43,11 @@ async function fetchAndValidateCancellationTarget(
     throw new Error("La venta ya está anulada");
   }
 
-  const [targetShift] = await tx
-    .select({
-      id: shift.id,
-      status: shift.status,
-      userId: shift.userId,
-    })
-    .from(shift)
-    .where(
-      and(
-        eq(shift.id, targetSale.shiftId),
-        eq(shift.organizationId, organizationId)
-      )
-    )
-    .limit(1);
-
-  if (!targetShift) {
-    throw new Error("Turno no encontrado para la venta seleccionada");
-  }
-  if (targetShift.status !== "open") {
-    throw new Error("Solo se puede anular una venta de un turno abierto");
-  }
-  if (targetShift.userId !== userId) {
-    throw new Error("Solo el cajero del turno puede anular la venta");
-  }
+  await assertOpenShiftForCancellation(tx, {
+    shiftId: targetSale.shiftId,
+    organizationId,
+    userId,
+  });
 
   return targetSale;
 }
@@ -99,133 +75,6 @@ function validateCreditTransactionRules(
       "La venta a crédito no tiene un cargo asociado para poder anularse"
     );
   }
-}
-
-function buildStockRestorations(
-  saleMovementRows: Array<{
-    productId: string;
-    quantity: number;
-    productName: string;
-  }>
-) {
-  const stockRestorations = new Map<
-    string,
-    { quantity: number; productName: string }
-  >();
-  for (const movementRow of saleMovementRows) {
-    const restorationQuantity = Math.max(-movementRow.quantity, 0);
-    if (restorationQuantity <= 0) {
-      continue;
-    }
-
-    stockRestorations.set(movementRow.productId, {
-      quantity:
-        (stockRestorations.get(movementRow.productId)?.quantity ?? 0) +
-        restorationQuantity,
-      productName: movementRow.productName,
-    });
-  }
-  return stockRestorations;
-}
-
-function restoreProductStock(
-  tx: CancelSaleDbExecutor,
-  entriesToRestore: Array<{
-    productId: string;
-    restoration: {
-      quantity: number;
-      productName: string;
-    };
-  }>,
-  organizationId: string
-) {
-  return Promise.all(
-    entriesToRestore.map(({ productId, restoration }) =>
-      tx
-        .update(product)
-        .set({
-          stock: sql`${product.stock} + ${restoration.quantity}`,
-        })
-        .where(
-          and(
-            eq(product.id, productId),
-            eq(product.organizationId, organizationId)
-          )
-        )
-        .returning({ id: product.id })
-        .then((updatedProducts) => {
-          if (updatedProducts.length === 0) {
-            throw new Error(
-              `No fue posible restaurar el stock de ${restoration.productName}`
-            );
-          }
-          return { productId, restoration };
-        })
-    )
-  );
-}
-
-async function reverseCreditCharges(
-  tx: CancelSaleDbExecutor,
-  chargeTransactions: Array<{
-    id: string;
-    creditAccountId: string;
-    amount: number;
-  }>,
-  organizationId: string,
-  saleId: string,
-  cancelledAt: Date
-) {
-  await Promise.all(
-    chargeTransactions.map(async (chargeTransaction) => {
-      const [creditAccountRow] = await tx
-        .select({ id: creditAccount.id })
-        .from(creditAccount)
-        .where(
-          and(
-            eq(creditAccount.id, chargeTransaction.creditAccountId),
-            eq(creditAccount.organizationId, organizationId)
-          )
-        )
-        .limit(1);
-
-      if (!creditAccountRow) {
-        throw new Error("Cuenta de crédito no encontrada para anular la venta");
-      }
-
-      const updatedAccounts = await tx
-        .update(creditAccount)
-        .set({
-          balance: sql`${creditAccount.balance} - ${chargeTransaction.amount}`,
-          updatedAt: cancelledAt,
-        })
-        .where(
-          and(
-            eq(creditAccount.id, creditAccountRow.id),
-            eq(creditAccount.organizationId, organizationId),
-            gte(creditAccount.balance, chargeTransaction.amount)
-          )
-        )
-        .returning({ id: creditAccount.id });
-
-      if (updatedAccounts.length === 0) {
-        throw new Error(
-          "La cuenta de crédito ya no coincide con la deuda de esta venta"
-        );
-      }
-
-      await tx.insert(creditTransaction).values({
-        id: crypto.randomUUID(),
-        organizationId,
-        creditAccountId: chargeTransaction.creditAccountId,
-        saleId,
-        type: "reversal",
-        amount: chargeTransaction.amount,
-        notes: `Anulacion venta ${saleId}`,
-        createdAt: cancelledAt,
-      });
-    })
-  );
 }
 
 export async function runCancelSale(
@@ -307,73 +156,18 @@ export async function runCancelSale(
     throw new Error("La venta ya está anulada");
   }
 
-  const saleMovementRows = await tx
-    .select({
-      productId: inventoryMovement.productId,
-      quantity: inventoryMovement.quantity,
-      productName: product.name,
-    })
-    .from(inventoryMovement)
-    .innerJoin(
-      product,
-      and(
-        eq(product.id, inventoryMovement.productId),
-        eq(product.organizationId, organizationId)
-      )
-    )
-    .where(
-      and(
-        eq(inventoryMovement.organizationId, organizationId),
-        eq(inventoryMovement.type, "sale"),
-        eq(inventoryMovement.notes, `Venta ${targetSale.id}`)
-      )
-    );
-
-  const stockRestorations = buildStockRestorations(saleMovementRows);
-
-  const entriesToRestore: Array<{
-    productId: string;
-    restoration: {
-      quantity: number;
-      productName: string;
-    };
-  }> = [];
-  for (const [productId, restoration] of stockRestorations.entries()) {
-    if (restoration.quantity <= 0) {
-      continue;
-    }
-    entriesToRestore.push({ productId, restoration });
-  }
-
-  const restoreResults = await restoreProductStock(
-    tx,
-    entriesToRestore,
-    organizationId
-  );
-
-  const inventoryRows: (typeof inventoryMovement.$inferInsert)[] =
-    restoreResults.map(({ productId, restoration }) => ({
-      id: crypto.randomUUID(),
-      organizationId,
-      productId,
-      userId,
-      type: "adjustment",
-      quantity: restoration.quantity,
-      notes: `Anulacion venta ${targetSale.id}`,
-      createdAt: cancelledAt,
-    }));
-
-  if (inventoryRows.length > 0) {
-    await tx.insert(inventoryMovement).values(inventoryRows);
-  }
-
-  await reverseCreditCharges(
-    tx,
-    chargeTransactions,
+  await restoreSaleInventory(tx, {
     organizationId,
-    targetSale.id,
-    cancelledAt
-  );
+    userId,
+    saleId: targetSale.id,
+    cancelledAt,
+  });
+
+  await reverseCreditSaleCharges(tx, {
+    organizationId,
+    saleId: targetSale.id,
+    cancelledAt,
+  });
 
   return {
     saleId: targetSale.id,

@@ -1,19 +1,22 @@
 import { and, asc, eq, gte, sql } from "drizzle-orm";
 import type { z } from "zod";
 import type { Database } from "@/database/drizzle/db";
-import { organization } from "@/database/drizzle/schema/auth.schema";
 import {
   creditAccount,
   creditTransaction,
 } from "@/database/drizzle/schema/credit.schema";
 import { customer } from "@/database/drizzle/schema/customer.schema";
-import { shift } from "@/database/drizzle/schema/pos.schema";
 import { payment, sale } from "@/database/drizzle/schema/sales.schema";
 import type { RegisterCreditPaymentSchema } from "@/features/credit/credit.schema";
+import { validateEnabledPaymentMethod } from "@/features/settings/payment-methods.server";
+import { assertOpenShiftForPayment } from "@/features/shifts/shift-operations.server";
 import {
-  getEnabledPaymentMethods,
-  parseOrganizationSettingsMetadata,
-} from "@/features/settings/settings.shared";
+  normalizeNumber,
+  normalizeOptionalString,
+  normalizeRequiredString,
+  resolveDate,
+  toPositiveInteger,
+} from "@/lib/domain-values.shared";
 
 type CreditPaymentDbExecutor = Pick<Database, "select" | "insert" | "update">;
 
@@ -29,104 +32,6 @@ type RegisterCreditPaymentInput = z.infer<
 export interface RegisterCreditPaymentContext {
   organizationId: string;
   userId: string;
-}
-
-function normalizeOptionalString(value?: string | null) {
-  if (value == null) {
-    return null;
-  }
-
-  const normalized = value.trim();
-  return normalized.length > 0 ? normalized : null;
-}
-
-function normalizeRequiredString(value: string, fieldName: string) {
-  const normalized = value.trim();
-  if (!normalized) {
-    throw new Error(`El campo "${fieldName}" es obligatorio`);
-  }
-
-  return normalized;
-}
-
-function toPositiveInteger(value: number, fieldName: string) {
-  if (!Number.isFinite(value) || value <= 0) {
-    throw new Error(
-      `El campo "${fieldName}" debe ser un número válido mayor a 0`
-    );
-  }
-
-  return Math.round(value);
-}
-
-function normalizeNumber(value: number | string | null | undefined) {
-  if (typeof value === "number") {
-    return Number.isFinite(value) ? value : 0;
-  }
-
-  if (typeof value === "string") {
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : 0;
-  }
-
-  return 0;
-}
-
-function resolveDate(input: number | undefined, fieldName: string) {
-  if (input === undefined) {
-    return new Date();
-  }
-
-  if (!Number.isFinite(input) || input < 0) {
-    throw new Error(`El campo "${fieldName}" no es una fecha válida`);
-  }
-
-  return new Date(Math.round(input));
-}
-
-async function validateShiftForPayment(
-  tx: CreditPaymentDbExecutor,
-  shiftId: string,
-  organizationId: string,
-  userId: string
-) {
-  const [targetShift] = await tx
-    .select({ id: shift.id, userId: shift.userId, status: shift.status })
-    .from(shift)
-    .where(and(eq(shift.id, shiftId), eq(shift.organizationId, organizationId)))
-    .limit(1);
-
-  if (!targetShift) {
-    throw new Error("Turno no encontrado para la organización activa");
-  }
-  if (targetShift.status !== "open") {
-    throw new Error("No se puede registrar pago en un turno cerrado");
-  }
-  if (targetShift.userId !== userId) {
-    throw new Error("Solo el cajero del turno puede registrar pagos");
-  }
-}
-
-async function validateEnabledPaymentMethod(
-  tx: CreditPaymentDbExecutor,
-  organizationId: string,
-  method: string
-) {
-  const [organizationRow] = await tx
-    .select({
-      metadata: organization.metadata,
-    })
-    .from(organization)
-    .where(eq(organization.id, organizationId))
-    .limit(1);
-  const enabledPaymentMethodIds = new Set(
-    getEnabledPaymentMethods(
-      parseOrganizationSettingsMetadata(organizationRow?.metadata)
-    ).map((paymentMethod) => paymentMethod.id)
-  );
-  if (!enabledPaymentMethodIds.has(method)) {
-    throw new Error(`Método de pago no habilitado: ${method}`);
-  }
 }
 
 async function fetchAndValidateCreditAccount(
@@ -311,12 +216,11 @@ export async function runRegisterCreditPayment(
   const createdAt = resolveDate(input.createdAt, "createdAt");
 
   const [, , accountRow] = await Promise.all([
-    validateShiftForPayment(
-      tx,
-      input.shiftId,
-      context.organizationId,
-      context.userId
-    ),
+    assertOpenShiftForPayment(tx, {
+      shiftId: input.shiftId,
+      organizationId: context.organizationId,
+      userId: context.userId,
+    }),
     validateEnabledPaymentMethod(tx, context.organizationId, method),
     fetchAndValidateCreditAccount(
       tx,

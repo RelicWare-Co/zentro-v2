@@ -1,9 +1,7 @@
 import type { z } from "zod";
 import { closeShiftArgsSchema } from "@/features/shifts/shifts.mutators";
-import {
-  buildExpectedAmountsByMethod,
-  normalizeNumber,
-} from "@/features/shifts/shifts.shared";
+import { buildExpectedAmountsByMethod } from "@/features/shifts/shifts.shared";
+import { normalizeNumber } from "@/lib/domain-values.shared";
 import { zql } from "@/zero/schema";
 import {
   assertOrgZeroContext,

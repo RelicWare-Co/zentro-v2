@@ -80,16 +80,28 @@ Files in a feature follow `<domain>.<role>.ts`, with Vike environment suffixes c
 ```
 features/sales/
   sales.schema.ts            # Zod contract — isomorphic, browser-safe
-  create-sale.server.ts      # authoritative server write logic
+  sale-totals.shared.ts     # pure calculation helpers — isomorphic, testable without DB
+  create-sale.server.ts      # authoritative server write logic (orchestrates operations)
   cancel-sale.server.ts
   sales.shared.ts            # client helpers
   hooks/ · components/ · sales-page.tsx
+features/shifts/
+  shift-operations.server.ts # reusable server operations (assertOpenCashierShift, etc.)
+features/settings/
+  payment-methods.server.ts  # reusable server operations (loadOrganizationSettings, etc.)
+features/inventory/
+  inventory-operations.server.ts  # reusable server operations (applyInventoryDeltas, etc.)
+features/credit/
+  credit-operations.server.ts     # reusable server operations (recordCreditSaleCharge, etc.)
 ```
 
 - **Schemas:** `features/<domain>/<domain>.schema.ts` — the Zod contract for that domain. Import from `@/features/<domain>/<domain>.schema`, not a top-level `schemas/` tree.
 - **Server logic:** `features/<domain>/*.server.ts` — Drizzle writes, SQL aggregation, audit logs, and other authoritative behavior. These may live anywhere in the feature folder; the `.server.ts` suffix enforces the Vike boundary.
+- **Operation modules:** `features/<domain>/<domain>-operations.server.ts` — reusable server-side operations that encapsulate cross-feature logic (shift validation, inventory deltas, credit charges, payment method validation). Server write logic (e.g. `create-sale.server.ts`) should orchestrate these operations instead of redefining the logic inline.
+- **Pure shared helpers:** `features/<domain>/*.shared.ts` — isomorphic, browser-safe helpers. Pure calculation functions (e.g. `sale-totals.shared.ts`) that don't need DB access can be extracted here for unit testability.
 - **Cross-feature schemas:** a schema lives with its owning domain. Non-owning consumers may import browser-safe `*.schema.ts` files across features. Examples: `customers` (customers + POS), `pos` (POS + shifts), and `modules` (Zero registry + admin).
 - `lib/` and `components/ui/` are for genuinely cross-cutting code only.
+- **Normalization helpers:** `lib/domain-values.shared.ts` is the canonical source for `normalizeOptionalString`, `normalizeRequiredString`, `normalizeNumber`, `toNonNegativeInteger`, `toInteger`, `toPositiveInteger`, `resolveDate`, and `resolveTimestamp`. Import from `@/lib/domain-values.shared` or `@/zero/sdk` (which re-exports them). Do not duplicate these in feature modules.
 
 ### Server app shell
 
@@ -150,7 +162,8 @@ Zero is the primary API for app data. Migration history lives in `MIGRATION_PLAN
 - `zero/schema.gen.ts` is generated: do not edit it. Regenerate it with `bun run zero:schema:gen` after changes to `database/drizzle/schema/*.schema.ts`.
 - `zero/schema.ts` re-exports `schema`, `zql`, row types, and `ZeroContext`. Import schema symbols from here, not `schema.gen.ts`.
 - `zero/context.ts` defines `ZeroContext { id, orgID, role, systemRole }` and registers it with Zero's `DefaultTypes`.
-- `zero/sdk.ts` is the internal Zero SDK facade. Feature slices and Zero composition roots import `defineZentroQuery`, `defineZentroMutator`, typed registry helpers, and shared auth/normalization helpers from here instead of importing `defineQuery` / `defineMutator` directly from `@rocicorp/zero`.
+- `zero/sdk.ts` is the internal Zero SDK facade (isomorphic). Feature slices and Zero composition roots import `defineZentroQuery`, `defineZentroMutator`, typed registry helpers, and shared auth/normalization helpers from here instead of importing `defineQuery` / `defineMutator` directly from `@rocicorp/zero`.
+- `zero/sdk.server.ts` is the server-only SDK extension. It exports `defineZentroServerMutator` (reduces boilerplate for server-backed mutators by extracting `drizzleTx`, validating context, and providing typed `auth`) and `requireServerDrizzleTransaction` (extracts the Drizzle transaction from a Zero mutator transaction). Server mutator files (`*.mutators.server.ts`) should use `defineZentroServerMutator` instead of manually checking `ctx` and `dbTransaction`.
 - `zero/queries.shared.ts` and `zero/mutators.shared.ts` hold browser-safe cross-slice helpers.
 - **Feature slices:** `features/<domain>/<domain>.queries.ts` exports `<domain>Queries`; `*.mutators.ts` exports `<domain>Mutators`; `*.mutators.server.ts` contains server-authoritative overrides when needed. See `docs/adr/0007-split-zero-registries-into-feature-slices.md`.
 - **Composition roots:** `zero/queries.ts`, `zero/mutators.ts`, and `zero/mutators.server.ts` only assemble feature slices into the registries Zero dispatches.
@@ -179,7 +192,7 @@ Zero is the primary API for app data. Migration history lives in `MIGRATION_PLAN
 1. Add a `defineZentroMutator` entry from `@/zero/sdk` to `features/<domain>/<domain>.mutators.ts` and await every `tx.mutate.*` call.
 2. Register a new domain slice in `zero/mutators.ts`.
 3. Validate identity against `args.organizationId` (or equivalent). Throw on mismatch so Zero rolls back the optimistic write and surfaces the error.
-4. Use `features/<domain>/<domain>.mutators.server.ts` plus `zero/mutators.server.ts` for hard server checks or side effects. Delegate authoritative work to feature `*.server.ts` helpers; the Drizzle transaction is `tx.dbTransaction.wrappedTransaction`.
+4. Use `features/<domain>/<domain>.mutators.server.ts` plus `zero/mutators.server.ts` for hard server checks or side effects. Use `defineZentroServerMutator` from `@/zero/sdk.server` to reduce boilerplate — it extracts the Drizzle transaction, validates context, and provides `{ drizzleTx, args, auth: { organizationId, userId, zeroContext } }`. Delegate authoritative work to feature `*.server.ts` helpers or `*-operations.server.ts` modules. For mutators that use Zero's own `tx.mutate` / `tx.run` (ZQL) instead of Drizzle, continue using `defineZentroMutator` from `@/zero/sdk`.
 5. Make mutators that need complete relationship graphs for accounting/settlement server-only/no-op on the client; client mutators can see only locally cached rows.
 6. Consume them with `const zero = useZero(); zero.mutate(mutators.<group>.<name>(args))`.
 
