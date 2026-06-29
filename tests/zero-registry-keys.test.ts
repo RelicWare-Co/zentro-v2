@@ -97,6 +97,7 @@ const EXPECTED_SERVER_MUTATOR_OVERRIDE_PATHS = [
   "organization.updateMemberRole",
   "organization.updateOrganization",
   "organization.updateSettings",
+  "products.registerInventoryMovement",
   "restaurants.addOrderItem",
   "restaurants.closeOrder",
   "restaurants.createArea",

@@ -107,7 +107,9 @@ export async function completeSplitSale(
     .click();
 
   const checkoutDialog = page.getByRole("dialog", { name: "Cobrar Orden" });
-  await checkoutDialog.getByRole("combobox").nth(2).click();
+  const paymentMethodComboboxes = checkoutDialog.getByRole("combobox");
+  const secondPaymentMethodCombobox = paymentMethodComboboxes.nth(1);
+  await secondPaymentMethodCombobox.click();
   await page.getByRole("option", { name: "Tarjeta" }).click();
   await page.getByPlaceholder("Monto").nth(1).fill(cardAmount);
   await page
