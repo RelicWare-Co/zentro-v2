@@ -4,7 +4,7 @@ import type { Database } from "@/database/drizzle/db";
 import { organization } from "@/database/drizzle/schema/auth.schema";
 import { organizationModuleEntitlement } from "@/database/drizzle/schema/feature.schema";
 import type { ModuleAccessState } from "@/features/modules/module-access.shared";
-import type { ModuleKey } from "@/features/modules/module-registry";
+import type { ModuleKey } from "@/features/modules/module-keys";
 import type { SetModuleEntitlementSchema } from "@/features/modules/modules.schema";
 import {
   buildModuleAccessStates,

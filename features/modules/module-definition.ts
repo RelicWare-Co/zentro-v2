@@ -1,3 +1,4 @@
+import type { PosSaleModeFactory } from "@/features/pos/sale-modes/types";
 import type { OrganizationSettings } from "@/features/settings/settings.shared";
 
 export type ModuleEntitlementStatus = "granted" | "blocked";
@@ -27,6 +28,11 @@ export interface ModuleDefinition<
     accessible: boolean;
     flags: Flags;
   }): ModuleNavigationItem[];
+  /**
+   * Return a static, stable list of POS sale mode factories for this module.
+   * Access checks belong in the adapter input so hook order never changes.
+   */
+  getPosSaleModes?(): PosSaleModeFactory[];
   key: Key;
   label: string;
 }

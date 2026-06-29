@@ -14,7 +14,8 @@ import { createZeroContext, createZeroTestDb } from "./helpers/zero-shifts";
 async function setRestaurantModuleEnabled(
   db: TestDb,
   organizationId: string,
-  enabled: boolean
+  enabled: boolean,
+  options: { kitchenDisplayEnabled?: boolean } = {}
 ) {
   await db
     .update(organization)
@@ -22,6 +23,11 @@ async function setRestaurantModuleEnabled(
       metadata: serializeOrganizationSettingsMetadata({
         modules: {
           restaurants: { enabled },
+        },
+        restaurants: {
+          kitchen: {
+            displayEnabled: options.kitchenDisplayEnabled ?? false,
+          },
         },
       } as any),
     })
@@ -35,7 +41,9 @@ describe("module access control", () => {
       const { organizationId, userId } = await seedOrganizationWithMember(db, {
         memberRole: "owner",
       });
-      await setRestaurantModuleEnabled(db, organizationId, true);
+      await setRestaurantModuleEnabled(db, organizationId, true, {
+        kitchenDisplayEnabled: true,
+      });
 
       const zeroDb = createZeroTestDb(db);
       const ctx = createZeroContext(userId, organizationId);
@@ -45,7 +53,7 @@ describe("module access control", () => {
       expect(result.modules.restaurants.navigation.length).toBeGreaterThan(0);
       expect(
         result.modules.restaurants.navigation.some(
-          (n) => n.id === "restaurants"
+          (n) => n.id === "restaurants-kitchen"
         )
       ).toBe(true);
 

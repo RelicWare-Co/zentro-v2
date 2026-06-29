@@ -3,8 +3,8 @@ import type { z } from "zod";
 import type { Database } from "@/database/drizzle/db";
 import { member, organization } from "@/database/drizzle/schema/auth.schema";
 import { organizationModuleEntitlement } from "@/database/drizzle/schema/feature.schema";
-import { MODULE_KEYS } from "@/features/modules/module-registry";
-import { getRestaurantModuleToggleSettings } from "@/features/restaurants/restaurants.module";
+import { MODULE_KEYS } from "@/features/modules/module-keys";
+import { getRestaurantModuleToggleSettings } from "@/features/restaurants/restaurants-settings.shared";
 import {
   buildModuleAccessStates,
   buildViewerAccess,

@@ -12,7 +12,6 @@ import {
   restaurantTable,
 } from "@/database/drizzle/schema/restaurant.schema";
 import { isOrganizationManagerRole } from "@/features/organization/access-control.shared";
-import { getRestaurantModuleSettings } from "@/features/restaurants/restaurants.module";
 import type {
   AddRestaurantOrderItemInputSchema,
   CloseRestaurantOrderInputSchema,
@@ -28,6 +27,7 @@ import type {
   UpdateRestaurantOrderMetaInputSchema,
   UpdateRestaurantTableInputSchema,
 } from "@/features/restaurants/restaurants.schema";
+import { getRestaurantModuleSettings } from "@/features/restaurants/restaurants-settings.shared";
 import { createCoreSale } from "@/features/sales/create-sale.server";
 import { parseOrganizationSettingsMetadata } from "@/features/settings/settings.shared";
 

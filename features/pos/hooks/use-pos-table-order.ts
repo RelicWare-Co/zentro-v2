@@ -1,6 +1,7 @@
 import { notifications } from "@mantine/notifications";
 import { useQuery as useZeroQuery } from "@rocicorp/zero/react";
 import { useCallback, useMemo, useState } from "react";
+import type { PosTableOrderItemStatus } from "@/features/pos/sale-modes/types";
 import type { CartItem, CartItemModifier, Product } from "@/features/pos/types";
 import { calculateCartTotals } from "@/features/pos/utils";
 import {
@@ -18,8 +19,6 @@ import { queries } from "@/zero/queries";
 
 type TableOpenOrder = NonNullable<RestaurantTableDetail["openOrder"]>;
 type TableOrderItem = TableOpenOrder["items"][number];
-
-export type PosTableOrderItemStatus = "draft" | "sent" | "ready" | "served";
 
 function getErrorDescription(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
@@ -62,10 +61,13 @@ function buildTableCartItem(item: TableOrderItem): CartItem {
  */
 export function usePosTableOrder(
   activeOrganizationId: string | null,
-  discountInput = "0"
+  discountInput = "0",
+  enabled = true
 ) {
   const [activeTableId, setActiveTableId] = useState<string | null>(null);
-  const tableDetailQuery = useRestaurantTableDetail(activeTableId);
+  const tableDetailQuery = useRestaurantTableDetail(
+    enabled ? activeTableId : null
+  );
   const table = tableDetailQuery.data?.table ?? null;
   const openOrder = tableDetailQuery.data?.openOrder ?? null;
   const [organizationRows] = useZeroQuery(queries.organization.current());
@@ -105,9 +107,15 @@ export function usePosTableOrder(
     return statuses;
   }, [activeItems]);
 
-  const enterTable = useCallback((tableId: string) => {
-    setActiveTableId(tableId);
-  }, []);
+  const enterTable = useCallback(
+    (tableId: string) => {
+      if (!enabled) {
+        return;
+      }
+      setActiveTableId(tableId);
+    },
+    [enabled]
+  );
 
   const exitTable = useCallback(() => {
     setActiveTableId(null);
@@ -115,7 +123,7 @@ export function usePosTableOrder(
 
   const addProduct = useCallback(
     async (product: Product, modifiers: CartItemModifier[]) => {
-      if (!activeTableId) {
+      if (!(enabled && activeTableId)) {
         return;
       }
       try {
@@ -137,7 +145,7 @@ export function usePosTableOrder(
         });
       }
     },
-    [activeTableId, addItemMutation]
+    [enabled, activeTableId, addItemMutation]
   );
 
   const updateItemQuantity = useCallback(

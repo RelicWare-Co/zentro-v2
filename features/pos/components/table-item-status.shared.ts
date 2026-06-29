@@ -1,4 +1,4 @@
-import type { PosTableOrderItemStatus } from "@/features/pos/hooks/use-pos-table-order";
+import type { PosTableOrderItemStatus } from "@/features/pos/sale-modes/types";
 import { getOrderItemStatusLabel } from "@/features/restaurants/restaurants-ui.shared";
 
 const itemStatusBadgeClassName: Record<PosTableOrderItemStatus, string> = {

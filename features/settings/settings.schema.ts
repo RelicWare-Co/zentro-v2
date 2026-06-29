@@ -6,7 +6,7 @@ import {
 import {
   restaurantModuleSettingsSchema,
   restaurantModuleToggleSettingsSchema,
-} from "@/features/restaurants/restaurants.module";
+} from "@/features/restaurants/restaurants-settings.shared";
 import {
   normalizePaymentMethodId,
   PAYMENT_METHOD_ID_PATTERN,

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { MODULE_KEYS } from "@/features/modules/module-registry";
+import { MODULE_KEYS } from "@/features/modules/module-keys";
 
 export const ModuleKeySchema = z.enum(MODULE_KEYS);
 

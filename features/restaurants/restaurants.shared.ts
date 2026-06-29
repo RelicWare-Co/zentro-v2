@@ -1,11 +1,11 @@
 import type { z } from "zod";
-import { getRestaurantModuleSettings } from "@/features/restaurants/restaurants.module";
 import type {
   KitchenBoardSchema,
   RestaurantBootstrapSchema,
   RestaurantConfigurationSchema,
   RestaurantTableDetailSchema,
 } from "@/features/restaurants/restaurants.schema";
+import { getRestaurantModuleSettings } from "@/features/restaurants/restaurants-settings.shared";
 import {
   getEnabledPaymentMethods,
   type OrganizationSettings,

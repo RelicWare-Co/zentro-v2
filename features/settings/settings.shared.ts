@@ -1,11 +1,11 @@
 import type {
   RestaurantModuleSettings,
   RestaurantModuleToggleSettings,
-} from "@/features/restaurants/restaurants.module";
+} from "@/features/restaurants/restaurants-settings.shared";
 import {
   DEFAULT_RESTAURANT_MODULE_SETTINGS,
   DEFAULT_RESTAURANT_MODULE_TOGGLE_SETTINGS,
-} from "@/features/restaurants/restaurants.module";
+} from "@/features/restaurants/restaurants-settings.shared";
 
 const PAYMENT_METHOD_CATALOG = [
   {

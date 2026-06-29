@@ -3,11 +3,7 @@ import type {
   ModuleEntitlementStatus,
   ModuleNavigationItem,
 } from "./module-definition";
-import {
-  getModuleDefinition,
-  MODULE_KEYS,
-  type ModuleKey,
-} from "./module-registry";
+import type { ModuleKey } from "./module-keys";
 
 export interface ModuleAccessState {
   accessible: boolean;
@@ -21,27 +17,6 @@ export interface ModuleAccessState {
   navigation: ModuleNavigationItem[];
   requiresPlatformAdmin: boolean;
 }
-
-const _MODULE_CATALOG = Object.fromEntries(
-  MODULE_KEYS.map((moduleKey) => {
-    const definition = getModuleDefinition(moduleKey);
-    return [
-      moduleKey,
-      {
-        label: definition.label,
-        activationPolicy: definition.activationPolicy,
-        defaultEntitlementStatus: definition.defaultEntitlementStatus,
-      },
-    ];
-  })
-) as Record<
-  ModuleKey,
-  {
-    label: string;
-    activationPolicy: ModuleActivationPolicy;
-    defaultEntitlementStatus: ModuleEntitlementStatus;
-  }
->;
 
 export function isModuleEntitled(status: ModuleEntitlementStatus) {
   return status === "granted";

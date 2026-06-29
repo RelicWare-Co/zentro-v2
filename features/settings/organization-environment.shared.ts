@@ -4,11 +4,8 @@ import {
   type ModuleAccessState,
 } from "@/features/modules/module-access.shared";
 import type { ModuleEntitlementStatus } from "@/features/modules/module-definition";
-import {
-  getModuleDefinition,
-  MODULE_KEYS,
-  type ModuleKey,
-} from "@/features/modules/module-registry";
+import { MODULE_KEYS, type ModuleKey } from "@/features/modules/module-keys";
+import { getModuleDefinition } from "@/features/modules/module-registry";
 import {
   isOrganizationManagerRole,
   isPlatformAdminRole,
