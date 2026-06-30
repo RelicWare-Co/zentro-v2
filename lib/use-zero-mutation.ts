@@ -20,19 +20,37 @@ function toZeroMutationError(
   return new Error(details.error.message || "La mutación de Zero falló");
 }
 
-export async function waitForZeroMutation(result: ZeroMutationResult) {
+function notifyServerRejection(
+  serverResult: Extract<ZeroMutationDetails, { type: "error" }>
+) {
+  notifications.show({
+    title: "El servidor rechazó el cambio",
+    message: serverResult.error.message || "Zero revertirá el cambio.",
+    color: "red",
+  });
+}
+
+export async function waitForZeroMutation(
+  result: ZeroMutationResult,
+  options?: { readonly awaitServer?: boolean }
+) {
   const clientResult = await result.client;
   if (clientResult.type === "error") {
     throw toZeroMutationError(clientResult);
   }
 
+  if (options?.awaitServer) {
+    const serverResult = await result.server;
+    if (serverResult.type === "error") {
+      notifyServerRejection(serverResult);
+      throw toZeroMutationError(serverResult);
+    }
+    return;
+  }
+
   result.server.then((serverResult) => {
     if (serverResult.type === "error") {
-      notifications.show({
-        title: "El servidor rechazó el cambio",
-        message: serverResult.error.message || "Zero revertirá el cambio.",
-        color: "red",
-      });
+      notifyServerRejection(serverResult);
     }
   });
 }
