@@ -161,17 +161,32 @@ export function buildPreparedModifiers(
 
 export function buildPreparedItems(
   items: CreateSaleInput["items"],
-  productById: Map<string, ProductInfo>
+  productById: Map<string, ProductInfo>,
+  options: { saleLevelDiscount?: number } = {}
 ) {
   const stockDeltas = new Map<string, number>();
   const addStockDelta = (productId: string, delta: number) => {
     stockDeltas.set(productId, (stockDeltas.get(productId) ?? 0) + delta);
   };
 
-  const preparedItems: PreparedItem[] = [];
+  const saleLevelDiscount = toNonNegativeInteger(
+    options.saleLevelDiscount ?? 0,
+    "saleLevelDiscount"
+  );
+  const drafts: Array<{
+    baseDiscountAmount: number;
+    baseProduct: ProductInfo;
+    lineSubtotal: number;
+    modifiersSubtotal: number;
+    preparedModifiers: PreparedModifier[];
+    quantity: number;
+    saleItemId: string;
+    taxRate: number;
+    taxableBaseBeforeSaleDiscount: number;
+    unitPrice: number;
+  }> = [];
   let subtotal = 0;
-  let taxAmount = 0;
-  let itemDiscountAmount = 0;
+  let taxableBaseBeforeSaleDiscount = 0;
 
   for (let itemIndex = 0; itemIndex < items.length; itemIndex += 1) {
     const item = items[itemIndex];
@@ -198,13 +213,10 @@ export function buildPreparedItems(
       item.taxRate ?? baseProduct.taxRate,
       `items[${itemIndex}].taxRate`
     );
-    const lineDiscountAmount = toNonNegativeInteger(
+    const baseDiscountAmount = toNonNegativeInteger(
       item.discountAmount ?? 0,
       `items[${itemIndex}].discountAmount`
     );
-
-    const lineSubtotal = quantity * unitPrice;
-    const lineTaxAmount = Math.round((lineSubtotal * lineTaxRate) / 100);
 
     const saleItemId = crypto.randomUUID();
     const { preparedModifiers, modifiersSubtotal } = buildPreparedModifiers(
@@ -216,29 +228,72 @@ export function buildPreparedItems(
       (productId, delta) => addStockDelta(productId, delta)
     );
 
-    const lineTotalAmount =
-      lineSubtotal + modifiersSubtotal + lineTaxAmount - lineDiscountAmount;
-    if (lineTotalAmount < 0) {
+    const lineSubtotal = quantity * unitPrice;
+    const lineTaxableBaseBeforeSaleDiscount =
+      lineSubtotal + modifiersSubtotal - baseDiscountAmount;
+    if (lineTaxableBaseBeforeSaleDiscount < 0) {
       throw new Error(
-        `El total del ítem ${itemIndex + 1} no puede ser negativo`
+        `La base gravable del ítem ${itemIndex + 1} no puede ser negativa`
       );
     }
 
-    preparedItems.push({
-      id: saleItemId,
-      productId: baseProduct.id,
+    drafts.push({
+      baseDiscountAmount,
+      baseProduct,
+      lineSubtotal,
+      modifiersSubtotal,
+      preparedModifiers,
       quantity,
-      unitPrice,
-      subtotal: lineSubtotal,
+      saleItemId,
       taxRate: lineTaxRate,
-      taxAmount: lineTaxAmount,
-      discountAmount: lineDiscountAmount,
-      totalAmount: lineTotalAmount,
-      modifiers: preparedModifiers,
+      taxableBaseBeforeSaleDiscount: lineTaxableBaseBeforeSaleDiscount,
+      unitPrice,
     });
 
     addStockDelta(baseProduct.id, -quantity);
     subtotal += lineSubtotal + modifiersSubtotal;
+    taxableBaseBeforeSaleDiscount += lineTaxableBaseBeforeSaleDiscount;
+  }
+
+  if (saleLevelDiscount > taxableBaseBeforeSaleDiscount) {
+    throw new Error("El total de la venta no puede ser negativo");
+  }
+
+  const saleDiscountAllocations = allocateProportionalDiscount(
+    drafts.map((draft) => draft.taxableBaseBeforeSaleDiscount),
+    saleLevelDiscount
+  );
+
+  const preparedItems: PreparedItem[] = [];
+  let taxAmount = 0;
+  let itemDiscountAmount = 0;
+
+  for (let itemIndex = 0; itemIndex < drafts.length; itemIndex += 1) {
+    const draft = drafts[itemIndex];
+    const lineDiscountAmount =
+      draft.baseDiscountAmount + (saleDiscountAllocations[itemIndex] ?? 0);
+    const taxableBase =
+      draft.lineSubtotal + draft.modifiersSubtotal - lineDiscountAmount;
+    const lineTaxAmount = Math.round((taxableBase * draft.taxRate) / 100);
+    const lineTotalAmount =
+      draft.lineSubtotal +
+      draft.modifiersSubtotal +
+      lineTaxAmount -
+      lineDiscountAmount;
+
+    preparedItems.push({
+      id: draft.saleItemId,
+      productId: draft.baseProduct.id,
+      quantity: draft.quantity,
+      unitPrice: draft.unitPrice,
+      subtotal: draft.lineSubtotal,
+      taxRate: draft.taxRate,
+      taxAmount: lineTaxAmount,
+      discountAmount: lineDiscountAmount,
+      totalAmount: lineTotalAmount,
+      modifiers: draft.preparedModifiers,
+    });
+
     taxAmount += lineTaxAmount;
     itemDiscountAmount += lineDiscountAmount;
   }
@@ -250,6 +305,33 @@ export function buildPreparedItems(
     taxAmount,
     itemDiscountAmount,
   };
+}
+
+function allocateProportionalDiscount(bases: number[], discountAmount: number) {
+  if (discountAmount === 0) {
+    return bases.map(() => 0);
+  }
+
+  const totalBase = bases.reduce((sum, base) => sum + base, 0);
+  if (totalBase <= 0) {
+    return bases.map(() => 0);
+  }
+
+  const allocations = bases.map((base) =>
+    Math.floor((discountAmount * base) / totalBase)
+  );
+  let remaining =
+    discountAmount - allocations.reduce((sum, amount) => sum + amount, 0);
+
+  for (let index = 0; index < allocations.length && remaining > 0; index += 1) {
+    if (bases[index] <= allocations[index]) {
+      continue;
+    }
+    allocations[index] += 1;
+    remaining -= 1;
+  }
+
+  return allocations;
 }
 
 export function normalizeAndValidatePayments(

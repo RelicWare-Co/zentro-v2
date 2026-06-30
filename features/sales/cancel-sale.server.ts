@@ -62,7 +62,7 @@ function validateCreditTransactionRules(
   paymentTransactions: Array<{ id: string }>,
   targetSale: { status: string; id: string }
 ) {
-  if (paymentRows.length > 0) {
+  if (targetSale.status !== "completed" && paymentRows.length > 0) {
     throw new Error("No se puede anular una venta con cobros registrados");
   }
 
@@ -75,6 +75,48 @@ function validateCreditTransactionRules(
       "La venta a crédito no tiene un cargo asociado para poder anularse"
     );
   }
+}
+
+async function insertPaymentReversals(
+  tx: CancelSaleDbExecutor,
+  paymentRows: Array<{
+    amount: number;
+    appliedAmount: number;
+    changeAmount: number;
+    id: string;
+    method: string;
+    reference: string | null;
+    saleId: string | null;
+    shiftId: string;
+  }>,
+  organizationId: string,
+  cancelledAt: Date
+) {
+  const reversiblePayments = paymentRows.filter(
+    (paymentRow) =>
+      paymentRow.amount !== 0 ||
+      paymentRow.appliedAmount !== 0 ||
+      paymentRow.changeAmount !== 0
+  );
+
+  if (reversiblePayments.length === 0) {
+    return;
+  }
+
+  await tx.insert(payment).values(
+    reversiblePayments.map((paymentRow) => ({
+      id: crypto.randomUUID(),
+      organizationId,
+      saleId: paymentRow.saleId,
+      shiftId: paymentRow.shiftId,
+      method: paymentRow.method,
+      reference: `reversal:${paymentRow.id}`,
+      amount: -paymentRow.amount,
+      appliedAmount: -paymentRow.appliedAmount,
+      changeAmount: -paymentRow.changeAmount,
+      createdAt: cancelledAt,
+    }))
+  );
 }
 
 export async function runCancelSale(
@@ -111,15 +153,23 @@ export async function runCancelSale(
           )
         ),
       tx
-        .select({ id: payment.id })
+        .select({
+          id: payment.id,
+          saleId: payment.saleId,
+          shiftId: payment.shiftId,
+          method: payment.method,
+          reference: payment.reference,
+          amount: payment.amount,
+          appliedAmount: payment.appliedAmount,
+          changeAmount: payment.changeAmount,
+        })
         .from(payment)
         .where(
           and(
             eq(payment.organizationId, organizationId),
             eq(payment.saleId, targetSale.id)
           )
-        )
-        .limit(1),
+        ),
       tx
         .select({ id: creditTransaction.id })
         .from(creditTransaction)
@@ -154,6 +204,15 @@ export async function runCancelSale(
 
   if (cancelledRows.length === 0) {
     throw new Error("La venta ya está anulada");
+  }
+
+  if (targetSale.status === "completed") {
+    await insertPaymentReversals(
+      tx,
+      salePaymentRows,
+      organizationId,
+      cancelledAt
+    );
   }
 
   await restoreSaleInventory(tx, {

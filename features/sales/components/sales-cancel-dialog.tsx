@@ -13,9 +13,8 @@ export function SalesCancelDialog() {
     >
       <Stack gap="lg">
         <Text c="dimmed" size="sm">
-          Solo se pueden anular ventas sin cobros registrados. La anulación
-          revertirá inventario y saldos de crédito pendientes, y no se puede
-          deshacer.
+          La anulación revertirá inventario, cobros aplicados y saldos de
+          crédito pendientes. Esta acción no se puede deshacer.
         </Text>
         <Group justify="flex-end">
           <Button

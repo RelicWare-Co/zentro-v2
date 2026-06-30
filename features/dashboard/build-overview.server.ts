@@ -49,8 +49,11 @@ type DashboardOverview = z.infer<typeof DashboardOverviewSchema>;
 interface AggregateSalesMetrics {
   avgTicket: number;
   distinctCustomers: number;
+  grossSales: number;
+  netRevenue: number;
   revenue: number;
   salesCount: number;
+  taxCollected: number;
 }
 
 const TREND_DAYS = 7;
@@ -83,11 +86,15 @@ function toTimestamp(value: Date | number | string | null | undefined) {
 function normalizeSalesMetrics(
   row: AggregateSalesMetrics | undefined
 ): AggregateSalesMetrics {
+  const netRevenue = normalizeNumber(row?.netRevenue);
   return {
-    revenue: normalizeNumber(row?.revenue),
-    salesCount: normalizeNumber(row?.salesCount),
     avgTicket: normalizeNumber(row?.avgTicket),
     distinctCustomers: normalizeNumber(row?.distinctCustomers),
+    grossSales: normalizeNumber(row?.grossSales),
+    netRevenue,
+    revenue: netRevenue,
+    salesCount: normalizeNumber(row?.salesCount),
+    taxCollected: normalizeNumber(row?.taxCollected),
   };
 }
 
@@ -105,15 +112,23 @@ function productAtStockRiskSql(lowStockThreshold: number) {
 }
 
 function buildSalesTrend(
-  rows: Array<{ dateKey: string; revenue: number; salesCount: number }>,
+  rows: Array<{
+    dateKey: string;
+    grossSales: number;
+    netRevenue: number;
+    salesCount: number;
+    taxCollected: number;
+  }>,
   today: ZonedDateParts
 ) {
   const trendByDate = new Map(
     rows.map((row) => [
       row.dateKey,
       {
-        revenue: normalizeNumber(row.revenue),
+        grossSales: normalizeNumber(row.grossSales),
+        netRevenue: normalizeNumber(row.netRevenue),
         salesCount: normalizeNumber(row.salesCount),
+        taxCollected: normalizeNumber(row.taxCollected),
       },
     ])
   );
@@ -126,15 +141,33 @@ function buildSalesTrend(
 
     return {
       dateKey,
-      revenue: point?.revenue ?? 0,
+      grossSales: point?.grossSales ?? 0,
+      netRevenue: point?.netRevenue ?? 0,
+      taxCollected: point?.taxCollected ?? 0,
+      revenue: point?.netRevenue ?? 0,
       salesCount: point?.salesCount ?? 0,
     };
   });
 }
 
+function buildCollectedTotal(
+  rows: Array<{
+    appliedAmount: number | string | null;
+    amount: number | string | null;
+    changeAmount: number | string | null;
+    method: string;
+    saleId: string | null;
+    saleTotalAmount: number | string | null;
+  }>
+) {
+  return buildPaymentMix(rows).reduce((total, row) => total + row.amount, 0);
+}
+
 function buildPaymentMix(
   rows: Array<{
+    appliedAmount: number | string | null;
     amount: number | string | null;
+    changeAmount: number | string | null;
     method: string;
     saleId: string | null;
     saleTotalAmount: number | string | null;
@@ -145,6 +178,10 @@ function buildPaymentMix(
     rows.map((row) => ({
       method: row.method,
       amount: normalizeNumber(row.amount),
+      appliedAmount:
+        row.appliedAmount === null ? null : normalizeNumber(row.appliedAmount),
+      changeAmount:
+        row.changeAmount === null ? null : normalizeNumber(row.changeAmount),
       saleId: row.saleId,
       saleTotalAmount:
         row.saleTotalAmount === null
@@ -281,6 +318,7 @@ export async function runBuildDashboardOverview(
   const salesTrendDays = db
     .select({
       dateKey: saleDateKey.as("date_key"),
+      taxAmount: sale.taxAmount,
       totalAmount: sale.totalAmount,
     })
     .from(sale)
@@ -305,6 +343,7 @@ export async function runBuildDashboardOverview(
     pendingCreditRows,
     trendRows,
     paymentMixRows,
+    monthPaymentRows,
     topProductsRows,
     lowStockProductRows,
     recentSalesRows,
@@ -329,10 +368,13 @@ export async function runBuildDashboardOverview(
     salesWindow.shiftIds.length > 0
       ? db
           .select({
-            revenue: sql<number>`coalesce(sum(${sale.totalAmount}), 0)`,
+            grossSales: sql<number>`coalesce(sum(${sale.totalAmount}), 0)`,
+            netRevenue: sql<number>`coalesce(sum(${sale.totalAmount} - ${sale.taxAmount}), 0)`,
+            revenue: sql<number>`coalesce(sum(${sale.totalAmount} - ${sale.taxAmount}), 0)`,
             salesCount: sql<number>`count(*)`,
-            avgTicket: sql<number>`coalesce(avg(${sale.totalAmount}), 0)`,
+            avgTicket: sql<number>`coalesce(avg(${sale.totalAmount} - ${sale.taxAmount}), 0)`,
             distinctCustomers: sql<number>`count(distinct ${sale.customerId})`,
+            taxCollected: sql<number>`coalesce(sum(${sale.taxAmount}), 0)`,
           })
           .from(sale)
           .where(
@@ -342,10 +384,13 @@ export async function runBuildDashboardOverview(
     salesWindow.previousShiftId
       ? db
           .select({
-            revenue: sql<number>`coalesce(sum(${sale.totalAmount}), 0)`,
+            grossSales: sql<number>`coalesce(sum(${sale.totalAmount}), 0)`,
+            netRevenue: sql<number>`coalesce(sum(${sale.totalAmount} - ${sale.taxAmount}), 0)`,
+            revenue: sql<number>`coalesce(sum(${sale.totalAmount} - ${sale.taxAmount}), 0)`,
             salesCount: sql<number>`count(*)`,
-            avgTicket: sql<number>`coalesce(avg(${sale.totalAmount}), 0)`,
+            avgTicket: sql<number>`coalesce(avg(${sale.totalAmount} - ${sale.taxAmount}), 0)`,
             distinctCustomers: sql<number>`count(distinct ${sale.customerId})`,
+            taxCollected: sql<number>`coalesce(sum(${sale.taxAmount}), 0)`,
           })
           .from(sale)
           .where(
@@ -357,8 +402,11 @@ export async function runBuildDashboardOverview(
       : Promise.resolve([]),
     db
       .select({
-        revenue: sql<number>`coalesce(sum(${sale.totalAmount}), 0)`,
+        grossSales: sql<number>`coalesce(sum(${sale.totalAmount}), 0)`,
+        netRevenue: sql<number>`coalesce(sum(${sale.totalAmount} - ${sale.taxAmount}), 0)`,
+        revenue: sql<number>`coalesce(sum(${sale.totalAmount} - ${sale.taxAmount}), 0)`,
         salesCount: sql<number>`count(*)`,
+        taxCollected: sql<number>`coalesce(sum(${sale.taxAmount}), 0)`,
       })
       .from(sale)
       .where(
@@ -370,8 +418,11 @@ export async function runBuildDashboardOverview(
       ),
     db
       .select({
-        revenue: sql<number>`coalesce(sum(${sale.totalAmount}), 0)`,
+        grossSales: sql<number>`coalesce(sum(${sale.totalAmount}), 0)`,
+        netRevenue: sql<number>`coalesce(sum(${sale.totalAmount} - ${sale.taxAmount}), 0)`,
+        revenue: sql<number>`coalesce(sum(${sale.totalAmount} - ${sale.taxAmount}), 0)`,
         salesCount: sql<number>`count(*)`,
+        taxCollected: sql<number>`coalesce(sum(${sale.taxAmount}), 0)`,
       })
       .from(sale)
       .where(
@@ -441,8 +492,11 @@ export async function runBuildDashboardOverview(
     db
       .select({
         dateKey: salesTrendDays.dateKey,
-        revenue: sql<number>`coalesce(sum(${salesTrendDays.totalAmount}), 0)`,
+        grossSales: sql<number>`coalesce(sum(${salesTrendDays.totalAmount}), 0)`,
+        netRevenue: sql<number>`coalesce(sum(${salesTrendDays.totalAmount} - ${salesTrendDays.taxAmount}), 0)`,
+        revenue: sql<number>`coalesce(sum(${salesTrendDays.totalAmount} - ${salesTrendDays.taxAmount}), 0)`,
         salesCount: sql<number>`count(*)`,
+        taxCollected: sql<number>`coalesce(sum(${salesTrendDays.taxAmount}), 0)`,
       })
       .from(salesTrendDays)
       .groupBy(salesTrendDays.dateKey)
@@ -452,6 +506,8 @@ export async function runBuildDashboardOverview(
           .select({
             method: payment.method,
             amount: payment.amount,
+            appliedAmount: payment.appliedAmount,
+            changeAmount: payment.changeAmount,
             saleId: payment.saleId,
             saleTotalAmount: sale.totalAmount,
           })
@@ -471,6 +527,31 @@ export async function runBuildDashboardOverview(
             )
           )
       : Promise.resolve([]),
+    db
+      .select({
+        method: payment.method,
+        amount: payment.amount,
+        appliedAmount: payment.appliedAmount,
+        changeAmount: payment.changeAmount,
+        saleId: payment.saleId,
+        saleTotalAmount: sale.totalAmount,
+      })
+      .from(payment)
+      .leftJoin(
+        sale,
+        and(
+          eq(sale.id, payment.saleId),
+          eq(sale.organizationId, auth.organizationId)
+        )
+      )
+      .where(
+        and(
+          eq(payment.organizationId, auth.organizationId),
+          gte(payment.createdAt, monthStart),
+          lt(payment.createdAt, nextMonthStart),
+          or(isNull(payment.saleId), ne(sale.status, "cancelled"))
+        )
+      ),
     db
       .select({
         productId: saleItem.productId,
@@ -565,6 +646,11 @@ export async function runBuildDashboardOverview(
   const currentMonth = currentMonthRows[0];
   const previousMonth = previousMonthRows[0];
   const paymentMix = buildPaymentMix(paymentMixRows);
+  const monthCollectedTotal = buildCollectedTotal(monthPaymentRows);
+  const shiftCollectedTotal = paymentMix.reduce(
+    (total, row) => total + row.amount,
+    0
+  );
 
   return {
     generatedAt: now.getTime(),
@@ -584,13 +670,27 @@ export async function runBuildDashboardOverview(
       closedAt: salesWindow.closedAt,
     },
     stats: {
+      shiftGrossSales: shiftMetrics.grossSales,
+      shiftNetRevenue: shiftMetrics.netRevenue,
+      shiftTaxCollected: shiftMetrics.taxCollected,
+      shiftCollectedTotal,
       shiftRevenue: shiftMetrics.revenue,
       shiftSalesCount: shiftMetrics.salesCount,
       shiftAvgTicket: shiftMetrics.avgTicket,
       shiftCustomersServed: shiftMetrics.distinctCustomers,
+      previousShiftGrossSales: previousShiftMetrics.grossSales,
+      previousShiftNetRevenue: previousShiftMetrics.netRevenue,
+      previousShiftTaxCollected: previousShiftMetrics.taxCollected,
       previousShiftRevenue: previousShiftMetrics.revenue,
+      monthGrossSales: normalizeNumber(currentMonth?.grossSales),
+      monthNetRevenue: normalizeNumber(currentMonth?.netRevenue),
+      monthTaxCollected: normalizeNumber(currentMonth?.taxCollected),
+      monthCollectedTotal,
       monthRevenue: normalizeNumber(currentMonth?.revenue),
       monthSalesCount: normalizeNumber(currentMonth?.salesCount),
+      previousMonthGrossSales: normalizeNumber(previousMonth?.grossSales),
+      previousMonthNetRevenue: normalizeNumber(previousMonth?.netRevenue),
+      previousMonthTaxCollected: normalizeNumber(previousMonth?.taxCollected),
       previousMonthRevenue: normalizeNumber(previousMonth?.revenue),
       activeProductsCount: normalizeNumber(activeProductsRows[0]?.total),
       activeCustomersCount: normalizeNumber(activeCustomersRows[0]?.total),
@@ -601,12 +701,15 @@ export async function runBuildDashboardOverview(
     salesTrend: buildSalesTrend(
       trendRows.map((row) => ({
         dateKey: row.dateKey,
-        revenue: normalizeNumber(row.revenue),
+        grossSales: normalizeNumber(row.grossSales),
+        netRevenue: normalizeNumber(row.netRevenue),
         salesCount: normalizeNumber(row.salesCount),
+        taxCollected: normalizeNumber(row.taxCollected),
       })),
       today
     ),
     paymentMix,
+    collectedPaymentMix: paymentMix,
     paymentMethodLabels: buildPaymentMethodLabelMap(
       buildPaymentMethodOptions(
         getAllPaymentMethods(organizationSettings),

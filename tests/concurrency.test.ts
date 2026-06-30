@@ -1,8 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import { eq } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
+// biome-ignore lint/performance/noNamespaceImport: drizzle requires all schemas as a namespace object
+import * as schema from "@/database/drizzle/schema";
 import { creditAccount } from "@/database/drizzle/schema/credit.schema";
 import { product } from "@/database/drizzle/schema/inventory.schema";
-import { sale } from "@/database/drizzle/schema/sales.schema";
+import { payment, sale } from "@/database/drizzle/schema/sales.schema";
 import { createCoreSale } from "@/features/sales/create-sale.server";
 import {
   seedCustomer,
@@ -10,6 +14,7 @@ import {
   seedProduct,
   seedShift,
 } from "./helpers/seed";
+import type { TestDb } from "./helpers/test-db";
 import { createTestDb } from "./helpers/test-db";
 import { registerCreditPaymentViaZero } from "./helpers/zero-credit";
 import { cancelSaleViaZero } from "./helpers/zero-sales";
@@ -187,5 +192,133 @@ describe("concurrency", () => {
     expect(updatedAccount?.balance).toBeGreaterThanOrEqual(0);
 
     await cleanup();
+  });
+
+  test("simultaneous unassigned credit payments do not over-allocate the same sale", async () => {
+    const { db, cleanup, databaseUrl } = await createTestDb();
+    const firstClient = postgres(databaseUrl, { max: 1 });
+    const secondClient = postgres(databaseUrl, { max: 1 });
+    const firstDb = drizzle(firstClient, { schema }) as TestDb;
+    const secondDb = drizzle(secondClient, { schema }) as TestDb;
+
+    try {
+      const { organizationId, userId } = await seedOrganizationWithMember(db);
+      const firstZeroDb = createZeroTestDb(firstDb);
+      const secondZeroDb = createZeroTestDb(secondDb);
+      const zeroCtx = createZeroContext(userId, organizationId);
+      const [productId, customerId, shiftId] = await Promise.all([
+        seedProduct(db, {
+          organizationId,
+          name: "Concurrent Credit Allocation",
+          price: 10_000,
+          stock: 10,
+          trackInventory: true,
+        }),
+        seedCustomer(db, {
+          organizationId,
+          name: "Concurrent Allocation Customer",
+        }),
+        seedShift(db, { organizationId, userId, status: "open" }),
+      ]);
+
+      const firstSale = await createCoreSale(
+        {
+          shiftId,
+          customerId,
+          items: [{ productId, quantity: 1, unitPrice: 10_000 }],
+          payments: [],
+          isCreditSale: true,
+        },
+        { db, organizationId, userId }
+      );
+      const secondSale = await createCoreSale(
+        {
+          shiftId,
+          customerId,
+          items: [{ productId, quantity: 1, unitPrice: 10_000 }],
+          payments: [],
+          isCreditSale: true,
+        },
+        { db, organizationId, userId }
+      );
+
+      const [accountRow] = await db
+        .select()
+        .from(creditAccount)
+        .where(eq(creditAccount.customerId, customerId));
+      expect(accountRow?.balance).toBe(20_000);
+
+      const results = await Promise.allSettled([
+        registerCreditPaymentViaZero({
+          zeroDb: firstZeroDb,
+          ctx: zeroCtx,
+          input: {
+            shiftId,
+            creditAccountId: accountRow.id,
+            amount: 10_000,
+            method: "cash",
+          },
+        }),
+        registerCreditPaymentViaZero({
+          zeroDb: secondZeroDb,
+          ctx: zeroCtx,
+          input: {
+            shiftId,
+            creditAccountId: accountRow.id,
+            amount: 10_000,
+            method: "cash",
+          },
+        }),
+      ]);
+
+      expect(results.every((result) => result.status === "fulfilled")).toBe(
+        true
+      );
+
+      const paymentRows = await db
+        .select({
+          appliedAmount: payment.appliedAmount,
+          saleId: payment.saleId,
+        })
+        .from(payment)
+        .where(eq(payment.organizationId, organizationId));
+      const paidBySale = new Map<string, number>();
+      for (const paymentRow of paymentRows) {
+        if (!paymentRow.saleId) {
+          continue;
+        }
+        paidBySale.set(
+          paymentRow.saleId,
+          (paidBySale.get(paymentRow.saleId) ?? 0) + paymentRow.appliedAmount
+        );
+      }
+
+      expect(paidBySale.get(firstSale.saleId)).toBe(10_000);
+      expect(paidBySale.get(secondSale.saleId)).toBe(10_000);
+
+      const saleRows = await db
+        .select({
+          id: sale.id,
+          status: sale.status,
+          totalAmount: sale.totalAmount,
+        })
+        .from(sale)
+        .where(eq(sale.customerId, customerId));
+      for (const saleRow of saleRows) {
+        expect(paidBySale.get(saleRow.id) ?? 0).toBeLessThanOrEqual(
+          saleRow.totalAmount
+        );
+        expect(saleRow.status).toBe("completed");
+      }
+
+      const [updatedAccount] = await db
+        .select({ balance: creditAccount.balance })
+        .from(creditAccount)
+        .where(eq(creditAccount.id, accountRow.id));
+      expect(updatedAccount?.balance).toBe(0);
+    } finally {
+      await Promise.all([firstClient.end(), secondClient.end()]);
+      await cleanup();
+    }
   });
 });

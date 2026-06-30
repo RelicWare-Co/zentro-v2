@@ -45,6 +45,11 @@ export type CreateSaleDbExecutor = Pick<
   "select" | "insert" | "update"
 >;
 
+type RegisteredPayment = NormalizedPayment & {
+  appliedAmount: number;
+  changeAmount: number;
+};
+
 async function validateCustomer(
   tx: CreateSaleDbExecutor,
   customerId: string | null,
@@ -127,7 +132,7 @@ async function insertSaleRecords(
   saleStatus: string,
   createdAt: Date,
   preparedItems: PreparedItem[],
-  normalizedPayments: NormalizedPayment[]
+  normalizedPayments: RegisteredPayment[]
 ) {
   await tx.insert(sale).values({
     id: saleId,
@@ -184,10 +189,51 @@ async function insertSaleRecords(
         method: registeredPayment.method,
         reference: registeredPayment.reference,
         amount: registeredPayment.amount,
+        appliedAmount: registeredPayment.appliedAmount,
+        changeAmount: registeredPayment.changeAmount,
         createdAt,
       }))
     );
   }
+}
+
+function applySalePayments(
+  normalizedPayments: NormalizedPayment[],
+  totalAmount: number
+): RegisteredPayment[] {
+  const nonCashTenderedAmount = normalizedPayments.reduce(
+    (total, registeredPayment) =>
+      registeredPayment.method === "cash"
+        ? total
+        : total + registeredPayment.amount,
+    0
+  );
+  let remainingCashAppliedAmount = Math.max(
+    totalAmount - nonCashTenderedAmount,
+    0
+  );
+
+  return normalizedPayments.map((registeredPayment) => {
+    if (registeredPayment.method !== "cash") {
+      return {
+        ...registeredPayment,
+        appliedAmount: registeredPayment.amount,
+        changeAmount: 0,
+      };
+    }
+
+    const appliedAmount = Math.min(
+      registeredPayment.amount,
+      remainingCashAppliedAmount
+    );
+    remainingCashAppliedAmount -= appliedAmount;
+
+    return {
+      ...registeredPayment,
+      appliedAmount,
+      changeAmount: registeredPayment.amount - appliedAmount,
+    };
+  });
 }
 
 export async function runCreateSale(
@@ -250,9 +296,11 @@ export async function runCreateSale(
     subtotal,
     taxAmount,
     itemDiscountAmount,
-  } = buildPreparedItems(input.items, productById);
+  } = buildPreparedItems(input.items, productById, {
+    saleLevelDiscount,
+  });
 
-  const discountAmount = itemDiscountAmount + saleLevelDiscount;
+  const discountAmount = itemDiscountAmount;
   const totalAmount = subtotal + taxAmount - discountAmount;
   if (totalAmount < 0) {
     throw new Error("El total de la venta no puede ser negativo");
@@ -262,15 +310,19 @@ export async function runCreateSale(
     input.payments,
     enabledPaymentMethodIds
   );
-  const { paidAmount } = validatePaymentRules(
+  validatePaymentRules(
     normalizedPayments,
     totalAmount,
     isCreditSale,
     customerId
   );
+  const registeredPayments = applySalePayments(normalizedPayments, totalAmount);
 
   const saleStatus = isCreditSale ? "credit" : "completed";
-  const appliedPaidAmount = Math.min(paidAmount, totalAmount);
+  const appliedPaidAmount = registeredPayments.reduce(
+    (total, registeredPayment) => total + registeredPayment.appliedAmount,
+    0
+  );
 
   await insertSaleRecords(
     tx,
@@ -283,7 +335,7 @@ export async function runCreateSale(
     saleStatus,
     createdAt,
     preparedItems,
-    normalizedPayments
+    registeredPayments
   );
 
   await applyInventoryDeltas(tx, {

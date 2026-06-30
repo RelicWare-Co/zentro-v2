@@ -50,7 +50,9 @@ export interface SaleWithRelations {
   }>;
   organizationId: string;
   payments?: Array<{
+    appliedAmount?: number | null;
     amount: number;
+    changeAmount?: number | null;
     createdAt: number;
     creditTransactions?: Array<{
       notes?: string | null;
@@ -138,7 +140,8 @@ function sumPaidAmount(row: SaleWithRelations) {
     return 0;
   }
   const paidAmount = (row.payments ?? []).reduce(
-    (total, paymentRow) => total + normalizeNumber(paymentRow.amount),
+    (total, paymentRow) =>
+      total + normalizeNumber(paymentRow.appliedAmount ?? paymentRow.amount),
     0
   );
   return Math.min(normalizeNumber(row.totalAmount), paidAmount);
@@ -190,18 +193,27 @@ function resolvePaymentKind(
 
 export function buildSaleDetail(row: SaleWithRelations): SaleDetail {
   const payments = (row.payments ?? [])
-    .map((paymentRow) => ({
-      id: paymentRow.id,
-      method: paymentRow.method,
-      reference: paymentRow.reference ?? null,
-      amount: normalizeNumber(paymentRow.amount),
-      createdAt: toTimestamp(paymentRow.createdAt) ?? 0,
-      kind: resolvePaymentKind(paymentRow),
-      notes:
-        (paymentRow.creditTransactions ?? []).find(
-          (transactionRow) => transactionRow.type === "payment"
-        )?.notes ?? null,
-    }))
+    .map((paymentRow) => {
+      const tenderedAmount = normalizeNumber(paymentRow.amount);
+      const appliedAmount = normalizeNumber(
+        paymentRow.appliedAmount ?? paymentRow.amount
+      );
+      return {
+        id: paymentRow.id,
+        method: paymentRow.method,
+        reference: paymentRow.reference ?? null,
+        amount: appliedAmount,
+        tenderedAmount,
+        appliedAmount,
+        changeAmount: normalizeNumber(paymentRow.changeAmount),
+        createdAt: toTimestamp(paymentRow.createdAt) ?? 0,
+        kind: resolvePaymentKind(paymentRow),
+        notes:
+          (paymentRow.creditTransactions ?? []).find(
+            (transactionRow) => transactionRow.type === "payment"
+          )?.notes ?? null,
+      };
+    })
     .toSorted((left, right) => {
       if (right.createdAt !== left.createdAt) {
         return right.createdAt - left.createdAt;
@@ -210,7 +222,7 @@ export function buildSaleDetail(row: SaleWithRelations): SaleDetail {
     });
 
   const paidAmount = payments.reduce(
-    (total, currentPayment) => total + currentPayment.amount,
+    (total, currentPayment) => total + currentPayment.appliedAmount,
     0
   );
   const totalAmount = normalizeNumber(row.totalAmount);

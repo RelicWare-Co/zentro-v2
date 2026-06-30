@@ -42,8 +42,10 @@ export interface ShiftWithRelations {
   openedAt: number;
   organizationId: string;
   payments?: Array<{
+    appliedAmount?: number | null;
     method: string;
     amount: number;
+    changeAmount?: number | null;
     saleId?: string | null;
     createdAt: number;
     sale?: { totalAmount?: number | null; status?: string | null } | null;
@@ -76,29 +78,46 @@ export function toTimestamp(value: Date | number | string | null | undefined) {
   return Number.isNaN(dateValue.getTime()) ? null : dateValue.getTime();
 }
 
-export function buildExpectedAmountsByMethod(
-  startingCash: number,
-  payments: Array<{
-    method: string;
-    amount: number;
-    saleId?: string | null;
-    saleTotalAmount?: number | null;
-  }>,
-  movements: Array<{ type: string; paymentMethod: string; amount: number }>
-) {
-  const expectedByMethod = new Map<string, number>();
-  const salePaymentStats = new Map<
-    string,
-    { saleTotalAmount: number; totalPaid: number; cashPaid: number }
-  >();
+interface ExpectedPaymentInput {
+  amount: number;
+  appliedAmount?: number | null;
+  changeAmount?: number | null;
+  method: string;
+  saleId?: string | null;
+  saleTotalAmount?: number | null;
+}
 
+interface LegacySalePaymentStats {
+  cashPaid: number;
+  saleTotalAmount: number;
+  totalPaid: number;
+}
+
+function hasExplicitPaymentApplication(paymentRow: ExpectedPaymentInput) {
+  return (
+    paymentRow.appliedAmount !== null && paymentRow.appliedAmount !== undefined
+  );
+}
+
+function addPaymentExpectedAmounts(
+  expectedByMethod: Map<string, number>,
+  payments: ExpectedPaymentInput[]
+) {
   for (const registeredPayment of payments) {
     expectedByMethod.set(
       registeredPayment.method,
       (expectedByMethod.get(registeredPayment.method) ?? 0) +
-        registeredPayment.amount
+        normalizeNumber(
+          registeredPayment.appliedAmount ?? registeredPayment.amount
+        )
     );
+  }
+}
 
+function buildLegacySalePaymentStats(payments: ExpectedPaymentInput[]) {
+  const salePaymentStats = new Map<string, LegacySalePaymentStats>();
+
+  for (const registeredPayment of payments) {
     if (
       !registeredPayment.saleId ||
       registeredPayment.saleTotalAmount === null ||
@@ -119,30 +138,48 @@ export function buildExpectedAmountsByMethod(
     salePaymentStats.set(registeredPayment.saleId, paymentStats);
   }
 
+  return salePaymentStats;
+}
+
+function calculateLegacyCashChange(
+  salePaymentStats: Map<string, LegacySalePaymentStats>
+) {
   let changeReturnedInCash = 0;
+
   for (const paymentStats of salePaymentStats.values()) {
     const overpayment = Math.max(
       paymentStats.totalPaid - paymentStats.saleTotalAmount,
       0
     );
-    if (overpayment <= 0 || paymentStats.cashPaid <= 0) {
-      continue;
+    if (overpayment > 0 && paymentStats.cashPaid > 0) {
+      changeReturnedInCash += Math.min(overpayment, paymentStats.cashPaid);
     }
-    changeReturnedInCash += Math.min(overpayment, paymentStats.cashPaid);
   }
 
-  if (changeReturnedInCash > 0) {
-    expectedByMethod.set(
-      "cash",
-      Math.max((expectedByMethod.get("cash") ?? 0) - changeReturnedInCash, 0)
-    );
+  return changeReturnedInCash;
+}
+
+function subtractLegacyCashChange(
+  expectedByMethod: Map<string, number>,
+  payments: ExpectedPaymentInput[]
+) {
+  const changeReturnedInCash = calculateLegacyCashChange(
+    buildLegacySalePaymentStats(payments)
+  );
+  if (changeReturnedInCash <= 0) {
+    return;
   }
 
   expectedByMethod.set(
     "cash",
-    (expectedByMethod.get("cash") ?? 0) + startingCash
+    Math.max((expectedByMethod.get("cash") ?? 0) - changeReturnedInCash, 0)
   );
+}
 
+function addMovementExpectedAmounts(
+  expectedByMethod: Map<string, number>,
+  movements: Array<{ type: string; paymentMethod: string; amount: number }>
+) {
   for (const movement of movements) {
     const paymentMethod = movement.paymentMethod || "cash";
     const currentAmount = expectedByMethod.get(paymentMethod) ?? 0;
@@ -161,6 +198,26 @@ export function buildExpectedAmountsByMethod(
         );
     }
   }
+}
+
+export function buildExpectedAmountsByMethod(
+  startingCash: number,
+  payments: ExpectedPaymentInput[],
+  movements: Array<{ type: string; paymentMethod: string; amount: number }>
+) {
+  const expectedByMethod = new Map<string, number>();
+
+  addPaymentExpectedAmounts(expectedByMethod, payments);
+  if (!payments.some(hasExplicitPaymentApplication)) {
+    subtractLegacyCashChange(expectedByMethod, payments);
+  }
+
+  expectedByMethod.set(
+    "cash",
+    (expectedByMethod.get("cash") ?? 0) + startingCash
+  );
+
+  addMovementExpectedAmounts(expectedByMethod, movements);
 
   return expectedByMethod;
 }
@@ -206,6 +263,16 @@ function normalizeShiftPayments(shift: ShiftWithRelations) {
     .map((paymentRow) => ({
       method: paymentRow.method,
       amount: normalizeNumber(paymentRow.amount),
+      appliedAmount:
+        paymentRow.appliedAmount === null ||
+        paymentRow.appliedAmount === undefined
+          ? null
+          : normalizeNumber(paymentRow.appliedAmount),
+      changeAmount:
+        paymentRow.changeAmount === null ||
+        paymentRow.changeAmount === undefined
+          ? null
+          : normalizeNumber(paymentRow.changeAmount),
       saleId: paymentRow.saleId ?? null,
       saleTotalAmount:
         paymentRow.sale?.totalAmount === null ||
@@ -252,6 +319,8 @@ export function buildShiftListItem(shift: ShiftWithRelations): ShiftListItem {
     payments.map((paymentRow) => ({
       method: paymentRow.method,
       amount: paymentRow.amount,
+      appliedAmount: paymentRow.appliedAmount,
+      changeAmount: paymentRow.changeAmount,
       saleId: paymentRow.saleId,
       saleTotalAmount: paymentRow.saleTotalAmount,
     })),
@@ -441,6 +510,8 @@ export function buildShiftCloseSummary(
     payments.map((paymentRow) => ({
       method: paymentRow.method,
       amount: paymentRow.amount,
+      appliedAmount: paymentRow.appliedAmount,
+      changeAmount: paymentRow.changeAmount,
       saleId: paymentRow.saleId,
       saleTotalAmount: paymentRow.saleTotalAmount,
     })),

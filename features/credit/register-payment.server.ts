@@ -1,4 +1,4 @@
-import { and, asc, eq, gte, sql } from "drizzle-orm";
+import { and, asc, eq, gte, ne, sql } from "drizzle-orm";
 import type { z } from "zod";
 import type { Database } from "@/database/drizzle/db";
 import {
@@ -61,6 +61,7 @@ async function fetchAndValidateCreditAccount(
         eq(creditAccount.organizationId, organizationId)
       )
     )
+    .for("update", { of: creditAccount })
     .limit(1);
 
   if (!accountRow || accountRow.customerDeletedAt) {
@@ -107,7 +108,7 @@ async function fetchAndValidateSaleForPayment(
   }
 
   const salePaymentRows = await tx
-    .select({ amount: payment.amount })
+    .select({ appliedAmount: payment.appliedAmount })
     .from(payment)
     .where(
       and(
@@ -119,7 +120,7 @@ async function fetchAndValidateSaleForPayment(
   const saleBalanceDue =
     saleRow.totalAmount -
     salePaymentRows.reduce(
-      (total, currentPayment) => total + currentPayment.amount,
+      (total, currentPayment) => total + currentPayment.appliedAmount,
       0
     );
   if (saleBalanceDue <= 0) {
@@ -149,7 +150,7 @@ async function buildAccountPaymentAllocations(
     .select({
       id: sale.id,
       totalAmount: sale.totalAmount,
-      paidAmount: sql<number>`coalesce(sum(${payment.amount}), 0)`,
+      paidAmount: sql<number>`coalesce(sum(${payment.appliedAmount}), 0)`,
     })
     .from(sale)
     .leftJoin(
@@ -294,6 +295,8 @@ export async function runRegisterCreditPayment(
     method,
     reference,
     amount: allocation.amount,
+    appliedAmount: allocation.amount,
+    changeAmount: 0,
     createdAt,
   }));
 
@@ -318,7 +321,7 @@ export async function runRegisterCreditPayment(
       continue;
     }
 
-    await tx
+    const updatedSales = await tx
       .update(sale)
       .set({
         status: allocation.remainingSaleBalance > 0 ? "credit" : "completed",
@@ -326,9 +329,27 @@ export async function runRegisterCreditPayment(
       .where(
         and(
           eq(sale.id, allocation.saleId),
-          eq(sale.organizationId, context.organizationId)
+          eq(sale.organizationId, context.organizationId),
+          ne(sale.status, "cancelled"),
+          gte(
+            sale.totalAmount,
+            sql<number>`(
+              select coalesce(sum(${payment.appliedAmount}), 0)
+              from ${payment}
+              where ${payment.organizationId} = ${context.organizationId}
+                and ${payment.saleId} = ${allocation.saleId}
+            )`
+          )
         )
+      )
+      .returning({ id: sale.id });
+
+    const updatedSale = updatedSales[0];
+    if (!updatedSale) {
+      throw new Error(
+        "El abono no se pudo aplicar porque la venta cambió o ya no tiene saldo pendiente"
       );
+    }
   }
 
   return {

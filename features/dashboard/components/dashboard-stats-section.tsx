@@ -32,14 +32,14 @@ export function DashboardStatsSection() {
         description={
           salesWindow.kind === "none"
             ? "Sin turnos registrados"
-            : `${formatCount(stats.shiftSalesCount)} ventas registradas`
+            : `${formatCurrency(stats.shiftGrossSales)} facturados · ${formatCurrency(stats.shiftTaxCollected)} IVA`
         }
         highlight={formatDelta(shiftRevenueChange, "vs turno anterior")}
         icon={Receipt}
         title={
           salesWindow.kind === "closed"
-            ? "Ventas último turno"
-            : "Ventas del turno"
+            ? "Ingreso neto último turno"
+            : "Ingreso neto del turno"
         }
         value={formatCurrency(stats.shiftRevenue)}
       />
@@ -55,10 +55,10 @@ export function DashboardStatsSection() {
         value={formatCurrency(stats.shiftAvgTicket)}
       />
       <CompactStatCard
-        description={`${formatCount(stats.monthSalesCount)} ventas acumuladas`}
+        description={`${formatCurrency(stats.monthGrossSales)} facturados · ${formatCurrency(stats.monthTaxCollected)} IVA`}
         highlight={formatDelta(monthRevenueChange, "vs mes anterior")}
         icon={TrendingUp}
-        title="Ventas del mes"
+        title="Ingreso neto del mes"
         value={formatCurrency(stats.monthRevenue)}
       />
       <CompactStatCard

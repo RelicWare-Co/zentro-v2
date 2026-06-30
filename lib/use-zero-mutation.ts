@@ -37,6 +37,18 @@ export async function waitForZeroMutation(result: ZeroMutationResult) {
   });
 }
 
+export async function waitForZeroServerMutation(result: ZeroMutationResult) {
+  const clientResult = await result.client;
+  if (clientResult.type === "error") {
+    throw toZeroMutationError(clientResult);
+  }
+
+  const serverResult = await result.server;
+  if (serverResult.type === "error") {
+    throw toZeroMutationError(serverResult);
+  }
+}
+
 export function getZeroQueryError(status: {
   type: string;
   error?: { message?: string };

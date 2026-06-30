@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { eq } from "drizzle-orm";
 import { creditAccount } from "@/database/drizzle/schema/credit.schema";
+import { payment, sale } from "@/database/drizzle/schema/sales.schema";
 import { createCoreSale } from "@/features/sales/create-sale.server";
 import {
   seedCustomer,
@@ -14,7 +15,7 @@ import { cancelSaleViaZero } from "./helpers/zero-sales";
 import { createZeroContext, createZeroTestDb } from "./helpers/zero-shifts";
 
 describe("error recovery", () => {
-  test("cancel sale with registered payments is rejected", async () => {
+  test("cancel completed sale with registered payments creates payment reversal", async () => {
     const { db, cleanup } = await createTestDb();
     const { organizationId, userId } = await seedOrganizationWithMember(db);
     const zeroDb = createZeroTestDb(db);
@@ -39,13 +40,33 @@ describe("error recovery", () => {
       { db, organizationId, userId }
     );
 
-    await expect(
-      cancelSaleViaZero({
-        zeroDb,
-        ctx: zeroCtx,
-        input: { saleId: result.saleId },
+    await cancelSaleViaZero({
+      zeroDb,
+      ctx: zeroCtx,
+      input: { saleId: result.saleId },
+    });
+
+    const [saleRow] = await db
+      .select({ status: sale.status })
+      .from(sale)
+      .where(eq(sale.id, result.saleId));
+    expect(saleRow?.status).toBe("cancelled");
+
+    const paymentRows = await db
+      .select({
+        amount: payment.amount,
+        appliedAmount: payment.appliedAmount,
+        reference: payment.reference,
       })
-    ).rejects.toThrow("cobros registrados");
+      .from(payment)
+      .where(eq(payment.saleId, result.saleId));
+    expect(paymentRows).toHaveLength(2);
+    expect(paymentRows.map((row) => row.appliedAmount).sort()).toEqual([
+      -10_000, 10_000,
+    ]);
+    expect(
+      paymentRows.some((row) => row.reference?.startsWith("reversal:"))
+    ).toBe(true);
 
     await cleanup();
   });

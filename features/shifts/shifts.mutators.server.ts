@@ -90,6 +90,8 @@ export async function runCloseShiftServerMutator({
     .map((paymentRow) => ({
       method: paymentRow.method,
       amount: paymentRow.amount,
+      appliedAmount: paymentRow.appliedAmount,
+      changeAmount: paymentRow.changeAmount,
       saleId: paymentRow.saleId,
       saleTotalAmount: paymentRow.sale?.totalAmount ?? null,
     }));

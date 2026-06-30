@@ -12,6 +12,7 @@ export type TestDb = PostgresJsDatabase<typeof schema> & { $client: Sql };
 export interface CreateTestDbResult {
   cleanup: () => Promise<void>;
   client: Sql;
+  databaseUrl: string;
   db: TestDb;
 }
 
@@ -49,5 +50,5 @@ export async function createTestDb(): Promise<CreateTestDbResult> {
     await dropSql.end();
   };
 
-  return { db, client, cleanup };
+  return { db, client, cleanup, databaseUrl: testUrl };
 }

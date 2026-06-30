@@ -212,7 +212,7 @@ describe("buildPreparedItems", () => {
         ],
         productById
       )
-    ).toThrow("no puede ser negativo");
+    ).toThrow("base gravable");
   });
 });
 
@@ -426,7 +426,7 @@ describe("tax calculations in buildPreparedItems", () => {
     expect(result.taxAmount).toBe(2200);
   });
 
-  test("tax is calculated on base line subtotal, not modifier subtotal", () => {
+  test("tax is calculated on item subtotal plus modifiers", () => {
     const productById = new Map([
       ["prod-1", makeProduct({ id: "prod-1", price: 2000, taxRate: 10 })],
       [
@@ -455,11 +455,11 @@ describe("tax calculations in buildPreparedItems", () => {
     );
     const item = result.preparedItems[0];
     expect(item.subtotal).toBe(4000);
-    expect(item.taxAmount).toBe(400);
+    expect(item.taxAmount).toBe(500);
     expect(item.modifiers[0].subtotal).toBe(1000);
-    expect(item.totalAmount).toBe(4000 + 1000 + 400);
+    expect(item.totalAmount).toBe(4000 + 1000 + 500);
     expect(result.subtotal).toBe(5000);
-    expect(result.taxAmount).toBe(400);
+    expect(result.taxAmount).toBe(500);
   });
 });
 
@@ -524,7 +524,7 @@ describe("discount validation in buildPreparedItems and calculateSaleTotals", ()
         ],
         productById
       )
-    ).toThrow("no puede ser negativo");
+    ).toThrow("base gravable");
   });
 
   test("zero discounts leave totals unchanged", () => {
@@ -538,7 +538,7 @@ describe("discount validation in buildPreparedItems and calculateSaleTotals", ()
     expect(result.totalAmount).toBe(11_000);
   });
 
-  test("discount reduces total but tax is calculated pre-discount", () => {
+  test("item-level discount reduces taxable base before tax", () => {
     const productById = new Map([
       ["prod-1", makeProduct({ price: 10_000, taxRate: 19 })],
     ]);
@@ -554,8 +554,8 @@ describe("discount validation in buildPreparedItems and calculateSaleTotals", ()
         ],
         productById
       );
-    expect(preparedItems[0].taxAmount).toBe(1900);
-    expect(preparedItems[0].totalAmount).toBe(10_000 + 1900 - 2000);
+    expect(preparedItems[0].taxAmount).toBe(1520);
+    expect(preparedItems[0].totalAmount).toBe(10_000 + 1520 - 2000);
 
     const totals = calculateSaleTotals({
       subtotal,
@@ -563,7 +563,122 @@ describe("discount validation in buildPreparedItems and calculateSaleTotals", ()
       itemDiscountAmount,
       saleLevelDiscount: 0,
     });
-    expect(totals.totalAmount).toBe(9900);
+    expect(totals.totalAmount).toBe(9520);
+  });
+
+  test("item-level discount reduces modifier-inclusive taxable base", () => {
+    const productById = new Map([
+      ["prod-1", makeProduct({ id: "prod-1", price: 10_000, taxRate: 19 })],
+      [
+        "mod-1",
+        makeProduct({
+          id: "mod-1",
+          isModifier: true,
+          name: "Extra",
+          price: 2000,
+        }),
+      ],
+    ]);
+    const { preparedItems, taxAmount } = buildPreparedItems(
+      [
+        {
+          productId: "prod-1",
+          quantity: 1,
+          unitPrice: 10_000,
+          discountAmount: 3000,
+          modifiers: [
+            { modifierProductId: "mod-1", quantity: 1, unitPrice: 2000 },
+          ],
+        },
+      ],
+      productById
+    );
+
+    expect(preparedItems[0].taxAmount).toBe(1710);
+    expect(preparedItems[0].totalAmount).toBe(10_000 + 2000 + 1710 - 3000);
+    expect(taxAmount).toBe(1710);
+  });
+
+  test("sale-level discount is distributed before tax is calculated", () => {
+    const productById = new Map([
+      ["prod-1", makeProduct({ id: "prod-1", price: 10_000, taxRate: 19 })],
+      ["prod-2", makeProduct({ id: "prod-2", price: 5000, taxRate: 5 })],
+    ]);
+
+    const result = buildPreparedItems(
+      [
+        { productId: "prod-1", quantity: 1, unitPrice: 10_000 },
+        { productId: "prod-2", quantity: 1, unitPrice: 5000 },
+      ],
+      productById,
+      { saleLevelDiscount: 3000 }
+    );
+
+    expect(result.preparedItems[0].discountAmount).toBe(2000);
+    expect(result.preparedItems[0].taxAmount).toBe(1520);
+    expect(result.preparedItems[1].discountAmount).toBe(1000);
+    expect(result.preparedItems[1].taxAmount).toBe(200);
+    expect(result.itemDiscountAmount).toBe(3000);
+    expect(result.taxAmount).toBe(1720);
+  });
+
+  test("sale-level discount includes modifier subtotal in distribution base", () => {
+    const productById = new Map([
+      ["prod-1", makeProduct({ id: "prod-1", price: 10_000, taxRate: 19 })],
+      ["prod-2", makeProduct({ id: "prod-2", price: 6000, taxRate: 19 })],
+      [
+        "mod-1",
+        makeProduct({
+          id: "mod-1",
+          isModifier: true,
+          name: "Extra",
+          price: 2000,
+        }),
+      ],
+    ]);
+
+    const result = buildPreparedItems(
+      [
+        {
+          productId: "prod-1",
+          quantity: 1,
+          unitPrice: 10_000,
+          modifiers: [
+            { modifierProductId: "mod-1", quantity: 1, unitPrice: 2000 },
+          ],
+        },
+        { productId: "prod-2", quantity: 1, unitPrice: 6000 },
+      ],
+      productById,
+      { saleLevelDiscount: 3000 }
+    );
+
+    expect(result.preparedItems[0].discountAmount).toBe(2000);
+    expect(result.preparedItems[0].taxAmount).toBe(1900);
+    expect(result.preparedItems[1].discountAmount).toBe(1000);
+    expect(result.preparedItems[1].taxAmount).toBe(950);
+    expect(result.itemDiscountAmount).toBe(3000);
+    expect(result.taxAmount).toBe(2850);
+  });
+
+  test("throws when item-level discount makes taxable base negative", () => {
+    const productById = new Map([
+      ["prod-1", makeProduct({ price: 1000, taxRate: 19 })],
+    ]);
+
+    expect(() =>
+      buildPreparedItems(
+        [
+          {
+            productId: "prod-1",
+            quantity: 1,
+            unitPrice: 1000,
+            discountAmount: 1100,
+          },
+        ],
+        productById
+      )
+    ).toThrow("base gravable");
   });
 });
 

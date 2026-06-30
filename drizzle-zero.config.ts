@@ -315,6 +315,8 @@ export default drizzleZeroConfig(drizzleSchema, {
       method: true,
       reference: true,
       amount: true,
+      appliedAmount: true,
+      changeAmount: true,
       createdAt: true,
     },
 

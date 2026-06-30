@@ -218,12 +218,15 @@ describe("cross-area end-to-end flows", () => {
       expect(saleDetail?.items[0].quantity).toBe(2);
       expect(saleDetail?.payments.length).toBe(1);
       expect(saleDetail?.payments[0].method).toBe("cash");
-      expect(saleDetail?.payments[0].amount).toBe(25_000);
+      expect(saleDetail?.payments[0].amount).toBe(24_000);
+      expect(saleDetail?.payments[0].tenderedAmount).toBe(25_000);
+      expect(saleDetail?.payments[0].appliedAmount).toBe(24_000);
+      expect(saleDetail?.payments[0].changeAmount).toBe(1000);
 
       await cleanup();
     });
 
-    test("cash sale with change cannot be cancelled without an explicit refund flow", async () => {
+    test("cash sale with change can be cancelled with payment reversal", async () => {
       const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const zeroDb = createZeroTestDb(db);
@@ -256,13 +259,11 @@ describe("cross-area end-to-end flows", () => {
       });
       expect(saleResult.totalAmount).toBe(24_000);
 
-      await expect(
-        cancelSaleViaZero({
-          zeroDb,
-          ctx: zeroCtx,
-          input: { saleId: saleResult.saleId },
-        })
-      ).rejects.toThrow("No se puede anular una venta con cobros registrados");
+      await cancelSaleViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: { saleId: saleResult.saleId },
+      });
 
       const salesList = await listSalesViaZero({
         zeroDb,
@@ -270,24 +271,40 @@ describe("cross-area end-to-end flows", () => {
         input: { limit: 10 },
       });
       expect(salesList.data).toHaveLength(1);
-      expect(salesList.data[0].status).toBe("completed");
+      expect(salesList.data[0].status).toBe("cancelled");
       expect(salesList.data[0].totalAmount).toBe(24_000);
-      expect(salesList.data[0].paidAmount).toBe(24_000);
+      expect(salesList.data[0].paidAmount).toBe(0);
       expect(salesList.data[0].balanceDue).toBe(0);
+
+      const paymentRows = await db
+        .select({
+          amount: payment.amount,
+          appliedAmount: payment.appliedAmount,
+          changeAmount: payment.changeAmount,
+        })
+        .from(payment)
+        .where(eq(payment.saleId, saleResult.saleId));
+      expect(paymentRows).toHaveLength(2);
+      expect(
+        paymentRows.reduce((total, row) => total + row.appliedAmount, 0)
+      ).toBe(0);
+      expect(paymentRows.map((row) => row.changeAmount).sort()).toEqual([
+        -1000, 1000,
+      ]);
 
       const shiftDetail = await getShiftDetailViaZero({
         zeroDb,
         ctx: zeroCtx,
         shiftId,
       });
-      expect(shiftDetail.operations.paidSalesCount).toBe(1);
-      expect(shiftDetail.operations.paidSalesAmount).toBe(24_000);
-      expect(shiftDetail.operations.cancelledSalesCount).toBe(0);
-      expect(shiftDetail.operations.cancelledSalesAmount).toBe(0);
-      expect(shiftDetail.totals.totalPayments).toBe(25_000);
-      expect(shiftDetail.totals.totalExpected).toBe(34_000);
+      expect(shiftDetail.operations.paidSalesCount).toBe(0);
+      expect(shiftDetail.operations.paidSalesAmount).toBe(0);
+      expect(shiftDetail.operations.cancelledSalesCount).toBe(1);
+      expect(shiftDetail.operations.cancelledSalesAmount).toBe(24_000);
+      expect(shiftDetail.totals.totalPayments).toBe(0);
+      expect(shiftDetail.totals.totalExpected).toBe(10_000);
       expect(shiftDetail.paymentBreakdown).toEqual([
-        { method: "cash", amount: 34_000 },
+        { method: "cash", amount: 10_000 },
       ]);
 
       const closeSummary = await getShiftCloseSummaryViaZero({
@@ -295,17 +312,17 @@ describe("cross-area end-to-end flows", () => {
         ctx: zeroCtx,
         shiftId,
       });
-      expect(closeSummary.totalExpected).toBe(34_000);
+      expect(closeSummary.totalExpected).toBe(10_000);
 
       const closeResult = await closeShiftViaZero({
         zeroDb,
         ctx: zeroCtx,
         input: {
           shiftId,
-          closures: [{ paymentMethod: "cash", actualAmount: 34_000 }],
+          closures: [{ paymentMethod: "cash", actualAmount: 10_000 }],
         },
       });
-      expect(closeResult.closures[0].expectedAmount).toBe(34_000);
+      expect(closeResult.closures[0].expectedAmount).toBe(10_000);
       expect(closeResult.closures[0].difference).toBe(0);
 
       const saleDetail = await getSaleDetailViaZero({
@@ -313,8 +330,8 @@ describe("cross-area end-to-end flows", () => {
         ctx: zeroCtx,
         saleId: saleResult.saleId,
       });
-      expect(saleDetail?.status).toBe("completed");
-      expect(saleDetail?.paidAmount).toBe(24_000);
+      expect(saleDetail?.status).toBe("cancelled");
+      expect(saleDetail?.paidAmount).toBe(0);
       expect(saleDetail?.balanceDue).toBe(0);
 
       await cleanup();

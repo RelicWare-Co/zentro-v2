@@ -98,7 +98,9 @@ export const payment = pgTable(
       .references(() => shift.id), // Para saber a qué caja entró la plata
     method: text("method").notNull(), // 'cash', 'card', 'transfer_nequi', 'transfer_bancolombia'
     reference: text("reference"), // Número de comprobante, voucher o últimos 4 dígitos de tarjeta
-    amount: integer("amount").notNull(),
+    amount: integer("amount").notNull(), // Monto entregado/cobrado antes de cambio o reversos
+    appliedAmount: integer("applied_amount").notNull().default(0), // Monto aplicado a la venta/deuda
+    changeAmount: integer("change_amount").notNull().default(0), // Cambio devuelto; negativo en reversos
     createdAt: timestamp("created_at", {
       withTimezone: true,
       mode: "date",

@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import type { z } from "zod";
 import type { Database } from "@/database/drizzle/db";
-import { sale } from "@/database/drizzle/schema/sales.schema";
+import { payment, sale } from "@/database/drizzle/schema/sales.schema";
 import type {
   CancelSaleInputSchema,
   CreateSaleInputSchema,
@@ -78,11 +78,14 @@ export async function createSaleViaZero({
     throw new Error(`Venta no encontrada después de create: ${saleId}`);
   }
 
-  const tenderedAmount = (input.payments ?? []).reduce(
-    (sum, payment) => sum + payment.amount,
-    0
+  const paymentRows = await db
+    .select({ appliedAmount: payment.appliedAmount })
+    .from(payment)
+    .where(eq(payment.saleId, saleId));
+  const paidAmount = Math.min(
+    saleRow.totalAmount,
+    paymentRows.reduce((sum, paymentRow) => sum + paymentRow.appliedAmount, 0)
   );
-  const paidAmount = Math.min(saleRow.totalAmount, tenderedAmount);
 
   return {
     saleId: saleRow.id,
