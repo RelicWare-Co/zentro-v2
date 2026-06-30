@@ -1,5 +1,5 @@
 import type { KeyboardBarcodeScannerEvent } from "@point-of-sale/keyboard-barcode-scanner";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePosPage } from "@/features/pos/pos-page-context";
 import { isPosOverlayBlockingCatalog } from "@/features/pos/pos-page-modals.shared";
 import { openPosCashDrawer } from "@/features/pos/printing/print-sale-receipt.client";
@@ -17,40 +17,37 @@ export function PosV2Layout() {
   const pendingBarcodeLookupRef = useRef<string[] | null>(null);
   const [isTablesOverlayOpen, setIsTablesOverlayOpen] = useState(false);
 
-  const handleOpenDrawer = useCallback(() => {
+  const handleOpenDrawer = () => {
     if (!state.activeShift) {
       actions.openShiftModal();
       return;
     }
     openPosCashDrawer(meta.activeOrganizationId).catch(() => undefined);
-  }, [state.activeShift, actions, meta.activeOrganizationId]);
+  };
 
-  const handleBarcodeScan = useCallback(
-    (event: KeyboardBarcodeScannerEvent) => {
-      const payload = buildPosV2BarcodeScanPayload(event);
-      if (payload.lookupValues.length === 0) {
-        return false;
-      }
-
-      if (!state.activeShift) {
-        actions.handleBarcodeScanV2(event);
-        return false;
-      }
-
-      const matchedProduct = meta.resolveBarcodeProduct(payload.lookupValues);
-      if (matchedProduct) {
-        pendingBarcodeLookupRef.current = null;
-        actions.setSearchQuery("");
-        actions.handleProductSelect(matchedProduct);
-        return true;
-      }
-
-      pendingBarcodeLookupRef.current = payload.lookupValues;
-      actions.setSearchQuery(payload.value);
+  const handleBarcodeScan = (event: KeyboardBarcodeScannerEvent) => {
+    const payload = buildPosV2BarcodeScanPayload(event);
+    if (payload.lookupValues.length === 0) {
       return false;
-    },
-    [state.activeShift, actions, meta.resolveBarcodeProduct]
-  );
+    }
+
+    if (!state.activeShift) {
+      actions.handleBarcodeScanV2(event);
+      return false;
+    }
+
+    const matchedProduct = meta.resolveBarcodeProduct(payload.lookupValues);
+    if (matchedProduct) {
+      pendingBarcodeLookupRef.current = null;
+      actions.setSearchQuery("");
+      actions.handleProductSelect(matchedProduct);
+      return true;
+    }
+
+    pendingBarcodeLookupRef.current = payload.lookupValues;
+    actions.setSearchQuery(payload.value);
+    return false;
+  };
 
   const isBarcodeScannerEnabled = !(
     isPosOverlayBlockingCatalog(state.activeModal, state.isMobileCartOpen) ||
