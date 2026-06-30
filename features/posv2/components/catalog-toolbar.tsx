@@ -1,6 +1,6 @@
 import { TextInput } from "@mantine/core";
 import { Barcode, LayoutGrid, List, Search, X } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePosPage } from "@/features/pos/pos-page-context";
 import {
   posV2AccentBg,
@@ -46,7 +46,7 @@ export function CatalogToolbar({
     };
   }, []);
 
-  const handleWheel = useCallback((event: React.WheelEvent<HTMLDivElement>) => {
+  const handleWheel = (event: React.WheelEvent<HTMLDivElement>) => {
     const element = scrollRef.current;
     if (!element) {
       return;
@@ -60,7 +60,7 @@ export function CatalogToolbar({
 
     event.preventDefault();
     element.scrollLeft += event.deltaY;
-  }, []);
+  };
 
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
