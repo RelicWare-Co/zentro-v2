@@ -1,6 +1,6 @@
 import { ActionIcon, Alert, Badge, Button } from "@mantine/core";
 import { UtensilsCrossed, X } from "lucide-react";
-import { type ReactNode, useCallback, useEffect, useRef } from "react";
+import { type ReactNode, useEffect, useRef } from "react";
 import { usePageContext } from "vike-react/usePageContext";
 import { useModuleCapabilities } from "@/features/modules/hooks/use-module-capabilities";
 import { isOrganizationManagerRole } from "@/features/organization/access-control.shared";
@@ -56,13 +56,10 @@ function RestaurantPosTablesPanel({
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
 
-  const handleSelectTable = useCallback(
-    (tableId: string) => {
-      onSelectTable(tableId);
-      onClose();
-    },
-    [onSelectTable, onClose]
-  );
+  const handleSelectTable = (tableId: string) => {
+    onSelectTable(tableId);
+    onClose();
+  };
 
   let content: ReactNode = null;
   if (bootstrap) {
