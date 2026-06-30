@@ -78,7 +78,7 @@ export function CartItemCard({
               autoComplete="off"
               classNames={{
                 input:
-                  "h-9 touch-manipulation border-zinc-800/80 bg-black/50 text-base md:h-8 md:text-xs",
+                  "h-9 touch-manipulation border-zinc-800/80! bg-black/50! text-base text-white! md:h-8 md:text-xs",
               }}
               id={`item-discount-${item.id}`}
               inputMode="numeric"

@@ -13,6 +13,7 @@ import type { PosTableSessionState } from "../pos-page-context";
 import type { CartItem, CartTotals } from "../types";
 import { formatCurrency } from "../utils";
 import { CartItemCard } from "./cart-item-card";
+import { SaleSuccessNotice } from "./sale-success-notice";
 import { buildTableItemStatusBadge } from "./table-item-status.shared";
 
 function CartPanelHeader({
@@ -51,7 +52,7 @@ function CartPanelHeader({
         </div>
         <Button
           aria-label="Salir de la mesa"
-          className="shrink-0 text-zinc-400 hover:bg-white/5 hover:text-white"
+          className="shrink-0 text-zinc-400! hover:bg-white/5 hover:text-white!"
           leftSection={<LogOut className="size-4" />}
           onClick={onExitTable}
           size="compact-sm"
@@ -73,7 +74,7 @@ function CartPanelHeader({
       </div>
       <Button
         aria-label="Limpiar carrito"
-        className="text-red-400 hover:bg-red-400/10 hover:text-red-300"
+        className="text-red-400! hover:bg-red-400/10 hover:text-red-300!"
         color="red"
         disabled={!hasItems}
         leftSection={<Trash2 className="size-4" />}
@@ -100,6 +101,7 @@ interface CartPanelProps {
   onSendToKitchen?: () => void;
   onUpdateItemDiscount: (cartItemId: string, value: string) => void;
   onUpdateQuantity: (cartItemId: string, delta: number) => void;
+  saleSuccessToken: number | null;
   tableSession?: PosTableSessionState | null;
   totalItems: number;
   totals: CartTotals;
@@ -121,6 +123,7 @@ export function CartPanel({
   isQuickSaleMode,
   tableSession,
   className,
+  saleSuccessToken,
 }: CartPanelProps) {
   const { subTotal, tax, discountAmount, totalAmount } = totals;
   const hasDiscount = discountAmount > 0;
@@ -135,7 +138,7 @@ export function CartPanel({
   return (
     <div
       className={cn(
-        "flex min-h-0 w-[380px] shrink-0 flex-col overflow-hidden border-zinc-800 border-l bg-[var(--color-carbon)]",
+        "relative flex min-h-0 w-[380px] shrink-0 flex-col overflow-hidden border-zinc-800 border-l bg-[var(--color-carbon)]",
         className
       )}
     >
@@ -190,7 +193,7 @@ export function CartPanel({
             <Textarea
               classNames={{
                 input:
-                  "resize-none border-zinc-800 bg-[#0f0f0f] text-sm text-white placeholder:text-zinc-600",
+                  "resize-none border-zinc-800! bg-[#0f0f0f]! text-sm text-white! placeholder:text-zinc-600!",
               }}
               id="pos-delivery-info"
               label="Info domicilio"
@@ -234,7 +237,7 @@ export function CartPanel({
 
           {tableSession ? (
             <Button
-              color="gray"
+              className="border-zinc-700! text-zinc-300! hover:border-zinc-500 hover:text-white"
               disabled={
                 tableSession.draftItemsCount === 0 ||
                 tableSession.isSendingToKitchen
@@ -256,7 +259,7 @@ export function CartPanel({
           ) : null}
 
           <Button
-            className="mt-2 h-12 rounded-xl bg-[var(--color-voltage)] font-bold text-base text-black hover:bg-[#c9e605]"
+            className="mt-2 h-12 rounded-xl bg-[var(--color-voltage)]! font-bold text-base text-black! hover:bg-[#c9e605]"
             disabled={cart.length === 0}
             fullWidth
             leftSection={
@@ -268,6 +271,8 @@ export function CartPanel({
           </Button>
         </div>
       </div>
+
+      <SaleSuccessNotice token={saleSuccessToken} />
     </div>
   );
 }

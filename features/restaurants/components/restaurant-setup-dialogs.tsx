@@ -7,7 +7,7 @@ import {
   Text,
   TextInput,
 } from "@mantine/core";
-import { Plus } from "lucide-react";
+import { Plus, UtensilsCrossed } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
   useCreateRestaurantAreaMutation,
@@ -87,7 +87,6 @@ export function CreateRestaurantAreaDialog({
         />
         <Group justify="flex-end">
           <Button
-            color="gray"
             onClick={() => handleOpenChange(false)}
             type="button"
             variant="default"
@@ -181,45 +180,58 @@ export function CreateRestaurantTableDialog({
       centered
       onClose={() => onOpenChange(false)}
       opened={open}
-      title="Nueva mesa"
+      title={
+        <span className="flex items-center gap-2">
+          <UtensilsCrossed
+            aria-hidden="true"
+            className="size-4 text-[var(--color-voltage)]"
+          />
+          Nueva mesa
+        </span>
+      }
     >
-      <Stack gap="md">
-        <Text c="dimmed" size="sm">
+      <div className="space-y-5 py-2">
+        <p className="text-sm text-zinc-400">
           Agrega una mesa a la zona activa. Aparecerá de inmediato en el plano.
-        </Text>
-        <NativeSelect
-          data={areas.map((area) => ({ value: area.id, label: area.name }))}
-          label="Zona"
-          onChange={(event) => setAreaId(event.target.value)}
-          value={areaId}
-        />
-        <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_120px]">
-          <TextInput
-            autoComplete="off"
-            label="Nombre"
-            onChange={(event) => setName(event.target.value)}
-            placeholder="Mesa 1"
-            value={name}
+        </p>
+
+        <div className="space-y-4 rounded-lg border border-zinc-800 bg-black/20 p-4">
+          <NativeSelect
+            data={areas.map((area) => ({ value: area.id, label: area.name }))}
+            label="Zona"
+            onChange={(event) => setAreaId(event.target.value)}
+            value={areaId}
           />
-          <TextInput
-            autoComplete="off"
-            label="Puestos"
-            min={0}
-            onChange={(event) => setSeats(event.target.value)}
-            placeholder="4"
-            type="number"
-            value={seats}
-          />
+          <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_120px]">
+            <TextInput
+              autoComplete="off"
+              label="Nombre"
+              onChange={(event) => setName(event.target.value)}
+              placeholder="Mesa 1"
+              value={name}
+            />
+            <TextInput
+              autoComplete="off"
+              label="Puestos"
+              min={0}
+              onChange={(event) => setSeats(event.target.value)}
+              placeholder="4"
+              type="number"
+              value={seats}
+            />
+          </div>
         </div>
+
         {errorMessage ? (
           <p className="text-red-300 text-sm">{errorMessage}</p>
         ) : null}
-        <Group justify="flex-end">
+
+        <div className="-mx-6 flex justify-end gap-3 border-zinc-800 border-t px-6 pt-4">
           <Button
-            color="gray"
+            className="border-zinc-700! text-zinc-300! hover:border-zinc-500 hover:text-white!"
             onClick={() => onOpenChange(false)}
             type="button"
-            variant="default"
+            variant="outline"
           >
             Cancelar
           </Button>
@@ -233,8 +245,8 @@ export function CreateRestaurantTableDialog({
           >
             Crear mesa
           </Button>
-        </Group>
-      </Stack>
+        </div>
+      </div>
     </Modal>
   );
 }

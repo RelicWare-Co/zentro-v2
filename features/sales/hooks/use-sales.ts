@@ -216,7 +216,9 @@ export function useSaleDetail(saleId: string | null) {
 export function useCancelSaleMutation() {
   return useZeroMutation(
     async (input: { saleId: string; cancelledAt?: number }, zero) => {
-      await waitForZeroMutation(zero.mutate(mutators.sales.cancel(input)));
+      await waitForZeroMutation(zero.mutate(mutators.sales.cancel(input)), {
+        awaitServer: true,
+      });
     }
   );
 }
@@ -232,7 +234,8 @@ export function useCreateSaleMutation() {
           ...saleInput,
           saleId,
         })
-      )
+      ),
+      { awaitServer: true }
     );
 
     const tenderedAmount = (saleInput.payments ?? []).reduce(

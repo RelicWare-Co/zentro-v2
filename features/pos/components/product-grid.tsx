@@ -73,7 +73,7 @@ export function ProductGrid({
             className="max-w-md flex-1"
             classNames={{
               input:
-                "h-10 rounded-lg border-zinc-800 bg-black/40 text-white placeholder:text-zinc-600 focus-visible:border-[var(--color-voltage)]",
+                "h-10 rounded-lg border-zinc-800! bg-black/40! text-white! placeholder:text-zinc-600! focus-visible:border-[var(--color-voltage)]!",
             }}
             id={searchInputId}
             leftSection={<Search className="size-4 text-zinc-500" />}

@@ -185,7 +185,7 @@ export function RestaurantFloorView({
           {canManageLayout ? (
             <>
               <Button
-                color="gray"
+                className="border-dashed"
                 leftSection={<Plus aria-hidden="true" className="size-4" />}
                 onClick={() => setIsCreateAreaOpen(true)}
                 type="button"

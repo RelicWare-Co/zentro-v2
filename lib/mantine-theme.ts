@@ -1,4 +1,7 @@
 import {
+  ActionIcon,
+  Badge,
+  Checkbox,
   Combobox,
   type CSSVariablesResolver,
   createTheme,
@@ -9,6 +12,8 @@ import {
   NativeSelect,
   Popover,
   Select,
+  Switch,
+  Tabs,
   Textarea,
   TextInput,
 } from "@mantine/core";
@@ -16,10 +21,13 @@ import {
 /**
  * Brand → Mantine theme mapping.
  *
- * The shadcn theme uses a near-black `--primary` (carbon) for solid actions and
- * `voltage` (#dfff06) as the bright accent. We expose both as Mantine color
- * scales so components can opt into either. `colorScheme` is forced to light —
- * the app has no dark mode.
+ * The shadcn theme uses a near-black `--primary` (carbon) for solid actions
+ * and `voltage` (#dfff06) as the bright accent. We expose both as Mantine
+ * color scales so components can opt into either. `colorScheme` is forced
+ * to `dark` because every app surface (including auth) is built on the
+ * void/carbon dark canvas; Mantine's light scheme produced invisible
+ * outline/subtle gray buttons and white-on-lime switch thumbs that do not
+ * belong on those surfaces.
  */
 
 export const brandColors = {
@@ -80,15 +88,15 @@ const textOnDark = "#fff";
 
 const darkInputClassNames = {
   input:
-    "[--zentro-mantine-input-bg:rgba(0,0,0,0.2)] [--zentro-mantine-input-border:#3f3f46] border-[var(--zentro-mantine-input-border)] bg-[var(--zentro-mantine-input-bg)] text-white",
-  label: "text-zinc-200",
+    "bg-black/20! border-[#3f3f46]! text-white! placeholder:text-zinc-500! focus-visible:border-[var(--color-voltage)]",
+  label: "text-zinc-200!",
 } as const;
 
 const darkSelectClassNames = {
   ...darkInputClassNames,
   dropdown:
-    "zentro-overlay [--zentro-mantine-select-bg:var(--color-carbon)] [--zentro-mantine-select-border:#27272a] border-[var(--zentro-mantine-select-border)] bg-[var(--zentro-mantine-select-bg)] text-white",
-  option: "text-white",
+    "zentro-overlay border-[#27272a]! bg-[var(--color-carbon)]! text-white!",
+  option: "text-white!",
 } as const;
 
 export const mantineTheme = createTheme({
@@ -97,8 +105,8 @@ export const mantineTheme = createTheme({
     carbon,
   },
   primaryColor: "carbon",
-  // Solid buttons use the near-black carbon shade in light mode.
-  primaryShade: { light: 8, dark: 9 },
+  // Solid buttons use the near-black carbon shade (any scheme).
+  primaryShade: 9,
   // Mirror Tailwind `--radius: 0.625rem`.
   defaultRadius: "0.625rem",
   // Inherit the font stack defined by the global stylesheet / Tailwind.
@@ -116,7 +124,16 @@ export const mantineTheme = createTheme({
       },
       styles: {
         content: { backgroundColor: darkSurface, color: textOnDark },
-        header: { backgroundColor: darkSurface, color: textOnDark },
+        header: {
+          backgroundColor: darkSurface,
+          borderBottom: `1px solid ${zinc800}`,
+          color: textOnDark,
+        },
+        title: {
+          fontSize: "1.25rem",
+          fontWeight: 700,
+          letterSpacing: "-0.01em",
+        },
       },
     }),
     Drawer: Drawer.extend({
@@ -163,6 +180,49 @@ export const mantineTheme = createTheme({
     }),
     Combobox: Combobox.extend({
       classNames: { dropdown: "zentro-overlay" },
+    }),
+    // Voltage-checked tracks use a dark thumb (lime is light) so the thumb
+    // contrasts with the green surface — Mantine's default thumb is
+    // `--mantine-color-white` regardless of colorScheme, which disappears on
+    // the lime accent. We pin the thumb to black via the cascading CSS var
+    // that Mantine's thumb background reads from.
+    Switch: Switch.extend({
+      classNames: {
+        root: "[--switch-thumb-bg:var(--mantine-color-black)]",
+        label: "text-zinc-200",
+      },
+    }),
+    Checkbox: Checkbox.extend({
+      classNames: {
+        icon: "text-black!",
+        label: "text-zinc-200",
+      },
+    }),
+    // ActionIcon outline/subtle variants used for table row affordances must
+    // read on dark surfaces — set a dark border + light text by default so
+    // the gray variants the app uses everywhere stop disappearing.
+    ActionIcon: ActionIcon.extend({
+      classNames: {
+        root: "[&[data-variant='outline']]:border-zinc-700! [&[data-variant='outline']]:text-zinc-300! [&[data-variant='outline']]:hover:bg-white/5 [&[data-variant='outline']]:hover:border-zinc-500 [&[data-variant='outline']]:hover:text-white! [&[data-variant='subtle']]:text-zinc-400 [&[data-variant='subtle']]:hover:bg-white/5 [&[data-variant='subtle']]:hover:text-white",
+      },
+    }),
+    // Status/dot badges used inside dark cards need a translucent dark
+    // backing so they read on dark surfaces. We scope that to the uncolored
+    // default + outline variants; colored `light`/`filled` badges keep
+    // their accent color (text-zinc-300 would mute them).
+    Badge: Badge.extend({
+      classNames: {
+        root: "[&[data-variant='outline']]:bg-white/5 [&[data-variant='outline']]:border-zinc-700! [&[data-variant='outline']]:hover:bg-white/5 [&[data-variant='default']]:bg-zinc-800! [&[data-variant='default']]:border-zinc-700! [&[data-variant='default']]:text-zinc-200!",
+      },
+    }),
+    // Tabs gain a "relief" segmented-control style: pill list inside a
+    // rounded translucent dark panel; inactive tabs are zinc, hover is a
+    // subtle light overlay, active is voltage-tinted with a voltage glow.
+    Tabs: Tabs.extend({
+      classNames: {
+        list: "rounded-xl border border-zinc-800! bg-black/30 p-1 [--tabs-list-border-width:0px]",
+        tab: "rounded-lg font-medium text-zinc-400! hover:text-white! hover:bg-white/5 data-[active]:text-[var(--color-voltage)]! data-[active]:bg-[var(--color-voltage)]/10 data-[active]:hover:bg-[var(--color-voltage)]/20",
+      },
     }),
   },
 });

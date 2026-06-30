@@ -1,4 +1,4 @@
-import { ActionIcon, Badge, Button, Loader, TextInput } from "@mantine/core";
+import { ActionIcon, Button, Loader, TextInput } from "@mantine/core";
 import { Edit3, Plus, Search, Trash2, Users } from "lucide-react";
 import { memo, useId } from "react";
 import { TableCell, TableHead, TableRow } from "@/components/ui/table";
@@ -21,9 +21,9 @@ const CustomerRow = memo(function CustomerRow({
         <div className="min-w-0">
           <p className="truncate font-medium text-white">{customer.name}</p>
           {customer.type ? (
-            <Badge className="mt-1" color="gray" size="sm" variant="default">
+            <span className="mt-1 inline-flex items-center rounded-md border border-zinc-700/60 bg-zinc-800/60 px-1.5 py-0.5 font-medium text-[11px] text-zinc-300">
               {customer.type === "juridica" ? "Jurídica" : "Natural"}
-            </Badge>
+            </span>
           ) : null}
         </div>
       </TableCell>
@@ -43,7 +43,6 @@ const CustomerRow = memo(function CustomerRow({
         <div className="flex justify-end gap-2">
           <ActionIcon
             aria-label="Editar cliente"
-            color="gray"
             onClick={() => actions.openEdit(customer)}
             variant="outline"
           >
@@ -95,7 +94,6 @@ export function CustomersListPanel() {
               </p>
               {state.searchQuery.trim() ? null : (
                 <Button
-                  color="gray"
                   leftSection={<Plus className="size-4" />}
                   onClick={actions.openCreate}
                   type="button"

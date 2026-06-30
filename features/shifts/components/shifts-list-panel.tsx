@@ -23,7 +23,6 @@ function ShiftsListContent() {
           {shiftsQuery.error?.message ?? "Intenta de nuevo más tarde."}
         </p>
         <Button
-          color="gray"
           mt="md"
           onClick={() => shiftsQuery.refetch()}
           type="button"
@@ -88,7 +87,6 @@ export function ShiftsListPanel() {
 
         <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
           <Button
-            color="gray"
             disabled={state.pageIndex === 0}
             onClick={actions.goToPreviousPage}
             size="xs"

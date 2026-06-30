@@ -1,3 +1,4 @@
+import { notifications } from "@mantine/notifications";
 import type { KeyboardBarcodeScannerEvent } from "@point-of-sale/keyboard-barcode-scanner";
 import {
   createContext,
@@ -8,10 +9,9 @@ import {
   useState,
 } from "react";
 import { useCreditAccountsSearch } from "@/features/credit/hooks/use-credit";
-import { useModuleCapabilities } from "@/features/modules/hooks/use-module-capabilities";
-import { usePosSaleModeAdapters } from "@/features/modules/hooks/use-pos-sale-mode-adapters";
 import { useCreateCustomerModal } from "@/features/pos/hooks/use-create-customer-modal";
 import { useModifierModal } from "@/features/pos/hooks/use-modifier-modal";
+import { usePosCart } from "@/features/pos/hooks/use-pos-cart";
 import {
   usePosCategories,
   usePosModifierProducts,
@@ -19,19 +19,21 @@ import {
   usePosSettings,
   useToggleProductFavoriteMutation,
 } from "@/features/pos/hooks/use-pos-catalog";
-import { buildSalePaymentsFromInputs } from "@/features/pos/hooks/use-pos-checkout";
+import {
+  buildQuickSalePayments,
+  buildSalePaymentsFromInputs,
+  usePosCheckout,
+} from "@/features/pos/hooks/use-pos-checkout";
 import { usePosCustomers } from "@/features/pos/hooks/use-pos-queries";
 import { usePosShift } from "@/features/pos/hooks/use-pos-shift";
+import {
+  type PosTableOrderItemStatus,
+  usePosTableOrder,
+} from "@/features/pos/hooks/use-pos-table-order";
+import { resolveAppliedSalePaidAmount } from "@/features/pos/pos.shared";
 import type { PosActiveModal } from "@/features/pos/pos-page-modals.shared";
 import { isPosModalOpen } from "@/features/pos/pos-page-modals.shared";
 import { printSaleReceipt } from "@/features/pos/printing/print-sale-receipt.client";
-import type {
-  PosPaymentMethodOption,
-  PosTableSessionState,
-  SaleFinalizeOptions,
-  SaleModeAdapter,
-  SaleReceiptPayload,
-} from "@/features/pos/sale-modes/types";
 import type {
   ActiveShift,
   CartItem,
@@ -50,9 +52,29 @@ import { useActiveShift } from "@/features/shifts/hooks/use-shifts";
 import { useActiveOrganization } from "@/lib/auth-client";
 
 export type PosPageVariant = "v1" | "v2";
-export type { PosTableSessionState } from "@/features/pos/sale-modes/types";
 
-export type PaymentMethodOption = PosPaymentMethodOption;
+export interface PaymentMethodOption {
+  id: string;
+  label: string;
+  requiresReference: boolean;
+}
+
+/**
+ * Sesión de mesa activa: la cuenta abierta de la mesa se refleja como el
+ * carrito del POS y las acciones se enrutan al módulo de restaurantes.
+ */
+export interface PosTableSessionState {
+  areaName: string;
+  draftItemsCount: number;
+  isClosingOrder: boolean;
+  isLoading: boolean;
+  isSendingToKitchen: boolean;
+  itemStatusById: Record<string, PosTableOrderItemStatus>;
+  orderId: string | null;
+  orderNumber: number | null;
+  tableId: string;
+  tableName: string;
+}
 
 export interface PosPageState {
   activeCategoryId: string;
@@ -85,6 +107,7 @@ export interface PosPageState {
   products: Product[];
   projectedCreditBalance: number;
   remainingCreditAmount: number;
+  saleSuccessToken: number | null;
   searchQuery: string;
   selectedCustomerCreditAccount: { balance: number } | null;
   selectedCustomerId: string;
@@ -99,7 +122,7 @@ export interface PosPageState {
 
 export interface PosPageActions {
   addPaymentMethod: () => void;
-  addToCart: SaleModeAdapter["addToCart"];
+  addToCart: ReturnType<typeof usePosCart>["addToCart"];
   clearCart: () => void;
   closeActiveModal: () => void;
   confirmCashMovement: () => void;
@@ -191,6 +214,8 @@ export function PosPageProvider({
   const [isMobileCartOpen, setIsMobileCartOpen] = useState(false);
   const [activeModal, setActiveModal] = useState<PosActiveModal | null>(null);
   const [isQuickSaleMode, setIsQuickSaleMode] = useState(false);
+  const [saleSuccessToken, setSaleSuccessToken] = useState<number | null>(null);
+  const [tableDiscountInput, setTableDiscountInput] = useState("0");
 
   const closeActiveModal = useCallback(() => {
     setActiveModal(null);
@@ -247,73 +272,51 @@ export function PosPageProvider({
   const customers = customersData?.data ?? [];
   const creditAccounts = creditAccountsData?.data ?? [];
 
+  const {
+    cart,
+    discountInput,
+    setDiscountInput,
+    addToCart,
+    removeFromCart,
+    updateQuantity,
+    clearCart,
+    resetDiscount,
+    updateItemDiscount,
+    getProductQuantity,
+    totals,
+    totalItems,
+  } = usePosCart();
+
   const resetDeliveryInfo = useCallback(() => {
     setDeliveryInfo("");
   }, []);
 
-  const printReceiptForSale = useCallback(
-    async (payload: SaleReceiptPayload) => {
-      const customer = customers.find((c) => c.id === selectedCustomerId);
-      await printSaleReceipt({
-        activeOrganizationId,
-        activeOrganizationName,
-        customer,
-        defaultTerminalName,
-        paymentMethods: paymentMethodsForReceipt,
-        result: payload.result,
-        snapshot: payload.snapshot,
-      });
-    },
-    [
-      customers,
-      selectedCustomerId,
-      activeOrganizationId,
-      activeOrganizationName,
-      defaultTerminalName,
-      paymentMethodsForReceipt,
-    ]
-  );
+  const clearCurrentOrder = useCallback(() => {
+    clearCart();
+    resetDeliveryInfo();
+  }, [clearCart, resetDeliveryInfo]);
 
-  const moduleCapabilities = useModuleCapabilities();
-  const saleModeAdapters = usePosSaleModeAdapters({
-    activeOrganizationId,
-    activeShiftId: activeShift?.id,
-    allowCreditSales,
-    closeActiveModal,
-    deliveryInfo,
-    moduleAccess: moduleCapabilities.data?.modules,
-    paymentMethodOptions,
-    printReceiptForSale,
-    resetDeliveryInfo,
-    selectedCustomerId,
-  });
-  const activeMode =
-    saleModeAdapters.find(
-      (mode) => mode.modeId !== "counter" && mode.isActive
-    ) ?? saleModeAdapters[0];
-  const checkout = activeMode.checkout;
-
-  const buildFinalizeOptions = useCallback(
-    (shiftId: string): SaleFinalizeOptions => ({
-      shiftId,
-      customerId: selectedCustomerId || null,
-      closeModal: closeActiveModal,
-      printReceipt: printReceiptForSale,
-      resetDeliveryInfo,
-    }),
-    [
-      selectedCustomerId,
-      closeActiveModal,
-      printReceiptForSale,
-      resetDeliveryInfo,
-    ]
-  );
+  const tableOrder = usePosTableOrder(activeOrganizationId, tableDiscountInput);
+  const isTableMode = Boolean(tableOrder.activeTableId);
+  const effectiveCart = isTableMode ? tableOrder.cart : cart;
+  const effectiveTotals = isTableMode ? tableOrder.totals : totals;
+  const effectiveDiscountInput = isTableMode
+    ? tableDiscountInput
+    : discountInput;
+  const effectiveTotalItems = isTableMode
+    ? tableOrder.cart.reduce((sum, item) => sum + item.quantity, 0)
+    : totalItems;
+  const effectiveAllowCreditSales = allowCreditSales && !isTableMode;
 
   const addItemToOrder = useCallback(
     (product: Product, modifiers: CartItemModifier[]) => {
-      activeMode.addToCart(product, modifiers);
+      if (tableOrder.activeTableId) {
+        tableOrder.addProduct(product, modifiers).catch(() => undefined);
+        return;
+      }
+      addToCart(product, modifiers);
     },
-    [activeMode]
+    [tableOrder.activeTableId, tableOrder.addProduct, addToCart]
   );
 
   const modifierModalControl = useMemo(
@@ -342,6 +345,74 @@ export function PosPageProvider({
     paymentMethodOptions,
     isPosModalOpen(activeModal, "close-shift"),
     closeActiveModal
+  );
+
+  const printReceiptForSale = useCallback(
+    async (payload: {
+      result: {
+        saleId: string;
+        status: string;
+        subtotal: number;
+        taxAmount: number;
+        discountAmount: number;
+        totalAmount: number;
+        paidAmount: number;
+        balanceDue: number;
+      };
+      snapshot: {
+        cart: CartItem[];
+        deliveryInfo: string | null;
+        payments: Array<{
+          method: string;
+          amount: number;
+          reference: string | null;
+        }>;
+        totals: CartTotals;
+      };
+    }) => {
+      const customer = customers.find((c) => c.id === selectedCustomerId);
+      await printSaleReceipt({
+        activeOrganizationId,
+        activeOrganizationName,
+        customer,
+        defaultTerminalName,
+        paymentMethods: paymentMethodsForReceipt,
+        result: payload.result,
+        snapshot: payload.snapshot,
+      });
+    },
+    [
+      customers,
+      selectedCustomerId,
+      activeOrganizationId,
+      activeOrganizationName,
+      defaultTerminalName,
+      paymentMethodsForReceipt,
+    ]
+  );
+
+  const handleSaleCompleted = useCallback(
+    (payload: Parameters<typeof printReceiptForSale>[0]) => {
+      setSaleSuccessToken(Date.now());
+      return printReceiptForSale(payload);
+    },
+    [printReceiptForSale]
+  );
+
+  const checkout = usePosCheckout(
+    activeShift?.id,
+    effectiveCart,
+    effectiveTotals,
+    selectedCustomerId,
+    deliveryInfo,
+    effectiveDiscountInput,
+    clearCurrentOrder,
+    resetDiscount,
+    resetDeliveryInfo,
+    paymentMethodOptions,
+    effectiveAllowCreditSales,
+    closeActiveModal,
+    handleSaleCompleted
   );
 
   const createCustomerModal = useCreateCustomerModal((customerId) => {
@@ -444,103 +515,245 @@ export function PosPageProvider({
     setActiveModal({ type: "checkout" });
   }, [requireActiveShift]);
 
+  const finalizeTableOrderWithPayments = useCallback(
+    async (
+      salePayments: Array<{
+        method: string;
+        amount: number;
+        reference: string | null;
+      }>
+    ) => {
+      const shiftId = activeShift?.id;
+      if (
+        !shiftId ||
+        tableOrder.isClosingOrder ||
+        tableOrder.cart.length === 0 ||
+        salePayments.length === 0
+      ) {
+        return;
+      }
+      const tableName = tableOrder.table?.name ?? "La mesa";
+      const receiptSnapshot = {
+        cart: tableOrder.cart.map((item) => ({
+          ...item,
+          modifiers: item.modifiers.map((modifier) => ({ ...modifier })),
+        })),
+        deliveryInfo: null,
+        payments: salePayments.map((payment) => ({ ...payment })),
+        totals: { ...tableOrder.totals },
+      };
+
+      try {
+        const result = await tableOrder.closeTableOrder({
+          shiftId,
+          customerId: selectedCustomerId || null,
+          discountAmount: receiptSnapshot.totals.saleDiscountAmount,
+          payments: salePayments,
+        });
+
+        const paidAmount = resolveAppliedSalePaidAmount(
+          receiptSnapshot.totals.totalAmount,
+          salePayments
+        );
+        notifications.show({
+          message: `${tableName} cobrada y liberada`,
+          color: "green",
+        });
+        closeActiveModal();
+        checkout.resetPayments();
+        setTableDiscountInput("0");
+        tableOrder.exitTable();
+
+        Promise.resolve(
+          handleSaleCompleted({
+            result: {
+              saleId: result.saleId,
+              status: "completed",
+              subtotal: receiptSnapshot.totals.subTotal,
+              taxAmount: receiptSnapshot.totals.tax,
+              discountAmount: receiptSnapshot.totals.discountAmount,
+              totalAmount: receiptSnapshot.totals.totalAmount,
+              paidAmount,
+              balanceDue: Math.max(
+                receiptSnapshot.totals.totalAmount - paidAmount,
+                0
+              ),
+            },
+            snapshot: receiptSnapshot,
+          })
+        ).catch((error) => {
+          notifications.show({
+            title: "La mesa se cobró, pero no se pudo imprimir el ticket",
+            message:
+              error instanceof Error
+                ? error.message
+                : "Revisa la impresora e intenta reimprimir.",
+            color: "red",
+          });
+        });
+      } catch (error) {
+        notifications.show({
+          title: "No se pudo cobrar la mesa",
+          message:
+            error instanceof Error ? error.message : "Inténtalo de nuevo.",
+          color: "red",
+        });
+      }
+    },
+    [
+      activeShift?.id,
+      tableOrder,
+      selectedCustomerId,
+      closeActiveModal,
+      checkout,
+      handleSaleCompleted,
+    ]
+  );
+
   const finalizeSale = useCallback(() => {
     if (!requireActiveShift()) {
       return;
     }
-    const shiftId = activeShift?.id;
-    if (!(shiftId && checkout.canFinalizeSale)) {
+    if (tableOrder.activeTableId) {
+      if (!checkout.canFinalizeSale) {
+        return;
+      }
+      finalizeTableOrderWithPayments(
+        buildSalePaymentsFromInputs(checkout.payments)
+      ).catch(() => undefined);
       return;
     }
-    activeMode
-      .finalizeSale(
-        buildSalePaymentsFromInputs(checkout.payments),
-        buildFinalizeOptions(shiftId)
-      )
-      .catch(() => undefined);
+    checkout.handleFinalizeSale();
   }, [
     requireActiveShift,
-    activeShift?.id,
+    tableOrder.activeTableId,
     checkout,
-    activeMode,
-    buildFinalizeOptions,
+    finalizeTableOrderWithPayments,
   ]);
 
   const handleQuickSale = useCallback(() => {
     if (!requireActiveShift()) {
       return;
     }
-    const shiftId = activeShift?.id;
-    if (!shiftId) {
+    if (tableOrder.activeTableId) {
+      finalizeTableOrderWithPayments(
+        buildQuickSalePayments(tableOrder.totals.totalAmount)
+      ).catch(() => undefined);
       return;
     }
-    activeMode.quickSale(buildFinalizeOptions(shiftId)).catch(() => undefined);
-  }, [requireActiveShift, activeShift?.id, activeMode, buildFinalizeOptions]);
+    checkout.handleQuickSale();
+  }, [
+    requireActiveShift,
+    tableOrder.activeTableId,
+    tableOrder.totals.totalAmount,
+    checkout,
+    finalizeTableOrderWithPayments,
+  ]);
 
   const updateQuantityAction = useCallback(
     (cartItemId: string, delta: number) => {
-      activeMode.updateQuantity(cartItemId, delta);
+      if (tableOrder.activeTableId) {
+        tableOrder.updateItemQuantity(cartItemId, delta).catch(() => undefined);
+        return;
+      }
+      updateQuantity(cartItemId, delta);
     },
-    [activeMode]
+    [tableOrder.activeTableId, tableOrder.updateItemQuantity, updateQuantity]
   );
 
   const removeFromCartAction = useCallback(
     (cartItemId: string) => {
-      activeMode.removeFromCart(cartItemId);
+      if (tableOrder.activeTableId) {
+        tableOrder.removeItem(cartItemId).catch(() => undefined);
+        return;
+      }
+      removeFromCart(cartItemId);
     },
-    [activeMode]
+    [tableOrder.activeTableId, tableOrder.removeItem, removeFromCart]
   );
 
   const clearCartAction = useCallback(() => {
-    activeMode.clearCart();
-  }, [activeMode]);
+    if (tableOrder.activeTableId) {
+      return;
+    }
+    clearCurrentOrder();
+  }, [tableOrder.activeTableId, clearCurrentOrder]);
 
   const updateItemDiscountAction = useCallback(
     (cartItemId: string, value: string) => {
-      activeMode.updateItemDiscount(cartItemId, value);
+      if (tableOrder.activeTableId) {
+        return;
+      }
+      updateItemDiscount(cartItemId, value);
     },
-    [activeMode]
+    [tableOrder.activeTableId, updateItemDiscount]
   );
 
   const setDiscountInputAction = useCallback(
     (value: string) => {
-      activeMode.setDiscountInput(value);
+      if (tableOrder.activeTableId) {
+        setTableDiscountInput(value);
+        return;
+      }
+      setDiscountInput(value);
     },
-    [activeMode]
+    [tableOrder.activeTableId, setDiscountInput]
   );
 
   const getProductQuantityAction = useCallback(
-    (productId: string) => activeMode.getProductQuantity(productId),
-    [activeMode]
+    (productId: string) => {
+      if (tableOrder.activeTableId) {
+        let quantity = 0;
+        for (const item of tableOrder.cart) {
+          if (item.product.id === productId) {
+            quantity += item.quantity;
+          }
+        }
+        return quantity;
+      }
+      return getProductQuantity(productId);
+    },
+    [tableOrder.activeTableId, tableOrder.cart, getProductQuantity]
   );
 
   const sendTableOrderToKitchen = useCallback(() => {
-    activeMode.sendToKitchen?.().catch(() => undefined);
-  }, [activeMode]);
+    tableOrder.sendToKitchen().catch(() => undefined);
+  }, [tableOrder.sendToKitchen]);
 
-  const tableMode = useMemo(
-    () => saleModeAdapters.find((mode) => mode.modeId === "table"),
-    [saleModeAdapters]
-  );
-
+  // Reset payment inputs when switching between counter and table mode so
+  // amounts typed for one order never leak into the other.
   const enterTableMode = useCallback(
     (tableId: string) => {
-      if (!tableMode) {
-        return;
-      }
-      activeMode.exit();
-      tableMode.enter(tableId);
+      checkout.resetPayments();
+      setTableDiscountInput("0");
+      tableOrder.enterTable(tableId);
     },
-    [activeMode, tableMode]
+    [checkout.resetPayments, tableOrder.enterTable]
   );
 
   const exitTableMode = useCallback(() => {
-    if (activeMode.modeId === "table") {
-      activeMode.exit();
-    }
-  }, [activeMode]);
+    checkout.resetPayments();
+    setTableDiscountInput("0");
+    tableOrder.exitTable();
+  }, [checkout.resetPayments, tableOrder.exitTable]);
 
-  const tableSession = activeMode.sessionState;
+  const tableSession = useMemo<PosTableSessionState | null>(() => {
+    if (!tableOrder.activeTableId) {
+      return null;
+    }
+    return {
+      tableId: tableOrder.activeTableId,
+      tableName: tableOrder.table?.name ?? "Mesa",
+      areaName: tableOrder.table?.areaName ?? "",
+      orderId: tableOrder.openOrder?.id ?? null,
+      orderNumber: tableOrder.openOrder?.orderNumber ?? null,
+      itemStatusById: tableOrder.itemStatusById,
+      draftItemsCount: tableOrder.draftItemsCount,
+      isLoading: tableOrder.isLoading,
+      isSendingToKitchen: tableOrder.isSendingToKitchen,
+      isClosingOrder: tableOrder.isClosingOrder,
+    };
+  }, [tableOrder]);
 
   const openShiftFromRequired = useCallback(() => {
     setActiveModal({ type: "open-shift" });
@@ -552,15 +765,15 @@ export function PosPageProvider({
         activeCategoryId,
         activeModal,
         activeShift,
-        canFinalizeSale: checkout.canFinalizeSale && !activeMode.isProcessing,
+        canFinalizeSale: checkout.canFinalizeSale && !tableOrder.isClosingOrder,
         canReturnCashChange: checkout.canReturnCashChange,
-        cart: activeMode.cart,
+        cart: effectiveCart,
         cashChangeDue: checkout.cashChangeDue,
         categories: categories ?? [],
-        checkoutError: checkout.error ?? activeMode.error,
+        checkoutError: checkout.error ?? tableOrder.closeOrderError,
         customers,
         deliveryInfo,
-        discountInput: activeMode.discountInput,
+        discountInput: effectiveDiscountInput,
         hasNextPage: !!hasNextPage,
         hasPaymentDifference: checkout.hasPaymentDifference,
         isActiveShift,
@@ -569,7 +782,8 @@ export function PosPageProvider({
         isCreditSale: checkout.isCreditSale,
         isFetchingNextPage,
         isMobileCartOpen,
-        isProcessingCheckout: activeMode.isProcessing,
+        isProcessingCheckout:
+          checkout.isProcessing || tableOrder.isClosingOrder,
         isProductsLoading,
         isQuickSaleMode,
         modifierProducts: modifierProducts ?? [],
@@ -579,15 +793,16 @@ export function PosPageProvider({
         products,
         projectedCreditBalance,
         remainingCreditAmount: checkout.remainingCreditAmount,
+        saleSuccessToken,
         searchQuery,
         selectedCustomerCreditAccount,
         selectedCustomerId,
         selectedProductForModifiers,
         shouldCreateCreditBalance: checkout.shouldCreateCreditBalance,
         tableSession,
-        totalItems: activeMode.totalItems,
+        totalItems: effectiveTotalItems,
         totalPaid: checkout.totalPaid,
-        totals: activeMode.totals,
+        totals: effectiveTotals,
         viewMode,
       },
       actions: {
@@ -641,7 +856,7 @@ export function PosPageProvider({
       },
       meta: {
         activeOrganizationId,
-        allowCreditSales: activeMode.allowCreditSales,
+        allowCreditSales: effectiveAllowCreditSales,
         createCustomerModal,
         defaultTerminalName,
         isTogglingFavorite: toggleFavoriteMutation.isPending,
@@ -655,11 +870,11 @@ export function PosPageProvider({
       activeCategoryId,
       activeModal,
       activeShift,
-      activeMode,
       checkout,
       categories,
       customers,
       deliveryInfo,
+      effectiveDiscountInput,
       hasNextPage,
       isActiveShift,
       isActiveShiftLoading,
@@ -673,11 +888,16 @@ export function PosPageProvider({
       modifierQuantities,
       products,
       projectedCreditBalance,
+      saleSuccessToken,
       searchQuery,
       selectedCustomerCreditAccount,
       selectedCustomerId,
       selectedProductForModifiers,
+      tableOrder,
       tableSession,
+      effectiveCart,
+      effectiveTotals,
+      effectiveTotalItems,
       viewMode,
       addItemToOrder,
       clearCartAction,
@@ -705,6 +925,7 @@ export function PosPageProvider({
       updateModifierQuantity,
       updateQuantityAction,
       activeOrganizationId,
+      effectiveAllowCreditSales,
       defaultTerminalName,
       toggleFavoriteMutation,
       paymentMethodOptions,

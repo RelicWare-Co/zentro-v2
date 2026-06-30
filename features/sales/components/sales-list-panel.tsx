@@ -20,13 +20,7 @@ export function SalesListPanel() {
       <div className="p-4 pt-4">
         <div className="rounded-xl border border-zinc-800 border-dashed px-4 py-16 text-center">
           <p className="text-zinc-400">{state.viewSummary.emptyTitle}</p>
-          <Button
-            color="gray"
-            component={Link}
-            href="/pos"
-            mt="md"
-            variant="outline"
-          >
+          <Button component={Link} href="/pos" mt="md" variant="outline">
             Registrar una venta
           </Button>
         </div>
@@ -76,9 +70,14 @@ export function SalesListPanel() {
                         {sale.customerName ?? "Cliente mostrador"}
                       </p>
                     </div>
-                    <p className="mt-1 truncate pl-5 text-xs text-zinc-500">
-                      {sale.cashierName ?? "Sin cajero"}
-                    </p>
+                    <div className="mt-1 flex min-w-0 items-center gap-1.5 pl-5 text-xs text-zinc-500">
+                      <span className="shrink-0 rounded bg-zinc-800/80 px-1.5 py-0.5 font-medium text-zinc-400 uppercase tracking-wide">
+                        Cajero
+                      </span>
+                      <span className="truncate">
+                        {sale.cashierName ?? "Sin cajero"}
+                      </span>
+                    </div>
                   </div>
 
                   <div className="min-w-0 text-sm text-zinc-300 tabular-nums">
@@ -154,7 +153,6 @@ export function SalesListPanel() {
 
           <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
             <Button
-              color="gray"
               disabled={state.pageIndex === 0}
               onClick={actions.goToPreviousPage}
               size="xs"

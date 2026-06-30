@@ -5,7 +5,7 @@ import { usePosPage } from "@/features/pos/pos-page-context";
 import { cn, formatMoneyInput, sanitizeMoneyInput } from "@/lib/utils";
 
 const paymentFieldClassName =
-  "h-10 touch-manipulation rounded-lg border-zinc-700 bg-[#151515] py-0 text-base text-white md:text-sm";
+  "h-10 touch-manipulation rounded-lg border-zinc-700! bg-[#151515]! py-0 text-base text-white! md:text-sm";
 
 interface CheckoutPaymentsSectionProps {
   autoFocusFirstAmount?: boolean;
@@ -131,7 +131,7 @@ export function CheckoutPaymentsSection({
                 autoComplete="off"
                 classNames={{
                   input:
-                    "h-10 touch-manipulation border-zinc-700 bg-[#151515] text-base focus-visible:border-[var(--color-voltage)] md:h-9 md:text-sm",
+                    "h-10 touch-manipulation border-zinc-700! bg-[#151515]! text-base text-white! focus-visible:border-[var(--color-voltage)]! md:h-9 md:text-sm",
                 }}
                 id={`${amountId}-ref-${index}`}
                 onChange={(e) =>
@@ -146,7 +146,7 @@ export function CheckoutPaymentsSection({
       })}
 
       <Button
-        className="w-full border-zinc-700 border-dashed bg-transparent text-zinc-400 hover:border-zinc-500 hover:text-white"
+        className="w-full border-zinc-700! border-dashed bg-transparent! text-zinc-400! hover:border-zinc-500 hover:text-white!"
         leftSection={<Plus className="size-4" />}
         onClick={actions.addPaymentMethod}
         variant="outline"

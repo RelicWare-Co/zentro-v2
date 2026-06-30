@@ -62,7 +62,7 @@ export function GeneralTab() {
             <span>Información General</span>
             {data.viewer.canManageAccess && !isEditing && (
               <Button
-                color="gray"
+                className="border-zinc-600! text-zinc-300! hover:border-[var(--color-voltage)]/40 hover:bg-[var(--color-voltage)]/10 hover:text-[var(--color-voltage)]"
                 leftSection={<Pencil className="size-3.5" />}
                 onClick={() => setIsEditing(true)}
                 size="sm"
@@ -98,7 +98,7 @@ export function GeneralTab() {
             </div>
             <div className="flex flex-col-reverse gap-3 sm:flex-row">
               <Button
-                color="gray"
+                className="border-zinc-700! text-zinc-300! hover:border-zinc-500 hover:text-white"
                 disabled={updateMutation.isPending}
                 onClick={() => {
                   setIsEditing(false);

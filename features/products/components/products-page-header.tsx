@@ -33,7 +33,6 @@ export function ProductsPageHeader() {
       </div>
       <div className="flex flex-col gap-3 sm:flex-row">
         <Button
-          color="gray"
           disabled={!hasTrackedInventory}
           leftSection={<PackagePlus className="size-4" />}
           onClick={actions.openInventoryMovement}

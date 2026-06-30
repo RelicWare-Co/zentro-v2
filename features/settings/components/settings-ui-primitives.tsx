@@ -78,7 +78,10 @@ export function SettingsToggleControl({
         checked={checked}
         color="voltage.5"
         disabled={disabled}
-        onChange={(event) => onCheckedChange(event.currentTarget.checked)}
+        onChange={(event) => {
+          const next = event.currentTarget.checked;
+          onCheckedChange(next);
+        }}
       />
       <span className="text-sm text-zinc-300">{label}</span>
     </div>
@@ -113,7 +116,10 @@ export function SettingsToggleRow({
         color="voltage.5"
         disabled={disabled}
         id={id}
-        onChange={(event) => onCheckedChange(event.currentTarget.checked)}
+        onChange={(event) => {
+          const next = event.currentTarget.checked;
+          onCheckedChange(next);
+        }}
       />
     </div>
   );

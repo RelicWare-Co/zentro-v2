@@ -41,7 +41,6 @@ const CreditAccountRow = memo(function CreditAccountRow({
         <div className="flex justify-end gap-2">
           <ActionIcon
             aria-label="Ver historial"
-            color="gray"
             onClick={() => actions.openLedger(account)}
             variant="outline"
           >

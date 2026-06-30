@@ -127,18 +127,19 @@ export function RestaurantModuleSettingsCard(
             checked={props.settings.modules.restaurants.enabled}
             color="voltage.5"
             disabled={!props.moduleAccess.canManageToggle}
-            onChange={(event) =>
+            onChange={(event) => {
+              const enabled = event.currentTarget.checked;
               props.onSettingsChange((currentValue) => ({
                 ...currentValue,
                 modules: {
                   ...currentValue.modules,
                   restaurants: {
                     ...currentValue.modules.restaurants,
-                    enabled: event.currentTarget.checked,
+                    enabled,
                   },
                 },
-              }))
-            }
+              }));
+            }}
           />
         </div>
 
@@ -154,18 +155,19 @@ export function RestaurantModuleSettingsCard(
               checked={props.settings.restaurants.kitchen.displayEnabled}
               color="voltage.5"
               disabled={!props.canManageSettings}
-              onChange={(event) =>
+              onChange={(event) => {
+                const displayEnabled = event.currentTarget.checked;
                 props.onSettingsChange((currentValue) => ({
                   ...currentValue,
                   restaurants: {
                     ...currentValue.restaurants,
                     kitchen: {
                       ...currentValue.restaurants.kitchen,
-                      displayEnabled: event.currentTarget.checked,
+                      displayEnabled,
                     },
                   },
-                }))
-              }
+                }));
+              }}
             />
           </div>
           <div className="flex items-center justify-between rounded-lg border border-zinc-800 bg-black/10 p-4">
@@ -179,18 +181,19 @@ export function RestaurantModuleSettingsCard(
               checked={props.settings.restaurants.kitchen.printTicketsEnabled}
               color="voltage.5"
               disabled={!props.canManageSettings}
-              onChange={(event) =>
+              onChange={(event) => {
+                const printTicketsEnabled = event.currentTarget.checked;
                 props.onSettingsChange((currentValue) => ({
                   ...currentValue,
                   restaurants: {
                     ...currentValue.restaurants,
                     kitchen: {
                       ...currentValue.restaurants.kitchen,
-                      printTicketsEnabled: event.currentTarget.checked,
+                      printTicketsEnabled,
                     },
                   },
-                }))
-              }
+                }));
+              }}
             />
           </div>
           <div className="flex items-center justify-between rounded-lg border border-zinc-800 bg-black/10 p-4">
@@ -209,18 +212,19 @@ export function RestaurantModuleSettingsCard(
                   props.settings.restaurants.kitchen.printTicketsEnabled
                 )
               }
-              onChange={(event) =>
+              onChange={(event) => {
+                const autoPrintOnSend = event.currentTarget.checked;
                 props.onSettingsChange((currentValue) => ({
                   ...currentValue,
                   restaurants: {
                     ...currentValue.restaurants,
                     kitchen: {
                       ...currentValue.restaurants.kitchen,
-                      autoPrintOnSend: event.currentTarget.checked,
+                      autoPrintOnSend,
                     },
                   },
-                }))
-              }
+                }));
+              }}
             />
           </div>
         </div>
@@ -239,7 +243,6 @@ export function RestaurantModuleSettingsCard(
               value={newAreaName}
             />
             <Button
-              color="gray"
               disabled={
                 !props.canManageSettings ||
                 createRestaurantAreaMutation.isPending
@@ -262,7 +265,6 @@ export function RestaurantModuleSettingsCard(
                 <div className="flex items-center justify-between gap-3">
                   <div className="font-medium text-white">{area.name}</div>
                   <Button
-                    color="gray"
                     disabled={
                       !props.canManageSettings ||
                       deleteRestaurantAreaMutation.isPending ||
@@ -305,16 +307,16 @@ export function RestaurantModuleSettingsCard(
                             !props.canManageSettings ||
                             updateRestaurantTableMutation.isPending
                           }
-                          onChange={(event) =>
+                          onChange={(event) => {
+                            const isActive = event.currentTarget.checked;
                             updateRestaurantTableMutation.mutate({
                               id: table.id,
-                              isActive: event.currentTarget.checked,
-                            })
-                          }
+                              isActive,
+                            });
+                          }}
                         />
                         <Button
                           aria-label={`Eliminar ${table.name}`}
-                          color="gray"
                           disabled={
                             !props.canManageSettings ||
                             deleteRestaurantTableMutation.isPending
@@ -370,7 +372,6 @@ export function RestaurantModuleSettingsCard(
                     value={newTableDrafts[area.id]?.seats ?? ""}
                   />
                   <Button
-                    color="gray"
                     disabled={
                       !props.canManageSettings ||
                       createRestaurantTableMutation.isPending

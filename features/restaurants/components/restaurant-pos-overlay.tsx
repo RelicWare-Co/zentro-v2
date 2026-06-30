@@ -6,6 +6,7 @@ import { useModuleCapabilities } from "@/features/modules/hooks/use-module-capab
 import { isOrganizationManagerRole } from "@/features/organization/access-control.shared";
 import { RestaurantFloorView } from "@/features/restaurants/components/restaurant-floor-view";
 import { useRestaurantBootstrap } from "@/features/restaurants/hooks/use-restaurants";
+import { cn } from "@/lib/utils";
 
 function isEditableEventTarget(target: EventTarget | null) {
   return (
@@ -87,7 +88,7 @@ function RestaurantPosTablesPanel({
     <div
       aria-label="Mesas del restaurante"
       aria-modal="true"
-      className="absolute inset-0 z-30 flex flex-col overflow-hidden bg-[var(--color-void)] text-[var(--color-photon)] outline-none"
+      className="absolute inset-0 z-30 flex flex-col overflow-hidden bg-[var(--color-void)] text-[var(--color-photon)] outline-none transition-transform duration-300 ease-out motion-reduce:transition-none"
       ref={panelRef}
       role="dialog"
       tabIndex={-1}
@@ -184,30 +185,41 @@ export function RestaurantPosTables({
     return null;
   }
 
-  if (isOpen) {
-    return (
-      <RestaurantPosTablesPanel
-        activeTableId={activeTableId}
-        onClose={() => onOpenChange(false)}
-        onSelectTable={onSelectTable}
-      />
-    );
-  }
-
-  // Positioned relative to the POS catalog (its `relative` wrapper), so it
-  // floats over the product zone instead of the app chrome. The absolute
-  // positioning lives on this div, not on the Mantine Button, because the
-  // Button's own root styles override `position`.
   return (
-    <div className="absolute bottom-4 left-4 z-20">
-      <Button
-        className="h-12 rounded-full bg-[var(--color-voltage)] px-5 font-semibold text-black shadow-lg hover:bg-[#d9f15c]"
-        leftSection={<UtensilsCrossed aria-hidden="true" className="size-5" />}
-        onClick={() => onOpenChange(true)}
-        type="button"
+    <>
+      {/* Sliding panel: mounted always so the slide-down exit transition can
+          run. When closed it's pushed below the catalog zone, hidden via
+          pointer-events-none and opacity, ready to slide up on open. */}
+      <div
+        className={cn(
+          "absolute inset-0 z-30 transition-all duration-300 ease-out motion-reduce:transition-none",
+          isOpen
+            ? "translate-y-0 opacity-100"
+            : "pointer-events-none translate-y-full opacity-0"
+        )}
       >
-        Mesas
-      </Button>
-    </div>
+        <RestaurantPosTablesPanel
+          activeTableId={activeTableId}
+          onClose={() => onOpenChange(false)}
+          onSelectTable={onSelectTable}
+        />
+      </div>
+
+      {/*Floating launcher — hidden while the overlay is open. */}
+      {isOpen ? null : (
+        <div className="absolute bottom-4 left-4 z-20">
+          <Button
+            className="h-12 rounded-full bg-[var(--color-voltage)] px-5 font-semibold text-black shadow-lg hover:bg-[#d9f15c]"
+            leftSection={
+              <UtensilsCrossed aria-hidden="true" className="size-5" />
+            }
+            onClick={() => onOpenChange(true)}
+            type="button"
+          >
+            Mesas
+          </Button>
+        </div>
+      )}
+    </>
   );
 }

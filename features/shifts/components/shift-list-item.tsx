@@ -153,15 +153,13 @@ export function ShiftListItemCard({
               Cierre y Conciliación
             </h4>
             {shift.closures.length > 0 ? (
-              <Badge
-                className={`h-6 rounded-md border-0 px-2 py-0.5 ${getDifferenceClassName(shift.totals.totalDifference)}`}
-                tt="none"
-                variant="outline"
+              <span
+                className={`inline-flex h-6 items-center rounded-md border border-zinc-700/60 bg-zinc-800/60 px-2 py-0.5 font-medium text-xs ${getDifferenceClassName(shift.totals.totalDifference)}`}
               >
                 {shift.totals.totalDifference === 0
                   ? "Cuadrado"
                   : formatSignedCurrency(shift.totals.totalDifference)}
-              </Badge>
+              </span>
             ) : null}
           </div>
 

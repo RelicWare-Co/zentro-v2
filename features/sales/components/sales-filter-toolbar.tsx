@@ -1,17 +1,7 @@
-import {
-  Badge,
-  Button,
-  Drawer,
-  Popover,
-  Select,
-  TextInput,
-} from "@mantine/core";
+import { Badge, Button, Drawer, Select, TextInput } from "@mantine/core";
 import { Filter, Search } from "lucide-react";
 import { ALL_FILTER_VALUE } from "@/features/listing/listing.constants.shared";
-import {
-  SalesAdvancedFiltersDesktop,
-  SalesAdvancedFiltersMobile,
-} from "@/features/sales/components/sales-advanced-filters";
+import { SalesAdvancedFiltersMobile } from "@/features/sales/components/sales-advanced-filters";
 import { useSalesPage } from "@/features/sales/sales-page-context";
 
 export function SalesFilterToolbar() {
@@ -44,9 +34,24 @@ export function SalesFilterToolbar() {
           />
         </div>
 
-        <div className="w-full sm:w-[200px]">
+        {/* Mobile: button opens bottom drawer with all advanced filters. */}
+        <Button
+          className="w-full sm:hidden"
+          leftSection={<Filter aria-hidden="true" className="size-4" />}
+          onClick={() => actions.setMobileFilterOpen(true)}
+          type="button"
+          variant="outline"
+        >
+          Filtros
+          {filterCountBadge}
+        </Button>
+
+        {/* Desktop: inline small selects — no big "Filtros" popover here.
+            Less-used fields (terminal, fechas, montos) live only on mobile. */}
+        <div className="hidden items-center gap-3 sm:flex">
           <Select
             aria-label="Filtrar por estado"
+            comboboxProps={{ withinPortal: false }}
             data={[
               { value: ALL_FILTER_VALUE, label: "Todos" },
               { value: "completed", label: "Pagada" },
@@ -60,70 +65,96 @@ export function SalesFilterToolbar() {
               )
             }
             placeholder="Estado"
+            size="sm"
             value={filters.status || ALL_FILTER_VALUE}
+            w={150}
           />
         </div>
 
-        <Button
-          className="w-full sm:hidden"
-          color="gray"
-          leftSection={<Filter aria-hidden="true" className="size-4" />}
-          onClick={() => actions.setMobileFilterOpen(true)}
-          type="button"
-          variant="outline"
-        >
-          Filtros
-          {filterCountBadge}
-        </Button>
-
-        <Drawer
-          onClose={() => actions.setMobileFilterOpen(false)}
-          opened={state.isMobileFilterOpen}
-          position="bottom"
-          size="85%"
-          title="Filtros avanzados"
-        >
-          <div className="flex h-full flex-col">
-            <div className="flex-1 overflow-y-auto p-4">
-              <SalesAdvancedFiltersMobile />
-            </div>
-          </div>
-        </Drawer>
-
-        <Popover position="bottom-start" shadow="xl" width={600} withinPortal>
-          <Popover.Target>
-            <Button
-              className="hidden sm:inline-flex"
-              color="gray"
-              leftSection={<Filter aria-hidden="true" className="size-4" />}
-              type="button"
-              variant="outline"
-            >
-              Filtros
-              {filterCountBadge}
-            </Button>
-          </Popover.Target>
-          <Popover.Dropdown>
-            <div className="space-y-4">
-              <h4 className="font-medium text-sm text-zinc-200">
-                Filtros avanzados
-              </h4>
-              <SalesAdvancedFiltersDesktop />
-            </div>
-          </Popover.Dropdown>
-        </Popover>
+        <div className="hidden items-center gap-3 md:flex">
+          <Select
+            aria-label="Filtrar por cajero"
+            comboboxProps={{ withinPortal: false }}
+            data={[
+              { value: ALL_FILTER_VALUE, label: "Todos" },
+              ...state.filterOptions.cashiers.map((cashier) => ({
+                value: cashier.id,
+                label: cashier.name ?? "Cajero",
+              })),
+            ]}
+            id={meta.fieldIds.cashier}
+            onChange={(value) =>
+              actions.setCashierId(
+                !value || value === ALL_FILTER_VALUE ? "" : value
+              )
+            }
+            placeholder="Cajero"
+            size="sm"
+            value={filters.cashierId || ALL_FILTER_VALUE}
+            w={150}
+          />
+          <Select
+            aria-label="Filtrar por medio de pago"
+            comboboxProps={{ withinPortal: false }}
+            data={[
+              { value: ALL_FILTER_VALUE, label: "Todos" },
+              ...state.filterOptions.paymentMethods.map((paymentMethod) => ({
+                value: paymentMethod.id,
+                label: paymentMethod.label,
+              })),
+            ]}
+            id={meta.fieldIds.paymentMethod}
+            onChange={(value) =>
+              actions.setPaymentMethod(
+                !value || value === ALL_FILTER_VALUE ? "" : value
+              )
+            }
+            placeholder="Método"
+            size="sm"
+            value={filters.paymentMethod || ALL_FILTER_VALUE}
+            w={150}
+          />
+          <Select
+            aria-label="Filtrar por saldo"
+            comboboxProps={{ withinPortal: false }}
+            data={[
+              { value: ALL_FILTER_VALUE, label: "Todos" },
+              { value: "with_balance", label: "Con saldo pendiente" },
+              { value: "settled", label: "Sin saldo" },
+            ]}
+            id={meta.fieldIds.balanceStatus}
+            onChange={(value) =>
+              actions.setBalanceStatus(
+                !value || value === ALL_FILTER_VALUE ? "" : value
+              )
+            }
+            placeholder="Saldo"
+            size="sm"
+            value={filters.balanceStatus || ALL_FILTER_VALUE}
+            w={170}
+          />
+        </div>
 
         {state.activeFilterCount > 0 ? (
-          <Button
-            color="gray"
-            onClick={actions.clearFilters}
-            type="button"
-            variant="subtle"
-          >
+          <Button onClick={actions.clearFilters} type="button" variant="subtle">
             Limpiar
           </Button>
         ) : null}
       </div>
+
+      <Drawer
+        onClose={() => actions.setMobileFilterOpen(false)}
+        opened={state.isMobileFilterOpen}
+        position="bottom"
+        size="85%"
+        title="Filtros avanzados"
+      >
+        <div className="flex h-full flex-col">
+          <div className="flex-1 overflow-y-auto p-4">
+            <SalesAdvancedFiltersMobile />
+          </div>
+        </div>
+      </Drawer>
     </div>
   );
 }
