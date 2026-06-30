@@ -36,11 +36,8 @@ export function AccessTab() {
     return null;
   }
 
-  const createJoinUrl = (joinPath: string) =>
-    new URL(joinPath, window.location.origin).toString();
-
   const copyJoinUrl = async (joinPath: string) => {
-    const joinUrl = createJoinUrl(joinPath);
+    const joinUrl = new URL(joinPath, window.location.origin).toString();
     await navigator.clipboard.writeText(joinUrl);
     actions.setFeedback("Enlace copiado. Ya puedes compartirlo.");
   };
@@ -56,7 +53,10 @@ export function AccessTab() {
         label: joinLinkLabel || undefined,
         expiresInDays: Number(expiresInDays),
       });
-      const joinUrl = createJoinUrl(result.joinPath);
+      const joinUrl = new URL(
+        result.joinPath,
+        window.location.origin
+      ).toString();
       setLatestJoinUrl(joinUrl);
       setJoinLinkLabel("");
       await navigator.clipboard.writeText(joinUrl);

@@ -6,6 +6,14 @@ import { type ReactNode, useEffect, useRef, useState } from "react";
 
 const SLOW_CONNECTION_MS = 15_000;
 
+const reload = () => {
+  window.location.reload();
+};
+
+const goToLogin = () => {
+  window.location.href = "/login";
+};
+
 type NeedsAuthReason = Extract<
   ConnectionState,
   { name: "needs-auth" }
@@ -114,14 +122,6 @@ export function ZeroConnectionBoundary({
 
   const retryConnection = () => {
     zero.connection.connect().catch(() => undefined);
-  };
-
-  const reload = () => {
-    window.location.reload();
-  };
-
-  const goToLogin = () => {
-    window.location.href = "/login";
   };
 
   if (mode === "optional") {

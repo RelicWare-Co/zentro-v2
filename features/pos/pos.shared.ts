@@ -79,7 +79,7 @@ export function sortPosProducts(
 ): Product[] {
   const normalizedSearch = normalizePosSearchQuery(searchQuery);
 
-  return [...products].sort((left, right) => {
+  return products.toSorted((left, right) => {
     const leftFavoriteRank = left.isFavorite ? 0 : 1;
     const rightFavoriteRank = right.isFavorite ? 0 : 1;
     if (leftFavoriteRank !== rightFavoriteRank) {
