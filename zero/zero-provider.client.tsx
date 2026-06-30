@@ -15,8 +15,8 @@ import { ZeroConnectionBoundary } from "./zero-connection-boundary.client";
 import { zeroContextFingerprint } from "./zero-context-stable.shared";
 
 function useStableZeroContext(context: ZeroContext | undefined) {
-  const stableRef = useRef(context);
-  const fingerprintRef = useRef(zeroContextFingerprint(context));
+  const stableRef = useRef<ZeroContext | undefined>(undefined);
+  const fingerprintRef = useRef<string | null | undefined>(undefined);
 
   const fingerprint = zeroContextFingerprint(context);
   if (fingerprint !== fingerprintRef.current) {

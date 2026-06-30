@@ -8,10 +8,10 @@ export type AdminPanelSession = SessionWithImpersonatedBy;
 
 export function parseUserRoles(role: string | null | undefined): string[] {
   return (
-    role
-      ?.split(",")
-      .map((value) => value.trim())
-      .filter(Boolean) ?? []
+    role?.split(",").flatMap((value) => {
+      const trimmed = value.trim();
+      return trimmed ? [trimmed] : [];
+    }) ?? []
   );
 }
 
