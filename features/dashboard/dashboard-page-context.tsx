@@ -1,4 +1,4 @@
-import { createContext, type ReactNode, use } from "react";
+import { createContext, type ReactNode, use, useMemo } from "react";
 import {
   type DashboardOverview,
   useDashboardOverview,
@@ -39,13 +39,16 @@ export function useDashboardData() {
 export function DashboardPageProvider({ children }: { children: ReactNode }) {
   const overviewQuery = useDashboardOverview();
 
-  const value = {
-    state: {
-      data: overviewQuery.data,
-      isPending: overviewQuery.isPending,
-      isError: overviewQuery.isError,
-    },
-  };
+  const value = useMemo<DashboardPageContextValue>(
+    () => ({
+      state: {
+        data: overviewQuery.data,
+        isPending: overviewQuery.isPending,
+        isError: overviewQuery.isError,
+      },
+    }),
+    [overviewQuery.data, overviewQuery.isError, overviewQuery.isPending]
+  );
 
   return <DashboardPageContext value={value}>{children}</DashboardPageContext>;
 }

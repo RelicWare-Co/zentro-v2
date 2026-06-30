@@ -1,30 +1,39 @@
 "use no memo";
 
 import { useVirtualizer, type VirtualItem } from "@tanstack/react-virtual";
-import { type ComponentType, type ReactNode, useRef } from "react";
+import {
+  type ComponentType,
+  memo,
+  type ReactNode,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
 import { Table, TableBody, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 
 const dynamicMeasureElement = (el: Element) =>
   el.getBoundingClientRect().height;
 
-interface VirtualTableRowProps<T> {
-  data: T[];
+interface VirtualTableRowProps {
+  data: unknown[];
   estimateSize: number;
   fixedSize: boolean;
   measureElement?: (node: Element | null) => void;
-  RowComponent: ComponentType<{ data: T; index: number }>;
+  RowComponent: ComponentType<{ data: unknown; index: number }>;
   virtualRow: VirtualItem;
 }
 
-function VirtualTableRow<T>({
+function VirtualTableRow({
   data,
   estimateSize,
   fixedSize,
   measureElement,
   RowComponent,
   virtualRow,
-}: VirtualTableRowProps<T>) {
+}: VirtualTableRowProps) {
+  "use no memo";
+
   const item = data[virtualRow.index];
 
   if (item === undefined) {
@@ -48,6 +57,9 @@ function VirtualTableRow<T>({
   );
 }
 
+// react-doctor-disable-next-line react-doctor/react-compiler-no-manual-memoization -- this shared virtualizer boundary is intentionally compiler opt-out.
+const MemoizedVirtualTableRow = memo(VirtualTableRow) as typeof VirtualTableRow;
+
 interface VirtualTableProps<T> {
   className?: string;
   data: T[];
@@ -67,7 +79,13 @@ interface VirtualTableProps<T> {
   RowComponent: ComponentType<{ data: T; index: number }>;
 }
 
-export function VirtualTable<T>({
+type VirtualTableImplProps = VirtualTableProps<unknown>;
+
+export function VirtualTable<T>(props: VirtualTableProps<T>) {
+  return <VirtualTableImpl {...(props as unknown as VirtualTableImplProps)} />;
+}
+
+function VirtualTableImpl({
   data,
   header,
   RowComponent,
@@ -78,21 +96,49 @@ export function VirtualTable<T>({
   className,
   emptyState,
   fixedSize = true,
-}: VirtualTableProps<T>) {
+}: VirtualTableImplProps) {
+  "use no memo";
+
   const parentRef = useRef<HTMLDivElement>(null);
 
-  const getScrollElement = () => parentRef.current;
+  // react-doctor-disable-next-line react-doctor/react-compiler-no-manual-memoization -- TanStack Virtual expects stable option callbacks.
+  const getScrollElement = useCallback(() => parentRef.current, []);
+  // react-doctor-disable-next-line react-doctor/react-compiler-no-manual-memoization -- TanStack Virtual expects stable option callbacks.
+  const getEstimatedSize = useCallback(() => estimateSize, [estimateSize]);
+  // react-doctor-disable-next-line react-doctor/react-compiler-no-manual-memoization -- TanStack Virtual expects stable option callbacks.
+  const getVirtualItemKey = useCallback(
+    (index: number) => {
+      const item = data[index];
+      if (!getItemKey || item === undefined) {
+        return index;
+      }
+      return getItemKey(item, index);
+    },
+    [data, getItemKey]
+  );
+  // react-doctor-disable-next-line react-doctor/react-compiler-no-manual-memoization -- keep the virtualizer options object stable across renders.
+  const virtualizerOptions = useMemo(
+    () => ({
+      count: data.length,
+      getScrollElement,
+      estimateSize: getEstimatedSize,
+      overscan,
+      getItemKey: getItemKey ? getVirtualItemKey : undefined,
+      measureElement: fixedSize ? undefined : dynamicMeasureElement,
+    }),
+    [
+      data.length,
+      fixedSize,
+      getEstimatedSize,
+      getItemKey,
+      getScrollElement,
+      getVirtualItemKey,
+      overscan,
+    ]
+  );
 
-  const virtualizer = useVirtualizer({
-    count: data.length,
-    getScrollElement,
-    estimateSize: () => estimateSize,
-    overscan,
-    getItemKey: getItemKey
-      ? (index: number) => getItemKey(data[index], index)
-      : undefined,
-    measureElement: fixedSize ? undefined : dynamicMeasureElement,
-  });
+  // react-doctor-disable-next-line react-hooks-js/incompatible-library -- TanStack Virtual is intentionally isolated in this compiler opt-out component.
+  const virtualizer = useVirtualizer(virtualizerOptions);
 
   const virtualItems = virtualizer.getVirtualItems();
   const totalSize = virtualizer.getTotalSize();
@@ -125,12 +171,12 @@ export function VirtualTable<T>({
           ) : (
             <>
               {paddingTop > 0 && (
-                <tr tabIndex={-1}>
+                <tr aria-label="Espaciador superior de filas virtualizadas">
                   <td colSpan={100} style={{ height: `${paddingTop}px` }} />
                 </tr>
               )}
               {virtualItems.map((virtualRow) => (
-                <VirtualTableRow
+                <MemoizedVirtualTableRow
                   data={data}
                   estimateSize={estimateSize}
                   fixedSize={fixedSize}
@@ -141,7 +187,7 @@ export function VirtualTable<T>({
                 />
               ))}
               {paddingBottom > 0 && (
-                <tr tabIndex={-1}>
+                <tr aria-label="Espaciador inferior de filas virtualizadas">
                   <td colSpan={100} style={{ height: `${paddingBottom}px` }} />
                 </tr>
               )}

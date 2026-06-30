@@ -199,7 +199,6 @@ export function useOrganizationManagement() {
     const pendingInvitations = (organizationRow.invitations ?? []).filter(
       (row) => {
         const expiresAt = toTimestamp(row.expiresAt);
-        // biome-ignore lint/performance/noAccumulatingSpread: Date.now() must be called per-filter to check current expiration
         return expiresAt === null || expiresAt > Date.now();
       }
     );

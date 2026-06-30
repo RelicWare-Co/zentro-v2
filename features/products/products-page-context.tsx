@@ -137,15 +137,7 @@ export function useProductsPage() {
 }
 
 export function ProductsPageProvider({ children }: { children: ReactNode }) {
-  const [activeTab, setActiveTab] = useState<ProductsTab>(() => {
-    if (typeof window === "undefined") {
-      return "products";
-    }
-    const stockParam = new URLSearchParams(window.location.search).get("stock");
-    return stockParam === "low" || stockParam === "out" || stockParam === "ok"
-      ? "products"
-      : "products";
-  });
+  const [activeTab, setActiveTab] = useState<ProductsTab>("products");
   const [query, setQueryState] = useState("");
   const [categoryFilter, setCategoryFilterState] = useState(ALL_FILTER_VALUE);
   const [pagination, setPagination] = useState<PaginationState>({

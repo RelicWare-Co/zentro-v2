@@ -10,7 +10,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { Edit3, Trash2 } from "lucide-react";
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { DataTablePagination } from "@/components/ui/data-table-pagination";
 import {
   Table,
@@ -28,6 +28,8 @@ import { useProductsPage } from "@/features/products/products-page-context";
 const columnHelper = createColumnHelper<Product>();
 
 export function ProductsTable() {
+  "use no memo";
+
   const { state, actions } = useProductsPage();
 
   const columns = useMemo(
@@ -128,6 +130,10 @@ export function ProductsTable() {
     () => ({ pagination: state.pagination }),
     [state.pagination]
   );
+  const handlePaginationChange = useCallback(
+    (updater: Updater<PaginationState>) => actions.setPagination(updater),
+    [actions]
+  );
 
   const table = useReactTable({
     data: state.products,
@@ -135,8 +141,7 @@ export function ProductsTable() {
     getCoreRowModel: coreRowModel,
     manualPagination: true,
     rowCount: state.total,
-    onPaginationChange: (updater: Updater<PaginationState>) =>
-      actions.setPagination(updater),
+    onPaginationChange: handlePaginationChange,
     state: tableState,
   });
 

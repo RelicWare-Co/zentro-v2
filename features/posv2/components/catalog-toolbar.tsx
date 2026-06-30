@@ -1,6 +1,12 @@
 import { TextInput } from "@mantine/core";
 import { Barcode, LayoutGrid, List, Search, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { usePosPage } from "@/features/pos/pos-page-context";
 import {
   posV2AccentBg,
@@ -14,6 +20,8 @@ import {
 } from "@/features/posv2/components/pos-v2-order-styles";
 import { cn } from "@/lib/utils";
 
+const noop = () => undefined;
+
 export function CatalogToolbar({
   isBarcodeScannerConnected,
 }: {
@@ -22,34 +30,42 @@ export function CatalogToolbar({
   const { state, actions } = usePosPage();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [hasOverflow, setHasOverflow] = useState(() => {
-    // Initialize with false, will be measured after mount
-    return false;
-  });
-  const hasInitializedRef = useRef(false);
-
-  useEffect(() => {
-    const element = scrollRef.current;
-    if (!element || hasInitializedRef.current) {
-      return;
-    }
-
-    const check = () => {
-      setHasOverflow(element.scrollWidth > element.clientWidth);
-    };
-
-    check();
-    hasInitializedRef.current = true;
-
-    const resizeObserver = new ResizeObserver(check);
-    resizeObserver.observe(element);
-    window.addEventListener("resize", check);
-
-    return () => {
-      resizeObserver.disconnect();
-      window.removeEventListener("resize", check);
-    };
+  const [scrollElement, setScrollElement] = useState<HTMLDivElement | null>(
+    null
+  );
+  // react-doctor-disable-next-line react-doctor/react-compiler-no-manual-memoization -- stable callback ref prevents unnecessary detach/attach cycles.
+  const setScrollRef = useCallback((element: HTMLDivElement | null) => {
+    scrollRef.current = element;
+    setScrollElement(element);
   }, []);
+  const hasOverflow = useSyncExternalStore(
+    // react-doctor-disable-next-line react-doctor/react-compiler-no-manual-memoization -- useSyncExternalStore should receive a stable subscribe function.
+    useCallback(
+      (onStoreChange) => {
+        if (!scrollElement) {
+          return noop;
+        }
+
+        const resizeObserver = new ResizeObserver(onStoreChange);
+        resizeObserver.observe(scrollElement);
+        window.addEventListener("resize", onStoreChange);
+
+        return () => {
+          resizeObserver.disconnect();
+          window.removeEventListener("resize", onStoreChange);
+        };
+      },
+      [scrollElement]
+    ),
+    // react-doctor-disable-next-line react-doctor/react-compiler-no-manual-memoization -- useSyncExternalStore should receive a stable snapshot reader.
+    useCallback(() => {
+      if (!scrollElement) {
+        return false;
+      }
+      return scrollElement.scrollWidth > scrollElement.clientWidth;
+    }, [scrollElement]),
+    () => false
+  );
 
   const handleWheel = (event: React.WheelEvent<HTMLDivElement>) => {
     const element = scrollRef.current;
@@ -162,7 +178,7 @@ export function CatalogToolbar({
         <div
           className="no-scrollbar flex items-center gap-1.5 overflow-x-auto"
           onWheel={handleWheel}
-          ref={scrollRef}
+          ref={setScrollRef}
           style={maskStyle}
         >
           {allCategories.map((category) => {
