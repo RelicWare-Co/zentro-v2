@@ -1,18 +1,13 @@
 import { ActionIcon, Button, Loader, TextInput } from "@mantine/core";
 import { Edit3, Plus, Search, Trash2, Users } from "lucide-react";
-import { memo, useId } from "react";
+import { useId } from "react";
 import { TableCell, TableHead, TableRow } from "@/components/ui/table";
 import { VirtualTable } from "@/components/ui/virtual-table";
 import { formatCustomerDocumentLabel } from "@/features/customers/customers-formatters.shared";
 import { useCustomersPage } from "@/features/customers/customers-page-context";
 import type { Customer } from "@/features/customers/hooks/use-customers";
 
-const CustomerRow = memo(function CustomerRow({
-  data: customer,
-}: {
-  data: Customer;
-  index: number;
-}) {
+function CustomerRow({ data: customer }: { data: Customer; index: number }) {
   const { actions } = useCustomersPage();
 
   return (
@@ -60,7 +55,7 @@ const CustomerRow = memo(function CustomerRow({
       </TableCell>
     </>
   );
-});
+}
 
 export function CustomersListPanel() {
   const { state, actions } = useCustomersPage();

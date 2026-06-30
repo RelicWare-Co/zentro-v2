@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { useCreateCustomerMutation } from "./use-pos-queries";
 
 export function useCreateCustomerModal(
@@ -13,7 +13,7 @@ export function useCreateCustomerModal(
 
   const createCustomerMutation = useCreateCustomerMutation();
 
-  const handleCreateCustomer = useCallback(() => {
+  const handleCreateCustomer = () => {
     if (!newCustomerName.trim()) {
       return;
     }
@@ -43,22 +43,14 @@ export function useCreateCustomerModal(
         },
       }
     );
-  }, [
-    newCustomerName,
-    newCustomerPhone,
-    newCustomerDocumentType,
-    newCustomerDocumentNumber,
-    createCustomerMutation,
-    closeModal,
-    onCustomerCreated,
-  ]);
+  };
 
-  const resetForm = useCallback(() => {
+  const resetForm = () => {
     setNewCustomerName("");
     setNewCustomerPhone("");
     setNewCustomerDocumentType("CC");
     setNewCustomerDocumentNumber("");
-  }, []);
+  };
 
   const canCreateCustomer =
     newCustomerName.trim().length > 0 && !createCustomerMutation.isPending;

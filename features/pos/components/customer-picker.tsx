@@ -1,6 +1,6 @@
 import { Combobox, useCombobox } from "@mantine/core";
 import { Check, ChevronsUpDown } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import type { PosCustomer } from "../types";
 
@@ -25,11 +25,8 @@ export function CustomerPicker({
     onDropdownClose: () => setSearch(""),
   });
   const [search, setSearch] = useState("");
-  const selectedCustomer = useMemo(
-    () =>
-      customers.find((customer) => customer.id === selectedCustomerId) ?? null,
-    [customers, selectedCustomerId]
-  );
+  const selectedCustomer =
+    customers.find((customer) => customer.id === selectedCustomerId) ?? null;
   const selectedCustomerLabel = selectedCustomer?.name ?? "Cliente Mostrador";
   const selectedCustomerMeta = selectedCustomer
     ? [

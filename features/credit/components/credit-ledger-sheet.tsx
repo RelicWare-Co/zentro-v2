@@ -1,6 +1,5 @@
 import { Badge, Button, Drawer, Loader } from "@mantine/core";
 import { History, Plus, Receipt } from "lucide-react";
-import { memo } from "react";
 import { VirtualList } from "@/components/ui/virtual-list";
 import type { CreditTransaction } from "@/features/credit/credit.shared";
 import {
@@ -12,7 +11,7 @@ import {
 } from "@/features/credit/credit-formatters.shared";
 import { useCreditPage } from "@/features/credit/credit-page-context";
 
-const CreditTransactionRow = memo(function CreditTransactionRow({
+function CreditTransactionRow({
   data: tx,
 }: {
   data: CreditTransaction;
@@ -49,7 +48,7 @@ const CreditTransactionRow = memo(function CreditTransactionRow({
       </div>
     </div>
   );
-});
+}
 
 function CreditLedgerTransactions() {
   const { meta } = useCreditPage();
