@@ -1,11 +1,10 @@
+"use no memo";
+
 import { useVirtualizer, type VirtualItem } from "@tanstack/react-virtual";
 import {
   type ComponentType,
   type CSSProperties,
-  memo,
   type ReactNode,
-  useCallback,
-  useMemo,
   useRef,
 } from "react";
 import { cn } from "@/lib/utils";
@@ -32,7 +31,7 @@ interface VirtualListRowProps<T> {
   virtualRow: VirtualItem;
 }
 
-const VirtualListRow = memo(function VirtualListRow<T>({
+function VirtualListRow<T>({
   data,
   estimateSize,
   measureElement,
@@ -54,7 +53,7 @@ const VirtualListRow = memo(function VirtualListRow<T>({
       <RowComponent data={item} index={virtualRow.index} />
     </div>
   );
-}) as <T>(props: VirtualListRowProps<T>) => ReactNode;
+}
 
 interface VirtualListProps<T> {
   className?: string;
@@ -82,16 +81,12 @@ export function VirtualList<T>({
 }: VirtualListProps<T>) {
   const parentRef = useRef<HTMLDivElement>(null);
 
-  const getScrollElement = useCallback(() => parentRef.current, []);
-  const estimateSizeFn = useCallback(() => estimateSize, [estimateSize]);
+  const getScrollElement = () => parentRef.current;
+  const estimateSizeFn = () => estimateSize;
 
-  const stableGetItemKey = useMemo(
-    () =>
-      getItemKey
-        ? (index: number) => getItemKey(data[index], index)
-        : undefined,
-    [getItemKey, data]
-  );
+  const stableGetItemKey = getItemKey
+    ? (index: number) => getItemKey(data[index], index)
+    : undefined;
 
   const virtualizer = useVirtualizer({
     count: data.length,

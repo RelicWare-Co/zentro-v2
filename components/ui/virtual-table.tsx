@@ -1,14 +1,12 @@
+"use no memo";
+
 import { useVirtualizer, type VirtualItem } from "@tanstack/react-virtual";
-import {
-  type ComponentType,
-  memo,
-  type ReactNode,
-  useCallback,
-  useMemo,
-  useRef,
-} from "react";
+import { type ComponentType, type ReactNode, useRef } from "react";
 import { Table, TableBody, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+
+const dynamicMeasureElement = (el: Element) =>
+  el.getBoundingClientRect().height;
 
 interface VirtualTableRowProps<T> {
   data: T[];
@@ -19,7 +17,7 @@ interface VirtualTableRowProps<T> {
   virtualRow: VirtualItem;
 }
 
-const VirtualTableRow = memo(function VirtualTableRow<T>({
+function VirtualTableRow<T>({
   data,
   estimateSize,
   fixedSize,
@@ -48,7 +46,7 @@ const VirtualTableRow = memo(function VirtualTableRow<T>({
       <RowComponent data={item} index={virtualRow.index} />
     </TableRow>
   );
-}) as <T>(props: VirtualTableRowProps<T>) => ReactNode;
+}
 
 interface VirtualTableProps<T> {
   className?: string;
@@ -83,21 +81,13 @@ export function VirtualTable<T>({
 }: VirtualTableProps<T>) {
   const parentRef = useRef<HTMLDivElement>(null);
 
-  const getScrollElement = useCallback(() => parentRef.current, []);
-  const estimateSizeFn = useCallback(() => estimateSize, [estimateSize]);
+  const getScrollElement = () => parentRef.current;
+  const estimateSizeFn = () => estimateSize;
 
-  const stableGetItemKey = useMemo(
-    () =>
-      getItemKey
-        ? (index: number) => getItemKey(data[index], index)
-        : undefined,
-    [getItemKey, data]
-  );
+  const stableGetItemKey = getItemKey
+    ? (index: number) => getItemKey(data[index], index)
+    : undefined;
 
-  const dynamicMeasureElement = useCallback(
-    (el: Element) => el.getBoundingClientRect().height,
-    []
-  );
   const measureElement = fixedSize ? undefined : dynamicMeasureElement;
 
   const virtualizer = useVirtualizer({

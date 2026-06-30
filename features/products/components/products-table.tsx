@@ -1,3 +1,5 @@
+"use no memo";
+
 import { ActionIcon, Badge, Button } from "@mantine/core";
 import {
   createColumnHelper,
