@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 export function isZentroDesktop() {
   return (
@@ -7,11 +7,7 @@ export function isZentroDesktop() {
 }
 
 export function useIsZentroDesktop() {
-  const [isDesktop, setIsDesktop] = useState(false);
-
-  useEffect(() => {
-    setIsDesktop(isZentroDesktop());
-  }, []);
+  const [isDesktop] = useState(() => isZentroDesktop());
 
   return isDesktop;
 }

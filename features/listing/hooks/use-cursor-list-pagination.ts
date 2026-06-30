@@ -1,19 +1,22 @@
-import { useEffect, useState } from "react";
+import { useRef, useState } from "react";
 
 export function useCursorListPagination<TCursor>(filterKey: string) {
+  const prevFilterKeyRef = useRef(filterKey);
   const [pageIndex, setPageIndex] = useState(0);
   const [pageCursors, setPageCursors] = useState<(TCursor | null)[]>([null]);
   const listCursor = pageCursors[pageIndex] ?? null;
+
+  // Reset pagination inline when filterKey changes to avoid stale UI
+  if (prevFilterKeyRef.current !== filterKey) {
+    prevFilterKeyRef.current = filterKey;
+    setPageIndex(0);
+    setPageCursors([null]);
+  }
 
   const resetPagination = () => {
     setPageIndex(0);
     setPageCursors([null]);
   };
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: filterKey drives pagination reset
-  useEffect(() => {
-    resetPagination();
-  }, [filterKey]);
 
   const goToPreviousPage = () => {
     setPageIndex((currentPage) => Math.max(currentPage - 1, 0));

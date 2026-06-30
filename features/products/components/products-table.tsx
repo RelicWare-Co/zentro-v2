@@ -10,7 +10,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { Edit3, Trash2 } from "lucide-react";
-import { useCallback, useMemo } from "react";
+import { useMemo } from "react";
 import { DataTablePagination } from "@/components/ui/data-table-pagination";
 import {
   Table,
@@ -129,18 +129,14 @@ export function ProductsTable() {
     [state.pagination]
   );
 
-  const handlePaginationChange = useCallback(
-    (updater: Updater<PaginationState>) => actions.setPagination(updater),
-    [actions.setPagination]
-  );
-
   const table = useReactTable({
     data: state.products,
     columns,
     getCoreRowModel: coreRowModel,
     manualPagination: true,
     rowCount: state.total,
-    onPaginationChange: handlePaginationChange,
+    onPaginationChange: (updater: Updater<PaginationState>) =>
+      actions.setPagination(updater),
     state: tableState,
   });
 

@@ -59,10 +59,14 @@ export function LoginForm() {
           Correo electrónico
         </AuthLabelWithRequired>
         <div className="relative">
-          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-500">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-500"
+          >
             <Mail className="size-4" />
           </div>
           <input
+            aria-label="Correo electrónico"
             autoComplete="email"
             className={AUTH_INPUT_BASE}
             disabled={isPending || state.isCompletingJoin}
@@ -88,10 +92,14 @@ export function LoginForm() {
           </a>
         </div>
         <div className="relative">
-          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-500">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-500"
+          >
             <Lock className="size-4" />
           </div>
           <input
+            aria-label="Contraseña"
             autoComplete="current-password"
             className={`${AUTH_INPUT_BASE} pr-10`}
             disabled={isPending || state.isCompletingJoin}

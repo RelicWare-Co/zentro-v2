@@ -128,11 +128,10 @@ export function useOrganizationSelection() {
       return;
     }
 
-    const now = Date.now();
     const pendingInvitations = (invitationRows as SelectionInvitationRow[])
       .filter((row) => {
         const expiresAt = toTimestamp(row.expiresAt);
-        return expiresAt === null || expiresAt > now;
+        return expiresAt === null || expiresAt > Date.now();
       })
       .map((row) => ({
         id: row.id,

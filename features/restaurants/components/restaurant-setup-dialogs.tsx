@@ -121,25 +121,47 @@ export function CreateRestaurantTableDialog({
   open,
   onOpenChange,
 }: CreateTableDialogProps) {
+  const resolvedAreaId = defaultAreaId ?? areas[0]?.id ?? "";
+
+  return (
+    <CreateRestaurantTableDialogInner
+      areas={areas}
+      defaultAreaId={resolvedAreaId}
+      key={`${open}-${resolvedAreaId}`}
+      onOpenChange={onOpenChange}
+      open={open}
+    />
+  );
+}
+
+function CreateRestaurantTableDialogInner({
+  areas,
+  defaultAreaId,
+  open,
+  onOpenChange,
+}: CreateTableDialogProps) {
   const createTableMutation = useCreateRestaurantTableMutation();
   const [areaId, setAreaId] = useState(defaultAreaId ?? areas[0]?.id ?? "");
-  const [name, setName] = useState("");
+  const [name, setName] = useState(() => {
+    const area = areas.find((item) => item.id === defaultAreaId);
+    return area ? suggestNextTableName(area.tables) : "Mesa 1";
+  });
   const [seats, setSeats] = useState("4");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const selectedArea = areas.find((area) => area.id === areaId) ?? areas[0];
 
   useEffect(() => {
-    if (!open) {
-      setErrorMessage(null);
+    if (!(open && selectedArea)) {
       return;
     }
-    const resolvedAreaId = defaultAreaId ?? areas[0]?.id ?? "";
-    setAreaId(resolvedAreaId);
-    const area = areas.find((item) => item.id === resolvedAreaId);
-    setName(area ? suggestNextTableName(area.tables) : "Mesa 1");
-    setSeats("4");
-  }, [areas, defaultAreaId, open]);
+    setName((currentName) => {
+      if (currentName.trim().length === 0) {
+        return suggestNextTableName(selectedArea.tables);
+      }
+      return currentName;
+    });
+  }, [open, selectedArea]);
 
   useEffect(() => {
     if (!(open && selectedArea)) {

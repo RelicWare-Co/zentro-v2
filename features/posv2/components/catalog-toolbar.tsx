@@ -22,11 +22,15 @@ export function CatalogToolbar({
   const { state, actions } = usePosPage();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [hasOverflow, setHasOverflow] = useState(false);
+  const [hasOverflow, setHasOverflow] = useState(() => {
+    // Initialize with false, will be measured after mount
+    return false;
+  });
+  const hasInitializedRef = useRef(false);
 
   useEffect(() => {
     const element = scrollRef.current;
-    if (!element) {
+    if (!element || hasInitializedRef.current) {
       return;
     }
 
@@ -35,6 +39,7 @@ export function CatalogToolbar({
     };
 
     check();
+    hasInitializedRef.current = true;
 
     const resizeObserver = new ResizeObserver(check);
     resizeObserver.observe(element);

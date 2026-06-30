@@ -82,21 +82,16 @@ export function VirtualTable<T>({
   const parentRef = useRef<HTMLDivElement>(null);
 
   const getScrollElement = () => parentRef.current;
-  const estimateSizeFn = () => estimateSize;
-
-  const stableGetItemKey = getItemKey
-    ? (index: number) => getItemKey(data[index], index)
-    : undefined;
-
-  const measureElement = fixedSize ? undefined : dynamicMeasureElement;
 
   const virtualizer = useVirtualizer({
     count: data.length,
     getScrollElement,
-    estimateSize: estimateSizeFn,
+    estimateSize: () => estimateSize,
     overscan,
-    getItemKey: stableGetItemKey,
-    measureElement,
+    getItemKey: getItemKey
+      ? (index: number) => getItemKey(data[index], index)
+      : undefined,
+    measureElement: fixedSize ? undefined : dynamicMeasureElement,
   });
 
   const virtualItems = virtualizer.getVirtualItems();
@@ -130,7 +125,7 @@ export function VirtualTable<T>({
           ) : (
             <>
               {paddingTop > 0 && (
-                <tr>
+                <tr tabIndex={-1}>
                   <td colSpan={100} style={{ height: `${paddingTop}px` }} />
                 </tr>
               )}
@@ -146,7 +141,7 @@ export function VirtualTable<T>({
                 />
               ))}
               {paddingBottom > 0 && (
-                <tr>
+                <tr tabIndex={-1}>
                   <td colSpan={100} style={{ height: `${paddingBottom}px` }} />
                 </tr>
               )}

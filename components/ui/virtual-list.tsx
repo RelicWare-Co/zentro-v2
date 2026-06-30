@@ -82,18 +82,15 @@ export function VirtualList<T>({
   const parentRef = useRef<HTMLDivElement>(null);
 
   const getScrollElement = () => parentRef.current;
-  const estimateSizeFn = () => estimateSize;
-
-  const stableGetItemKey = getItemKey
-    ? (index: number) => getItemKey(data[index], index)
-    : undefined;
 
   const virtualizer = useVirtualizer({
     count: data.length,
     getScrollElement,
-    estimateSize: estimateSizeFn,
+    estimateSize: () => estimateSize,
     overscan,
-    getItemKey: stableGetItemKey,
+    getItemKey: getItemKey
+      ? (index: number) => getItemKey(data[index], index)
+      : undefined,
   });
 
   const virtualItems = virtualizer.getVirtualItems();
