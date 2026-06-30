@@ -22,7 +22,6 @@ import {
   getZeroQueryError,
   useZeroMutation,
   waitForZeroMutation,
-  waitForZeroServerMutation,
 } from "@/lib/use-zero-mutation";
 import { mutators } from "@/zero/mutators";
 import { queries } from "@/zero/queries";
@@ -228,7 +227,7 @@ export function useCreateSaleMutation() {
     const { receiptTotals, ...saleInput } = input;
     const saleId = crypto.randomUUID();
 
-    await waitForZeroServerMutation(
+    await waitForZeroMutation(
       zero.mutate(
         mutators.sales.create({
           ...saleInput,
