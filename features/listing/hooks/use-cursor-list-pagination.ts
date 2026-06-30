@@ -1,19 +1,19 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 export function useCursorListPagination<TCursor>(filterKey: string) {
   const [pageIndex, setPageIndex] = useState(0);
   const [pageCursors, setPageCursors] = useState<(TCursor | null)[]>([null]);
   const listCursor = pageCursors[pageIndex] ?? null;
 
-  const resetPagination = useCallback(() => {
+  const resetPagination = () => {
     setPageIndex(0);
     setPageCursors([null]);
-  }, []);
+  };
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: filterKey drives pagination reset
   useEffect(() => {
     resetPagination();
-  }, [filterKey, resetPagination]);
+  }, [filterKey]);
 
   const goToPreviousPage = () => {
     setPageIndex((currentPage) => Math.max(currentPage - 1, 0));
