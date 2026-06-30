@@ -2,13 +2,7 @@ import { Button } from "@mantine/core";
 import type { ConnectionState } from "@rocicorp/zero";
 import { useConnectionState, useZero } from "@rocicorp/zero/react";
 import { AlertTriangle, RefreshCw, RotateCcw } from "lucide-react";
-import {
-  type ReactNode,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 
 const SLOW_CONNECTION_MS = 15_000;
 
@@ -118,17 +112,17 @@ export function ZeroConnectionBoundary({
     };
   }, [connectionState.name]);
 
-  const retryConnection = useCallback(() => {
+  const retryConnection = () => {
     zero.connection.connect().catch(() => undefined);
-  }, [zero]);
+  };
 
-  const reload = useCallback(() => {
+  const reload = () => {
     window.location.reload();
-  }, []);
+  };
 
-  const goToLogin = useCallback(() => {
+  const goToLogin = () => {
     window.location.href = "/login";
-  }, []);
+  };
 
   if (mode === "optional") {
     return children;
