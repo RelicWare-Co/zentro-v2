@@ -38,7 +38,8 @@ export const CreateOrderInputSchema = z.object({
   notes: z.string().trim().max(500).optional(),
   items: z
     .array(CreateOrderItemSchema)
-    .min(1, "El pedido debe incluir al menos un ítem"),
+    .min(1, "El pedido debe incluir al menos un ítem")
+    .max(50, "El pedido no puede incluir más de 50 ítems"),
 });
 
 export type CreateOrderInput = z.infer<typeof CreateOrderInputSchema>;

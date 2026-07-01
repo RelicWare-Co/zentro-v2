@@ -8,6 +8,7 @@ import {
   PUBLIC_CATALOG_SCHEMA,
 } from "@/features/orders/orders.schema";
 import { getPublicCatalogBySlug } from "@/features/orders/public-catalog.server";
+import { publicRateLimit } from "./rate-limit";
 
 const catalogQuerySchema = z.object({
   slug: z.string().trim().min(1).max(255),
@@ -15,6 +16,8 @@ const catalogQuerySchema = z.object({
 
 export function createPublicApp() {
   const app = new Hono();
+
+  app.use("*", publicRateLimit());
 
   app.get("/catalog", async (c) => {
     const parsed = catalogQuerySchema.safeParse({

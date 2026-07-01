@@ -19,6 +19,7 @@ import {
   ShoppingBag,
   UtensilsCrossed,
 } from "lucide-react";
+import { formatCurrency } from "@/features/pos/utils";
 import { queries } from "@/zero/queries";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -46,14 +47,6 @@ const STATUS_COLORS: Record<string, string> = {
   cancelled: "red",
 };
 
-function formatCOP(value: number) {
-  return new Intl.NumberFormat("es-CO", {
-    style: "currency",
-    currency: "COP",
-    minimumFractionDigits: 0,
-  }).format(value);
-}
-
 function formatTime(timestamp: number) {
   return new Intl.DateTimeFormat("es-CO", {
     dateStyle: "short",
@@ -67,14 +60,14 @@ function PedidoCard({
   pedido: {
     id: string;
     orderNumber: number;
-    status: string;
-    fulfillment: string;
-    contactName: string | null;
-    contactPhone: string | null;
+    status: string | null;
+    fulfillment: string | null;
+    contactName: string;
+    contactPhone: string;
     deliveryAddress: string | null;
     deliveryNotes: string | null;
     notes: string | null;
-    totalAmount: number;
+    totalAmount: number | null;
     createdAt: number;
     items?: ReadonlyArray<{
       id: string;
@@ -95,11 +88,11 @@ function PedidoCard({
         <Group align="center" justify="space-between">
           <Group gap="sm">
             <Badge
-              color={STATUS_COLORS[pedido.status] ?? "gray"}
+              color={STATUS_COLORS[pedido.status ?? ""] ?? "gray"}
               size="md"
               variant="light"
             >
-              {STATUS_LABELS[pedido.status] ?? pedido.status}
+              {STATUS_LABELS[pedido.status ?? ""] ?? pedido.status}
             </Badge>
             <Text c="zinc.5" fw={600} size="sm">
               #{pedido.orderNumber}
@@ -122,7 +115,7 @@ function PedidoCard({
             size="sm"
             variant="outline"
           >
-            {FULFILLMENT_LABELS[pedido.fulfillment] ?? pedido.fulfillment}
+            {FULFILLMENT_LABELS[pedido.fulfillment ?? ""] ?? pedido.fulfillment}
           </Badge>
         </Group>
 
@@ -177,7 +170,7 @@ function PedidoCard({
                   {item.quantity}× {item.product?.name ?? "Producto eliminado"}
                 </Text>
                 <Text c="zinc.4" className="tabular-nums" size="sm">
-                  {formatCOP(item.totalAmount)}
+                  {formatCurrency(item.totalAmount)}
                 </Text>
               </Group>
             ))}
@@ -195,7 +188,7 @@ function PedidoCard({
 
         <Group justify="flex-end" pt="xs">
           <Text fw={700} size="lg">
-            Total: {formatCOP(pedido.totalAmount)}
+            Total: {formatCurrency(pedido.totalAmount ?? 0)}
           </Text>
         </Group>
       </Stack>
@@ -204,7 +197,7 @@ function PedidoCard({
 }
 
 function PedidosInbox() {
-  const [pedidos] = useQuery(queries.orders.inbox({ status: "" }));
+  const [pedidos] = useQuery(queries.orders.inbox({ status: undefined }));
 
   if (!pedidos) {
     return (
