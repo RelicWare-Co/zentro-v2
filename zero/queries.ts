@@ -6,6 +6,7 @@
 import { creditQueries } from "@/features/credit/credit.queries";
 import { customersQueries } from "@/features/customers/customers.queries";
 import { modulesQueries } from "@/features/modules/modules.queries";
+import { ordersQueries } from "@/features/orders/orders.queries";
 import { organizationQueries } from "@/features/organization/organization.queries";
 import { productsQueries } from "@/features/products/products.queries";
 import { restaurantsQueries } from "@/features/restaurants/restaurants.queries";
@@ -22,6 +23,7 @@ export const queries = defineZentroQueries({
   ...salesQueries,
   ...modulesQueries,
   ...restaurantsQueries,
+  ...ordersQueries,
 });
 
 export type Queries = typeof queries;
