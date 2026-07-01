@@ -100,11 +100,11 @@ async function nextOrderNumber(
 ): Promise<number> {
   const [row] = await tx
     .select({
-      maxNumber: sql<number>`coalesce(max(${pedido.orderNumber}), 0)`,
+      maxNumber: sql<number>`coalesce(max("sub"."order_number"), 0)`,
     })
-    .from(pedido)
-    .where(eq(pedido.organizationId, organizationId))
-    .for("update");
+    .from(
+      sql`(SELECT ${pedido.orderNumber} as "order_number" FROM ${pedido} WHERE ${pedido.organizationId} = ${organizationId} FOR UPDATE) as "sub"`
+    );
   return (row?.maxNumber ?? 0) + 1;
 }
 
