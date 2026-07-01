@@ -1,13 +1,13 @@
 import { ActionIcon, TextInput } from "@mantine/core";
 import { History, Plus, Search, Wallet } from "lucide-react";
-import { memo, useId } from "react";
+import { useId } from "react";
 import { TableCell, TableHead, TableRow } from "@/components/ui/table";
 import { VirtualTable } from "@/components/ui/virtual-table";
 import type { CreditAccount } from "@/features/credit/credit.shared";
 import { creditCurrencyFormatter } from "@/features/credit/credit-formatters.shared";
 import { useCreditPage } from "@/features/credit/credit-page-context";
 
-const CreditAccountRow = memo(function CreditAccountRow({
+function CreditAccountRow({
   data: account,
 }: {
   data: CreditAccount;
@@ -60,7 +60,7 @@ const CreditAccountRow = memo(function CreditAccountRow({
       </TableCell>
     </>
   );
-});
+}
 
 export function CreditAccountsPanel() {
   const { state, actions } = useCreditPage();

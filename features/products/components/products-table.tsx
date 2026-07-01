@@ -1,3 +1,5 @@
+"use no memo";
+
 import { ActionIcon, Badge, Button } from "@mantine/core";
 import {
   createColumnHelper,
@@ -26,6 +28,8 @@ import { useProductsPage } from "@/features/products/products-page-context";
 const columnHelper = createColumnHelper<Product>();
 
 export function ProductsTable() {
+  "use no memo";
+
   const { state, actions } = useProductsPage();
 
   const columns = useMemo(
@@ -126,10 +130,9 @@ export function ProductsTable() {
     () => ({ pagination: state.pagination }),
     [state.pagination]
   );
-
   const handlePaginationChange = useCallback(
     (updater: Updater<PaginationState>) => actions.setPagination(updater),
-    [actions.setPagination]
+    [actions]
   );
 
   const table = useReactTable({

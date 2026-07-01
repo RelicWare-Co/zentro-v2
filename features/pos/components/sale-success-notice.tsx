@@ -2,21 +2,19 @@ import { Transition } from "@mantine/core";
 import { Check } from "lucide-react";
 import { useEffect, useState } from "react";
 
-interface SaleSuccessNoticeProps {
-  token: number | null;
+interface SaleSuccessNoticeInnerProps {
+  token: number;
 }
 
-export function SaleSuccessNotice({ token }: SaleSuccessNoticeProps) {
-  const [visible, setVisible] = useState(false);
+function SaleSuccessNoticeInner({
+  token: _token,
+}: SaleSuccessNoticeInnerProps) {
+  const [visible, setVisible] = useState(true);
 
   useEffect(() => {
-    if (token === null) {
-      return;
-    }
-    setVisible(true);
     const hideTimer = setTimeout(() => setVisible(false), 1800);
     return () => clearTimeout(hideTimer);
-  }, [token]);
+  }, []);
 
   return (
     <Transition
@@ -49,4 +47,16 @@ export function SaleSuccessNotice({ token }: SaleSuccessNoticeProps) {
       )}
     </Transition>
   );
+}
+
+interface SaleSuccessNoticeProps {
+  token: number | null;
+}
+
+export function SaleSuccessNotice({ token }: SaleSuccessNoticeProps) {
+  if (token === null) {
+    return null;
+  }
+
+  return <SaleSuccessNoticeInner key={token} token={token} />;
 }

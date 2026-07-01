@@ -1,3 +1,5 @@
+"use no memo";
+
 import { useVirtualizer, type VirtualItem } from "@tanstack/react-virtual";
 import {
   type ComponentType,
@@ -24,21 +26,23 @@ const virtualListInnerBaseStyle: CSSProperties = {
   flexDirection: "column",
 };
 
-interface VirtualListRowProps<T> {
-  data: T[];
+interface VirtualListRowProps {
+  data: unknown[];
   estimateSize: number;
   measureElement: (node: Element | null) => void;
-  RowComponent: ComponentType<{ data: T; index: number }>;
+  RowComponent: ComponentType<{ data: unknown; index: number }>;
   virtualRow: VirtualItem;
 }
 
-const VirtualListRow = memo(function VirtualListRow<T>({
+function VirtualListRow({
   data,
   estimateSize,
   measureElement,
   RowComponent,
   virtualRow,
-}: VirtualListRowProps<T>) {
+}: VirtualListRowProps) {
+  "use no memo";
+
   const item = data[virtualRow.index];
 
   if (item === undefined) {
@@ -54,7 +58,10 @@ const VirtualListRow = memo(function VirtualListRow<T>({
       <RowComponent data={item} index={virtualRow.index} />
     </div>
   );
-}) as <T>(props: VirtualListRowProps<T>) => ReactNode;
+}
+
+// react-doctor-disable-next-line react-doctor/react-compiler-no-manual-memoization -- this shared virtualizer boundary is intentionally compiler opt-out.
+const MemoizedVirtualListRow = memo(VirtualListRow) as typeof VirtualListRow;
 
 interface VirtualListProps<T> {
   className?: string;
@@ -69,7 +76,13 @@ interface VirtualListProps<T> {
   RowComponent: ComponentType<{ data: T; index: number }>;
 }
 
-export function VirtualList<T>({
+type VirtualListImplProps = VirtualListProps<unknown>;
+
+export function VirtualList<T>(props: VirtualListProps<T>) {
+  return <VirtualListImpl {...(props as unknown as VirtualListImplProps)} />;
+}
+
+function VirtualListImpl({
   data,
   RowComponent,
   getItemKey,
@@ -79,27 +92,47 @@ export function VirtualList<T>({
   className,
   innerClassName,
   emptyState,
-}: VirtualListProps<T>) {
+}: VirtualListImplProps) {
+  "use no memo";
+
   const parentRef = useRef<HTMLDivElement>(null);
 
+  // react-doctor-disable-next-line react-doctor/react-compiler-no-manual-memoization -- TanStack Virtual expects stable option callbacks.
   const getScrollElement = useCallback(() => parentRef.current, []);
-  const estimateSizeFn = useCallback(() => estimateSize, [estimateSize]);
-
-  const stableGetItemKey = useMemo(
-    () =>
-      getItemKey
-        ? (index: number) => getItemKey(data[index], index)
-        : undefined,
-    [getItemKey, data]
+  // react-doctor-disable-next-line react-doctor/react-compiler-no-manual-memoization -- TanStack Virtual expects stable option callbacks.
+  const getEstimatedSize = useCallback(() => estimateSize, [estimateSize]);
+  // react-doctor-disable-next-line react-doctor/react-compiler-no-manual-memoization -- TanStack Virtual expects stable option callbacks.
+  const getVirtualItemKey = useCallback(
+    (index: number) => {
+      const item = data[index];
+      if (!getItemKey || item === undefined) {
+        return index;
+      }
+      return getItemKey(item, index);
+    },
+    [data, getItemKey]
+  );
+  // react-doctor-disable-next-line react-doctor/react-compiler-no-manual-memoization -- keep the virtualizer options object stable across renders.
+  const virtualizerOptions = useMemo(
+    () => ({
+      count: data.length,
+      getScrollElement,
+      estimateSize: getEstimatedSize,
+      overscan,
+      getItemKey: getItemKey ? getVirtualItemKey : undefined,
+    }),
+    [
+      data.length,
+      getEstimatedSize,
+      getItemKey,
+      getScrollElement,
+      getVirtualItemKey,
+      overscan,
+    ]
   );
 
-  const virtualizer = useVirtualizer({
-    count: data.length,
-    getScrollElement,
-    estimateSize: estimateSizeFn,
-    overscan,
-    getItemKey: stableGetItemKey,
-  });
+  // react-doctor-disable-next-line react-hooks-js/incompatible-library -- TanStack Virtual is intentionally isolated in this compiler opt-out component.
+  const virtualizer = useVirtualizer(virtualizerOptions);
 
   const virtualItems = virtualizer.getVirtualItems();
   const measureElement = virtualizer.measureElement;
@@ -125,7 +158,7 @@ export function VirtualList<T>({
           }}
         >
           {virtualItems.map((virtualRow) => (
-            <VirtualListRow
+            <MemoizedVirtualListRow
               data={data}
               estimateSize={estimateSize}
               key={virtualRow.key}

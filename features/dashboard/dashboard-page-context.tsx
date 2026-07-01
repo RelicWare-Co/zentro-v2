@@ -47,7 +47,7 @@ export function DashboardPageProvider({ children }: { children: ReactNode }) {
         isError: overviewQuery.isError,
       },
     }),
-    [overviewQuery.data, overviewQuery.isPending, overviewQuery.isError]
+    [overviewQuery.data, overviewQuery.isError, overviewQuery.isPending]
   );
 
   return <DashboardPageContext value={value}>{children}</DashboardPageContext>;

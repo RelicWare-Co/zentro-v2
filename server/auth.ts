@@ -6,10 +6,10 @@ import { dbSqlite } from "@/database/drizzle/db";
 
 function csvEnv(name: string) {
   return (
-    process.env[name]
-      ?.split(",")
-      .map((value) => value.trim())
-      .filter(Boolean) ?? []
+    process.env[name]?.split(",").flatMap((value) => {
+      const trimmed = value.trim();
+      return trimmed ? [trimmed] : [];
+    }) ?? []
   );
 }
 

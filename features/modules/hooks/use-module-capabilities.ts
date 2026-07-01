@@ -1,5 +1,5 @@
 import { useQuery as useZeroQuery } from "@rocicorp/zero/react";
-import { useMemo, useRef } from "react";
+import { useRef } from "react";
 import { usePageContext } from "vike-react/usePageContext";
 import {
   buildModuleCapabilities,
@@ -22,22 +22,16 @@ export function useModuleCapabilities() {
     getZeroQueryError(organizationStatus) ??
     getZeroQueryError(entitlementStatus);
 
-  const data = useMemo(() => {
-    if (!zeroContext) {
-      return null;
-    }
-
-    const organizationRow = organizationRows[0];
-    if (!organizationRow) {
-      return null;
-    }
-
-    return buildModuleCapabilities({
-      ctx: zeroContext,
-      entitlementRows: entitlementRows as ModuleEntitlementRow[],
-      settings: parseOrganizationSettingsMetadata(organizationRow.metadata),
-    });
-  }, [entitlementRows, organizationRows, zeroContext]);
+  const data =
+    zeroContext && organizationRows[0]
+      ? buildModuleCapabilities({
+          ctx: zeroContext,
+          entitlementRows: entitlementRows as ModuleEntitlementRow[],
+          settings: parseOrganizationSettingsMetadata(
+            organizationRows[0].metadata
+          ),
+        })
+      : null;
 
   const hasLoadedRef = useRef(false);
   const staleDataRef = useRef(data);

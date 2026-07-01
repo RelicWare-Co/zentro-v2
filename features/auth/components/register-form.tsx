@@ -76,7 +76,10 @@ export function RegisterForm() {
           Nombre
         </label>
         <div className="relative">
-          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-500">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-500"
+          >
             <User className="size-4" />
           </div>
           <input
@@ -98,10 +101,14 @@ export function RegisterForm() {
           Correo electrónico
         </AuthLabelWithRequired>
         <div className="relative">
-          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-500">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-500"
+          >
             <Mail className="size-4" />
           </div>
           <input
+            aria-label="Correo electrónico"
             autoComplete="email"
             className={AUTH_INPUT_BASE}
             disabled={isPending || state.isCompletingJoin}
@@ -123,10 +130,14 @@ export function RegisterForm() {
         </AuthLabelWithRequired>
         <p className="text-xs text-zinc-500">Mínimo 8 caracteres.</p>
         <div className="relative">
-          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-500">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-500"
+          >
             <Lock className="size-4" />
           </div>
           <input
+            aria-label="Contraseña"
             autoComplete="new-password"
             className={`${AUTH_INPUT_BASE} pr-10`}
             disabled={isPending || state.isCompletingJoin}
@@ -162,10 +173,14 @@ export function RegisterForm() {
           Confirmar contraseña
         </AuthLabelWithRequired>
         <div className="relative">
-          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-500">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-500"
+          >
             <Lock className="size-4" />
           </div>
           <input
+            aria-label="Confirmar contraseña"
             autoComplete="new-password"
             className={`${AUTH_INPUT_BASE} pr-10`}
             disabled={isPending || state.isCompletingJoin}

@@ -1,6 +1,6 @@
 import { ActionIcon, Badge, TextInput } from "@mantine/core";
 import { Building2, ExternalLink, Search } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
   Table,
   TableBody,
@@ -162,17 +162,14 @@ export function AdminOrganizationsTab() {
 
   const organizations = organizationsQuery.data?.organizations ?? [];
 
-  const filtered = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    if (!query) {
-      return organizations;
-    }
-    return organizations.filter(
-      (org) =>
-        org.name.toLowerCase().includes(query) ||
-        org.slug.toLowerCase().includes(query)
-    );
-  }, [organizations, search]);
+  const query = search.trim().toLowerCase();
+  const filtered = query
+    ? organizations.filter(
+        (org) =>
+          org.name.toLowerCase().includes(query) ||
+          org.slug.toLowerCase().includes(query)
+      )
+    : organizations;
 
   if (organizationsQuery.isPending) {
     return <AdminTabLoading />;

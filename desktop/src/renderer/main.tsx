@@ -5,7 +5,7 @@ import {
   Settings,
   WifiOff,
 } from "lucide-react";
-import { StrictMode, useEffect, useMemo, useState } from "react";
+import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 
 import type { DesktopConnectionStatus } from "../desktop-api";
@@ -58,7 +58,7 @@ const statusContent = (status: DesktopConnectionStatus) => {
 function DesktopShell() {
   const [status, setStatus] = useState<DesktopConnectionStatus>(initialStatus);
   const [isRetrying, setIsRetrying] = useState(false);
-  const content = useMemo(() => statusContent(status), [status]);
+  const content = statusContent(status);
   const isChecking = status.state === "checking" || isRetrying;
 
   useEffect(() => {

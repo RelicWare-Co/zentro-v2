@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useCallback, useEffect } from "react";
+import { useEffect } from "react";
 import { ALL_FILTER_VALUE } from "@/features/listing/listing.constants.shared";
 import { useKeyboardBarcodeScanner } from "@/features/posv2/hooks/use-keyboard-barcode-scanner.client";
 import {
@@ -47,27 +47,26 @@ function ProductsPageLayout() {
     state.productToDelete
   );
 
-  const handleBarcodeScan = useCallback(
-    (event: Parameters<typeof buildPosV2BarcodeScanPayload>[0]) => {
-      if (isPosV2ScannerBlocked()) {
-        return;
-      }
-      const payload = buildPosV2BarcodeScanPayload(event);
-      const match = findCatalogProductByBarcodeScan(
-        state.barcodeCatalogProducts,
-        payload.lookupValues
-      );
-      if (match) {
-        actions.openEditProduct(match);
-        return;
-      }
-      actions.setCategoryFilter(ALL_FILTER_VALUE);
-      actions.setStockFilter("all");
-      actions.setQuery(payload.value);
-      actions.setActiveTab("products");
-    },
-    [actions, state.barcodeCatalogProducts]
-  );
+  const handleBarcodeScan = (
+    event: Parameters<typeof buildPosV2BarcodeScanPayload>[0]
+  ) => {
+    if (isPosV2ScannerBlocked()) {
+      return;
+    }
+    const payload = buildPosV2BarcodeScanPayload(event);
+    const match = findCatalogProductByBarcodeScan(
+      state.barcodeCatalogProducts,
+      payload.lookupValues
+    );
+    if (match) {
+      actions.openEditProduct(match);
+      return;
+    }
+    actions.setCategoryFilter(ALL_FILTER_VALUE);
+    actions.setStockFilter("all");
+    actions.setQuery(payload.value);
+    actions.setActiveTab("products");
+  };
 
   const { isConnected: isBarcodeScannerConnected } = useKeyboardBarcodeScanner({
     enabled: scannerEnabled,

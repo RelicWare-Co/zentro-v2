@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import type { CartItemModifier, Product } from "../types";
 
 export function useModifierModal(
@@ -15,35 +15,29 @@ export function useModifierModal(
     Record<string, number>
   >({});
 
-  const updateModifierQuantity = useCallback(
-    (modifierId: string, delta: number) => {
-      setModifierQuantities((previousQuantities) => {
-        const currentValue = previousQuantities[modifierId] ?? 0;
-        const nextValue = Math.max(0, currentValue + delta);
-        return {
-          ...previousQuantities,
-          [modifierId]: nextValue,
-        };
-      });
-    },
-    []
-  );
+  const updateModifierQuantity = (modifierId: string, delta: number) => {
+    setModifierQuantities((previousQuantities) => {
+      const currentValue = previousQuantities[modifierId] ?? 0;
+      const nextValue = Math.max(0, currentValue + delta);
+      return {
+        ...previousQuantities,
+        [modifierId]: nextValue,
+      };
+    });
+  };
 
-  const handleProductSelection = useCallback(
-    (product: Product) => {
-      if (modifierProducts.length === 0) {
-        onAddToCart(product, []);
-        return;
-      }
+  const handleProductSelection = (product: Product) => {
+    if (modifierProducts.length === 0) {
+      onAddToCart(product, []);
+      return;
+    }
 
-      setSelectedProductForModifiers(product);
-      setModifierQuantities({});
-      modalControl.openModifierModal();
-    },
-    [modalControl, modifierProducts.length, onAddToCart]
-  );
+    setSelectedProductForModifiers(product);
+    setModifierQuantities({});
+    modalControl.openModifierModal();
+  };
 
-  const handleConfirmModifiers = useCallback(() => {
+  const handleConfirmModifiers = () => {
     if (!selectedProductForModifiers) {
       return;
     }
@@ -67,15 +61,9 @@ export function useModifierModal(
     modalControl.closeModifierModal();
     setSelectedProductForModifiers(null);
     setModifierQuantities({});
-  }, [
-    modalControl,
-    modifierProducts,
-    modifierQuantities,
-    onAddToCart,
-    selectedProductForModifiers,
-  ]);
+  };
 
-  const handleQuickAddWithoutModifiers = useCallback(() => {
+  const handleQuickAddWithoutModifiers = () => {
     if (!selectedProductForModifiers) {
       return;
     }
@@ -84,13 +72,13 @@ export function useModifierModal(
     modalControl.closeModifierModal();
     setSelectedProductForModifiers(null);
     setModifierQuantities({});
-  }, [modalControl, onAddToCart, selectedProductForModifiers]);
+  };
 
-  const handleCloseModal = useCallback(() => {
+  const handleCloseModal = () => {
     modalControl.closeModifierModal();
     setSelectedProductForModifiers(null);
     setModifierQuantities({});
-  }, [modalControl]);
+  };
 
   return {
     selectedProductForModifiers,

@@ -8,7 +8,7 @@ import {
   TextInput,
 } from "@mantine/core";
 import { Plus, UtensilsCrossed } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   useCreateRestaurantAreaMutation,
   useCreateRestaurantTableMutation,
@@ -121,37 +121,50 @@ export function CreateRestaurantTableDialog({
   open,
   onOpenChange,
 }: CreateTableDialogProps) {
+  const resolvedAreaId = defaultAreaId ?? areas[0]?.id ?? "";
+
+  return (
+    <CreateRestaurantTableDialogInner
+      areas={areas}
+      defaultAreaId={resolvedAreaId}
+      key={`${open}-${resolvedAreaId}`}
+      onOpenChange={onOpenChange}
+      open={open}
+    />
+  );
+}
+
+function CreateRestaurantTableDialogInner({
+  areas,
+  defaultAreaId,
+  open,
+  onOpenChange,
+}: CreateTableDialogProps) {
   const createTableMutation = useCreateRestaurantTableMutation();
   const [areaId, setAreaId] = useState(defaultAreaId ?? areas[0]?.id ?? "");
-  const [name, setName] = useState("");
+  const [name, setName] = useState(() => {
+    const area = areas.find((item) => item.id === defaultAreaId);
+    return area ? suggestNextTableName(area.tables) : "Mesa 1";
+  });
   const [seats, setSeats] = useState("4");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const selectedArea = areas.find((area) => area.id === areaId) ?? areas[0];
-
-  useEffect(() => {
-    if (!open) {
-      setErrorMessage(null);
+  const handleAreaChange = (nextAreaId: string) => {
+    setAreaId(nextAreaId);
+    const nextArea = areas.find((area) => area.id === nextAreaId);
+    if (!nextArea) {
       return;
     }
-    const resolvedAreaId = defaultAreaId ?? areas[0]?.id ?? "";
-    setAreaId(resolvedAreaId);
-    const area = areas.find((item) => item.id === resolvedAreaId);
-    setName(area ? suggestNextTableName(area.tables) : "Mesa 1");
-    setSeats("4");
-  }, [areas, defaultAreaId, open]);
+    setName((currentName) =>
+      currentName.trim().length === 0
+        ? suggestNextTableName(nextArea.tables)
+        : currentName
+    );
+  };
 
-  useEffect(() => {
-    if (!(open && selectedArea)) {
-      return;
-    }
-    setName((currentName) => {
-      if (currentName.trim().length === 0) {
-        return suggestNextTableName(selectedArea.tables);
-      }
-      return currentName;
-    });
-  }, [open, selectedArea]);
+  const handleClose = () => {
+    onOpenChange(false);
+  };
 
   const handleSubmit = async () => {
     const trimmedName = name.trim();
@@ -167,7 +180,7 @@ export function CreateRestaurantTableDialog({
         name: trimmedName,
         seats: Number(seats) || 0,
       });
-      onOpenChange(false);
+      handleClose();
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : "No se pudo crear la mesa."
@@ -178,7 +191,7 @@ export function CreateRestaurantTableDialog({
   return (
     <Modal
       centered
-      onClose={() => onOpenChange(false)}
+      onClose={handleClose}
       opened={open}
       title={
         <span className="flex items-center gap-2">
@@ -199,7 +212,7 @@ export function CreateRestaurantTableDialog({
           <NativeSelect
             data={areas.map((area) => ({ value: area.id, label: area.name }))}
             label="Zona"
-            onChange={(event) => setAreaId(event.target.value)}
+            onChange={(event) => handleAreaChange(event.currentTarget.value)}
             value={areaId}
           />
           <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_120px]">
@@ -229,7 +242,7 @@ export function CreateRestaurantTableDialog({
         <div className="-mx-6 flex justify-end gap-3 border-zinc-800 border-t px-6 pt-4">
           <Button
             className="border-zinc-700! text-zinc-300! hover:border-zinc-500 hover:text-white!"
-            onClick={() => onOpenChange(false)}
+            onClick={handleClose}
             type="button"
             variant="outline"
           >

@@ -8,23 +8,53 @@
 // rather than importing it directly from a non-client module.
 
 import { ZeroProvider } from "@rocicorp/zero/react";
-import { type ReactNode, useMemo, useRef } from "react";
+import { type ReactNode, useMemo } from "react";
 import { createZeroOptions } from "./client";
 import type { ZeroContext } from "./context";
 import { ZeroConnectionBoundary } from "./zero-connection-boundary.client";
-import { zeroContextFingerprint } from "./zero-context-stable.shared";
 
 function useStableZeroContext(context: ZeroContext | undefined) {
-  const stableRef = useRef(context);
-  const fingerprintRef = useRef(zeroContextFingerprint(context));
+  const policy = context?.organizationPolicy;
+  const allowSelfServiceCreation = policy?.allowSelfServiceCreation ?? false;
+  const contactHref = policy?.contactHref ?? null;
+  const contactLabel = policy?.contactLabel ?? "";
+  const contactMessage = policy?.contactMessage ?? "";
+  const email = context?.email;
+  const id = context?.id;
+  const orgID = context?.orgID ?? null;
+  const role = context?.role ?? null;
+  const systemRole = context?.systemRole ?? null;
 
-  const fingerprint = zeroContextFingerprint(context);
-  if (fingerprint !== fingerprintRef.current) {
-    fingerprintRef.current = fingerprint;
-    stableRef.current = context;
-  }
+  // react-doctor-disable-next-line react-doctor/react-compiler-no-manual-memoization -- ZeroProvider should not receive a new context object for unchanged auth facts.
+  return useMemo<ZeroContext | undefined>(() => {
+    if (!(id && email)) {
+      return;
+    }
 
-  return stableRef.current;
+    return {
+      email,
+      id,
+      organizationPolicy: {
+        allowSelfServiceCreation,
+        contactHref,
+        contactLabel,
+        contactMessage,
+      },
+      orgID,
+      role,
+      systemRole,
+    };
+  }, [
+    allowSelfServiceCreation,
+    contactHref,
+    contactLabel,
+    contactMessage,
+    email,
+    id,
+    orgID,
+    role,
+    systemRole,
+  ]);
 }
 
 export interface ZentroZeroProviderProps {

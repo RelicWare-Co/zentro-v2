@@ -1,5 +1,5 @@
 import { notifications } from "@mantine/notifications";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
   buildQuickSalePayments,
   usePosCheckout,
@@ -38,6 +38,9 @@ export function useTableSaleAdapter(
   );
   const isActive = params.accessible && Boolean(tableOrder.activeTableId);
 
+  const prevAccessibleRef = useRef(params.accessible);
+  const prevActiveTableIdRef = useRef(tableOrder.activeTableId);
+
   const resetDiscount = useCallback(() => {
     setDiscountInput("0");
   }, []);
@@ -57,19 +60,21 @@ export function useTableSaleAdapter(
     params.closeActiveModal
   );
 
-  useEffect(() => {
-    if (!(params.accessible || !tableOrder.activeTableId)) {
-      tableOrder.exitTable();
-      checkout.resetPayments();
-      resetDiscount();
-    }
-  }, [
-    params.accessible,
-    tableOrder.activeTableId,
-    tableOrder.exitTable,
-    checkout.resetPayments,
-    resetDiscount,
-  ]);
+  // Reset state inline when accessibility or table changes to avoid stale UI
+  const shouldReset =
+    prevAccessibleRef.current &&
+    (!params.accessible ||
+      (prevActiveTableIdRef.current !== tableOrder.activeTableId &&
+        !tableOrder.activeTableId));
+
+  if (shouldReset) {
+    tableOrder.exitTable();
+    checkout.resetPayments();
+    resetDiscount();
+  }
+
+  prevAccessibleRef.current = params.accessible;
+  prevActiveTableIdRef.current = tableOrder.activeTableId;
 
   const finalizeSale = useCallback(
     async (payments: SalePayment[], options: SaleFinalizeOptions) => {

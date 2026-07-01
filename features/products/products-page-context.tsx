@@ -5,7 +5,6 @@ import {
   type ReactNode,
   use,
   useCallback,
-  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -164,8 +163,19 @@ export function ProductsPageProvider({ children }: { children: ReactNode }) {
   const [inventoryNotes, setInventoryNotes] = useState("");
   const [inventoryRestockMode, setInventoryRestockMode] =
     useState<InventoryRestockMode>("add_to_stock");
-  const [stockFilter, setStockFilterState] =
-    useState<ProductStockFilterValue>("all");
+  const [stockFilter, setStockFilterState] = useState<ProductStockFilterValue>(
+    () => {
+      if (typeof window === "undefined") {
+        return "all";
+      }
+      const stockParam = new URLSearchParams(window.location.search).get(
+        "stock"
+      );
+      return stockParam === "low" || stockParam === "out" || stockParam === "ok"
+        ? (stockParam as ProductStockFilterValue)
+        : "all";
+    }
+  );
   const [isBarcodeScannerConnected, setIsBarcodeScannerConnected] =
     useState(false);
 
@@ -178,17 +188,6 @@ export function ProductsPageProvider({ children }: { children: ReactNode }) {
     );
     return settings.inventory.lowStockThreshold;
   }, [organizationRows]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-    const stockParam = new URLSearchParams(window.location.search).get("stock");
-    if (stockParam === "low" || stockParam === "out" || stockParam === "ok") {
-      setStockFilterState(stockParam);
-      setActiveTab("products");
-    }
-  }, []);
 
   const mutations = useProductsMutations({
     onCreateProductSuccess: () => {

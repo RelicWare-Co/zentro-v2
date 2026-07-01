@@ -23,8 +23,10 @@ export type AdminSetOrganizationModuleInput = z.infer<
   typeof AdminSetOrganizationModuleSchema
 > & { organizationId: string };
 
+const dateTimeFormat = new Intl.DateTimeFormat();
+
 function getBrowserTimeZone() {
-  return new Intl.DateTimeFormat().resolvedOptions().timeZone;
+  return dateTimeFormat.resolvedOptions().timeZone;
 }
 
 async function fetchAdminJson<T>(

@@ -22,7 +22,7 @@ export function usePosSaleModeAdapters(
     const factories = definition.getPosSaleModes?.() ?? [];
 
     return factories.map((factory) =>
-      // biome-ignore lint/correctness/useHookAtTopLevel: sale mode factories are collected from MODULE_KEYS in a static order; adapters receive `accessible` instead of being conditionally registered.
+      // biome-ignore lint/correctness/useHookAtTopLevel: sale mode factories are collected from MODULE_KEYS in a static order; adapters receive `accessible` instead of being conditionally registered
       factory.useAdapter({
         ...params,
         accessible,

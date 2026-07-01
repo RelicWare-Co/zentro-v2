@@ -1,5 +1,4 @@
 import { User, Zap } from "lucide-react";
-import { useMemo } from "react";
 import { CustomerPicker } from "@/features/pos/components/customer-picker";
 import { usePosPage } from "@/features/pos/pos-page-context";
 import { cn } from "@/lib/utils";
@@ -13,13 +12,10 @@ export function CheckoutCustomerSection({
 }: CheckoutCustomerSectionProps) {
   const { state, actions } = usePosPage();
 
-  const selectedCustomer = useMemo(
-    () =>
-      state.customers.find(
-        (customer) => customer.id === state.selectedCustomerId
-      ) ?? null,
-    [state.customers, state.selectedCustomerId]
-  );
+  const selectedCustomer =
+    state.customers.find(
+      (customer) => customer.id === state.selectedCustomerId
+    ) ?? null;
 
   const isQuickSale = !selectedCustomer;
   return (

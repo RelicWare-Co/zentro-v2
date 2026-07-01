@@ -4,8 +4,10 @@ import type { DashboardOverviewSchema } from "@/features/dashboard/dashboard.sch
 
 export type DashboardOverview = z.infer<typeof DashboardOverviewSchema>;
 
+const dateTimeFormat = new Intl.DateTimeFormat();
+
 function getBrowserTimeZone() {
-  return new Intl.DateTimeFormat().resolvedOptions().timeZone;
+  return dateTimeFormat.resolvedOptions().timeZone;
 }
 
 async function fetchDashboardOverview(

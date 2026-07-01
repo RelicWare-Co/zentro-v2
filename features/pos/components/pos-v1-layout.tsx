@@ -1,6 +1,6 @@
 import { Button, Drawer } from "@mantine/core";
 import { ShoppingCart } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { CartPanel } from "@/features/pos/components/cart-panel";
 import { PosHeader } from "@/features/pos/components/pos-header";
 import { ProductGrid } from "@/features/pos/components/product-grid";
@@ -25,13 +25,13 @@ export function PosV1Layout() {
     actions.openCheckout();
   };
 
-  const handleOpenDrawer = useCallback(() => {
+  const handleOpenDrawer = () => {
     if (!state.activeShift) {
       actions.openShiftModal();
       return;
     }
     openPosCashDrawer(meta.activeOrganizationId).catch(() => undefined);
-  }, [state.activeShift, actions, meta.activeOrganizationId]);
+  };
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-[var(--color-void)] text-[var(--color-photon)]">

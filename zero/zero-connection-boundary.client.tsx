@@ -1,16 +1,29 @@
 import { Button } from "@mantine/core";
 import type { ConnectionState } from "@rocicorp/zero";
-import { useConnectionState, useZero } from "@rocicorp/zero/react";
+import { useZero } from "@rocicorp/zero/react";
 import { AlertTriangle, RefreshCw, RotateCcw } from "lucide-react";
-import {
-  type ReactNode,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { type ReactNode, useMemo, useSyncExternalStore } from "react";
 
 const SLOW_CONNECTION_MS = 15_000;
+
+interface ConnectionStateSource {
+  readonly current: ConnectionState;
+  subscribe(listener: (state: ConnectionState) => void): () => void;
+}
+
+interface ConnectionBoundarySnapshot {
+  connectionState: ConnectionState;
+  hasConnected: boolean;
+  isSlowConnection: boolean;
+}
+
+const reload = () => {
+  window.location.reload();
+};
+
+const goToLogin = () => {
+  window.location.href = "/login";
+};
 
 type NeedsAuthReason = Extract<
   ConnectionState,
@@ -87,6 +100,116 @@ function OfflineBanner({ onRetry }: { onRetry: () => void }) {
   );
 }
 
+function createConnectionBoundaryStore(source: ConnectionStateSource) {
+  const listeners = new Set<() => void>();
+  let connectionState = source.current;
+  let hasConnected = connectionState.name === "connected";
+  let isSlowConnection = false;
+  let snapshot: ConnectionBoundarySnapshot = {
+    connectionState,
+    hasConnected,
+    isSlowConnection,
+  };
+  let timeout: number | undefined;
+  let unsubscribe: (() => void) | undefined;
+
+  const clearSlowConnectionTimeout = () => {
+    if (timeout === undefined) {
+      return;
+    }
+
+    window.clearTimeout(timeout);
+    timeout = undefined;
+  };
+
+  const emit = () => {
+    for (const listener of listeners) {
+      listener();
+    }
+  };
+
+  const updateSnapshot = () => {
+    if (
+      Object.is(snapshot.connectionState, connectionState) &&
+      snapshot.hasConnected === hasConnected &&
+      snapshot.isSlowConnection === isSlowConnection
+    ) {
+      return false;
+    }
+
+    snapshot = {
+      connectionState,
+      hasConnected,
+      isSlowConnection,
+    };
+    return true;
+  };
+
+  const scheduleSlowConnectionTimeout = () => {
+    if (timeout !== undefined || isSlowConnection) {
+      return;
+    }
+
+    timeout = window.setTimeout(() => {
+      timeout = undefined;
+      if (connectionState.name !== "connecting" || isSlowConnection) {
+        return;
+      }
+
+      isSlowConnection = true;
+      if (updateSnapshot()) {
+        emit();
+      }
+    }, SLOW_CONNECTION_MS);
+  };
+
+  const syncConnectionState = (nextState: ConnectionState) => {
+    connectionState = nextState;
+
+    if (nextState.name === "connected") {
+      hasConnected = true;
+    }
+
+    if (nextState.name === "connecting") {
+      scheduleSlowConnectionTimeout();
+    } else {
+      clearSlowConnectionTimeout();
+      isSlowConnection = false;
+    }
+
+    return updateSnapshot();
+  };
+
+  return {
+    getSnapshot: () => snapshot,
+    subscribe: (listener: () => void) => {
+      listeners.add(listener);
+
+      if (syncConnectionState(source.current)) {
+        listener();
+      }
+
+      unsubscribe ??= source.subscribe((nextState) => {
+        if (syncConnectionState(nextState)) {
+          emit();
+        }
+      });
+
+      return () => {
+        listeners.delete(listener);
+
+        if (listeners.size > 0) {
+          return;
+        }
+
+        unsubscribe?.();
+        unsubscribe = undefined;
+        clearSlowConnectionTimeout();
+      };
+    },
+  };
+}
+
 export function ZeroConnectionBoundary({
   children,
   mode = "required",
@@ -95,40 +218,22 @@ export function ZeroConnectionBoundary({
   mode?: "optional" | "required";
 }) {
   const zero = useZero();
-  const connectionState = useConnectionState();
-  const hasConnectedRef = useRef(connectionState.name === "connected");
-  const [isSlowConnection, setIsSlowConnection] = useState(false);
+  const connectionStateSource = zero.connection.state;
+  // react-doctor-disable-next-line react-doctor/react-compiler-no-manual-memoization -- store state must persist for a given Zero connection source.
+  const connectionStore = useMemo(
+    () => createConnectionBoundaryStore(connectionStateSource),
+    [connectionStateSource]
+  );
+  const { connectionState, hasConnected, isSlowConnection } =
+    useSyncExternalStore(
+      connectionStore.subscribe,
+      connectionStore.getSnapshot,
+      connectionStore.getSnapshot
+    );
 
-  if (connectionState.name === "connected") {
-    hasConnectedRef.current = true;
-  }
-
-  useEffect(() => {
-    if (connectionState.name !== "connecting") {
-      setIsSlowConnection(false);
-      return;
-    }
-
-    const timeout = window.setTimeout(() => {
-      setIsSlowConnection(true);
-    }, SLOW_CONNECTION_MS);
-
-    return () => {
-      window.clearTimeout(timeout);
-    };
-  }, [connectionState.name]);
-
-  const retryConnection = useCallback(() => {
+  const retryConnection = () => {
     zero.connection.connect().catch(() => undefined);
-  }, [zero]);
-
-  const reload = useCallback(() => {
-    window.location.reload();
-  }, []);
-
-  const goToLogin = useCallback(() => {
-    window.location.href = "/login";
-  }, []);
+  };
 
   if (mode === "optional") {
     return children;
@@ -167,7 +272,7 @@ export function ZeroConnectionBoundary({
     );
   }
 
-  if (connectionState.name === "disconnected" && !hasConnectedRef.current) {
+  if (connectionState.name === "disconnected" && !hasConnected) {
     return (
       <ZeroConnectionProblem
         actionLabel="Recargar"
@@ -181,7 +286,7 @@ export function ZeroConnectionBoundary({
   if (
     connectionState.name === "connecting" &&
     isSlowConnection &&
-    !hasConnectedRef.current
+    !hasConnected
   ) {
     return (
       <ZeroConnectionProblem
@@ -193,7 +298,7 @@ export function ZeroConnectionBoundary({
     );
   }
 
-  if (connectionState.name === "disconnected" && hasConnectedRef.current) {
+  if (connectionState.name === "disconnected" && hasConnected) {
     return (
       <div className="relative min-h-0 flex-1">
         <OfflineBanner onRetry={retryConnection} />
