@@ -1,18 +1,21 @@
-export type PosActiveModal =
-  | { type: "cash-movement" }
-  | { type: "checkout" }
-  | { type: "checkout-details" }
-  | { type: "close-shift" }
-  | { type: "create-customer" }
-  | { type: "modifier" }
-  | { type: "open-shift" }
-  | { type: "shift-required" };
+export type PosActiveModal = string;
+
+export const POS_MODAL_IDS = {
+  CASH_MOVEMENT: "cash-movement",
+  CHECKOUT: "checkout",
+  CHECKOUT_DETAILS: "checkout-details",
+  CLOSE_SHIFT: "close-shift",
+  CREATE_CUSTOMER: "create-customer",
+  MODIFIER: "modifier",
+  OPEN_SHIFT: "open-shift",
+  SHIFT_REQUIRED: "shift-required",
+} as const;
 
 export function isPosModalOpen(
   activeModal: PosActiveModal | null,
-  type: PosActiveModal["type"]
+  type: string
 ) {
-  return activeModal?.type === type;
+  return activeModal === type;
 }
 
 export function isAnyPosModalOpen(activeModal: PosActiveModal | null) {
@@ -23,15 +26,5 @@ export function isPosOverlayBlockingCatalog(
   activeModal: PosActiveModal | null,
   isMobileCartOpen: boolean
 ) {
-  return (
-    isMobileCartOpen ||
-    isPosModalOpen(activeModal, "modifier") ||
-    isPosModalOpen(activeModal, "create-customer") ||
-    isPosModalOpen(activeModal, "open-shift") ||
-    isPosModalOpen(activeModal, "cash-movement") ||
-    isPosModalOpen(activeModal, "close-shift") ||
-    isPosModalOpen(activeModal, "checkout") ||
-    isPosModalOpen(activeModal, "checkout-details") ||
-    isPosModalOpen(activeModal, "shift-required")
-  );
+  return isMobileCartOpen || isAnyPosModalOpen(activeModal);
 }

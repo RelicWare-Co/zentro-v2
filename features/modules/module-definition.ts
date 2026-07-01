@@ -1,3 +1,4 @@
+import type { PosExtension } from "@/features/pos/pos-extension.shared";
 import type { PosSaleModeFactory } from "@/features/pos/sale-modes/types";
 import type { OrganizationSettings } from "@/features/settings/settings.shared";
 
@@ -28,6 +29,10 @@ export interface ModuleDefinition<
     accessible: boolean;
     flags: Flags;
   }): ModuleNavigationItem[];
+  getPosExtensions?(input: {
+    accessible: boolean;
+    flags: Flags;
+  }): PosExtension[];
   /**
    * Return a static, stable list of POS sale mode factories for this module.
    * Access checks belong in the adapter input so hook order never changes.

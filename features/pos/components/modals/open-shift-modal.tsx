@@ -1,6 +1,9 @@
 import { Button, Group, Modal, Textarea, TextInput } from "@mantine/core";
 import { usePosPage } from "@/features/pos/pos-page-context";
-import { isPosModalOpen } from "@/features/pos/pos-page-modals.shared";
+import {
+  isPosModalOpen,
+  POS_MODAL_IDS,
+} from "@/features/pos/pos-page-modals.shared";
 import { formatMoneyInput, sanitizeMoneyInput } from "@/lib/utils";
 
 export function OpenShiftModal() {
@@ -11,7 +14,7 @@ export function OpenShiftModal() {
     <Modal
       centered
       onClose={actions.closeActiveModal}
-      opened={isPosModalOpen(state.activeModal, "open-shift")}
+      opened={isPosModalOpen(state.activeModal, POS_MODAL_IDS.OPEN_SHIFT)}
       title="Apertura de Turno"
     >
       <div className="py-2">

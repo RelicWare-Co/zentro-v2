@@ -1,18 +1,41 @@
 import { Button, Drawer } from "@mantine/core";
 import { ShoppingCart } from "lucide-react";
-import { useState } from "react";
+import { useModuleCapabilities } from "@/features/modules/hooks/use-module-capabilities";
+import { usePosExtensions } from "@/features/modules/hooks/use-pos-extensions";
 import { CartPanel } from "@/features/pos/components/cart-panel";
 import { PosHeader } from "@/features/pos/components/pos-header";
 import { ProductGrid } from "@/features/pos/components/product-grid";
+import type { PosExtensionRenderProps } from "@/features/pos/pos-extension.shared";
 import { usePosPage } from "@/features/pos/pos-page-context";
+import { isAnyPosModalOpen } from "@/features/pos/pos-page-modals.shared";
 import { openPosCashDrawer } from "@/features/pos/printing/print-sale-receipt.client";
-import { RestaurantPosTables } from "@/features/restaurants/components/restaurant-pos-overlay";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 export function PosV1Layout() {
   const { state, actions, meta } = usePosPage();
   const isMobile = useIsMobile();
-  const [isTablesOverlayOpen, setIsTablesOverlayOpen] = useState(false);
+  const moduleCapabilities = useModuleCapabilities();
+  const extensions = usePosExtensions(moduleCapabilities.data?.modules);
+
+  const extensionRenderProps: PosExtensionRenderProps = {
+    activeModal: state.activeModal,
+    onCloseModal: actions.closeActiveModal,
+    onOpenModal: actions.openActiveModal,
+    saleMode: {
+      enterMode: (payload: unknown) =>
+        actions.enterTableMode(payload as string),
+      modeId: state.tableSession ? "table" : "counter",
+      sessionState: state.tableSession,
+      tableId: state.tableSession?.tableId ?? null,
+    },
+  };
+
+  const catalogOverlayExtensions = extensions.filter(
+    (ext) => ext.slot === "catalog-overlay"
+  );
+  const headerActionExtensions = extensions.filter(
+    (ext) => ext.slot === "header-action"
+  );
 
   const handleCheckout = () => {
     if (isMobile) {
@@ -39,6 +62,9 @@ export function PosV1Layout() {
         activeShift={state.activeShift}
         customers={state.customers}
         defaultTerminalName={meta.defaultTerminalName}
+        headerActions={headerActionExtensions.map(({ Component, id }) => (
+          <Component key={id} {...extensionRenderProps} />
+        ))}
         isQuickSaleMode={state.isQuickSaleMode}
         onCashMovement={actions.openCashMovementModal}
         onCloseShift={actions.openCloseShiftModal}
@@ -54,15 +80,14 @@ export function PosV1Layout() {
         <div className="relative flex min-h-0 min-w-0 flex-1 overflow-hidden">
           <ProductGrid
             className={isMobile ? "border-r-0" : undefined}
-            shouldAutoFocusSearch={!(isMobile || isTablesOverlayOpen)}
+            shouldAutoFocusSearch={
+              !(isMobile || isAnyPosModalOpen(state.activeModal))
+            }
           />
 
-          <RestaurantPosTables
-            activeTableId={state.tableSession?.tableId ?? null}
-            isOpen={isTablesOverlayOpen}
-            onOpenChange={setIsTablesOverlayOpen}
-            onSelectTable={actions.enterTableMode}
-          />
+          {catalogOverlayExtensions.map(({ Component, id }) => (
+            <Component key={id} {...extensionRenderProps} />
+          ))}
         </div>
 
         {!isMobile && (

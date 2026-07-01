@@ -5,7 +5,10 @@ import { CheckoutCustomerSection } from "@/features/pos/components/checkout/chec
 import { CheckoutDiscountSection } from "@/features/pos/components/checkout/checkout-discount-section";
 import { CheckoutSummaryFooter } from "@/features/pos/components/checkout/checkout-summary-footer";
 import { usePosPage } from "@/features/pos/pos-page-context";
-import { isPosModalOpen } from "@/features/pos/pos-page-modals.shared";
+import {
+  isPosModalOpen,
+  POS_MODAL_IDS,
+} from "@/features/pos/pos-page-modals.shared";
 import { formatCurrency } from "@/features/pos/utils";
 import {
   posV2AccentText,
@@ -25,7 +28,7 @@ export function CheckoutDetailsModal() {
     <Modal
       centered
       onClose={actions.closeActiveModal}
-      opened={isPosModalOpen(state.activeModal, "checkout-details")}
+      opened={isPosModalOpen(state.activeModal, POS_MODAL_IDS.CHECKOUT_DETAILS)}
       title="Venta a crédito"
     >
       <div className="space-y-4 py-2">

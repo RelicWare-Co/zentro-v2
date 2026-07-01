@@ -1,6 +1,9 @@
 import { Button, Group, Modal, Select, TextInput } from "@mantine/core";
 import { usePosPage } from "@/features/pos/pos-page-context";
-import { isPosModalOpen } from "@/features/pos/pos-page-modals.shared";
+import {
+  isPosModalOpen,
+  POS_MODAL_IDS,
+} from "@/features/pos/pos-page-modals.shared";
 
 const DOCUMENT_TYPE_DATA = [
   { value: "CC", label: "CC" },
@@ -17,7 +20,7 @@ export function CreateCustomerModal() {
     <Modal
       centered
       onClose={actions.closeActiveModal}
-      opened={isPosModalOpen(state.activeModal, "create-customer")}
+      opened={isPosModalOpen(state.activeModal, POS_MODAL_IDS.CREATE_CUSTOMER)}
       title="Crear cliente rápido"
     >
       <div className="space-y-4 py-2">

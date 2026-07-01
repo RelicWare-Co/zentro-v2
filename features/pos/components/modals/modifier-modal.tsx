@@ -1,7 +1,10 @@
 import { Button, Group, Modal } from "@mantine/core";
 import { Minus, Plus } from "lucide-react";
 import { usePosPage } from "@/features/pos/pos-page-context";
-import { isPosModalOpen } from "@/features/pos/pos-page-modals.shared";
+import {
+  isPosModalOpen,
+  POS_MODAL_IDS,
+} from "@/features/pos/pos-page-modals.shared";
 import { formatCurrency } from "@/features/pos/utils";
 
 export function ModifierModal() {
@@ -11,7 +14,7 @@ export function ModifierModal() {
     <Modal
       centered
       onClose={actions.closeActiveModal}
-      opened={isPosModalOpen(state.activeModal, "modifier")}
+      opened={isPosModalOpen(state.activeModal, POS_MODAL_IDS.MODIFIER)}
       size="lg"
       title={`Añadir modificadores · ${state.selectedProductForModifiers?.name ?? ""}`}
     >

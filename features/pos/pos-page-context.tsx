@@ -22,8 +22,10 @@ import {
 import { buildSalePaymentsFromInputs } from "@/features/pos/hooks/use-pos-checkout";
 import { usePosCustomers } from "@/features/pos/hooks/use-pos-queries";
 import { usePosShift } from "@/features/pos/hooks/use-pos-shift";
-import type { PosActiveModal } from "@/features/pos/pos-page-modals.shared";
-import { isPosModalOpen } from "@/features/pos/pos-page-modals.shared";
+import {
+  isPosModalOpen,
+  POS_MODAL_IDS,
+} from "@/features/pos/pos-page-modals.shared";
 import { printSaleReceipt } from "@/features/pos/printing/print-sale-receipt.client";
 import type {
   PosPaymentMethodOption,
@@ -55,7 +57,7 @@ export type PaymentMethodOption = PosPaymentMethodOption;
 
 export interface PosPageState {
   activeCategoryId: string;
-  activeModal: PosActiveModal | null;
+  activeModal: string | null;
   activeShift: ActiveShift | null;
   canFinalizeSale: boolean;
   canReturnCashChange: boolean;
@@ -116,7 +118,7 @@ export interface PosPageActions {
   handleBarcodeScanV2: (event: KeyboardBarcodeScannerEvent) => boolean;
   handleProductSelect: (product: Product) => void;
   handleQuickSale: () => void;
-  openActiveModal: (modal: PosActiveModal) => void;
+  openActiveModal: (modal: string) => void;
   openCashMovementModal: () => void;
   openCheckout: () => void;
   openCheckoutDetails: () => void;
@@ -189,7 +191,7 @@ export function PosPageProvider({
   const [deliveryInfo, setDeliveryInfo] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [isMobileCartOpen, setIsMobileCartOpen] = useState(false);
-  const [activeModal, setActiveModal] = useState<PosActiveModal | null>(null);
+  const [activeModal, setActiveModal] = useState<string | null>(null);
   const [isQuickSaleMode, setIsQuickSaleMode] = useState(false);
   const [saleSuccessToken, setSaleSuccessToken] = useState<number | null>(null);
 
@@ -197,7 +199,7 @@ export function PosPageProvider({
     setActiveModal(null);
   }, []);
 
-  const openActiveModal = useCallback((modal: PosActiveModal) => {
+  const openActiveModal = useCallback((modal: string) => {
     setActiveModal(modal);
   }, []);
 
@@ -327,7 +329,7 @@ export function PosPageProvider({
 
   const modifierModalControl = useMemo(
     () => ({
-      openModifierModal: () => setActiveModal({ type: "modifier" }),
+      openModifierModal: () => setActiveModal(POS_MODAL_IDS.MODIFIER),
       closeModifierModal: closeActiveModal,
     }),
     [closeActiveModal]
@@ -349,7 +351,7 @@ export function PosPageProvider({
   const shift = usePosShift(
     activeShift,
     paymentMethodOptions,
-    isPosModalOpen(activeModal, "close-shift"),
+    isPosModalOpen(activeModal, POS_MODAL_IDS.CLOSE_SHIFT),
     closeActiveModal
   );
 
@@ -383,7 +385,7 @@ export function PosPageProvider({
     if (activeShift) {
       return true;
     }
-    setActiveModal({ type: "shift-required" });
+    setActiveModal(POS_MODAL_IDS.SHIFT_REQUIRED);
     return false;
   }, [activeShift]);
 
@@ -450,7 +452,7 @@ export function PosPageProvider({
     if (!requireActiveShift()) {
       return;
     }
-    setActiveModal({ type: "checkout" });
+    setActiveModal(POS_MODAL_IDS.CHECKOUT);
   }, [requireActiveShift]);
 
   const finalizeSale = useCallback(() => {
@@ -552,7 +554,7 @@ export function PosPageProvider({
   const tableSession = activeMode.sessionState;
 
   const openShiftFromRequired = useCallback(() => {
-    setActiveModal({ type: "open-shift" });
+    setActiveModal(POS_MODAL_IDS.OPEN_SHIFT);
   }, []);
 
   const value = useMemo<PosPageContextValue>(
@@ -620,14 +622,16 @@ export function PosPageProvider({
         handleProductSelect,
         handleQuickSale,
         openActiveModal,
-        openCashMovementModal: () => setActiveModal({ type: "cash-movement" }),
+        openCashMovementModal: () =>
+          setActiveModal(POS_MODAL_IDS.CASH_MOVEMENT),
         openCheckout,
-        openCheckoutDetails: () => setActiveModal({ type: "checkout-details" }),
-        openCloseShiftModal: () => setActiveModal({ type: "close-shift" }),
+        openCheckoutDetails: () =>
+          setActiveModal(POS_MODAL_IDS.CHECKOUT_DETAILS),
+        openCloseShiftModal: () => setActiveModal(POS_MODAL_IDS.CLOSE_SHIFT),
         openCreateCustomerModal: () =>
-          setActiveModal({ type: "create-customer" }),
+          setActiveModal(POS_MODAL_IDS.CREATE_CUSTOMER),
         openShiftFromRequired,
-        openShiftModal: () => setActiveModal({ type: "open-shift" }),
+        openShiftModal: () => setActiveModal(POS_MODAL_IDS.OPEN_SHIFT),
         quickAddWithoutModifiers: handleQuickAddWithoutModifiers,
         removeFromCart: removeFromCartAction,
         removePaymentMethod: checkout.removePaymentMethod,

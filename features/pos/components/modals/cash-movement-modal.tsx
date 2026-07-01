@@ -1,6 +1,9 @@
 import { Button, Group, Modal, Select, TextInput } from "@mantine/core";
 import { usePosPage } from "@/features/pos/pos-page-context";
-import { isPosModalOpen } from "@/features/pos/pos-page-modals.shared";
+import {
+  isPosModalOpen,
+  POS_MODAL_IDS,
+} from "@/features/pos/pos-page-modals.shared";
 import type { CashMovementType } from "@/features/pos/types";
 import { formatMoneyInput, sanitizeMoneyInput } from "@/lib/utils";
 
@@ -18,7 +21,7 @@ export function CashMovementModal() {
     <Modal
       centered
       onClose={actions.closeActiveModal}
-      opened={isPosModalOpen(state.activeModal, "cash-movement")}
+      opened={isPosModalOpen(state.activeModal, POS_MODAL_IDS.CASH_MOVEMENT)}
       title="Movimiento del Turno"
     >
       <div className="grid gap-4 py-2">

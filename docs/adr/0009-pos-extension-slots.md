@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed
+Implemented
 
 ## Date
 
@@ -31,7 +31,7 @@ type PosExtensionSlot = "catalog-overlay" | "header-action" | "modal";
 interface PosExtension {
   slot: PosExtensionSlot;
   id: string;
-  render: (props: PosExtensionRenderProps) => ReactNode | null;
+  Component: ComponentType<PosExtensionRenderProps>;
 }
 
 interface PosExtensionRenderProps {
@@ -51,27 +51,20 @@ Modules declare their POS extensions in their module definition:
 // features/restaurants/restaurants.module.ts
 export const restaurantModuleDefinition = defineModule({
   // ...existing fields...
-  getPosExtensions: ({ accessible, flags }) =>
+  getPosExtensions: ({ accessible }) =>
     accessible
       ? [
           {
             slot: "catalog-overlay",
-            id: "restaurant-tables",
-            render: (props) => (
-              <RestaurantPosTables
-                activeTableId={props.saleMode?.tableId ?? null}
-                isOpen={props.activeModal === "restaurant-tables"}
-                onOpenChange={(open) =>
-                  open ? props.onOpenModal("restaurant-tables") : props.onCloseModal()
-                }
-                onSelectTable={props.saleMode?.enterMode ?? (() => {})}
-              />
-            ),
+            id: RESTAURANT_POS_EXTENSION_IDS.TABLES,
+            Component: RestaurantTablesPosExtension,
           },
         ]
       : [],
 });
 ```
+
+The extension component is a `ComponentType<PosExtensionRenderProps>`, not a raw render callback. This lets extension components use hooks safely and keeps the registry as metadata plus component references.
 
 ### POS layout rendering
 
@@ -79,21 +72,23 @@ The POS layouts iterate registered extensions instead of importing module compon
 
 ```typescript
 // features/pos/components/pos-v1-layout.tsx
-const extensions = usePosExtensions();
+const extensions = usePosExtensions(moduleCapabilities.data?.modules);
 
 return (
   <div className="relative flex ...">
     <ProductGrid ... />
-    {extensions
-      .filter((ext) => ext.slot === "catalog-overlay")
-      .map((ext) => <Fragment key={ext.id}>{ext.render(renderProps)}</Fragment>)}
+    {catalogOverlayExtensions.map(({ Component, id }) => (
+      <Component key={id} {...extensionRenderProps} />
+    ))}
   </div>
 );
 ```
 
 ### Modal system
 
-`PosActiveModal` becomes `string` (open union) instead of a closed discriminated union. Each extension manages its own modal content via `render`. The `pos-modals.tsx` component iterates `extensions.filter(ext => ext.slot === "modal")` instead of listing hardcoded modals.
+`PosActiveModal` becomes `string` (open union) instead of a closed discriminated union. Each extension manages its own modal content via its `Component`. The `pos-modals.tsx` component iterates `extensions.filter(ext => ext.slot === "modal")` instead of listing hardcoded modals.
+
+Any open `activeModal` blocks catalog focus and barcode scanning by default. `isPosOverlayBlockingCatalog` now simply checks `isAnyPosModalOpen(activeModal)`. If a later module needs a non-blocking surface, explicit metadata can be added in a separate change.
 
 Built-in POS modals (checkout, shift, customer) remain in the POS feature — they are not module extensions. They use the same `activeModal: string` system.
 

@@ -1,4 +1,6 @@
 import { defineModule } from "@/features/modules/module-definition";
+import { RestaurantTablesPosExtension } from "@/features/restaurants/components/restaurant-tables-pos-extension";
+import { RESTAURANT_POS_EXTENSION_IDS } from "@/features/restaurants/restaurants-pos-extension.shared";
 import type { OrganizationSettings } from "@/features/settings/settings.shared";
 import {
   getRestaurantModuleSettings,
@@ -42,4 +44,14 @@ export const restaurantModuleDefinition = defineModule({
       : [];
   },
   getPosSaleModes: () => [tableSaleModeFactory],
+  getPosExtensions: ({ accessible }) =>
+    accessible
+      ? [
+          {
+            Component: RestaurantTablesPosExtension,
+            id: RESTAURANT_POS_EXTENSION_IDS.TABLES,
+            slot: "catalog-overlay",
+          },
+        ]
+      : [],
 });

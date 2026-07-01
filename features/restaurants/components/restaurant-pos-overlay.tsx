@@ -2,7 +2,6 @@ import { ActionIcon, Alert, Badge, Button } from "@mantine/core";
 import { UtensilsCrossed, X } from "lucide-react";
 import { type ReactNode, useEffect, useRef } from "react";
 import { usePageContext } from "vike-react/usePageContext";
-import { useModuleCapabilities } from "@/features/modules/hooks/use-module-capabilities";
 import { isOrganizationManagerRole } from "@/features/organization/access-control.shared";
 import { RestaurantFloorView } from "@/features/restaurants/components/restaurant-floor-view";
 import { useRestaurantBootstrap } from "@/features/restaurants/hooks/use-restaurants";
@@ -159,8 +158,9 @@ function RestaurantPosTablesPanel({
 /**
  * Floating "Mesas" launcher + floor-plan overlay for the POS product zone.
  * Selecting a table hands it off to the POS table session (the table's open
- * order becomes the POS cart) and closes the overlay. Renders nothing when
- * the restaurants module is not accessible for the active organization.
+ * order becomes the POS cart) and closes the overlay. Accessibility is
+ * enforced by the module registry — this component is only mounted when the
+ * restaurants module is accessible.
  * Mount inside a `relative` container that wraps the product catalog so the
  * overlay covers only that zone.
  */
@@ -175,13 +175,6 @@ export function RestaurantPosTables({
   onOpenChange: (open: boolean) => void;
   onSelectTable: (tableId: string) => void;
 }) {
-  const { data: capabilities } = useModuleCapabilities();
-  const isAccessible = capabilities?.modules.restaurants.accessible ?? false;
-
-  if (!isAccessible) {
-    return null;
-  }
-
   return (
     <>
       {/* Sliding panel: mounted always so the slide-down exit transition can

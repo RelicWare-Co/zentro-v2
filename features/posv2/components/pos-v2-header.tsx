@@ -1,5 +1,6 @@
 import { ActionIcon } from "@mantine/core";
 import { ArrowLeftRight, Lock, Printer } from "lucide-react";
+import type { ReactNode } from "react";
 import type { ActiveShift } from "@/features/pos/types";
 import {
   posV2AccentSoftBg,
@@ -13,6 +14,7 @@ import { cn } from "@/lib/utils";
 interface PosV2HeaderProps {
   activeShift: ActiveShift | null;
   defaultTerminalName: string;
+  headerActions?: ReactNode;
   onCashMovement: () => void;
   onCloseShift: () => void;
   onOpenDrawer: () => void;
@@ -21,6 +23,7 @@ interface PosV2HeaderProps {
 export function PosV2Header({
   activeShift,
   defaultTerminalName: _defaultTerminalName,
+  headerActions,
   onCashMovement,
   onOpenDrawer,
   onCloseShift,
@@ -46,6 +49,7 @@ export function PosV2Header({
         </div>
 
         <div className="flex items-center gap-2">
+          {headerActions}
           <ActionIcon
             aria-label="Movimiento de efectivo"
             className={cn(

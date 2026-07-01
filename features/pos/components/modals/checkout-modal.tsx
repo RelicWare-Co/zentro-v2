@@ -8,7 +8,10 @@ import { PaymentMethodGrid } from "@/features/pos/components/checkout/checkout-p
 import { CheckoutPaymentsSection } from "@/features/pos/components/checkout/checkout-payments-section";
 import { CheckoutSummaryFooter } from "@/features/pos/components/checkout/checkout-summary-footer";
 import { usePosPage } from "@/features/pos/pos-page-context";
-import { isPosModalOpen } from "@/features/pos/pos-page-modals.shared";
+import {
+  isPosModalOpen,
+  POS_MODAL_IDS,
+} from "@/features/pos/pos-page-modals.shared";
 import { formatCurrency } from "@/features/pos/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -19,7 +22,10 @@ export function CheckoutModal() {
   const creditSaleId = useId();
 
   useEffect(() => {
-    if (!isPosModalOpen(state.activeModal, "checkout") || isMobile) {
+    if (
+      !isPosModalOpen(state.activeModal, POS_MODAL_IDS.CHECKOUT) ||
+      isMobile
+    ) {
       return;
     }
 
@@ -31,7 +37,7 @@ export function CheckoutModal() {
     return () => window.clearTimeout(focusTimeout);
   }, [isMobile, state.activeModal]);
 
-  const isOpen = isPosModalOpen(state.activeModal, "checkout");
+  const isOpen = isPosModalOpen(state.activeModal, POS_MODAL_IDS.CHECKOUT);
 
   const firstPaymentMethod = state.payments[0]?.method ?? "";
 

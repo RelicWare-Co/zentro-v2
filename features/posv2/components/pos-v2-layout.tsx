@@ -1,5 +1,8 @@
 import type { KeyboardBarcodeScannerEvent } from "@point-of-sale/keyboard-barcode-scanner";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
+import { useModuleCapabilities } from "@/features/modules/hooks/use-module-capabilities";
+import { usePosExtensions } from "@/features/modules/hooks/use-pos-extensions";
+import type { PosExtensionRenderProps } from "@/features/pos/pos-extension.shared";
 import { usePosPage } from "@/features/pos/pos-page-context";
 import { isPosOverlayBlockingCatalog } from "@/features/pos/pos-page-modals.shared";
 import { openPosCashDrawer } from "@/features/pos/printing/print-sale-receipt.client";
@@ -9,13 +12,33 @@ import { posV2OrderCanvasBg } from "@/features/posv2/components/pos-v2-order-sty
 import { ProductCatalog } from "@/features/posv2/components/product-catalog";
 import { useKeyboardBarcodeScanner } from "@/features/posv2/hooks/use-keyboard-barcode-scanner.client";
 import { buildPosV2BarcodeScanPayload } from "@/features/posv2/posv2-barcode.shared";
-import { RestaurantPosTables } from "@/features/restaurants/components/restaurant-pos-overlay";
 import { cn } from "@/lib/utils";
 
 export function PosV2Layout() {
   const { state, actions, meta } = usePosPage();
   const pendingBarcodeLookupRef = useRef<string[] | null>(null);
-  const [isTablesOverlayOpen, setIsTablesOverlayOpen] = useState(false);
+  const moduleCapabilities = useModuleCapabilities();
+  const extensions = usePosExtensions(moduleCapabilities.data?.modules);
+
+  const extensionRenderProps: PosExtensionRenderProps = {
+    activeModal: state.activeModal,
+    onCloseModal: actions.closeActiveModal,
+    onOpenModal: actions.openActiveModal,
+    saleMode: {
+      enterMode: (payload: unknown) =>
+        actions.enterTableMode(payload as string),
+      modeId: state.tableSession ? "table" : "counter",
+      sessionState: state.tableSession,
+      tableId: state.tableSession?.tableId ?? null,
+    },
+  };
+
+  const catalogOverlayExtensions = extensions.filter(
+    (ext) => ext.slot === "catalog-overlay"
+  );
+  const headerActionExtensions = extensions.filter(
+    (ext) => ext.slot === "header-action"
+  );
 
   const handleOpenDrawer = () => {
     if (!state.activeShift) {
@@ -51,8 +74,7 @@ export function PosV2Layout() {
 
   const isBarcodeScannerEnabled = !(
     isPosOverlayBlockingCatalog(state.activeModal, state.isMobileCartOpen) ||
-    state.isProcessingCheckout ||
-    isTablesOverlayOpen
+    state.isProcessingCheckout
   );
 
   const { isConnected: isBarcodeScannerConnected } = useKeyboardBarcodeScanner({
@@ -91,6 +113,9 @@ export function PosV2Layout() {
       <PosV2Header
         activeShift={state.activeShift}
         defaultTerminalName={meta.defaultTerminalName}
+        headerActions={headerActionExtensions.map(({ Component, id }) => (
+          <Component key={id} {...extensionRenderProps} />
+        ))}
         onCashMovement={actions.openCashMovementModal}
         onCloseShift={actions.openCloseShiftModal}
         onOpenDrawer={handleOpenDrawer}
@@ -102,12 +127,9 @@ export function PosV2Layout() {
             isBarcodeScannerConnected={isBarcodeScannerConnected}
           />
 
-          <RestaurantPosTables
-            activeTableId={state.tableSession?.tableId ?? null}
-            isOpen={isTablesOverlayOpen}
-            onOpenChange={setIsTablesOverlayOpen}
-            onSelectTable={actions.enterTableMode}
-          />
+          {catalogOverlayExtensions.map(({ Component, id }) => (
+            <Component key={id} {...extensionRenderProps} />
+          ))}
         </div>
 
         <CartPanelV2 className="min-h-0" />

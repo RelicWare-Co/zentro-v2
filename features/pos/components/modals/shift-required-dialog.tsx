@@ -1,7 +1,10 @@
 import { Button, Group, Modal } from "@mantine/core";
 import { AlertCircle } from "lucide-react";
 import { usePosPage } from "@/features/pos/pos-page-context";
-import { isPosModalOpen } from "@/features/pos/pos-page-modals.shared";
+import {
+  isPosModalOpen,
+  POS_MODAL_IDS,
+} from "@/features/pos/pos-page-modals.shared";
 
 export function ShiftRequiredDialog() {
   const { state, actions } = usePosPage();
@@ -10,7 +13,7 @@ export function ShiftRequiredDialog() {
     <Modal
       centered
       onClose={actions.closeActiveModal}
-      opened={isPosModalOpen(state.activeModal, "shift-required")}
+      opened={isPosModalOpen(state.activeModal, POS_MODAL_IDS.SHIFT_REQUIRED)}
       size="md"
       title={
         <div className="flex items-center gap-3">

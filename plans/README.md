@@ -20,6 +20,7 @@ run; the most notable unplanned candidates are listed under "Backlog" below.
 | 004 | Surface receipt-print failures to the cashier | P2 | S | — | DONE |
 | 005 | Playwright E2E for POS checkout & shift lifecycle | P2 | M | — | BLOCKED (checkout/split specs added; shift-close UI flow hits duplicate Zero mutate processing under Playwright) |
 | 006 | Reduce the production container to runtime dependencies | P1 | M | — | DONE (reviewed: 1,016 MB → 671 MB; runtime and migration smoke tests pass) |
+| 007 | Implement POS extension slots | P2 | M | — | DONE |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale)
 

@@ -1,5 +1,6 @@
 import { Button, Divider } from "@mantine/core";
 import { ArrowLeftRight, Lock, Plus, Printer, Unlock, Zap } from "lucide-react";
+import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import type { ActiveShift, PosCustomer } from "../types";
 import { CustomerPicker } from "./customer-picker";
@@ -8,6 +9,7 @@ interface PosHeaderProps {
   activeShift: ActiveShift | null;
   customers: PosCustomer[];
   defaultTerminalName: string;
+  headerActions?: ReactNode;
   isQuickSaleMode?: boolean;
   onCashMovement: () => void;
   onCloseShift: () => void;
@@ -23,6 +25,7 @@ export function PosHeader({
   activeShift,
   defaultTerminalName,
   customers,
+  headerActions,
   selectedCustomerId,
   onCustomerChange,
   onOpenShift,
@@ -99,6 +102,7 @@ export function PosHeader({
           >
             <Zap className="size-4" />
           </Button>
+          {headerActions}
           <Button
             className="whitespace-nowrap border-zinc-700! bg-zinc-900/50! text-zinc-300! hover:border-zinc-600 hover:bg-zinc-800 hover:text-white!"
             disabled={!activeShift}
