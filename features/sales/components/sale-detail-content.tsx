@@ -139,9 +139,15 @@ export function SaleDetailContent({
                       Ref: {payment.reference}
                     </p>
                   ) : null}
+                  {payment.changeAmount > 0 ? (
+                    <p className="text-xs text-zinc-400">
+                      Recibido: {formatSalesCurrency(payment.tenderedAmount)} ·
+                      Devuelta: {formatSalesCurrency(payment.changeAmount)}
+                    </p>
+                  ) : null}
                 </div>
                 <p className="font-medium text-[var(--color-voltage)]">
-                  {formatSalesCurrency(payment.amount)}
+                  {formatSalesCurrency(payment.appliedAmount)}
                 </p>
               </div>
             ))}

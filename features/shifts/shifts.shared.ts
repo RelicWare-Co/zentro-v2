@@ -104,12 +104,15 @@ function addPaymentExpectedAmounts(
   payments: ExpectedPaymentInput[]
 ) {
   for (const registeredPayment of payments) {
+    const tenderedAmount = normalizeNumber(registeredPayment.amount);
+    const changeAmount = normalizeNumber(registeredPayment.changeAmount ?? 0);
+    // Use net inflow per method so cash overpayment minus change does not
+    // inflate expected cash at shift close.
+    const netAppliedAmount = tenderedAmount - changeAmount;
+
     expectedByMethod.set(
       registeredPayment.method,
-      (expectedByMethod.get(registeredPayment.method) ?? 0) +
-        normalizeNumber(
-          registeredPayment.appliedAmount ?? registeredPayment.amount
-        )
+      (expectedByMethod.get(registeredPayment.method) ?? 0) + netAppliedAmount
     );
   }
 }
