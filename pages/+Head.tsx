@@ -1,5 +1,6 @@
 // https://vike.dev/Head
 
+import { ColorSchemeScript } from "@mantine/core";
 import { usePageContext } from "vike-react/usePageContext";
 import { brandColors } from "@/lib/mantine-theme";
 import {
@@ -18,6 +19,7 @@ export function Head() {
 
   return (
     <>
+      <ColorSchemeScript defaultColorScheme="dark" />
       <meta
         content="width=device-width, initial-scale=1, viewport-fit=cover"
         name="viewport"

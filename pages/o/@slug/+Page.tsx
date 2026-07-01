@@ -6,9 +6,7 @@ import {
   Button,
   Card,
   Container,
-  Flex,
   Group,
-  Loader,
   SegmentedControl,
   Stack,
   Text,
@@ -16,7 +14,6 @@ import {
   TextInput,
   Title,
 } from "@mantine/core";
-import { useQuery } from "@tanstack/react-query";
 import {
   CheckCircle2,
   Info,
@@ -27,53 +24,15 @@ import {
   ShoppingBag,
   Trash2,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import type {
-  PublicCatalog,
-  PublicCatalogItem,
-} from "@/features/orders/orders.schema";
+import { useMemo, useState } from "react";
+import { usePageContext } from "vike-react/usePageContext";
+import type { PublicCatalogItem } from "@/features/orders/orders.schema";
 import { formatCurrency } from "@/features/pos/utils";
+import type { Data } from "./+data.server";
 
 interface CartLine {
   product: PublicCatalogItem;
   quantity: number;
-}
-
-async function fetchCatalog(slug: string): Promise<PublicCatalog> {
-  const res = await fetch(
-    `/api/public/catalog?slug=${encodeURIComponent(slug)}`
-  );
-  if (!res.ok) {
-    throw new Error("No se pudo cargar el catálogo");
-  }
-  return res.json() as Promise<PublicCatalog>;
-}
-
-function useCatalogSlug() {
-  const [slug, setSlug] = useState(() => {
-    if (typeof window === "undefined") {
-      return "";
-    }
-    return new URLSearchParams(window.location.search).get("slug") ?? "";
-  });
-
-  useEffect(() => {
-    const onPopState = () => {
-      setSlug(new URLSearchParams(window.location.search).get("slug") ?? "");
-    };
-    window.addEventListener("popstate", onPopState);
-    return () => window.removeEventListener("popstate", onPopState);
-  }, []);
-
-  return slug;
-}
-
-function useCatalog(slug: string) {
-  return useQuery({
-    enabled: slug.length > 0,
-    queryFn: () => fetchCatalog(slug),
-    queryKey: ["public-catalog", slug],
-  });
 }
 
 function ProductGrid({
@@ -376,11 +335,7 @@ function OrderForm({
         al teléfono indicado.
       </Text>
 
-      <Anchor
-        href={`/o?slug=${encodeURIComponent(slug)}`}
-        size="xs"
-        ta="center"
-      >
+      <Anchor href={`/o/${slug}`} size="xs" ta="center">
         Volver al catálogo
       </Anchor>
     </Stack>
@@ -422,9 +377,8 @@ function OrderSuccess({
   );
 }
 
-function CatalogPage() {
-  const slug = useCatalogSlug();
-  const { data: catalog, isPending, isError, refetch } = useCatalog(slug);
+function CatalogPage({ data }: { data: Data }) {
+  const { catalog, slug } = data;
 
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -544,24 +498,13 @@ function CatalogPage() {
     );
   }
 
-  if (isPending) {
-    return (
-      <Flex align="center" justify="center" py="xl">
-        <Loader color="voltage.5" />
-      </Flex>
-    );
-  }
-
-  if (isError || !catalog) {
+  if (!catalog) {
     return (
       <Container py="xl" size="sm">
         <Stack align="center" gap="md">
           <Alert color="red" variant="light">
             No se pudo cargar el catálogo. Verifica que el enlace sea correcto.
           </Alert>
-          <Button onClick={() => refetch()} variant="light">
-            Reintentar
-          </Button>
         </Stack>
       </Container>
     );
@@ -631,9 +574,12 @@ function CatalogPage() {
 }
 
 export default function PublicOrderPage() {
+  const pageContext = usePageContext();
+  const data = pageContext.data as Data;
+
   return (
     <div className="min-h-[100dvh] bg-[var(--color-void)] text-[var(--color-photon)]">
-      <CatalogPage />
+      <CatalogPage data={data} />
     </div>
   );
 }
