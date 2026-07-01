@@ -127,6 +127,13 @@ const ROUTE_SEO: Record<string, RouteSeoConfig> = {
     indexable: false,
     title: "Administración | Zentro",
   },
+  "/o": {
+    canonicalPath: "/o",
+    description:
+      "Pide en línea al negocio: catálogo de productos, carrito y pedido rápido para llevar o a domicilio.",
+    indexable: true,
+    title: "Pedidos en línea | Zentro",
+  },
 };
 
 const PRIVATE_PATH_PREFIXES = [
