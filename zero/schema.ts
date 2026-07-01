@@ -27,6 +27,8 @@ export type {
   OrganizationJoinLink,
   OrganizationModuleEntitlement,
   Payment,
+  Pedido,
+  PedidoItem,
   Product,
   RestaurantArea,
   RestaurantKitchenTicket,

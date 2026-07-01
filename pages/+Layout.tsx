@@ -15,12 +15,14 @@ import { ZeroProviderGate } from "@/zero/zero-provider-gate.client";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const pageContext = usePageContext();
-  const isAuthPage =
-    pageContext.urlPathname === "/login" || pageContext.urlPathname === "/join";
+  const isPublicPage =
+    pageContext.urlPathname === "/login" ||
+    pageContext.urlPathname === "/join" ||
+    pageContext.urlPathname.startsWith("/o");
 
   let content: ReactNode;
 
-  if (isAuthPage) {
+  if (isPublicPage) {
     content = <ZeroProviderGate allowAnonymous>{children}</ZeroProviderGate>;
   } else {
     content = (

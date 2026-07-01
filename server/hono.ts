@@ -8,6 +8,7 @@ import { auth } from "./auth";
 import { createDashboardApp } from "./dashboard/handler.server";
 import { dbMiddleware } from "./db-middleware";
 import { createOrganizationApp } from "./organization/handler.server";
+import { createPublicApp } from "./public/handler.server";
 import { createQzApp } from "./qz/handler.server";
 import { createRuntimeConfigApp } from "./runtime-config.server";
 import { createZeroApp } from "./zero/handler.server";
@@ -40,6 +41,7 @@ function getApp() {
   app.route("/api/admin", createAdminApp());
   app.route("/api/dashboard", createDashboardApp());
   app.route("/api/organization", createOrganizationApp());
+  app.route("/api/public", createPublicApp());
   app.route("/api/runtime-config", createRuntimeConfigApp());
   app.route("/api/qz", createQzApp());
 
