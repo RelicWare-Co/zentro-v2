@@ -50,11 +50,9 @@ export function useTableSaleAdapter(
     tableOrder.cart,
     tableOrder.totals,
     params.selectedCustomerId,
-    "",
     discountInput,
     noOp,
     resetDiscount,
-    noOp,
     params.paymentMethodOptions,
     false,
     params.closeActiveModal
@@ -93,7 +91,6 @@ export function useTableSaleAdapter(
           ...item,
           modifiers: item.modifiers.map((modifier) => ({ ...modifier })),
         })),
-        deliveryInfo: null,
         payments: clonePayments(payments),
         totals: { ...tableOrder.totals },
       };
@@ -120,7 +117,6 @@ export function useTableSaleAdapter(
         checkout.resetPayments();
         resetDiscount();
         tableOrder.exitTable();
-        options.resetDeliveryInfo();
 
         Promise.resolve(
           options.printReceipt({

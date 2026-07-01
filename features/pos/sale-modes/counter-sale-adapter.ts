@@ -13,21 +13,14 @@ export function useCounterSaleAdapter(
 ): SaleModeAdapter {
   const cart = usePosCart();
 
-  const clearCurrentOrder = useCallback(() => {
-    cart.clearCart();
-    params.resetDeliveryInfo();
-  }, [cart.clearCart, params.resetDeliveryInfo]);
-
   const checkout = usePosCheckout(
     params.activeShiftId,
     cart.cart,
     cart.totals,
     params.selectedCustomerId,
-    params.deliveryInfo,
     cart.discountInput,
-    clearCurrentOrder,
+    cart.clearCart,
     cart.resetDiscount,
-    params.resetDeliveryInfo,
     params.paymentMethodOptions,
     params.allowCreditSales,
     params.closeActiveModal,
@@ -69,7 +62,7 @@ export function useCounterSaleAdapter(
     addToCart: cart.addToCart,
     updateQuantity: cart.updateQuantity,
     removeFromCart: cart.removeFromCart,
-    clearCart: clearCurrentOrder,
+    clearCart: cart.clearCart,
     updateItemDiscount: cart.updateItemDiscount,
     setDiscountInput: cart.setDiscountInput,
     getProductQuantity: cart.getProductQuantity,

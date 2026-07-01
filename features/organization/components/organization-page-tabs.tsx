@@ -1,4 +1,4 @@
-import { Select, Tabs } from "@mantine/core";
+import { SegmentedControl, Select } from "@mantine/core";
 import { Building2, Link2, Mail, Users } from "lucide-react";
 import type { ReactNode } from "react";
 import {
@@ -29,7 +29,7 @@ export function OrganizationPageTabs({ children }: { children: ReactNode }) {
   };
 
   return (
-    <Tabs className="gap-6" onChange={selectTab} value={state.activeTab}>
+    <div className="space-y-6">
       <div className="flex justify-center sm:hidden">
         <Select
           allowDeselect={false}
@@ -41,29 +41,47 @@ export function OrganizationPageTabs({ children }: { children: ReactNode }) {
         />
       </div>
       <div className="hidden w-full justify-center sm:flex">
-        <Tabs.List className="flex-wrap">
-          <Tabs.Tab
-            leftSection={<Building2 className="size-4" />}
-            value="general"
-          >
-            General
-          </Tabs.Tab>
-          <Tabs.Tab leftSection={<Users className="size-4" />} value="members">
-            Miembros
-          </Tabs.Tab>
-          <Tabs.Tab
-            leftSection={<Mail className="size-4" />}
-            value="invitations"
-          >
-            Invitaciones
-          </Tabs.Tab>
-          <Tabs.Tab leftSection={<Link2 className="size-4" />} value="access">
-            Acceso
-          </Tabs.Tab>
-        </Tabs.List>
+        <SegmentedControl
+          data={[
+            {
+              label: (
+                <span className="inline-flex items-center gap-1.5">
+                  <Building2 className="size-4" /> General
+                </span>
+              ),
+              value: "general",
+            },
+            {
+              label: (
+                <span className="inline-flex items-center gap-1.5">
+                  <Users className="size-4" /> Miembros
+                </span>
+              ),
+              value: "members",
+            },
+            {
+              label: (
+                <span className="inline-flex items-center gap-1.5">
+                  <Mail className="size-4" /> Invitaciones
+                </span>
+              ),
+              value: "invitations",
+            },
+            {
+              label: (
+                <span className="inline-flex items-center gap-1.5">
+                  <Link2 className="size-4" /> Acceso
+                </span>
+              ),
+              value: "access",
+            },
+          ]}
+          onChange={selectTab}
+          value={state.activeTab}
+        />
       </div>
       {children}
-    </Tabs>
+    </div>
   );
 }
 
@@ -72,7 +90,8 @@ export function OrganizationPageGeneralTabContent({
 }: {
   children: ReactNode;
 }) {
-  return <Tabs.Panel value="general">{children}</Tabs.Panel>;
+  const { state } = useOrganizationPage();
+  return <div hidden={state.activeTab !== "general"}>{children}</div>;
 }
 
 export function OrganizationPageMembersTabContent({
@@ -80,7 +99,8 @@ export function OrganizationPageMembersTabContent({
 }: {
   children: ReactNode;
 }) {
-  return <Tabs.Panel value="members">{children}</Tabs.Panel>;
+  const { state } = useOrganizationPage();
+  return <div hidden={state.activeTab !== "members"}>{children}</div>;
 }
 
 export function OrganizationPageInvitationsTabContent({
@@ -88,7 +108,8 @@ export function OrganizationPageInvitationsTabContent({
 }: {
   children: ReactNode;
 }) {
-  return <Tabs.Panel value="invitations">{children}</Tabs.Panel>;
+  const { state } = useOrganizationPage();
+  return <div hidden={state.activeTab !== "invitations"}>{children}</div>;
 }
 
 export function OrganizationPageAccessTabContent({
@@ -96,5 +117,6 @@ export function OrganizationPageAccessTabContent({
 }: {
   children: ReactNode;
 }) {
-  return <Tabs.Panel value="access">{children}</Tabs.Panel>;
+  const { state } = useOrganizationPage();
+  return <div hidden={state.activeTab !== "access"}>{children}</div>;
 }

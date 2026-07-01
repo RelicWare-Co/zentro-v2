@@ -44,7 +44,6 @@ export interface PosPageState {
   categories: Category[];
   checkoutError: Error | null;
   customers: PosCustomer[];
-  deliveryInfo: string;
   discountInput: string;
   hasNextPage: boolean;
   hasPaymentDifference: boolean;
@@ -109,7 +108,6 @@ export interface PosPageActions {
   removePaymentMethod: (index: number) => void;
   sendTableOrderToKitchen: () => void;
   setActiveCategoryId: (id: string) => void;
-  setDeliveryInfo: (value: string) => void;
   setDiscountInput: (value: string) => void;
   setIsCreditSale: (value: boolean) => void;
   setIsMobileCartOpen: (open: boolean) => void;
@@ -210,8 +208,7 @@ export function PosPageCompatProvider({ children }: { children: ReactNode }) {
     setSelectedCustomerId,
   } = usePosCustomer();
 
-  const { activeMode, deliveryInfo, saleSuccessToken, setDeliveryInfo } =
-    usePosSaleMode();
+  const { activeMode, saleSuccessToken } = usePosSaleMode();
 
   const {
     cart,
@@ -273,7 +270,6 @@ export function PosPageCompatProvider({ children }: { children: ReactNode }) {
         categories,
         checkoutError,
         customers,
-        deliveryInfo,
         discountInput: activeMode.discountInput,
         hasNextPage: !!hasNextPage,
         hasPaymentDifference,
@@ -337,7 +333,6 @@ export function PosPageCompatProvider({ children }: { children: ReactNode }) {
         removePaymentMethod,
         sendTableOrderToKitchen,
         setActiveCategoryId,
-        setDeliveryInfo,
         setDiscountInput,
         setIsCreditSale,
         setIsMobileCartOpen,
@@ -375,7 +370,6 @@ export function PosPageCompatProvider({ children }: { children: ReactNode }) {
       checkoutError,
       categories,
       customers,
-      deliveryInfo,
       hasNextPage,
       isActiveShift,
       isActiveShiftLoading,
@@ -440,7 +434,6 @@ export function PosPageCompatProvider({ children }: { children: ReactNode }) {
       setSelectedCustomerId,
       setViewMode,
       toggleProductFavorite,
-      setDeliveryInfo,
       hasPaymentDifference,
       isCreditSale,
       isProcessingCheckout,

@@ -1,4 +1,4 @@
-import { Tabs } from "@mantine/core";
+import { SegmentedControl } from "@mantine/core";
 import { History, Package } from "lucide-react";
 import type { ReactNode } from "react";
 import {
@@ -11,43 +11,44 @@ export function ProductsPageTabs({ children }: { children: ReactNode }) {
   const { state, actions } = useProductsPage();
 
   return (
-    <Tabs
-      className="space-y-6"
-      onChange={(value) => {
-        if (
-          value &&
-          PRODUCTS_TAB_VALUES.includes(
-            value as (typeof PRODUCTS_TAB_VALUES)[number]
-          )
-        ) {
-          actions.setActiveTab(value as ProductsTab);
-        }
-      }}
-      value={state.activeTab}
-    >
+    <div className="space-y-6">
       <div className="mb-6 flex w-full justify-center">
-        <Tabs.List>
-          <Tabs.Tab
-            className="flex-1 sm:flex-none"
-            leftSection={<Package className="size-4" />}
-            value="products"
-          >
-            Productos
-          </Tabs.Tab>
-          <Tabs.Tab className="flex-1 sm:flex-none" value="categories">
-            Categorías
-          </Tabs.Tab>
-          <Tabs.Tab
-            className="flex-1 sm:flex-none"
-            leftSection={<History className="size-4" />}
-            value="kardex"
-          >
-            Kardex
-          </Tabs.Tab>
-        </Tabs.List>
+        <SegmentedControl
+          className="w-full sm:w-auto!"
+          data={[
+            {
+              label: (
+                <span className="inline-flex items-center gap-1.5">
+                  <Package className="size-4" /> Productos
+                </span>
+              ),
+              value: "products",
+            },
+            { label: "Categorías", value: "categories" },
+            {
+              label: (
+                <span className="inline-flex items-center gap-1.5">
+                  <History className="size-4" /> Kardex
+                </span>
+              ),
+              value: "kardex",
+            },
+          ]}
+          fullWidth
+          onChange={(value) => {
+            if (
+              PRODUCTS_TAB_VALUES.includes(
+                value as (typeof PRODUCTS_TAB_VALUES)[number]
+              )
+            ) {
+              actions.setActiveTab(value as ProductsTab);
+            }
+          }}
+          value={state.activeTab}
+        />
       </div>
       {children}
-    </Tabs>
+    </div>
   );
 }
 
@@ -56,10 +57,11 @@ export function ProductsPageProductsTabContent({
 }: {
   children: ReactNode;
 }) {
+  const { state } = useProductsPage();
   return (
-    <Tabs.Panel className="space-y-6" value="products">
+    <div className="space-y-6" hidden={state.activeTab !== "products"}>
       {children}
-    </Tabs.Panel>
+    </div>
   );
 }
 
@@ -68,10 +70,11 @@ export function ProductsPageCategoriesTabContent({
 }: {
   children: ReactNode;
 }) {
+  const { state } = useProductsPage();
   return (
-    <Tabs.Panel className="space-y-6" value="categories">
+    <div className="space-y-6" hidden={state.activeTab !== "categories"}>
       {children}
-    </Tabs.Panel>
+    </div>
   );
 }
 
@@ -80,9 +83,10 @@ export function ProductsPageKardexTabContent({
 }: {
   children: ReactNode;
 }) {
+  const { state } = useProductsPage();
   return (
-    <Tabs.Panel className="space-y-6" value="kardex">
+    <div className="space-y-6" hidden={state.activeTab !== "kardex"}>
       {children}
-    </Tabs.Panel>
+    </div>
   );
 }

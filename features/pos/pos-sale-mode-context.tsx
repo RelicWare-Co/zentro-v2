@@ -21,12 +21,9 @@ import type {
 export interface PosSaleModeContextValue {
   activeMode: SaleModeAdapter;
   buildFinalizeOptions: (shiftId: string) => SaleFinalizeOptions;
-  deliveryInfo: string;
   handleSaleCompleted: (payload: SaleReceiptPayload) => Promise<void>;
-  resetDeliveryInfo: () => void;
   saleModeAdapters: [SaleModeAdapter, ...SaleModeAdapter[]];
   saleSuccessToken: number | null;
-  setDeliveryInfo: (value: string) => void;
 }
 
 const PosSaleModeContext = createContext<PosSaleModeContextValue | null>(null);
@@ -52,12 +49,7 @@ export function PosSaleModeProvider({ children }: { children: ReactNode }) {
   const { closeActiveModal } = usePosModal();
   const { customers, selectedCustomerId } = usePosCustomer();
 
-  const [deliveryInfo, setDeliveryInfo] = useState("");
   const [saleSuccessToken, setSaleSuccessToken] = useState<number | null>(null);
-
-  const resetDeliveryInfo = useCallback(() => {
-    setDeliveryInfo("");
-  }, []);
 
   const printReceiptForSale = useCallback(
     async (payload: SaleReceiptPayload) => {
@@ -96,11 +88,9 @@ export function PosSaleModeProvider({ children }: { children: ReactNode }) {
     activeShiftId: activeShift?.id,
     allowCreditSales,
     closeActiveModal,
-    deliveryInfo,
     moduleAccess: moduleCapabilities.data?.modules,
     paymentMethodOptions,
     printReceiptForSale: handleSaleCompleted,
-    resetDeliveryInfo,
     selectedCustomerId,
   });
   const activeMode =
@@ -114,25 +104,16 @@ export function PosSaleModeProvider({ children }: { children: ReactNode }) {
       customerId: selectedCustomerId || null,
       closeModal: closeActiveModal,
       printReceipt: handleSaleCompleted,
-      resetDeliveryInfo,
     }),
-    [
-      selectedCustomerId,
-      closeActiveModal,
-      handleSaleCompleted,
-      resetDeliveryInfo,
-    ]
+    [selectedCustomerId, closeActiveModal, handleSaleCompleted]
   );
 
   const value: PosSaleModeContextValue = {
     activeMode,
     buildFinalizeOptions,
-    deliveryInfo,
     handleSaleCompleted,
-    resetDeliveryInfo,
     saleModeAdapters,
     saleSuccessToken,
-    setDeliveryInfo,
   };
 
   return <PosSaleModeContext value={value}>{children}</PosSaleModeContext>;

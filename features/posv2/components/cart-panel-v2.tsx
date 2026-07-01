@@ -1,4 +1,4 @@
-import { Button, Textarea } from "@mantine/core";
+import { Button } from "@mantine/core";
 import {
   Check,
   LogOut,
@@ -18,12 +18,10 @@ import {
   posV2AccentText,
   posV2ButtonOutlineClassName,
   posV2IconText,
-  posV2MutedColor,
   posV2MutedText,
   posV2OrderBorder,
   posV2OrderBorderSubtle,
   posV2OrderPanelBg,
-  posV2PlaceholderText,
   posV2SurfaceButtonClassName,
 } from "@/features/posv2/components/pos-v2-order-styles";
 import { cn } from "@/lib/utils";
@@ -112,7 +110,7 @@ function CartPanelV2FooterAction({
 }: {
   tableSession: PosTableSessionState | null;
 }) {
-  const { state, actions } = usePosPage();
+  const { actions } = usePosPage();
 
   if (tableSession) {
     return (
@@ -138,23 +136,7 @@ function CartPanelV2FooterAction({
     );
   }
 
-  return (
-    <Textarea
-      classNames={{
-        input: `resize-none text-white text-xs ${posV2PlaceholderText} ${posV2OrderBorder} ${posV2OrderPanelBg}`,
-      }}
-      id="pos-v2-delivery-info"
-      label="Info domicilio"
-      maxLength={280}
-      minRows={2}
-      onChange={(event) => actions.setDeliveryInfo(event.target.value)}
-      placeholder="Dirección, referencia o instrucciones"
-      styles={{
-        label: { color: posV2MutedColor, fontSize: "0.75rem" },
-      }}
-      value={state.deliveryInfo}
-    />
-  );
+  return null;
 }
 
 export function CartPanelV2({ className }: CartPanelV2Props) {

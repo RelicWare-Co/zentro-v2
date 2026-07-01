@@ -1,4 +1,4 @@
-import { Badge, Button, Tabs } from "@mantine/core";
+import { Badge, Button, SegmentedControl } from "@mantine/core";
 import { ChefHat, LayoutGrid, Plus, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import { formatCurrency } from "@/features/pos/utils";
@@ -234,22 +234,26 @@ export function RestaurantFloorView({
         </div>
       ) : (
         <>
-          <Tabs
-            onChange={(value) => setActiveAreaId(value ?? "all")}
-            value={resolvedAreaId}
-          >
-            <Tabs.List className="flex-wrap gap-1">
-              <Tabs.Tab value="all">Todas</Tabs.Tab>
-              {bootstrap.areas.map((area) => (
-                <Tabs.Tab key={area.id} value={area.id}>
-                  {area.name}
-                  <span className="ml-1 text-xs opacity-70">
-                    ({area.tables.filter((table) => table.isActive).length})
-                  </span>
-                </Tabs.Tab>
-              ))}
-            </Tabs.List>
-          </Tabs>
+          <div className="overflow-x-auto pb-1">
+            <SegmentedControl
+              data={[
+                { label: "Todas", value: "all" },
+                ...bootstrap.areas.map((area) => ({
+                  value: area.id,
+                  label: (
+                    <span className="inline-flex items-center gap-1">
+                      {area.name}
+                      <span className="text-xs opacity-70">
+                        ({area.tables.filter((table) => table.isActive).length})
+                      </span>
+                    </span>
+                  ),
+                })),
+              ]}
+              onChange={setActiveAreaId}
+              value={resolvedAreaId}
+            />
+          </div>
 
           <div className="min-h-0 flex-1 space-y-8 overflow-y-auto p-1 pb-4">
             {visibleAreas.map((area) => (
