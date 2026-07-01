@@ -1,4 +1,4 @@
-import { Button, Textarea } from "@mantine/core";
+import { Button } from "@mantine/core";
 import {
   LogOut,
   Search,
@@ -91,11 +91,9 @@ function CartPanelHeader({
 interface CartPanelProps {
   cart: CartItem[];
   className?: string;
-  deliveryInfo: string;
   isQuickSaleMode?: boolean;
   onCheckout: () => void;
   onClearCart: () => void;
-  onDeliveryInfoChange: (value: string) => void;
   onExitTable?: () => void;
   onRemoveItem: (cartItemId: string) => void;
   onSendToKitchen?: () => void;
@@ -109,10 +107,8 @@ interface CartPanelProps {
 
 export function CartPanel({
   cart,
-  deliveryInfo,
   totalItems,
   totals,
-  onDeliveryInfoChange,
   onUpdateQuantity,
   onRemoveItem,
   onUpdateItemDiscount,
@@ -189,22 +185,6 @@ export function CartPanel({
       {/* Payment Summary */}
       <div className="shrink-0 border-zinc-800 border-t bg-[#0a0a0a] p-4">
         <div className="space-y-3">
-          {tableSession ? null : (
-            <Textarea
-              classNames={{
-                input:
-                  "resize-none border-zinc-800! bg-[#0f0f0f]! text-sm text-white! placeholder:text-zinc-600!",
-              }}
-              id="pos-delivery-info"
-              label="Info domicilio"
-              maxLength={280}
-              minRows={2}
-              onChange={(event) => onDeliveryInfoChange(event.target.value)}
-              placeholder="Dirección, referencia o instrucciones"
-              value={deliveryInfo}
-            />
-          )}
-
           <div className="space-y-1.5">
             <div className="flex justify-between text-sm text-zinc-400">
               <span>Subtotal</span>

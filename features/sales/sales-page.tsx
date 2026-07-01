@@ -1,4 +1,4 @@
-import { Button, Tabs } from "@mantine/core";
+import { Button, SegmentedControl } from "@mantine/core";
 import { Clock3, Receipt, Store, Wallet } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link } from "@/components/link";
@@ -61,28 +61,29 @@ function SalesPageViewTabs({ children }: { children: ReactNode }) {
   const { state, actions } = useSalesPage();
 
   return (
-    <Tabs
-      className="w-full"
-      onChange={(value) => {
-        if (
-          value &&
-          SALES_VIEW_VALUES.includes(
-            value as (typeof SALES_VIEW_VALUES)[number]
-          )
-        ) {
-          actions.setActiveView(value as (typeof SALES_VIEW_VALUES)[number]);
-        }
-      }}
-      value={state.activeView}
-    >
+    <div className="w-full">
       <div className="mb-6 flex w-full justify-center">
-        <Tabs.List>
-          <Tabs.Tab value="today">Ventas de hoy</Tabs.Tab>
-          <Tabs.Tab value="history">Historial de ventas</Tabs.Tab>
-        </Tabs.List>
+        <SegmentedControl
+          data={[
+            { label: "Ventas de hoy", value: "today" },
+            { label: "Historial de ventas", value: "history" },
+          ]}
+          onChange={(value) => {
+            if (
+              SALES_VIEW_VALUES.includes(
+                value as (typeof SALES_VIEW_VALUES)[number]
+              )
+            ) {
+              actions.setActiveView(
+                value as (typeof SALES_VIEW_VALUES)[number]
+              );
+            }
+          }}
+          value={state.activeView}
+        />
       </div>
       {children}
-    </Tabs>
+    </div>
   );
 }
 

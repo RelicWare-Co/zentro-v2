@@ -66,7 +66,6 @@ export interface PosPageState {
   categories: Category[];
   checkoutError: Error | null;
   customers: PosCustomer[];
-  deliveryInfo: string;
   discountInput: string;
   hasNextPage: boolean;
   hasPaymentDifference: boolean;
@@ -131,7 +130,6 @@ export interface PosPageActions {
   removePaymentMethod: (index: number) => void;
   sendTableOrderToKitchen: () => void;
   setActiveCategoryId: (id: string) => void;
-  setDeliveryInfo: (value: string) => void;
   setDiscountInput: (value: string) => void;
   setIsCreditSale: (value: boolean) => void;
   setIsMobileCartOpen: (open: boolean) => void;
@@ -188,7 +186,6 @@ export function PosPageProvider({
   const [activeCategoryId, setActiveCategoryId] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
-  const [deliveryInfo, setDeliveryInfo] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [isMobileCartOpen, setIsMobileCartOpen] = useState(false);
   const [activeModal, setActiveModal] = useState<string | null>(null);
@@ -250,10 +247,6 @@ export function PosPageProvider({
   const customers = customersData?.data ?? [];
   const creditAccounts = creditAccountsData?.data ?? [];
 
-  const resetDeliveryInfo = useCallback(() => {
-    setDeliveryInfo("");
-  }, []);
-
   const printReceiptForSale = useCallback(
     async (payload: SaleReceiptPayload) => {
       const customer = customers.find((c) => c.id === selectedCustomerId);
@@ -291,11 +284,9 @@ export function PosPageProvider({
     activeShiftId: activeShift?.id,
     allowCreditSales,
     closeActiveModal,
-    deliveryInfo,
     moduleAccess: moduleCapabilities.data?.modules,
     paymentMethodOptions,
     printReceiptForSale: handleSaleCompleted,
-    resetDeliveryInfo,
     selectedCustomerId,
   });
   const activeMode =
@@ -310,14 +301,8 @@ export function PosPageProvider({
       customerId: selectedCustomerId || null,
       closeModal: closeActiveModal,
       printReceipt: handleSaleCompleted,
-      resetDeliveryInfo,
     }),
-    [
-      selectedCustomerId,
-      closeActiveModal,
-      handleSaleCompleted,
-      resetDeliveryInfo,
-    ]
+    [selectedCustomerId, closeActiveModal, handleSaleCompleted]
   );
 
   const addItemToOrder = useCallback(
@@ -570,7 +555,6 @@ export function PosPageProvider({
         categories: categories ?? [],
         checkoutError: checkout.error ?? activeMode.error,
         customers,
-        deliveryInfo,
         discountInput: activeMode.discountInput,
         hasNextPage: !!hasNextPage,
         hasPaymentDifference: checkout.hasPaymentDifference,
@@ -637,7 +621,6 @@ export function PosPageProvider({
         removePaymentMethod: checkout.removePaymentMethod,
         sendTableOrderToKitchen,
         setActiveCategoryId,
-        setDeliveryInfo,
         setDiscountInput: setDiscountInputAction,
         setIsCreditSale: checkout.setIsCreditSale,
         setIsMobileCartOpen,
@@ -673,7 +656,6 @@ export function PosPageProvider({
       checkout,
       categories,
       customers,
-      deliveryInfo,
       hasNextPage,
       isActiveShift,
       isActiveShiftLoading,

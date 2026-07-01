@@ -11,9 +11,9 @@ import {
   Modal,
   NativeSelect,
   Popover,
+  SegmentedControl,
   Select,
   Switch,
-  Tabs,
   Textarea,
   TextInput,
 } from "@mantine/core";
@@ -215,13 +215,19 @@ export const mantineTheme = createTheme({
         root: "[&[data-variant='outline']]:bg-white/5 [&[data-variant='outline']]:border-zinc-700! [&[data-variant='outline']]:hover:bg-white/5 [&[data-variant='default']]:bg-zinc-800! [&[data-variant='default']]:border-zinc-700! [&[data-variant='default']]:text-zinc-200!",
       },
     }),
-    // Tabs gain a "relief" segmented-control style: pill list inside a
-    // rounded translucent dark panel; inactive tabs are zinc, hover is a
-    // subtle light overlay, active is voltage-tinted with a voltage glow.
-    Tabs: Tabs.extend({
+    // SegmentedControl is the app's standard view switcher. Give it the
+    // brand voltage active indicator with auto-contrast text, item
+    // separators, and a translucent dark panel so it reads on the
+    // void/carbon canvas. The active indicator gets a relief shadow
+    // (--sc-shadow) so it lifts above the inactive segments.
+    SegmentedControl: SegmentedControl.extend({
+      defaultProps: {
+        autoContrast: true,
+        color: "voltage.5",
+        withItemsBorders: true,
+      },
       classNames: {
-        list: "rounded-xl border border-zinc-800! bg-black/30 p-1 [--tabs-list-border-width:0px]",
-        tab: "rounded-lg font-medium text-zinc-400! hover:text-white! hover:bg-white/5 data-[active]:text-[var(--color-voltage)]! data-[active]:bg-[var(--color-voltage)]/10 data-[active]:hover:bg-[var(--color-voltage)]/20",
+        root: "rounded-xl border border-zinc-800! bg-black/30! [--sc-shadow:0_2px_8px_-1px_rgba(0,0,0,0.55),0_1px_2px_rgba(0,0,0,0.35)]",
       },
     }),
   },

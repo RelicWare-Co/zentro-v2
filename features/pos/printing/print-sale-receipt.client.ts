@@ -23,7 +23,6 @@ interface PrintSaleReceiptParams {
   };
   snapshot: {
     cart: CartItem[];
-    deliveryInfo?: string | null;
     payments: Array<{
       method: string;
       amount: number;
@@ -48,7 +47,6 @@ export async function printSaleReceipt({
     status: result.status,
     customerName: customer?.name ?? "Cliente general",
     customerMeta: customer?.phone ?? null,
-    deliveryInfo: snapshot.deliveryInfo,
     cashierName: null,
     terminalName: defaultTerminalName,
     items: snapshot.cart.map((item) => ({

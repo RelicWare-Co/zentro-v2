@@ -44,7 +44,6 @@ export interface SaleReceiptResult {
 
 export interface SaleReceiptSnapshot {
   cart: CartItem[];
-  deliveryInfo: string | null;
   payments: SalePayment[];
   totals: CartTotals;
 }
@@ -58,7 +57,6 @@ export interface SaleFinalizeOptions {
   closeModal: () => void;
   customerId: string | null;
   printReceipt: (payload: SaleReceiptPayload) => Promise<void> | void;
-  resetDeliveryInfo: () => void;
   shiftId: string;
 }
 
@@ -126,10 +124,8 @@ export interface SaleModeFactoryParams {
   activeShiftId: string | undefined;
   allowCreditSales: boolean;
   closeActiveModal: () => void;
-  deliveryInfo: string;
   paymentMethodOptions: PosPaymentMethodOption[];
   printReceiptForSale: (payload: SaleReceiptPayload) => Promise<void>;
-  resetDeliveryInfo: () => void;
   selectedCustomerId: string;
 }
 

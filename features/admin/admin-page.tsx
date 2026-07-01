@@ -1,6 +1,7 @@
-import { Tabs } from "@mantine/core";
+import { SegmentedControl } from "@mantine/core";
 import { Building2, LayoutDashboard, Users } from "lucide-react";
 import type { ReactNode } from "react";
+import { useState } from "react";
 import {
   AdminPageProvider,
   useAdminPage,
@@ -31,6 +32,9 @@ function AdminPageRoot({ children }: { children: ReactNode }) {
 
 function AdminPageLayout() {
   const { state, meta } = useAdminPage();
+  const [adminTab, setAdminTab] = useState<
+    "overview" | "organizations" | "users"
+  >("overview");
 
   if (state.isPending) {
     return <AdminPageLoading />;
@@ -44,34 +48,47 @@ function AdminPageLayout() {
     <>
       <AdminPageRoot>
         <AdminPageHeader />
-        <Tabs className="space-y-6" defaultValue="overview">
-          <Tabs.List>
-            <Tabs.Tab
-              leftSection={<LayoutDashboard className="size-4" />}
-              value="overview"
-            >
-              Resumen
-            </Tabs.Tab>
-            <Tabs.Tab
-              leftSection={<Building2 className="size-4" />}
-              value="organizations"
-            >
-              Organizaciones
-            </Tabs.Tab>
-            <Tabs.Tab leftSection={<Users className="size-4" />} value="users">
-              Usuarios
-            </Tabs.Tab>
-          </Tabs.List>
-          <Tabs.Panel value="overview">
+        <div className="space-y-6">
+          <SegmentedControl<"overview" | "organizations" | "users">
+            data={[
+              {
+                label: (
+                  <span className="inline-flex items-center gap-1.5">
+                    <LayoutDashboard className="size-4" /> Resumen
+                  </span>
+                ),
+                value: "overview",
+              },
+              {
+                label: (
+                  <span className="inline-flex items-center gap-1.5">
+                    <Building2 className="size-4" /> Organizaciones
+                  </span>
+                ),
+                value: "organizations",
+              },
+              {
+                label: (
+                  <span className="inline-flex items-center gap-1.5">
+                    <Users className="size-4" /> Usuarios
+                  </span>
+                ),
+                value: "users",
+              },
+            ]}
+            onChange={setAdminTab}
+            value={adminTab}
+          />
+          <div hidden={adminTab !== "overview"}>
             <AdminOverviewTab />
-          </Tabs.Panel>
-          <Tabs.Panel value="organizations">
+          </div>
+          <div hidden={adminTab !== "organizations"}>
             <AdminOrganizationsTab />
-          </Tabs.Panel>
-          <Tabs.Panel value="users">
+          </div>
+          <div hidden={adminTab !== "users"}>
             <AdminUsersTab />
-          </Tabs.Panel>
-        </Tabs>
+          </div>
+        </div>
       </AdminPageRoot>
       <AdminUserFormSheet />
       <AdminRoleDialog />
