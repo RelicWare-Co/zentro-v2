@@ -15,20 +15,34 @@ import { ZeroProviderGate } from "@/zero/zero-provider-gate.client";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const pageContext = usePageContext();
-  const isPublicPage =
-    pageContext.urlPathname === "/login" ||
-    pageContext.urlPathname === "/join" ||
-    pageContext.urlPathname.startsWith("/o");
+  const isPublicMenuPage = pageContext.urlPathname.startsWith("/o/");
+  const isAuthPage =
+    pageContext.urlPathname === "/login" || pageContext.urlPathname === "/join";
 
   let content: ReactNode;
 
-  if (isPublicPage) {
+  if (isPublicMenuPage) {
+    // /o is SSR with +data — no Zero, TanStack Query, or org context needed.
+    content = children;
+  } else if (isAuthPage) {
     content = <ZeroProviderGate allowAnonymous>{children}</ZeroProviderGate>;
   } else {
     content = (
       <ZeroProviderGate>
         <AppLayout>{children}</AppLayout>
       </ZeroProviderGate>
+    );
+  }
+
+  if (isPublicMenuPage) {
+    return (
+      <MantineProvider
+        cssVariablesResolver={mantineCssVariablesResolver}
+        forceColorScheme="dark"
+        theme={mantineTheme}
+      >
+        {children}
+      </MantineProvider>
     );
   }
 
