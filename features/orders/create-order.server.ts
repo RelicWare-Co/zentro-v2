@@ -17,7 +17,6 @@ import {
 
 export type CreateOrderInput = z.infer<typeof CreateOrderInputSchema>;
 export type CreateOrderResult = z.infer<typeof CreateOrderResultSchema>;
-export type CreateOrderDbExecutor = Pick<Database, "select" | "insert">;
 
 interface ProductRow {
   id: string;
@@ -26,10 +25,9 @@ interface ProductRow {
   taxRate: number;
 }
 
-async function resolveOrganizationBySlug(
-  tx: CreateOrderDbExecutor,
-  slug: string
-) {
+type Tx = Parameters<Parameters<Database["transaction"]>[0]>[0];
+
+async function resolveOrganizationBySlug(tx: Tx, slug: string) {
   const [org] = await tx
     .select({ id: organization.id, name: organization.name })
     .from(organization)
@@ -48,7 +46,7 @@ async function resolveOrganizationBySlug(
 }
 
 async function loadOrderProducts(
-  tx: CreateOrderDbExecutor,
+  tx: Tx,
   productIds: string[],
   organizationId: string
 ): Promise<Map<string, ProductRow>> {
@@ -97,7 +95,7 @@ async function loadOrderProducts(
 }
 
 async function nextOrderNumber(
-  tx: CreateOrderDbExecutor,
+  tx: Tx,
   organizationId: string
 ): Promise<number> {
   const [row] = await tx
@@ -105,54 +103,15 @@ async function nextOrderNumber(
       maxNumber: sql<number>`coalesce(max(${pedido.orderNumber}), 0)`,
     })
     .from(pedido)
-    .where(eq(pedido.organizationId, organizationId));
+    .where(eq(pedido.organizationId, organizationId))
+    .for("update");
   return (row?.maxNumber ?? 0) + 1;
 }
 
-export async function runCreateOrder(
-  tx: CreateOrderDbExecutor,
+export function runCreateOrder(
+  db: Database,
   input: CreateOrderInput
 ): Promise<CreateOrderResult> {
-  const org = await resolveOrganizationBySlug(tx, input.organizationSlug);
-
-  const productIds = input.items.map((item) => item.productId);
-  const productMap = await loadOrderProducts(tx, productIds, org.id);
-
-  let subtotal = 0;
-  let taxAmount = 0;
-
-  const preparedItems = input.items.map((item) => {
-    const productRow = productMap.get(item.productId);
-    if (!productRow) {
-      throw createError({
-        message: `Producto no disponible: ${item.productId}`,
-        status: 400,
-      });
-    }
-
-    const unitPrice = productRow.price;
-    const lineSubtotal = unitPrice * item.quantity;
-    const lineTax = Math.round((lineSubtotal * productRow.taxRate) / 100);
-    const lineTotal = lineSubtotal + lineTax;
-
-    subtotal += lineSubtotal;
-    taxAmount += lineTax;
-
-    return {
-      id: crypto.randomUUID(),
-      productId: item.productId,
-      quantity: toNonNegativeInteger(item.quantity, "Cantidad inválida"),
-      unitPrice,
-      taxRate: productRow.taxRate,
-      totalAmount: lineTotal,
-      notes: normalizeOptionalString(item.notes),
-    };
-  });
-
-  const totalAmount = subtotal + taxAmount;
-  const orderNumber = await nextOrderNumber(tx, org.id);
-  const orderId = crypto.randomUUID();
-
   if (input.fulfillment === "delivery" && !input.deliveryAddress?.trim()) {
     throw createError({
       message: "La dirección de entrega es obligatoria para domicilios",
@@ -162,53 +121,98 @@ export async function runCreateOrder(
     });
   }
 
-  await tx.insert(pedido).values({
-    id: orderId,
-    organizationId: org.id,
-    orderNumber,
-    status: "pending",
-    fulfillment: input.fulfillment,
-    source: "web",
-    contactName: normalizeRequiredString(input.contactName, "Nombre requerido"),
-    contactPhone: normalizeRequiredString(
-      input.contactPhone,
-      "Teléfono requerido"
-    ),
-    deliveryAddress:
-      input.fulfillment === "delivery"
-        ? normalizeRequiredString(
-            input.deliveryAddress ?? "",
-            "Dirección requerida"
-          )
-        : null,
-    deliveryNotes: normalizeOptionalString(input.deliveryNotes),
-    notes: normalizeOptionalString(input.notes),
-    subtotal,
-    taxAmount,
-    totalAmount,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  });
+  return db.transaction(async (tx) => {
+    const org = await resolveOrganizationBySlug(tx, input.organizationSlug);
 
-  await tx.insert(pedidoItem).values(
-    preparedItems.map((item) => ({
-      id: item.id,
+    const productIds = input.items.map((item) => item.productId);
+    const productMap = await loadOrderProducts(tx, productIds, org.id);
+
+    let subtotal = 0;
+    let taxAmount = 0;
+
+    const preparedItems = input.items.map((item) => {
+      const productRow = productMap.get(item.productId);
+      if (!productRow) {
+        throw createError({
+          message: `Producto no disponible: ${item.productId}`,
+          status: 400,
+        });
+      }
+
+      const unitPrice = productRow.price;
+      const lineSubtotal = unitPrice * item.quantity;
+      const lineTax = Math.round((lineSubtotal * productRow.taxRate) / 100);
+      const lineTotal = lineSubtotal + lineTax;
+
+      subtotal += lineSubtotal;
+      taxAmount += lineTax;
+
+      return {
+        id: crypto.randomUUID(),
+        productId: item.productId,
+        quantity: toNonNegativeInteger(item.quantity, "Cantidad inválida"),
+        unitPrice,
+        taxRate: productRow.taxRate,
+        totalAmount: lineTotal,
+        notes: normalizeOptionalString(item.notes),
+      };
+    });
+
+    const totalAmount = subtotal + taxAmount;
+    const orderNumber = await nextOrderNumber(tx, org.id);
+    const orderId = crypto.randomUUID();
+
+    await tx.insert(pedido).values({
+      id: orderId,
       organizationId: org.id,
-      orderId,
-      productId: item.productId,
-      quantity: item.quantity,
-      unitPrice: item.unitPrice,
-      taxRate: item.taxRate,
-      totalAmount: item.totalAmount,
-      notes: item.notes,
+      orderNumber,
+      status: "pending",
+      fulfillment: input.fulfillment,
+      source: "web",
+      contactName: normalizeRequiredString(
+        input.contactName,
+        "Nombre requerido"
+      ),
+      contactPhone: normalizeRequiredString(
+        input.contactPhone,
+        "Teléfono requerido"
+      ),
+      deliveryAddress:
+        input.fulfillment === "delivery"
+          ? normalizeRequiredString(
+              input.deliveryAddress ?? "",
+              "Dirección requerida"
+            )
+          : null,
+      deliveryNotes: normalizeOptionalString(input.deliveryNotes),
+      notes: normalizeOptionalString(input.notes),
+      subtotal,
+      taxAmount,
+      totalAmount,
       createdAt: new Date(),
-    }))
-  );
+      updatedAt: new Date(),
+    });
 
-  return {
-    orderId,
-    orderNumber,
-    status: "pending",
-    totalAmount,
-  };
+    await tx.insert(pedidoItem).values(
+      preparedItems.map((item) => ({
+        id: item.id,
+        organizationId: org.id,
+        orderId,
+        productId: item.productId,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        taxRate: item.taxRate,
+        totalAmount: item.totalAmount,
+        notes: item.notes,
+        createdAt: new Date(),
+      }))
+    );
+
+    return {
+      orderId,
+      orderNumber,
+      status: "pending",
+      totalAmount,
+    };
+  });
 }

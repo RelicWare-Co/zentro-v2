@@ -27,23 +27,16 @@ import {
   ShoppingBag,
   Trash2,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type {
   PublicCatalog,
   PublicCatalogItem,
 } from "@/features/orders/orders.schema";
+import { formatCurrency } from "@/features/pos/utils";
 
 interface CartLine {
   product: PublicCatalogItem;
   quantity: number;
-}
-
-function formatCOP(value: number) {
-  return new Intl.NumberFormat("es-CO", {
-    style: "currency",
-    currency: "COP",
-    minimumFractionDigits: 0,
-  }).format(value);
 }
 
 async function fetchCatalog(slug: string): Promise<PublicCatalog> {
@@ -57,11 +50,22 @@ async function fetchCatalog(slug: string): Promise<PublicCatalog> {
 }
 
 function useCatalogSlug() {
-  if (typeof window === "undefined") {
-    return "";
-  }
-  const params = new URLSearchParams(window.location.search);
-  return params.get("slug") ?? "";
+  const [slug, setSlug] = useState(() => {
+    if (typeof window === "undefined") {
+      return "";
+    }
+    return new URLSearchParams(window.location.search).get("slug") ?? "";
+  });
+
+  useEffect(() => {
+    const onPopState = () => {
+      setSlug(new URLSearchParams(window.location.search).get("slug") ?? "");
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
+  return slug;
 }
 
 function useCatalog(slug: string) {
@@ -75,10 +79,12 @@ function useCatalog(slug: string) {
 function ProductGrid({
   products,
   onAdd,
+  onAdjust,
   quantities,
 }: {
   products: PublicCatalogItem[];
   onAdd: (product: PublicCatalogItem) => void;
+  onAdjust: (productId: string, delta: number) => void;
   quantities: Record<string, number>;
 }) {
   const categories = useMemo(() => {
@@ -118,14 +124,14 @@ function ProductGrid({
                       {product.name}
                     </Text>
                     <Text c="voltage.5" fw={700} size="lg">
-                      {formatCOP(product.price)}
+                      {formatCurrency(product.price)}
                     </Text>
                   </Stack>
                   <Group gap="xs" justify="space-between" mt="md">
                     {quantities[product.id] > 0 ? (
                       <Group gap="xs">
                         <Button
-                          onClick={() => onAdd(product)}
+                          onClick={() => onAdjust(product.id, -1)}
                           size="compact-sm"
                           variant="default"
                         >
@@ -201,7 +207,7 @@ function CartSummary({
               {line.product.name}
             </Text>
             <Text c="zinc.5" size="xs">
-              {formatCOP(line.product.price)} × {line.quantity}
+              {formatCurrency(line.product.price)} × {line.quantity}
             </Text>
           </Box>
           <Group gap="xs">
@@ -235,7 +241,7 @@ function CartSummary({
       ))}
       <Group justify="flex-end" pt="xs">
         <Text fw={700} size="lg">
-          Total: {formatCOP(total)}
+          Total: {formatCurrency(total)}
         </Text>
       </Group>
     </Stack>
@@ -250,7 +256,6 @@ function OrderForm({
   submitError,
   slug,
 }: {
-  catalog: PublicCatalog;
   cartLines: CartLine[];
   cartTotal: number;
   onSubmit: (data: {
@@ -363,7 +368,7 @@ function OrderForm({
       >
         {isSubmitting
           ? "Enviando pedido…"
-          : `Enviar pedido — ${formatCOP(cartTotal)}`}
+          : `Enviar pedido — ${formatCurrency(cartTotal)}`}
       </Button>
 
       <Text c="zinc.5" size="xs" ta="center">
@@ -419,7 +424,7 @@ function OrderSuccess({
 
 function CatalogPage() {
   const slug = useCatalogSlug();
-  const { data: catalog, isPending, isError } = useCatalog(slug);
+  const { data: catalog, isPending, isError, refetch } = useCatalog(slug);
 
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -550,9 +555,14 @@ function CatalogPage() {
   if (isError || !catalog) {
     return (
       <Container py="xl" size="sm">
-        <Alert color="red" variant="light">
-          No se pudo cargar el catálogo. Verifica que el enlace sea correcto.
-        </Alert>
+        <Stack align="center" gap="md">
+          <Alert color="red" variant="light">
+            No se pudo cargar el catálogo. Verifica que el enlace sea correcto.
+          </Alert>
+          <Button onClick={() => refetch()} variant="light">
+            Reintentar
+          </Button>
+        </Stack>
       </Container>
     );
   }
@@ -581,6 +591,7 @@ function CatalogPage() {
         </Group>
         <ProductGrid
           onAdd={handleAdd}
+          onAdjust={handleAdjust}
           products={catalog.products}
           quantities={quantities}
         />
@@ -606,7 +617,6 @@ function CatalogPage() {
               <OrderForm
                 cartLines={cartLines}
                 cartTotal={cartTotal}
-                catalog={catalog}
                 isSubmitting={isSubmitting}
                 onSubmit={handleSubmit}
                 slug={slug}
