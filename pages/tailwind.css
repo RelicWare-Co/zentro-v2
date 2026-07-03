@@ -41,7 +41,7 @@
   /* Brand Colors */
   --color-void: var(--mantine-color-carbon-9, #0f0f0f);
   --color-carbon: var(--mantine-color-carbon-8, #1c1c1c);
-  --color-page-bg: var(--zentro-color-page-bg, #1a1a1a);
+  --color-page-bg: var(--zentro-color-page-bg, #141414);
   --color-photon: var(--mantine-color-white, #ffffff);
   --color-voltage: var(--mantine-color-voltage-5, #dfff06);
   --color-voltage-hover: var(--mantine-color-voltage-6, #c7e600);
