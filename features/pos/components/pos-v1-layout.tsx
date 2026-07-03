@@ -94,6 +94,7 @@ export function PosV1Layout() {
           <CartPanel
             cart={state.cart}
             isQuickSaleMode={state.isQuickSaleMode}
+            isTableSelectorOpen={state.activeModal === "restaurant-tables"}
             onCheckout={handleCheckout}
             onClearCart={actions.clearCart}
             onExitTable={actions.exitTableMode}
@@ -137,6 +138,7 @@ export function PosV1Layout() {
                 cart={state.cart}
                 className="w-full flex-1 border-l-0"
                 isQuickSaleMode={state.isQuickSaleMode}
+                isTableSelectorOpen={state.activeModal === "restaurant-tables"}
                 onCheckout={handleCheckout}
                 onClearCart={actions.clearCart}
                 onExitTable={actions.exitTableMode}

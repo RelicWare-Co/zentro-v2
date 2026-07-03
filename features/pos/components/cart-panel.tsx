@@ -22,10 +22,294 @@ const noop = () => {
   /* intentionally no-op for read-only overlays */
 };
 
+type AnimationClass =
+  | "cart-slide-in"
+  | "cart-slide-out"
+  | "mesas-slide-out"
+  | "mesas-slide-in"
+  | "";
+
+interface AnimationState {
+  animClass: AnimationClass;
+  enterSnapshot: {
+    cart: CartItem[];
+    totalItems: number;
+    totals: CartTotals;
+  } | null;
+  exitSnapshot: {
+    tableSession: PosTableSessionState;
+    cart: CartItem[];
+    totalItems: number;
+    totals: CartTotals;
+  } | null;
+  mesasSnapshot: {
+    cart: CartItem[];
+    totalItems: number;
+    totals: CartTotals;
+  } | null;
+}
+
+function useCartAnimation(
+  tableSession: PosTableSessionState | null | undefined,
+  isTableSelectorOpen: boolean | undefined,
+  cart: CartItem[],
+  totalItems: number,
+  totals: CartTotals
+) {
+  const [enterSnapshot, setEnterSnapshot] =
+    useState<AnimationState["enterSnapshot"]>(null);
+  const [exitSnapshot, setExitSnapshot] =
+    useState<AnimationState["exitSnapshot"]>(null);
+  const [mesasSnapshot, setMesasSnapshot] =
+    useState<AnimationState["mesasSnapshot"]>(null);
+  const [animClass, setAnimClass] = useState<AnimationClass>("");
+
+  const prevTableSession = useRef(tableSession);
+  const prevCart = useRef(cart);
+  const prevTotalItems = useRef(totalItems);
+  const prevTotals = useRef(totals);
+  const prevIsTableSelectorOpen = useRef(isTableSelectorOpen);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const wasTable = Boolean(prevTableSession.current);
+  const isTable = Boolean(tableSession);
+  const wasTableSelectorOpen = Boolean(prevIsTableSelectorOpen.current);
+  const isTableSelectorOpenNow = Boolean(isTableSelectorOpen);
+
+  let nextAnimClass: AnimationClass = "";
+  let nextEnterSnapshot: AnimationState["enterSnapshot"] = null;
+  let nextExitSnapshot: AnimationState["exitSnapshot"] = null;
+  let nextMesasSnapshot = mesasSnapshot;
+
+  if (!wasTable && isTable) {
+    nextEnterSnapshot = {
+      cart: prevCart.current,
+      totalItems: prevTotalItems.current,
+      totals: prevTotals.current,
+    };
+    nextAnimClass = "cart-slide-in";
+  } else if (wasTable && !isTable && prevTableSession.current) {
+    nextExitSnapshot = {
+      tableSession: prevTableSession.current,
+      cart: prevCart.current,
+      totalItems: prevTotalItems.current,
+      totals: prevTotals.current,
+    };
+    nextAnimClass = "cart-slide-out";
+  } else if (!wasTableSelectorOpen && isTableSelectorOpenNow && !isTable) {
+    nextMesasSnapshot = {
+      cart: prevCart.current,
+      totalItems: prevTotalItems.current,
+      totals: prevTotals.current,
+    };
+    nextAnimClass = "mesas-slide-out";
+  } else if (
+    wasTableSelectorOpen &&
+    !isTableSelectorOpenNow &&
+    mesasSnapshot &&
+    !isTable
+  ) {
+    nextAnimClass = "mesas-slide-in";
+  }
+
+  if (nextAnimClass) {
+    setEnterSnapshot(nextEnterSnapshot);
+    setExitSnapshot(nextExitSnapshot);
+    setMesasSnapshot(nextMesasSnapshot);
+    setAnimClass(nextAnimClass);
+  }
+
+  prevTableSession.current = tableSession;
+  prevCart.current = cart;
+  prevTotalItems.current = totalItems;
+  prevTotals.current = totals;
+  prevIsTableSelectorOpen.current = isTableSelectorOpen;
+
+  useEffect(() => {
+    if (!animClass) {
+      return;
+    }
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
+    timerRef.current = setTimeout(() => {
+      setEnterSnapshot(null);
+      setExitSnapshot(null);
+      setMesasSnapshot(null);
+      setAnimClass("");
+      timerRef.current = null;
+    }, 350);
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, [animClass]);
+
+  return {
+    ...computeBaseValues({
+      animClass,
+      cart,
+      enterSnapshot,
+      isTable,
+      isTableSelectorOpenNow,
+      tableSession,
+      totalItems,
+      totals,
+    }),
+    animClass,
+    enterSnapshot,
+    exitSnapshot,
+    mesasSnapshot,
+  };
+}
+
+const blankTotals: CartTotals = {
+  subTotal: 0,
+  tax: 0,
+  discountAmount: 0,
+  itemsDiscountAmount: 0,
+  saleDiscountAmount: 0,
+  totalAmount: 0,
+};
+
+function computeBaseValues(args: {
+  animClass: AnimationClass;
+  cart: CartItem[];
+  enterSnapshot: AnimationState["enterSnapshot"];
+  isTable: boolean;
+  isTableSelectorOpenNow: boolean;
+  tableSession: PosTableSessionState | null | undefined;
+  totalItems: number;
+  totals: CartTotals;
+}) {
+  const {
+    animClass,
+    cart,
+    enterSnapshot,
+    isTable,
+    isTableSelectorOpenNow,
+    tableSession,
+    totalItems,
+    totals,
+  } = args;
+
+  const isMesasAnimating =
+    animClass === "mesas-slide-out" || animClass === "mesas-slide-in";
+  const shouldShowBlankBase = isTableSelectorOpenNow && !isTable;
+  const showBlankState = shouldShowBlankBase && !isMesasAnimating;
+  const useBlankForBase = shouldShowBlankBase && animClass !== "mesas-slide-in";
+
+  const baseCart = enterSnapshot?.cart ?? (useBlankForBase ? [] : cart);
+  const baseTotalItems =
+    enterSnapshot?.totalItems ?? (useBlankForBase ? 0 : totalItems);
+  const baseTotals =
+    enterSnapshot?.totals ?? (useBlankForBase ? blankTotals : totals);
+
+  let baseTableSession: PosTableSessionState | null | undefined = tableSession;
+  if (enterSnapshot) {
+    baseTableSession = null;
+  } else if (useBlankForBase) {
+    baseTableSession = null;
+  }
+
+  return {
+    animClass,
+    baseCart,
+    baseTableSession,
+    baseTotalItems,
+    baseTotals,
+    showBlankState,
+    useBlankForBase,
+  };
+}
+
+function CartOverlay({
+  animClass,
+  cart,
+  isQuickSaleMode,
+  onCheckout,
+  onClearCart,
+  onExitTable,
+  onSendToKitchen,
+  totals,
+  totalItems,
+  tableSession,
+}: {
+  animClass: string;
+  cart: CartItem[];
+  isQuickSaleMode: boolean;
+  onCheckout: () => void;
+  onClearCart: () => void;
+  onExitTable?: () => void;
+  onSendToKitchen?: () => void;
+  totals: CartTotals;
+  totalItems: number;
+  tableSession?: PosTableSessionState | null;
+}) {
+  const emptyMessage = getEmptyCartMessage(false, tableSession ?? null);
+
+  return (
+    <div
+      className={cn(
+        "absolute inset-0 z-10 flex min-h-0 flex-1 flex-col bg-[#0f0f0f]",
+        animClass
+      )}
+    >
+      <CartPanelHeader
+        hasItems={cart.length > 0}
+        onClearCart={onClearCart}
+        onExitTable={onExitTable}
+        tableSession={tableSession}
+        totalItems={totalItems}
+      />
+
+      <div className="min-h-0 flex-1 overflow-y-auto bg-[#0f0f0f] px-2 py-1">
+        <CartItemList
+          emptyMessage={emptyMessage}
+          isTable={Boolean(tableSession)}
+          itemStatusById={tableSession?.itemStatusById}
+          items={cart}
+          onRemoveItem={noop}
+          onUpdateItemDiscount={noop}
+          onUpdateQuantity={noop}
+          readOnly
+          showDiscount={false}
+        />
+      </div>
+
+      <div className="shrink-0 border-zinc-800 border-t bg-[#0a0a0a] p-4">
+        <CartSummary totals={totals} />
+        <div className="mt-3">
+          {tableSession ? (
+            <Button
+              className="mt-2 h-12 rounded-xl bg-[var(--color-voltage)]! font-bold text-base text-black! hover:bg-[#c9e605]"
+              disabled
+              fullWidth
+            >
+              Cobrar mesa
+            </Button>
+          ) : (
+            <CartFooter
+              cart={cart}
+              isQuickSaleMode={isQuickSaleMode}
+              onCheckout={onCheckout}
+              onSendToKitchen={onSendToKitchen}
+              tableSession={tableSession}
+            />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 interface CartPanelProps {
   cart: CartItem[];
   className?: string;
   isQuickSaleMode?: boolean;
+  isTableSelectorOpen?: boolean;
   onCheckout: () => void;
   onClearCart: () => void;
   onExitTable?: () => void;
@@ -269,6 +553,21 @@ function CartItemList({
   );
 }
 
+function getEmptyCartMessage(
+  showBlankState: boolean,
+  baseTableSession: PosTableSessionState | null | undefined
+): string {
+  if (showBlankState) {
+    return "Selecciona una mesa";
+  }
+  if (baseTableSession) {
+    return baseTableSession.isLoading
+      ? "Cargando la cuenta de la mesa…"
+      : "Agrega productos a la mesa";
+  }
+  return "Escanea o selecciona un producto";
+}
+
 export function CartPanel({
   cart,
   totalItems,
@@ -281,94 +580,23 @@ export function CartPanel({
   onExitTable,
   onSendToKitchen,
   isQuickSaleMode,
+  isTableSelectorOpen,
   tableSession,
   className,
   saleSuccessToken,
 }: CartPanelProps) {
-  const [enterSnapshot, setEnterSnapshot] = useState<{
-    cart: CartItem[];
-    totalItems: number;
-    totals: CartTotals;
-  } | null>(null);
-  const [exitSnapshot, setExitSnapshot] = useState<{
-    tableSession: PosTableSessionState;
-    cart: CartItem[];
-    totalItems: number;
-    totals: CartTotals;
-  } | null>(null);
-  const [animClass, setAnimClass] = useState<
-    "cart-slide-in" | "cart-slide-out" | ""
-  >("");
+  const anim = useCartAnimation(
+    tableSession,
+    isTableSelectorOpen,
+    cart,
+    totalItems,
+    totals
+  );
 
-  const prevTableSession = useRef(tableSession);
-  const prevCart = useRef(cart);
-  const prevTotalItems = useRef(totalItems);
-  const prevTotals = useRef(totals);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const wasTable = Boolean(prevTableSession.current);
-  const isTable = Boolean(tableSession);
-
-  if (!wasTable && isTable) {
-    setEnterSnapshot({
-      cart: prevCart.current,
-      totalItems: prevTotalItems.current,
-      totals: prevTotals.current,
-    });
-    setExitSnapshot(null);
-    setAnimClass("cart-slide-in");
-  } else if (wasTable && !isTable && prevTableSession.current) {
-    setEnterSnapshot(null);
-    setExitSnapshot({
-      tableSession: prevTableSession.current,
-      cart: prevCart.current,
-      totalItems: prevTotalItems.current,
-      totals: prevTotals.current,
-    });
-    setAnimClass("cart-slide-out");
-  }
-
-  prevTableSession.current = tableSession;
-  prevCart.current = cart;
-  prevTotalItems.current = totalItems;
-  prevTotals.current = totals;
-
-  useEffect(() => {
-    if (!animClass) {
-      return;
-    }
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-    }
-    timerRef.current = setTimeout(() => {
-      setEnterSnapshot(null);
-      setExitSnapshot(null);
-      setAnimClass("");
-      timerRef.current = null;
-    }, 350);
-    return () => {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-        timerRef.current = null;
-      }
-    };
-  }, [animClass]);
-
-  const baseCart = enterSnapshot?.cart ?? cart;
-  const baseTotalItems = enterSnapshot?.totalItems ?? totalItems;
-  const baseTotals = enterSnapshot?.totals ?? totals;
-  const baseTableSession = enterSnapshot ? null : tableSession;
-
-  let emptyCartMessage = "Escanea o selecciona un producto";
-  if (baseTableSession) {
-    emptyCartMessage = baseTableSession.isLoading
-      ? "Cargando la cuenta de la mesa…"
-      : "Agrega productos a la mesa";
-  }
-
-  const exitEmptyCartMessage = exitSnapshot?.tableSession.isLoading
-    ? "Cargando la cuenta de la mesa…"
-    : "Agrega productos a la mesa";
+  const emptyCartMessage = getEmptyCartMessage(
+    anim.showBlankState,
+    anim.baseTableSession
+  );
 
   return (
     <div
@@ -377,138 +605,109 @@ export function CartPanel({
         className
       )}
     >
-      {/* Base layer: always rendered */}
       <div className="flex min-h-0 flex-1 flex-col">
-        <CartPanelHeader
-          hasItems={baseCart.length > 0}
-          onClearCart={onClearCart}
-          onExitTable={onExitTable}
-          tableSession={baseTableSession}
-          totalItems={baseTotalItems}
-        />
+        {!anim.useBlankForBase && (
+          <CartPanelHeader
+            hasItems={anim.baseCart.length > 0}
+            onClearCart={onClearCart}
+            onExitTable={onExitTable}
+            tableSession={anim.baseTableSession}
+            totalItems={anim.baseTotalItems}
+          />
+        )}
 
         <div
           className={cn(
             "min-h-0 flex-1 overflow-y-auto px-2 py-1",
-            baseTableSession && "bg-[#0f0f0f]"
+            anim.baseTableSession && "bg-[#0f0f0f]",
+            anim.useBlankForBase && "flex flex-col items-center justify-center"
           )}
         >
           <CartItemList
             emptyMessage={emptyCartMessage}
-            isTable={Boolean(baseTableSession)}
-            itemStatusById={baseTableSession?.itemStatusById}
-            items={baseCart}
+            isTable={Boolean(anim.baseTableSession)}
+            itemStatusById={anim.baseTableSession?.itemStatusById}
+            items={anim.baseCart}
             onRemoveItem={onRemoveItem}
             onUpdateItemDiscount={onUpdateItemDiscount}
             onUpdateQuantity={onUpdateQuantity}
             readOnly={false}
-            showDiscount={!baseTableSession}
+            showDiscount={!anim.baseTableSession}
           />
         </div>
 
-        <div className="shrink-0 border-zinc-800 border-t bg-[#0a0a0a] p-4">
-          <CartSummary totals={baseTotals} />
-          <div className="mt-3">
-            <CartFooter
-              cart={baseCart}
-              isQuickSaleMode={Boolean(isQuickSaleMode)}
-              onCheckout={onCheckout}
-              onSendToKitchen={onSendToKitchen}
-              tableSession={baseTableSession}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Enter overlay: new table content sliding up over the normal cart */}
-      {enterSnapshot && (
-        <div
-          className={cn(
-            "absolute inset-0 z-10 flex min-h-0 flex-1 flex-col bg-[#0f0f0f]",
-            animClass === "cart-slide-in" &&
-              "animate-[cart-slide-in_300ms_ease-out_both]"
-          )}
-        >
-          <CartPanelHeader
-            hasItems={cart.length > 0}
-            onClearCart={onClearCart}
-            onExitTable={onExitTable}
-            tableSession={tableSession}
-            totalItems={totalItems}
-          />
-
-          <div className="min-h-0 flex-1 overflow-y-auto bg-[#0f0f0f] px-2 py-1">
-            <CartItemList
-              emptyMessage={emptyCartMessage}
-              isTable={Boolean(tableSession)}
-              itemStatusById={tableSession?.itemStatusById}
-              items={cart}
-              onRemoveItem={noop}
-              onUpdateItemDiscount={noop}
-              onUpdateQuantity={noop}
-              readOnly
-              showDiscount={false}
-            />
-          </div>
-
+        {!anim.useBlankForBase && (
           <div className="shrink-0 border-zinc-800 border-t bg-[#0a0a0a] p-4">
-            <CartSummary totals={totals} />
+            <CartSummary totals={anim.baseTotals} />
             <div className="mt-3">
               <CartFooter
-                cart={cart}
+                cart={anim.baseCart}
                 isQuickSaleMode={Boolean(isQuickSaleMode)}
                 onCheckout={onCheckout}
                 onSendToKitchen={onSendToKitchen}
-                tableSession={tableSession}
+                tableSession={anim.baseTableSession}
               />
             </div>
           </div>
-        </div>
+        )}
+      </div>
+
+      {anim.enterSnapshot && (
+        <CartOverlay
+          animClass="animate-[cart-slide-in_300ms_ease-out_both]"
+          cart={cart}
+          isQuickSaleMode={Boolean(isQuickSaleMode)}
+          onCheckout={onCheckout}
+          onClearCart={onClearCart}
+          onExitTable={onExitTable}
+          onSendToKitchen={onSendToKitchen}
+          tableSession={tableSession}
+          totalItems={totalItems}
+          totals={totals}
+        />
       )}
 
-      {/* Exit overlay: old table content sliding down to reveal normal order */}
-      {exitSnapshot && (
-        <div
-          className={cn(
-            "absolute inset-0 z-10 flex min-h-0 flex-1 flex-col bg-[#0f0f0f]",
-            animClass === "cart-slide-out" &&
-              "animate-[cart-slide-out_300ms_ease-out_forwards]"
-          )}
-        >
-          <CartPanelHeader
-            hasItems={exitSnapshot.cart.length > 0}
-            onClearCart={onClearCart}
-            onExitTable={onExitTable}
-            tableSession={exitSnapshot.tableSession}
-            totalItems={exitSnapshot.totalItems}
-          />
+      {anim.exitSnapshot && (
+        <CartOverlay
+          animClass="animate-[cart-slide-out_300ms_ease-out_forwards]"
+          cart={anim.exitSnapshot.cart}
+          isQuickSaleMode={Boolean(isQuickSaleMode)}
+          onCheckout={onCheckout}
+          onClearCart={onClearCart}
+          onExitTable={onExitTable}
+          onSendToKitchen={onSendToKitchen}
+          tableSession={anim.exitSnapshot.tableSession}
+          totalItems={anim.exitSnapshot.totalItems}
+          totals={anim.exitSnapshot.totals}
+        />
+      )}
 
-          <div className="min-h-0 flex-1 overflow-y-auto bg-[#0f0f0f] px-2 py-1">
-            <CartItemList
-              emptyMessage={exitEmptyCartMessage}
-              isTable
-              items={exitSnapshot.cart}
-              onRemoveItem={noop}
-              onUpdateItemDiscount={noop}
-              onUpdateQuantity={noop}
-              readOnly
-              showDiscount={false}
-            />
-          </div>
+      {anim.mesasSnapshot && anim.animClass === "mesas-slide-out" && (
+        <CartOverlay
+          animClass="animate-[cart-slide-out_350ms_ease-out_forwards]"
+          cart={anim.mesasSnapshot.cart}
+          isQuickSaleMode={Boolean(isQuickSaleMode)}
+          onCheckout={onCheckout}
+          onClearCart={onClearCart}
+          onExitTable={onExitTable}
+          onSendToKitchen={onSendToKitchen}
+          totalItems={anim.mesasSnapshot.totalItems}
+          totals={anim.mesasSnapshot.totals}
+        />
+      )}
 
-          <div className="shrink-0 border-zinc-800 border-t bg-[#0a0a0a] p-4">
-            <CartSummary totals={exitSnapshot.totals} />
-            <div className="mt-3">
-              <Button
-                className="mt-2 h-12 rounded-xl bg-[var(--color-voltage)]! font-bold text-base text-black! hover:bg-[#c9e605]"
-                disabled
-                fullWidth
-              >
-                Cobrar mesa
-              </Button>
-            </div>
-          </div>
-        </div>
+      {anim.mesasSnapshot && anim.animClass === "mesas-slide-in" && (
+        <CartOverlay
+          animClass="animate-[cart-slide-in_350ms_ease-out_both]"
+          cart={anim.mesasSnapshot.cart}
+          isQuickSaleMode={Boolean(isQuickSaleMode)}
+          onCheckout={onCheckout}
+          onClearCart={onClearCart}
+          onExitTable={onExitTable}
+          onSendToKitchen={onSendToKitchen}
+          totalItems={anim.mesasSnapshot.totalItems}
+          totals={anim.mesasSnapshot.totals}
+        />
       )}
 
       <SaleSuccessNotice token={saleSuccessToken} />
