@@ -322,11 +322,6 @@ export const productsMutators = {
         }
 
         const nextStock = currentStock + deltaQuantity;
-        if (nextStock < 0) {
-          throw new Error(
-            `Stock insuficiente para ${targetProduct.name}. Disponible: ${currentStock}`
-          );
-        }
 
         await tx.mutate.product.update({
           id: targetProduct.id,

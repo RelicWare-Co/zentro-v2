@@ -202,6 +202,24 @@ function buildPaymentMix(
     });
 }
 
+function mapTopProducts(
+  rows: Array<{
+    productId: string;
+    name: string;
+    quantitySold: number;
+    revenue: number;
+    stock: number;
+  }>
+) {
+  return rows.map((row) => ({
+    productId: row.productId,
+    name: row.name,
+    quantitySold: normalizeNumber(row.quantitySold),
+    revenue: normalizeNumber(row.revenue),
+    stock: normalizeNumber(row.stock),
+  }));
+}
+
 export async function runBuildDashboardOverview(
   db: DashboardDbExecutor,
   auth: { organizationId: string; userId: string },
@@ -345,6 +363,8 @@ export async function runBuildDashboardOverview(
     paymentMixRows,
     monthPaymentRows,
     topProductsRows,
+    topProductsTodayRows,
+    topProductsShiftRows,
     lowStockProductRows,
     recentSalesRows,
   ] = await Promise.all([
@@ -592,6 +612,83 @@ export async function runBuildDashboardOverview(
       .limit(5),
     db
       .select({
+        productId: saleItem.productId,
+        name: product.name,
+        quantitySold: sql<number>`coalesce(sum(${saleItem.quantity}), 0)`,
+        revenue: sql<number>`coalesce(sum(${saleItem.totalAmount}), 0)`,
+        stock: product.stock,
+      })
+      .from(saleItem)
+      .innerJoin(
+        sale,
+        and(
+          eq(sale.id, saleItem.saleId),
+          eq(sale.organizationId, auth.organizationId),
+          ne(sale.status, "cancelled")
+        )
+      )
+      .innerJoin(
+        product,
+        and(
+          eq(product.id, saleItem.productId),
+          eq(product.organizationId, auth.organizationId),
+          isNull(product.deletedAt)
+        )
+      )
+      .where(
+        and(
+          eq(saleItem.organizationId, auth.organizationId),
+          gte(sale.createdAt, zonedMidnightUtc(today, timeZone)),
+          lt(sale.createdAt, tomorrowStart)
+        )
+      )
+      .groupBy(saleItem.productId, product.name, product.stock)
+      .orderBy(
+        desc(sql`sum(${saleItem.quantity})`),
+        desc(sql`sum(${saleItem.totalAmount})`)
+      )
+      .limit(5),
+    salesWindow.shiftIds.length > 0
+      ? db
+          .select({
+            productId: saleItem.productId,
+            name: product.name,
+            quantitySold: sql<number>`coalesce(sum(${saleItem.quantity}), 0)`,
+            revenue: sql<number>`coalesce(sum(${saleItem.totalAmount}), 0)`,
+            stock: product.stock,
+          })
+          .from(saleItem)
+          .innerJoin(
+            sale,
+            and(
+              eq(sale.id, saleItem.saleId),
+              eq(sale.organizationId, auth.organizationId),
+              ne(sale.status, "cancelled")
+            )
+          )
+          .innerJoin(
+            product,
+            and(
+              eq(product.id, saleItem.productId),
+              eq(product.organizationId, auth.organizationId),
+              isNull(product.deletedAt)
+            )
+          )
+          .where(
+            and(
+              eq(saleItem.organizationId, auth.organizationId),
+              inArray(sale.shiftId, salesWindow.shiftIds)
+            )
+          )
+          .groupBy(saleItem.productId, product.name, product.stock)
+          .orderBy(
+            desc(sql`sum(${saleItem.quantity})`),
+            desc(sql`sum(${saleItem.totalAmount})`)
+          )
+          .limit(5)
+      : Promise.resolve([]),
+    db
+      .select({
         id: product.id,
         name: product.name,
         categoryName: category.name,
@@ -716,13 +813,9 @@ export async function runBuildDashboardOverview(
         paymentMix.map((row) => row.method)
       )
     ),
-    topProducts: topProductsRows.map((row) => ({
-      productId: row.productId,
-      name: row.name,
-      quantitySold: normalizeNumber(row.quantitySold),
-      revenue: normalizeNumber(row.revenue),
-      stock: normalizeNumber(row.stock),
-    })),
+    topProducts: mapTopProducts(topProductsRows),
+    topProductsToday: mapTopProducts(topProductsTodayRows),
+    topProductsShift: mapTopProducts(topProductsShiftRows),
     lowStockProducts: lowStockProductRows.map((row) => ({
       id: row.id,
       name: row.name,

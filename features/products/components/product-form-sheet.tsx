@@ -55,7 +55,7 @@ function ProductFormSheetContent({
       price: parseMoneyInput(form.price),
       cost: parseMoneyInput(form.cost),
       taxRate: Number(form.taxRate) || 0,
-      stock: Number(form.stock) || 0,
+      ...(product ? {} : { stock: Number(form.stock) || 0 }),
       minStock: parseOptionalStockField(form.minStock),
       reorderQuantity: parseOptionalStockField(form.reorderQuantity),
       trackInventory: form.trackInventory,
@@ -199,21 +199,23 @@ function ProductFormSheetContent({
           </ProductsField>
           {form.trackInventory ? (
             <>
-              <ProductsField label="Stock inicial">
-                <TextInput
-                  id="product-form-stock"
-                  min={0}
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      stock: event.target.value,
-                    }))
-                  }
-                  placeholder="0"
-                  type="number"
-                  value={form.stock}
-                />
-              </ProductsField>
+              {!product && (
+                <ProductsField label="Stock inicial">
+                  <TextInput
+                    id="product-form-stock"
+                    min={0}
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        stock: event.target.value,
+                      }))
+                    }
+                    placeholder="0"
+                    type="number"
+                    value={form.stock}
+                  />
+                </ProductsField>
+              )}
               <ProductsField label="Stock mínimo (alerta)">
                 <TextInput
                   min={0}

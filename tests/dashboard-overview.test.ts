@@ -10,6 +10,79 @@ import {
 import { createTestDb } from "./helpers/test-db";
 
 describe("dashboard overview accounting", () => {
+  test("top products split between calendar day and shift window", async () => {
+    const { db, cleanup } = await createTestDb();
+    const { organizationId, userId } = await seedOrganizationWithMember(db);
+    const [todayProductId, previousDayProductId, shiftId] = await Promise.all([
+      seedProduct(db, {
+        organizationId,
+        name: "Today Product",
+        price: 10_000,
+        stock: 20,
+        trackInventory: true,
+      }),
+      seedProduct(db, {
+        organizationId,
+        name: "Previous Day Product",
+        price: 8000,
+        stock: 20,
+        trackInventory: true,
+      }),
+      seedShift(db, {
+        organizationId,
+        userId,
+        startingCash: 0,
+        status: "open",
+      }),
+    ]);
+
+    const now = Date.now();
+    const yesterday = now - 24 * 60 * 60 * 1000;
+
+    await createCoreSale(
+      {
+        shiftId,
+        createdAt: yesterday,
+        items: [
+          { productId: previousDayProductId, quantity: 1, unitPrice: 8000 },
+        ],
+        payments: [{ method: "cash", amount: 8000 }],
+      },
+      { db, organizationId, userId }
+    );
+
+    await createCoreSale(
+      {
+        shiftId,
+        createdAt: now,
+        items: [{ productId: todayProductId, quantity: 1, unitPrice: 10_000 }],
+        payments: [{ method: "cash", amount: 10_000 }],
+      },
+      { db, organizationId, userId }
+    );
+
+    const overview = await runBuildDashboardOverview(
+      db,
+      { organizationId, userId },
+      "America/Bogota"
+    );
+
+    expect(overview.topProductsToday.map((item) => item.productId)).toEqual([
+      todayProductId,
+    ]);
+    expect(
+      overview.topProductsShift
+        .map((item) => item.productId)
+        .sort((left, right) => left.localeCompare(right))
+    ).toEqual(
+      [todayProductId, previousDayProductId].sort((left, right) =>
+        left.localeCompare(right)
+      )
+    );
+
+    await cleanup();
+  });
+
   test("cash payment mix excludes returned change from overpaid sales", async () => {
     const { db, cleanup } = await createTestDb();
     const { organizationId, userId } = await seedOrganizationWithMember(db);

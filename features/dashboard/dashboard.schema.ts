@@ -84,6 +84,24 @@ export const DashboardOverviewSchema = z.object({
       stock: z.number(),
     })
     .array(),
+  topProductsToday: z
+    .object({
+      productId: z.string(),
+      name: z.string(),
+      quantitySold: z.number(),
+      revenue: z.number(),
+      stock: z.number(),
+    })
+    .array(),
+  topProductsShift: z
+    .object({
+      productId: z.string(),
+      name: z.string(),
+      quantitySold: z.number(),
+      revenue: z.number(),
+      stock: z.number(),
+    })
+    .array(),
   lowStockProducts: z
     .object({
       id: z.string(),

@@ -6,7 +6,13 @@ export const PRODUCTS_TAB_VALUES = [
   "kardex",
 ] as const;
 
-export const PRODUCT_STOCK_FILTER_VALUES = ["all", "out", "low", "ok"] as const;
+export const PRODUCT_STOCK_FILTER_VALUES = [
+  "all",
+  "debt",
+  "out",
+  "low",
+  "ok",
+] as const;
 
 export type ProductStockFilterValue =
   (typeof PRODUCT_STOCK_FILTER_VALUES)[number];

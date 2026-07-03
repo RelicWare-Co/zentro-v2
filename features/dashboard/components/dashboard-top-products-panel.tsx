@@ -1,3 +1,5 @@
+import { SegmentedControl } from "@mantine/core";
+import { useMemo, useState } from "react";
 import {
   DashboardPanelShell,
   EmptyState,
@@ -9,16 +11,42 @@ import {
 import { useDashboardData } from "@/features/dashboard/dashboard-page-context";
 
 export function DashboardTopProductsPanel() {
-  const { topProducts } = useDashboardData();
+  const { salesWindow, topProductsToday, topProductsShift } =
+    useDashboardData();
+  const [viewMode, setViewMode] = useState<"day" | "shift">("shift");
+
+  const activeRows = useMemo(
+    () => (viewMode === "day" ? topProductsToday : topProductsShift),
+    [topProductsToday, topProductsShift, viewMode]
+  );
+
+  let panelDescription = "Productos vendidos hoy (día calendario).";
+  if (viewMode === "shift") {
+    panelDescription =
+      salesWindow.kind === "none"
+        ? "No hay turno abierto ni cerrado reciente para construir el ranking del turno."
+        : "Productos vendidos en la ventana operativa del turno actual.";
+  }
 
   return (
     <DashboardPanelShell
-      description="Top de los últimos 30 días para vigilar rotación y stock."
+      description={panelDescription}
+      headerAside={
+        <SegmentedControl
+          data={[
+            { label: "Turno", value: "shift" },
+            { label: "Día", value: "day" },
+          ]}
+          onChange={(value) => setViewMode(value as "day" | "shift")}
+          size="xs"
+          value={viewMode}
+        />
+      }
       title="Productos más vendidos"
     >
-      {topProducts.length > 0 ? (
+      {activeRows.length > 0 ? (
         <div className="space-y-3">
-          {topProducts.map((productItem, index) => (
+          {activeRows.map((productItem, index) => (
             <div
               className="flex items-center justify-between gap-4 rounded-xl border border-zinc-800 bg-black/10 px-4 py-3 transition-colors hover:bg-white/5"
               key={productItem.productId}
@@ -49,7 +77,9 @@ export function DashboardTopProductsPanel() {
         </div>
       ) : (
         <EmptyState>
-          Aún no hay ventas suficientes para construir el ranking.
+          {viewMode === "day"
+            ? "Aún no hay ventas hoy para construir el ranking."
+            : "Aún no hay ventas en el turno para construir el ranking."}
         </EmptyState>
       )}
     </DashboardPanelShell>

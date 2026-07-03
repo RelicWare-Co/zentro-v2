@@ -177,7 +177,7 @@ describe("sale creation transactions", () => {
       await cleanup();
     });
 
-    test("tracked product sale is rejected when stock would become negative", async () => {
+    test("tracked product sale allows stock to go negative", async () => {
       const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
       const [productId, shiftId] = await Promise.all([
@@ -195,28 +195,27 @@ describe("sale creation transactions", () => {
         }),
       ]);
 
-      await expect(
-        createCoreSale(
-          {
-            shiftId,
-            items: [{ productId, quantity: 2, unitPrice: 10_000 }],
-            payments: [{ method: "cash", amount: 20_000 }],
-          },
-          { db, organizationId, userId }
-        )
-      ).rejects.toThrow("No fue posible actualizar el stock");
+      await createCoreSale(
+        {
+          shiftId,
+          items: [{ productId, quantity: 2, unitPrice: 10_000 }],
+          payments: [{ method: "cash", amount: 20_000 }],
+        },
+        { db, organizationId, userId }
+      );
 
       const productRows = await db
         .select({ stock: product.stock })
         .from(product)
         .where(eq(product.id, productId));
-      expect(productRows[0].stock).toBe(1);
+      expect(productRows[0].stock).toBe(-1);
 
       const movementRows = await db
         .select()
         .from(inventoryMovement)
         .where(eq(inventoryMovement.productId, productId));
-      expect(movementRows).toHaveLength(0);
+      expect(movementRows).toHaveLength(1);
+      expect(movementRows[0].quantity).toBe(-2);
 
       await cleanup();
     });

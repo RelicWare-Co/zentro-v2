@@ -20,14 +20,6 @@ const config: Config = {
   // https://vike.dev/prefetchStaticAssets
   prefetchStaticAssets: "viewport",
 
-  // Permanent redirect for the root path — avoids running onCreatePageContext
-  // (session + DB resolution) just to redirect.  Auth/org guards on the
-  // (app) group handle the remaining checks.
-  // https://vike.dev/redirects
-  redirects: {
-    "/": "/dashboard",
-  },
-
   extends: [vikeReact],
   passToClient: ["user", "zeroContext", "zeroCacheURL"],
 };
