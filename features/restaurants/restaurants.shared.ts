@@ -69,7 +69,7 @@ export interface RestaurantOpenOrderRow {
   orderNumber: number;
   status?: string | null;
   table?: RestaurantTableRow | null;
-  tableId: string;
+  tableId: string | null;
   updatedAt: number;
 }
 
@@ -374,7 +374,7 @@ export function buildRestaurantBootstrap(params: {
 
   for (const orderRow of params.openOrders) {
     const summary = summariesByOrderId.get(orderRow.id);
-    if (!summary) {
+    if (!(summary && orderRow.tableId)) {
       continue;
     }
     openOrderByTableId.set(orderRow.tableId, {

@@ -117,6 +117,10 @@ export const DeleteRestaurantTableInputSchema = z.object({
   id: z.string().trim().min(1),
 });
 
+export const CancelRestaurantOrderInputSchema = z.object({
+  orderId: z.string().trim().min(1),
+});
+
 // Schemas reutilizados del POS
 const RestaurantPaymentMethodSchema = z.object({
   id: z.string(),

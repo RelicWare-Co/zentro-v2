@@ -22,6 +22,7 @@ import type {
 import { buildPosV2BarcodeScanPayload } from "@/features/posv2/posv2-barcode.shared";
 
 export interface PosCartContextValue {
+  cancelTableOrder: () => Promise<void>;
   cart: CartItem[];
   clearCart: () => void;
   confirmModifiers: () => void;
@@ -190,6 +191,10 @@ export function PosCartProvider({ children }: { children: ReactNode }) {
     activeMode.sendToKitchen?.().catch(() => undefined);
   }, [activeMode]);
 
+  const cancelTableOrder = useCallback(async () => {
+    await activeMode.cancelOrder?.();
+  }, [activeMode]);
+
   const tableMode = useMemo(
     () => saleModeAdapters.find((mode) => mode.modeId === "table"),
     [saleModeAdapters]
@@ -215,6 +220,7 @@ export function PosCartProvider({ children }: { children: ReactNode }) {
   const tableSession = activeMode.sessionState;
 
   const value: PosCartContextValue = {
+    cancelTableOrder,
     cart: activeMode.cart,
     clearCart: clearCartAction,
     confirmModifiers: handleConfirmModifiers,

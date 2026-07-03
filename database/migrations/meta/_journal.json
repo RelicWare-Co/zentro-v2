@@ -50,6 +50,13 @@
       "when": 1782792000000,
       "tag": "0006_payment_applied_change",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1783118179331,
+      "tag": "0007_brief_inhumans",
+      "breakpoints": true
     }
   ]
 }

@@ -79,6 +79,7 @@ export interface PosPageState {
 export interface PosPageActions {
   addPaymentMethod: () => void;
   addToCart: (product: Product, modifiers: CartItemModifier[]) => void;
+  cancelTableOrder: () => Promise<void>;
   clearCart: () => void;
   closeActiveModal: () => void;
   confirmCashMovement: () => void;
@@ -211,6 +212,7 @@ export function PosPageCompatProvider({ children }: { children: ReactNode }) {
   const { activeMode, saleSuccessToken } = usePosSaleMode();
 
   const {
+    cancelTableOrder,
     cart,
     clearCart,
     confirmModifiers,
@@ -304,6 +306,7 @@ export function PosPageCompatProvider({ children }: { children: ReactNode }) {
       actions: {
         addToCart: activeMode.addToCart,
         addPaymentMethod,
+        cancelTableOrder,
         clearCart,
         closeActiveModal,
         confirmCashMovement: shift.handleCashMovement,
@@ -366,6 +369,7 @@ export function PosPageCompatProvider({ children }: { children: ReactNode }) {
       addPaymentMethod,
       canFinalizeSale,
       canReturnCashChange,
+      cancelTableOrder,
       cashChangeDue,
       checkoutError,
       categories,

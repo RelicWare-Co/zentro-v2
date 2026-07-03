@@ -7,7 +7,7 @@ import {
   UtensilsCrossed,
   Zap,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
 import type { PosTableSessionState } from "../pos-page-context";
@@ -310,6 +310,7 @@ interface CartPanelProps {
   className?: string;
   isQuickSaleMode?: boolean;
   isTableSelectorOpen?: boolean;
+  onCancelTableOrder?: () => Promise<void>;
   onCheckout: () => void;
   onClearCart: () => void;
   onExitTable?: () => void;
@@ -452,18 +453,67 @@ function CartEmptyState({
 function CartFooter({
   cart,
   isQuickSaleMode,
+  onCancelTableOrder,
   onCheckout,
   onSendToKitchen,
   tableSession,
 }: {
   cart: CartItem[];
   isQuickSaleMode: boolean;
+  onCancelTableOrder?: () => Promise<void>;
   onCheckout: () => void;
   onSendToKitchen?: () => void;
   tableSession?: PosTableSessionState | null;
 }) {
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+
+  const handleCancelOrder = useCallback(async () => {
+    if (!onCancelTableOrder) {
+      return;
+    }
+    setIsCancelling(true);
+    try {
+      await onCancelTableOrder();
+      setShowCancelConfirm(false);
+    } catch {
+      // Error is handled by the mutation hook
+    } finally {
+      setIsCancelling(false);
+    }
+  }, [onCancelTableOrder]);
+
   return (
     <div className="space-y-3">
+      {showCancelConfirm && (
+        <div className="rounded-lg border border-red-800/50 bg-red-950/50 p-3">
+          <p className="mb-2 text-red-200 text-sm">
+            ¿Cancelar toda la orden? Esta acción no se puede deshacer.
+          </p>
+          <div className="flex gap-2">
+            <Button
+              color="gray"
+              disabled={isCancelling}
+              onClick={() => setShowCancelConfirm(false)}
+              size="compact-sm"
+              variant="default"
+            >
+              Volver
+            </Button>
+            <Button
+              color="red"
+              loading={isCancelling}
+              onClick={() => {
+                handleCancelOrder().catch(() => undefined);
+              }}
+              size="compact-sm"
+            >
+              {isCancelling ? "Cancelando…" : "Confirmar"}
+            </Button>
+          </div>
+        </div>
+      )}
+
       {tableSession ? (
         <Button
           className="border-zinc-700! text-zinc-300! hover:border-zinc-500 hover:text-white"
@@ -496,6 +546,19 @@ function CartFooter({
       >
         {tableSession ? "Cobrar mesa" : "Cobrar"}
       </Button>
+
+      {tableSession?.orderId && !showCancelConfirm && (
+        <Button
+          className="text-red-400! hover:bg-red-400/10 hover:text-red-300!"
+          color="red"
+          fullWidth
+          onClick={() => setShowCancelConfirm(true)}
+          size="compact-sm"
+          variant="subtle"
+        >
+          Cancelar orden
+        </Button>
+      )}
     </div>
   );
 }
@@ -577,6 +640,7 @@ export function CartPanel({
   onUpdateItemDiscount,
   onClearCart,
   onCheckout,
+  onCancelTableOrder,
   onExitTable,
   onSendToKitchen,
   isQuickSaleMode,
@@ -643,6 +707,7 @@ export function CartPanel({
               <CartFooter
                 cart={anim.baseCart}
                 isQuickSaleMode={Boolean(isQuickSaleMode)}
+                onCancelTableOrder={onCancelTableOrder}
                 onCheckout={onCheckout}
                 onSendToKitchen={onSendToKitchen}
                 tableSession={anim.baseTableSession}

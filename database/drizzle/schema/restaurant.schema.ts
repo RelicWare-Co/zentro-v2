@@ -77,9 +77,9 @@ export const restaurantOrder = pgTable(
     organizationId: text("organization_id")
       .notNull()
       .references(() => organization.id, { onDelete: "cascade" }),
-    tableId: text("table_id")
-      .notNull()
-      .references(() => restaurantTable.id, { onDelete: "restrict" }),
+    tableId: text("table_id").references(() => restaurantTable.id, {
+      onDelete: "set null",
+    }),
     openedByUserId: text("opened_by_user_id")
       .notNull()
       .references(() => user.id),

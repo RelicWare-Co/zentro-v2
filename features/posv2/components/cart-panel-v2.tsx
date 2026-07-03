@@ -7,6 +7,7 @@ import {
   Trash2,
   UtensilsCrossed,
 } from "lucide-react";
+import { useCallback, useState } from "react";
 import { buildTableItemStatusBadge } from "@/features/pos/components/table-item-status.shared";
 import {
   type PosTableSessionState,
@@ -111,9 +112,56 @@ function CartPanelV2FooterAction({
   tableSession: PosTableSessionState | null;
 }) {
   const { actions } = usePosPage();
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
-  if (tableSession) {
-    return (
+  const handleCancelOrder = useCallback(async () => {
+    setIsCancelling(true);
+    try {
+      await actions.cancelTableOrder();
+      setShowCancelConfirm(false);
+    } catch {
+      // Error is handled by the mutation hook
+    } finally {
+      setIsCancelling(false);
+    }
+  }, [actions]);
+
+  if (!tableSession) {
+    return null;
+  }
+
+  return (
+    <div className="space-y-2">
+      {showCancelConfirm && (
+        <div className="rounded-lg border border-red-800/50 bg-red-950/50 p-3">
+          <p className="mb-2 text-red-200 text-sm">
+            ¿Cancelar toda la orden? Esta acción no se puede deshacer.
+          </p>
+          <div className="flex gap-2">
+            <Button
+              color="gray"
+              disabled={isCancelling}
+              onClick={() => setShowCancelConfirm(false)}
+              size="compact-sm"
+              variant="default"
+            >
+              Volver
+            </Button>
+            <Button
+              color="red"
+              loading={isCancelling}
+              onClick={() => {
+                handleCancelOrder().catch(() => undefined);
+              }}
+              size="compact-sm"
+            >
+              {isCancelling ? "Cancelando…" : "Confirmar"}
+            </Button>
+          </div>
+        </div>
+      )}
+
       <Button
         className={posV2ButtonOutlineClassName}
         disabled={
@@ -133,10 +181,21 @@ function CartPanelV2FooterAction({
                 : ""
             }`}
       </Button>
-    );
-  }
 
-  return null;
+      {tableSession.orderId && !showCancelConfirm && (
+        <Button
+          className="text-red-400 hover:bg-red-400/10 hover:text-red-300"
+          color="red"
+          fullWidth
+          onClick={() => setShowCancelConfirm(true)}
+          size="compact-sm"
+          variant="subtle"
+        >
+          Cancelar orden
+        </Button>
+      )}
+    </div>
+  );
 }
 
 export function CartPanelV2({ className }: CartPanelV2Props) {

@@ -1,5 +1,11 @@
-import { Badge, Button, SegmentedControl } from "@mantine/core";
-import { ChefHat, LayoutGrid, Plus, Users } from "lucide-react";
+import {
+  ActionIcon,
+  Badge,
+  Button,
+  SegmentedControl,
+  Tooltip,
+} from "@mantine/core";
+import { ChefHat, LayoutGrid, Plus, Trash2, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import { formatCurrency } from "@/features/pos/utils";
 import {
@@ -7,6 +13,7 @@ import {
   CreateRestaurantTableDialog,
   QuickAddTableCard,
 } from "@/features/restaurants/components/restaurant-setup-dialogs";
+import { useDeleteRestaurantTableMutation } from "@/features/restaurants/hooks/use-restaurants";
 import type { RestaurantBootstrap } from "@/features/restaurants/restaurants.shared";
 import {
   countFloorStats,
@@ -32,15 +39,20 @@ const statusStyles: Record<
 };
 
 function TableTile({
+  canManageLayout,
   isSelected,
+  onDeleteTable,
   onSelect,
   table,
 }: {
-  table: RestaurantTableSummary;
+  canManageLayout: boolean;
   isSelected: boolean;
+  onDeleteTable: (tableId: string) => void;
   onSelect: (tableId: string) => void;
+  table: RestaurantTableSummary;
 }) {
   const status = getTableOccupancyStatus(table);
+  const hasActiveOrder = Boolean(table.openOrder);
 
   return (
     <button
@@ -67,20 +79,39 @@ function TableTile({
             </div>
           ) : null}
         </div>
-        <Badge
-          className={cn(
-            "shrink-0 border-transparent",
-            status === "free" && "bg-emerald-500/15 text-emerald-200",
-            status === "draft" && "bg-amber-400/15 text-amber-100",
-            status === "kitchen" && "bg-orange-400/15 text-orange-100",
-            status === "ready" && "bg-sky-400/15 text-sky-100",
-            status === "occupied" &&
-              "bg-[var(--color-voltage)]/15 text-[var(--color-voltage)]"
+        <div className="flex items-center gap-1">
+          <Badge
+            className={cn(
+              "shrink-0 border-transparent",
+              status === "free" && "bg-emerald-500/15 text-emerald-200",
+              status === "draft" && "bg-amber-400/15 text-amber-100",
+              status === "kitchen" && "bg-orange-400/15 text-orange-100",
+              status === "ready" && "bg-sky-400/15 text-sky-100",
+              status === "occupied" &&
+                "bg-[var(--color-voltage)]/15 text-[var(--color-voltage)]"
+            )}
+            tt="none"
+          >
+            {getTableStatusLabel(status)}
+          </Badge>
+          {canManageLayout && !hasActiveOrder && (
+            <Tooltip label="Eliminar mesa" position="top" withArrow>
+              <ActionIcon
+                aria-label={`Eliminar mesa ${table.name}`}
+                className="hover:!bg-red-500/10 hover:!text-red-400 opacity-0 transition-opacity group-hover:opacity-100"
+                color="gray"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onDeleteTable(table.id);
+                }}
+                size="sm"
+                variant="subtle"
+              >
+                <Trash2 className="size-3.5" />
+              </ActionIcon>
+            </Tooltip>
           )}
-          tt="none"
-        >
-          {getTableStatusLabel(status)}
-        </Badge>
+        </div>
       </div>
 
       <div className="mt-auto pt-4">
@@ -124,6 +155,8 @@ export function RestaurantFloorView({
   );
   const [isCreateAreaOpen, setIsCreateAreaOpen] = useState(false);
   const [isCreateTableOpen, setIsCreateTableOpen] = useState(false);
+  const [tableToDelete, setTableToDelete] = useState<string | null>(null);
+  const deleteTableMutation = useDeleteRestaurantTableMutation();
 
   const stats = useMemo(
     () => countFloorStats(bootstrap.areas),
@@ -143,6 +176,34 @@ export function RestaurantFloorView({
 
   const createTableAreaId =
     resolvedAreaId === "all" ? bootstrap.areas[0]?.id : resolvedAreaId;
+
+  const handleDeleteTable = (tableId: string) => {
+    const table = bootstrap.areas
+      .flatMap((area) => area.tables)
+      .find((t) => t.id === tableId);
+    if (!table || table.openOrder) {
+      return;
+    }
+    setTableToDelete(tableId);
+  };
+
+  const confirmDeleteTable = async () => {
+    if (!tableToDelete) {
+      return;
+    }
+    try {
+      await deleteTableMutation.mutateAsync({ id: tableToDelete });
+      setTableToDelete(null);
+    } catch {
+      // Error is handled by the mutation hook
+    }
+  };
+
+  const tableToDeleteInfo = tableToDelete
+    ? bootstrap.areas
+        .flatMap((area) => area.tables)
+        .find((t) => t.id === tableToDelete)
+    : null;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-6">
@@ -288,8 +349,10 @@ export function RestaurantFloorView({
                     .filter((table) => table.isActive)
                     .map((table) => (
                       <TableTile
+                        canManageLayout={canManageLayout}
                         isSelected={table.id === selectedTableId}
                         key={table.id}
+                        onDeleteTable={handleDeleteTable}
                         onSelect={onSelectTable}
                         table={table}
                       />
@@ -319,6 +382,42 @@ export function RestaurantFloorView({
         onOpenChange={setIsCreateTableOpen}
         open={isCreateTableOpen}
       />
+
+      {tableToDeleteInfo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+          <div className="mx-4 w-full max-w-sm rounded-xl border border-zinc-800 bg-[var(--color-carbon)] p-5 shadow-xl">
+            <h3 className="font-semibold text-base text-white">
+              Eliminar mesa
+            </h3>
+            <p className="mt-2 text-sm text-zinc-400">
+              ¿Eliminar la mesa{" "}
+              <span className="font-medium text-white">
+                {tableToDeleteInfo.name}
+              </span>
+              ? Esta acción no se puede deshacer.
+            </p>
+            <div className="mt-5 flex justify-end gap-2">
+              <Button
+                color="gray"
+                disabled={deleteTableMutation.isPending}
+                onClick={() => setTableToDelete(null)}
+                variant="default"
+              >
+                Cancelar
+              </Button>
+              <Button
+                color="red"
+                loading={deleteTableMutation.isPending}
+                onClick={() => {
+                  confirmDeleteTable().catch(() => undefined);
+                }}
+              >
+                {deleteTableMutation.isPending ? "Eliminando…" : "Eliminar"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

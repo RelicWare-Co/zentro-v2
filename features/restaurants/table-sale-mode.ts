@@ -220,6 +220,7 @@ export function useTableSaleAdapter(
       isLoading: tableOrder.isLoading,
       isSendingToKitchen: tableOrder.isSendingToKitchen,
       isClosingOrder: tableOrder.isClosingOrder,
+      isCancellingOrder: tableOrder.isCancellingOrder,
     };
   }, [isActive, tableOrder]);
 
@@ -248,6 +249,10 @@ export function useTableSaleAdapter(
     await tableOrder.sendToKitchen();
   }, [tableOrder.sendToKitchen]);
 
+  const cancelOrder = useCallback(async () => {
+    await tableOrder.cancelTableOrder();
+  }, [tableOrder.cancelTableOrder]);
+
   return {
     modeId: tableSaleModeFactory.modeId,
     isActive,
@@ -257,8 +262,8 @@ export function useTableSaleAdapter(
     discountInput,
     allowCreditSales: false,
     checkout,
-    isProcessing: tableOrder.isClosingOrder,
-    error: tableOrder.closeOrderError,
+    isProcessing: tableOrder.isClosingOrder || tableOrder.isCancellingOrder,
+    error: tableOrder.closeOrderError ?? tableOrder.cancelOrderError,
     sessionState,
     addToCart,
     updateQuantity,
@@ -272,6 +277,7 @@ export function useTableSaleAdapter(
     enter,
     exit,
     sendToKitchen,
+    cancelOrder,
   };
 }
 

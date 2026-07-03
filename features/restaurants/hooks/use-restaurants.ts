@@ -4,6 +4,7 @@ import { usePageContext } from "vike-react/usePageContext";
 import type { z } from "zod";
 import type {
   AddRestaurantOrderItemInputSchema,
+  CancelRestaurantOrderInputSchema,
   CloseRestaurantOrderInputSchema,
   CreateRestaurantAreaInputSchema,
   CreateRestaurantTableInputSchema,
@@ -469,6 +470,17 @@ export function useDeleteRestaurantTableMutation() {
       await waitForZeroMutation(
         zero.mutate(mutators.restaurants.deleteTable(input))
       );
+    }
+  );
+}
+
+export function useCancelRestaurantOrderMutation() {
+  return useZeroMutation(
+    async (input: z.infer<typeof CancelRestaurantOrderInputSchema>, zero) => {
+      await waitForZeroMutation(
+        zero.mutate(mutators.restaurants.cancelOrder(input))
+      );
+      return { success: true as const };
     }
   );
 }

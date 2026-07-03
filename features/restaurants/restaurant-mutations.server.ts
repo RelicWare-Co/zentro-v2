@@ -14,6 +14,7 @@ import {
 import { isOrganizationManagerRole } from "@/features/organization/access-control.shared";
 import type {
   AddRestaurantOrderItemInputSchema,
+  CancelRestaurantOrderInputSchema,
   CloseRestaurantOrderInputSchema,
   CreateRestaurantAreaInputSchema,
   CreateRestaurantTableInputSchema,
@@ -847,6 +848,9 @@ export async function runSendRestaurantOrderToKitchen(
 
   const database = db;
   const order = await getOpenOrderById(database, organizationId, args.orderId);
+  if (!order.tableId) {
+    throw new Error("La orden no está asociada a una mesa.");
+  }
   const [table, items] = await Promise.all([
     assertTableFromOrganization(database, organizationId, order.tableId),
     getOrderItemsWithModifiers(database, organizationId, order.id),
@@ -1249,19 +1253,22 @@ export async function runDeleteRestaurantTable(
     organizationId: auth.organizationId,
     user: { id: auth.userId },
   });
-  const [orderRow] = await db
+  const [openOrderRow] = await db
     .select({ id: restaurantOrder.id })
     .from(restaurantOrder)
     .where(
       and(
         eq(restaurantOrder.organizationId, auth.organizationId),
-        eq(restaurantOrder.tableId, args.id)
+        eq(restaurantOrder.tableId, args.id),
+        eq(restaurantOrder.status, "open")
       )
     )
     .limit(1);
 
-  if (orderRow) {
-    throw new Error("No puedes eliminar una mesa que ya tiene historial.");
+  if (openOrderRow) {
+    throw new Error(
+      "No puedes eliminar una mesa que tiene una orden abierta. Cierra o cancela la orden primero."
+    );
   }
 
   await db
@@ -1272,4 +1279,47 @@ export async function runDeleteRestaurantTable(
         eq(restaurantTable.id, args.id)
       )
     );
+}
+
+export async function runCancelRestaurantOrder(
+  db: RestaurantDbExecutor,
+  args: z.infer<typeof CancelRestaurantOrderInputSchema>,
+  auth: RestaurantAuth
+) {
+  await requireRestaurantModuleAccess({
+    db,
+    organizationId: auth.organizationId,
+  });
+  const organizationId = auth.organizationId;
+  const order = await getOpenOrderById(db, organizationId, args.orderId);
+
+  const now = new Date();
+
+  await Promise.all([
+    db
+      .update(restaurantOrderItem)
+      .set({
+        status: "cancelled",
+        cancelledAt: now,
+        updatedAt: now,
+      })
+      .where(
+        and(
+          eq(restaurantOrderItem.organizationId, organizationId),
+          eq(restaurantOrderItem.orderId, order.id),
+          isNull(restaurantOrderItem.cancelledAt)
+        )
+      ),
+    db
+      .update(restaurantOrder)
+      .set({
+        status: "cancelled",
+        closedByUserId: auth.userId,
+        closedAt: now,
+        updatedAt: now,
+      })
+      .where(eq(restaurantOrder.id, order.id)),
+  ]);
+
+  return { success: true };
 }

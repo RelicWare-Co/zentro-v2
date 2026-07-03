@@ -6,6 +6,7 @@ import type { CartItem, CartItemModifier, Product } from "@/features/pos/types";
 import { calculateCartTotals } from "@/features/pos/utils";
 import {
   useAddRestaurantOrderItemMutation,
+  useCancelRestaurantOrderMutation,
   useCloseRestaurantOrderMutation,
   useDeleteRestaurantDraftItemMutation,
   useRestaurantTableDetail,
@@ -78,6 +79,7 @@ export function usePosTableOrder(
   const deleteDraftItemMutation = useDeleteRestaurantDraftItemMutation();
   const sendToKitchenMutation = useSendRestaurantOrderToKitchenMutation();
   const closeOrderMutation = useCloseRestaurantOrderMutation();
+  const cancelOrderMutation = useCancelRestaurantOrderMutation();
 
   const activeItems = useMemo(
     () => openOrder?.items.filter((item) => item.status !== "cancelled") ?? [],
@@ -316,6 +318,23 @@ export function usePosTableOrder(
     [openOrder, closeOrderMutation]
   );
 
+  const cancelTableOrder = useCallback(async () => {
+    if (!openOrder) {
+      throw new Error("La mesa no tiene una cuenta abierta.");
+    }
+    try {
+      await cancelOrderMutation.mutateAsync({ orderId: openOrder.id });
+      exitTable();
+    } catch (error) {
+      notifications.show({
+        title: "No se pudo cancelar la orden",
+        message: getErrorDescription(error, "Inténtalo de nuevo."),
+        color: "red",
+      });
+      throw error;
+    }
+  }, [openOrder, cancelOrderMutation, exitTable]);
+
   return {
     activeTableId,
     table,
@@ -333,10 +352,13 @@ export function usePosTableOrder(
     removeItem,
     sendToKitchen,
     closeTableOrder,
+    cancelTableOrder,
     isAddingItem: addItemMutation.isPending,
     isSendingToKitchen: sendToKitchenMutation.isPending,
     isClosingOrder: closeOrderMutation.isPending,
+    isCancellingOrder: cancelOrderMutation.isPending,
     closeOrderError: closeOrderMutation.error,
+    cancelOrderError: cancelOrderMutation.error,
   };
 }
 
