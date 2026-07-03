@@ -57,7 +57,7 @@ export function PosV1Layout() {
   };
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-[var(--color-void)] text-[var(--color-photon)]">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-[var(--color-page-bg)] text-[var(--color-photon)]">
       <PosHeader
         activeShift={state.activeShift}
         customers={state.customers}
@@ -77,7 +77,7 @@ export function PosV1Layout() {
       />
 
       <div className="flex min-h-0 flex-1 overflow-hidden">
-        <div className="relative flex min-h-0 min-w-0 flex-1 overflow-hidden">
+        <div className="relative flex min-h-0 min-w-0 flex-1 overflow-hidden bg-[var(--color-page-bg)]">
           <ProductGrid
             className={isMobile ? "border-r-0" : undefined}
             shouldAutoFocusSearch={
@@ -94,6 +94,7 @@ export function PosV1Layout() {
           <CartPanel
             cart={state.cart}
             isQuickSaleMode={state.isQuickSaleMode}
+            isTableSelectorOpen={state.activeModal === "restaurant-tables"}
             onCheckout={handleCheckout}
             onClearCart={actions.clearCart}
             onExitTable={actions.exitTableMode}
@@ -137,6 +138,7 @@ export function PosV1Layout() {
                 cart={state.cart}
                 className="w-full flex-1 border-l-0"
                 isQuickSaleMode={state.isQuickSaleMode}
+                isTableSelectorOpen={state.activeModal === "restaurant-tables"}
                 onCheckout={handleCheckout}
                 onClearCart={actions.clearCart}
                 onExitTable={actions.exitTableMode}

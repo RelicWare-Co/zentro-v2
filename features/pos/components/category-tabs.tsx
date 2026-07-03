@@ -15,18 +15,18 @@ export function CategoryTabs({
   const allCategories = [{ id: "all", name: "Todos" }, ...categories];
   return (
     <ScrollArea className="w-full" scrollbarSize={0} type="never">
-      <div className="flex w-max gap-x-1.5 pb-2">
+      <div className="flex w-max gap-x-2">
         {allCategories.map((category) => (
           <Button
             className={`font-medium ${
               activeCategoryId === category.id
-                ? "border-transparent bg-[var(--color-voltage)] text-black hover:bg-[#c9e605]"
-                : "border-zinc-800 bg-transparent text-zinc-400 hover:bg-zinc-800 hover:text-white"
+                ? "border-[var(--color-voltage)]! bg-[var(--color-voltage)]/10! text-[var(--color-voltage)]!"
+                : "border-zinc-800! bg-transparent! text-zinc-400! hover:bg-zinc-800 hover:text-white"
             }`}
             key={category.id}
             onClick={() => onCategoryChange(category.id)}
-            size="compact-sm"
-            variant={activeCategoryId === category.id ? "filled" : "outline"}
+            size="sm"
+            variant="outline"
           >
             {category.name}
           </Button>
@@ -34,7 +34,7 @@ export function CategoryTabs({
       </div>
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute top-0 right-0 bottom-0 z-10 w-12 bg-gradient-to-l from-[#0a0a0a] via-[#0a0a0a]/80 to-transparent"
+        className="pointer-events-none absolute top-0 right-0 bottom-0 z-10 w-12 bg-gradient-to-l from-[var(--color-page-bg)] via-[var(--color-page-bg)]/80 to-transparent"
       />
     </ScrollArea>
   );

@@ -199,7 +199,7 @@ export function RestaurantPosTables({
       {isOpen ? null : (
         <div className="absolute bottom-4 left-4 z-20">
           <Button
-            className="h-12 rounded-full bg-[var(--color-voltage)] px-5 font-semibold text-black shadow-lg hover:bg-[#d9f15c]"
+            className="h-12 rounded-full bg-[var(--color-voltage)]! px-5 font-semibold text-black! shadow-lg hover:bg-[#d9f15c]"
             leftSection={
               <UtensilsCrossed aria-hidden="true" className="size-5" />
             }

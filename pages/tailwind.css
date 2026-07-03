@@ -41,6 +41,7 @@
   /* Brand Colors */
   --color-void: var(--mantine-color-carbon-9, #0f0f0f);
   --color-carbon: var(--mantine-color-carbon-8, #1c1c1c);
+  --color-page-bg: var(--zentro-color-page-bg, #141414);
   --color-photon: var(--mantine-color-white, #ffffff);
   --color-voltage: var(--mantine-color-voltage-5, #dfff06);
   --color-voltage-hover: var(--mantine-color-voltage-6, #c7e600);
@@ -122,5 +123,27 @@
   .app-safe-y {
     padding-top: var(--safe-area-top);
     padding-bottom: var(--safe-area-bottom);
+  }
+
+  @keyframes cart-slide-in {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes cart-slide-out {
+    from {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    to {
+      transform: translateY(100%);
+      opacity: 0;
+    }
   }
 }

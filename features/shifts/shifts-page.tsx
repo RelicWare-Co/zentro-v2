@@ -92,7 +92,7 @@ function ShiftsPageListSection() {
 
 function ShiftsPageRoot({ children }: { children: ReactNode }) {
   return (
-    <main className="flex min-h-0 flex-1 flex-col gap-6 overflow-hidden bg-[var(--color-void)] p-6 font-sans text-[var(--color-photon)] md:p-8 lg:p-12">
+    <main className="flex min-h-0 flex-1 flex-col gap-6 overflow-hidden bg-[var(--color-page-bg)] p-6 font-sans text-[var(--color-photon)] md:p-8 lg:p-12">
       {children}
     </main>
   );
