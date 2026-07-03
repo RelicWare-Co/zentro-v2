@@ -74,6 +74,15 @@ export function SalesFilterToolbar() {
             <Popover.Target>{filterButton}</Popover.Target>
             <Popover.Dropdown className="space-y-3 p-4">
               <SalesAdvancedFiltersDesktop />
+              <div className="flex justify-end border-zinc-800 border-t pt-3">
+                <Button
+                  onClick={() => actions.setMobileFilterOpen(false)}
+                  type="button"
+                  variant="outline"
+                >
+                  Cerrar
+                </Button>
+              </div>
             </Popover.Dropdown>
           </Popover>
         )}

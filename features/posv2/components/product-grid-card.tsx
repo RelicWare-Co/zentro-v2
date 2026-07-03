@@ -115,32 +115,33 @@ export function ProductGridCard({
           ) : (
             <span className="block min-h-[12.2px] md:min-h-[13.2px]" />
           )}
-          <button
-            aria-label={
-              product.isFavorite ? "Quitar de favoritos" : "Agregar a favoritos"
-            }
-            aria-pressed={product.isFavorite}
-            className={cn(
-              "rounded p-0.5 disabled:opacity-50",
-              posV2AccentFocusRing
-            )}
-            disabled={meta.isTogglingFavorite}
-            onClick={(event) => {
-              event.stopPropagation();
-              actions.toggleProductFavorite(product.id);
-            }}
-            type="button"
-          >
-            <Heart
-              className={cn(
-                "size-3.5 transition-colors",
-                product.isFavorite
-                  ? "fill-red-500 text-red-500"
-                  : `${posV2IconText} hover:text-red-400`
-              )}
-            />
-          </button>
         </div>
+      </button>
+
+      <button
+        aria-label={
+          product.isFavorite ? "Quitar de favoritos" : "Agregar a favoritos"
+        }
+        aria-pressed={product.isFavorite}
+        className={cn(
+          "absolute right-2 bottom-2 z-10 rounded p-0.5 disabled:opacity-50",
+          posV2AccentFocusRing
+        )}
+        disabled={meta.isTogglingFavorite}
+        onClick={(event) => {
+          event.stopPropagation();
+          actions.toggleProductFavorite(product.id);
+        }}
+        type="button"
+      >
+        <Heart
+          className={cn(
+            "size-3.5 transition-colors",
+            product.isFavorite
+              ? "fill-red-500 text-red-500"
+              : `${posV2IconText} hover:text-red-400`
+          )}
+        />
       </button>
     </div>
   );
