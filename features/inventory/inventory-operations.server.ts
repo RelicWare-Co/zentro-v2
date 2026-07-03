@@ -73,15 +73,14 @@ export async function applyInventoryDeltas(
           and(
             eq(product.id, productId),
             eq(product.organizationId, input.organizationId),
-            isNull(product.deletedAt)
+            isNull(product.deletedAt),
+            sql`${product.stock} + ${deltaQuantity} >= 0`
           )
         )
         .returning({ id: product.id })
         .then((updatedProducts) => {
           if (updatedProducts.length === 0) {
-            throw new Error(
-              `No fue posible actualizar el stock de ${productRow.name}`
-            );
+            throw new Error(`Stock insuficiente para ${productRow.name}`);
           }
           return { productId, deltaQuantity };
         })
