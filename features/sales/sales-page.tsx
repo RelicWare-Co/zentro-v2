@@ -132,7 +132,7 @@ function SalesPageListSection() {
 
 function SalesPageRoot({ children }: { children: ReactNode }) {
   return (
-    <div className="flex-1 space-y-6 bg-[var(--color-void)] p-6 font-sans text-[var(--color-photon)] md:p-8 lg:p-12">
+    <div className="flex-1 space-y-6 bg-[var(--color-page-bg)] p-6 font-sans text-[var(--color-photon)] md:p-8 lg:p-12">
       {children}
     </div>
   );

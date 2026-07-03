@@ -17,7 +17,7 @@ import {
 
 function DashboardPageRoot({ children }: { children: ReactNode }) {
   return (
-    <main className="flex-1 space-y-6 overflow-y-auto bg-[var(--color-void)] p-6 text-[var(--color-photon)] md:p-8 lg:p-12">
+    <main className="flex-1 space-y-6 overflow-y-auto bg-[var(--color-page-bg)] p-6 text-[var(--color-photon)] md:p-8 lg:p-12">
       {children}
     </main>
   );

@@ -67,7 +67,7 @@ export function ProductGrid({
         className
       )}
     >
-      <div className="shrink-0 space-y-4 border-zinc-800/50 border-b bg-[#0a0a0a] p-4">
+      <div className="shrink-0 space-y-4 border-zinc-800/50 p-4">
         <div className="flex items-center gap-4">
           <TextInput
             className="max-w-md flex-1"
@@ -140,7 +140,7 @@ export function ProductGrid({
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto bg-[#0a0a0a] p-4">
+      <div className="min-h-0 flex-1 overflow-y-auto border-zinc-800/50 border-t p-4">
         <div className="h-fit space-y-6 pb-24 md:pb-6">
           {state.viewMode === "grid" ? (
             <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 [&>*]:h-fit">

@@ -36,6 +36,7 @@ export const brandColors = {
   voltageHover: "#c7e600",
   carbon: "#1c1c1c",
   void: "#0f0f0f",
+  pageBg: "#141414",
   posCanvas: "#0a0a0a",
   posPanel: "#111111",
   posSurface: "#151515",
@@ -48,6 +49,7 @@ export const brandColorCssVars = {
   voltageHover: "--mantine-color-voltage-6",
   carbon: "--mantine-color-carbon-8",
   void: "--mantine-color-carbon-9",
+  pageBg: "--zentro-color-page-bg",
   posCanvas: "--zentro-color-pos-canvas",
   posPanel: "--zentro-color-pos-panel",
   posSurface: "--zentro-color-pos-surface",
@@ -235,6 +237,7 @@ export const mantineTheme = createTheme({
 
 export const mantineCssVariablesResolver: CSSVariablesResolver = () => ({
   variables: {
+    [brandColorCssVars.pageBg]: brandColors.pageBg,
     [brandColorCssVars.posCanvas]: brandColors.posCanvas,
     [brandColorCssVars.posPanel]: brandColors.posPanel,
     [brandColorCssVars.posSurface]: brandColors.posSurface,

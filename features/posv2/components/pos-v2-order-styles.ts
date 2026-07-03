@@ -11,6 +11,8 @@ export const posV2AccentSoftBorder =
   "border-[color-mix(in_srgb,var(--color-voltage)_40%,transparent)]!";
 export const posV2AccentHoverBorder =
   "hover:border-[color-mix(in_srgb,var(--color-voltage)_40%,transparent)]!";
+export const posV2AccentSelectedBorder =
+  "border-[color-mix(in_srgb,var(--color-voltage)_40%,transparent)]!";
 export const posV2AccentSoftShadow =
   "hover:shadow-[0_0_20px_color-mix(in_srgb,var(--color-voltage)_8%,transparent)]";
 export const posV2IconText = "text-[#3d3d3d]!";

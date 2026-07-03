@@ -1,12 +1,24 @@
-import { Badge, Button, Drawer, Select, TextInput } from "@mantine/core";
+import {
+  Badge,
+  Button,
+  Drawer,
+  Popover,
+  Select,
+  TextInput,
+} from "@mantine/core";
 import { Filter, Search } from "lucide-react";
 import { ALL_FILTER_VALUE } from "@/features/listing/listing.constants.shared";
-import { ShiftsAdvancedFiltersMobile } from "@/features/shifts/components/shifts-advanced-filters";
+import {
+  ShiftsAdvancedFiltersDesktop,
+  ShiftsAdvancedFiltersMobile,
+} from "@/features/shifts/components/shifts-advanced-filters";
 import { useShiftsPage } from "@/features/shifts/shifts-page-context";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export function ShiftsFilterToolbar() {
   const { state, actions, meta } = useShiftsPage();
   const { filters } = state;
+  const isMobile = useIsMobile();
 
   const filterCountBadge =
     state.activeAdvancedFilterCount > 0 ? (
@@ -18,6 +30,19 @@ export function ShiftsFilterToolbar() {
         {state.activeAdvancedFilterCount}
       </Badge>
     ) : null;
+
+  const filterButton = (
+    <Button
+      className="w-full sm:w-auto"
+      leftSection={<Filter aria-hidden="true" className="size-4" />}
+      onClick={() => actions.setMobileFilterOpen(!state.isMobileFilterOpen)}
+      type="button"
+      variant="outline"
+    >
+      Filtros
+      {filterCountBadge}
+    </Button>
+  );
 
   return (
     <div className="flex shrink-0 flex-col gap-4 border-zinc-800 border-b p-4 lg:flex-row lg:items-center lg:justify-between">
@@ -33,22 +58,46 @@ export function ShiftsFilterToolbar() {
           />
         </div>
 
-        {/* Mobile: one button opens the bottom drawer with all advanced
-            filters. */}
-        <Button
-          className="w-full sm:hidden"
-          leftSection={<Filter aria-hidden="true" className="size-4" />}
-          onClick={() => actions.setMobileFilterOpen(true)}
-          type="button"
-          variant="outline"
-        >
-          Filtros
-          {filterCountBadge}
-        </Button>
+        {isMobile ? (
+          filterButton
+        ) : (
+          <Popover
+            closeOnEscape
+            onClose={() => actions.setMobileFilterOpen(false)}
+            opened={state.isMobileFilterOpen}
+            position="bottom-start"
+            shadow="md"
+            width={420}
+            withArrow
+          >
+            <Popover.Target>{filterButton}</Popover.Target>
+            <Popover.Dropdown className="space-y-3 p-4">
+              <ShiftsAdvancedFiltersDesktop />
+              <div className="flex gap-3 border-zinc-800 border-t pt-3">
+                <Button
+                  onClick={() => {
+                    actions.clearFilters();
+                    actions.setMobileFilterOpen(false);
+                  }}
+                  type="button"
+                  variant="outline"
+                >
+                  Limpiar
+                </Button>
+                <Button
+                  c="black"
+                  color="voltage.5"
+                  onClick={() => actions.setMobileFilterOpen(false)}
+                  type="button"
+                >
+                  Aplicar
+                </Button>
+              </div>
+            </Popover.Dropdown>
+          </Popover>
+        )}
 
-        {/* Desktop: inline small filters — no big "Filtros" popover.
-            Keeps the quick selects and the applicable date range; less
-            used fields (terminal / movimientos) live only on mobile. */}
+        {/* Desktop: inline small filters */}
         <div className="hidden items-center gap-3 sm:flex">
           <Select
             aria-label="Filtrar por estado"
@@ -143,36 +192,38 @@ export function ShiftsFilterToolbar() {
         ) : null}
       </div>
 
-      <Drawer
-        onClose={() => actions.setMobileFilterOpen(false)}
-        opened={state.isMobileFilterOpen}
-        position="bottom"
-        size="85%"
-        title="Filtros avanzados"
-      >
-        <div className="flex h-full flex-col">
-          <div className="flex-1 overflow-y-auto p-4">
-            <ShiftsAdvancedFiltersMobile />
+      {isMobile ? (
+        <Drawer
+          onClose={() => actions.setMobileFilterOpen(false)}
+          opened={state.isMobileFilterOpen}
+          position="bottom"
+          size="85%"
+          title="Filtros avanzados"
+        >
+          <div className="flex h-full flex-col">
+            <div className="flex-1 overflow-y-auto p-4">
+              <ShiftsAdvancedFiltersMobile />
+            </div>
+            <div className="grid grid-cols-2 gap-3 border-zinc-800 border-t p-4">
+              <Button
+                onClick={actions.clearFilters}
+                type="button"
+                variant="outline"
+              >
+                Limpiar
+              </Button>
+              <Button
+                c="black"
+                color="voltage.5"
+                onClick={actions.applyMobileFilters}
+                type="button"
+              >
+                Aplicar
+              </Button>
+            </div>
           </div>
-          <div className="grid grid-cols-2 gap-3 border-zinc-800 border-t p-4">
-            <Button
-              onClick={actions.clearFilters}
-              type="button"
-              variant="outline"
-            >
-              Limpiar
-            </Button>
-            <Button
-              c="black"
-              color="voltage.5"
-              onClick={actions.applyMobileFilters}
-              type="button"
-            >
-              Aplicar
-            </Button>
-          </div>
-        </div>
-      </Drawer>
+        </Drawer>
+      ) : null}
     </div>
   );
 }

@@ -163,7 +163,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     })
   ) {
     return (
-      <div className="app-safe-area flex min-h-[100dvh] w-full items-center justify-center bg-[var(--color-void)] text-[var(--color-photon)]">
+      <div className="app-safe-area flex min-h-[100dvh] w-full items-center justify-center bg-[var(--color-page-bg)] text-[var(--color-photon)]">
         <Loader2 className="size-8 animate-spin text-[var(--color-voltage)]" />
       </div>
     );
@@ -199,7 +199,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const lockMainScroll = isFullHeightRoute(pageContext.urlPathname);
 
   return (
-    <div className="app-safe-area flex h-dvh max-h-dvh overflow-hidden bg-[var(--color-void)] text-[var(--color-photon)]">
+    <div className="app-safe-area flex h-dvh max-h-dvh overflow-hidden bg-[var(--color-page-bg)] text-[var(--color-photon)]">
       {isSidebarOpen ? (
         <button
           aria-label="Cerrar navegación"

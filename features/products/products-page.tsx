@@ -32,7 +32,7 @@ import {
 
 function ProductsPageRoot({ children }: { children: ReactNode }) {
   return (
-    <main className="space-y-6 bg-[var(--color-void)] p-6 text-[var(--color-photon)] md:p-8 lg:p-12">
+    <main className="space-y-6 bg-[var(--color-page-bg)] p-6 text-[var(--color-photon)] md:p-8 lg:p-12">
       {children}
     </main>
   );
