@@ -26,6 +26,25 @@ describe("getStockStatus", () => {
     ).toBe("out");
   });
 
+  test("returns debt when stock is negative", () => {
+    expect(
+      getStockStatus({
+        trackInventory: true,
+        stock: -1,
+        minStock: 3,
+        lowStockThreshold: 5,
+      })
+    ).toBe("debt");
+    expect(
+      getStockStatus({
+        trackInventory: true,
+        stock: -50,
+        minStock: null,
+        lowStockThreshold: 5,
+      })
+    ).toBe("debt");
+  });
+
   test("uses per-product minStock when set", () => {
     expect(
       getStockStatus({

@@ -1,4 +1,4 @@
-export type StockStatus = "untracked" | "out" | "low" | "ok";
+export type StockStatus = "untracked" | "debt" | "out" | "low" | "ok";
 
 export interface StockStatusInput {
   lowStockThreshold: number;
@@ -27,7 +27,10 @@ export function getStockStatus(input: StockStatusInput): StockStatus {
   }
 
   const stock = Math.trunc(input.stock);
-  if (stock <= 0) {
+  if (stock < 0) {
+    return "debt";
+  }
+  if (stock === 0) {
     return "out";
   }
 
@@ -41,6 +44,7 @@ export function getStockStatus(input: StockStatusInput): StockStatus {
 
 export const STOCK_STATUS_LABELS: Record<StockStatus, string> = {
   untracked: "Sin seguimiento",
+  debt: "Stock negativo",
   out: "Sin stock",
   low: "Stock bajo",
   ok: "En stock",

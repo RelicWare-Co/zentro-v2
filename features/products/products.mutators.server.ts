@@ -70,13 +70,6 @@ export const productsServerMutators = {
         deltaQuantity = baseQuantity - currentStock;
       }
 
-      const nextStock = currentStock + deltaQuantity;
-      if (nextStock < 0) {
-        throw new Error(
-          `Stock insuficiente para ${targetProduct.name}. Disponible: ${currentStock}`
-        );
-      }
-
       const stockDeltas = new Map<string, number>([
         [targetProduct.id, deltaQuantity],
       ]);

@@ -28,6 +28,7 @@ export function ProductStockBadge({
   }
 
   const classNameByStatus = {
+    debt: "border-red-500/30 bg-red-500/15 text-red-400",
     out: "border-red-500/20 bg-red-500/10 text-red-300",
     low: "border-amber-500/20 bg-amber-500/10 text-amber-300",
     ok: "border-emerald-500/20 bg-emerald-500/10 text-emerald-300",

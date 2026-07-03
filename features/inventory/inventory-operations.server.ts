@@ -3,7 +3,7 @@
 // Sales, cancellations, and product mutator overrides import from here
 // instead of redefining stock delta + movement logic.
 
-import { and, eq, gte, isNull, sql } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import type { Database } from "@/database/drizzle/db";
 import {
   inventoryMovement,
@@ -73,10 +73,7 @@ export async function applyInventoryDeltas(
           and(
             eq(product.id, productId),
             eq(product.organizationId, input.organizationId),
-            isNull(product.deletedAt),
-            deltaQuantity < 0
-              ? gte(product.stock, Math.abs(deltaQuantity))
-              : undefined
+            isNull(product.deletedAt)
           )
         )
         .returning({ id: product.id })

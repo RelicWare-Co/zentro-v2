@@ -1,21 +1,12 @@
 # Plan 003: Enforce the stock invariant in the sale path and back money invariants with DB constraints
 
-> **Executor instructions**: Follow this plan step by step. Run every
-> verification command and confirm the expected result before moving to the
-> next step. If anything in the "STOP conditions" section occurs, stop and
-> report — do not improvise. When done, update the status row for this plan
-> in `plans/README.md` — unless a reviewer dispatched you and told you they
-> maintain the index.
->
-> **Drift check (run first)**: `git diff --stat d97b06e..HEAD -- server/sales database/drizzle/schema src/zero tests/`
-> If any in-scope file changed since this plan was written, compare the
-> "Current state" excerpts against the live code before proceeding; on a
-> mismatch, treat it as a STOP condition.
->
-> **⚠ Product decision embedded in this plan**: it makes sales REJECT when a
-> tracked product lacks stock, matching the rule the inventory module already
-> enforces. If the maintainer wants POS overselling allowed, this plan must
-> not be executed as-is — see STOP conditions.
+> **⚠ SUPERSEDED (2026-07-03)**: The product decision was made to allow
+> overselling — tracked product stock can now go negative for both sales and
+> manual inventory movements. The stock non-negativity guards were removed from
+> `applyInventoryDeltas`, `products.mutators.server.ts`, and
+> `products.mutators.ts`. A `"debt"` stock status was added to the UI to display
+> negative stock clearly. This plan is retained for historical context but
+> should not be executed as-is.
 
 ## Status
 

@@ -11,6 +11,7 @@ import { useProductsPage } from "@/features/products/products-page-context";
 
 const STOCK_FILTER_LABELS: Record<ProductStockFilterValue, string> = {
   all: "Todos los estados",
+  debt: "Stock negativo",
   out: "Sin stock",
   low: "Stock bajo",
   ok: "En stock",

@@ -22,7 +22,7 @@ function productsPageStockFilterHref(
     minStock: product.minStock,
     lowStockThreshold,
   });
-  return status === "out" || status === "low"
+  return status === "out" || status === "low" || status === "debt"
     ? `/products?stock=${status}`
     : "/products?stock=low";
 }

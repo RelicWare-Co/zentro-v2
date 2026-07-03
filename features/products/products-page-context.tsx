@@ -89,7 +89,7 @@ export interface ProductsPageActions {
     price: number;
     cost: number;
     taxRate: number;
-    stock: number;
+    stock?: number;
     minStock: number | null;
     reorderQuantity: number | null;
     trackInventory: boolean;
@@ -171,7 +171,10 @@ export function ProductsPageProvider({ children }: { children: ReactNode }) {
       const stockParam = new URLSearchParams(window.location.search).get(
         "stock"
       );
-      return stockParam === "low" || stockParam === "out" || stockParam === "ok"
+      return stockParam === "low" ||
+        stockParam === "out" ||
+        stockParam === "ok" ||
+        stockParam === "debt"
         ? (stockParam as ProductStockFilterValue)
         : "all";
     }
@@ -410,7 +413,7 @@ export function ProductsPageProvider({ children }: { children: ReactNode }) {
       price: number;
       cost: number;
       taxRate: number;
-      stock: number;
+      stock?: number;
       minStock: number | null;
       reorderQuantity: number | null;
       trackInventory: boolean;
