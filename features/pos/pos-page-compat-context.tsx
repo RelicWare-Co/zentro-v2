@@ -45,6 +45,7 @@ export interface PosPageState {
   checkoutError: Error | null;
   customers: PosCustomer[];
   discountInput: string;
+  hasDiscountError: boolean;
   hasNextPage: boolean;
   hasPaymentDifference: boolean;
   isActiveShift: boolean;
@@ -242,6 +243,7 @@ export function PosPageCompatProvider({ children }: { children: ReactNode }) {
     checkoutError,
     finalizeSale,
     handleQuickSale,
+    hasDiscountError,
     hasPaymentDifference,
     isCreditSale,
     isProcessingCheckout,
@@ -272,6 +274,7 @@ export function PosPageCompatProvider({ children }: { children: ReactNode }) {
         customers,
         discountInput: activeMode.discountInput,
         hasNextPage: !!hasNextPage,
+        hasDiscountError,
         hasPaymentDifference,
         isActiveShift,
         isActiveShiftLoading,
@@ -371,6 +374,7 @@ export function PosPageCompatProvider({ children }: { children: ReactNode }) {
       categories,
       customers,
       hasNextPage,
+      hasDiscountError,
       isActiveShift,
       isActiveShiftLoading,
       isBootstrapLoading,

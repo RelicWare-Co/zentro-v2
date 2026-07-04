@@ -21,6 +21,7 @@ export interface PosCheckoutContextValue {
   checkoutError: Error | null;
   finalizeSale: () => void;
   handleQuickSale: () => void;
+  hasDiscountError: boolean;
   hasPaymentDifference: boolean;
   isCreditSale: boolean;
   isProcessingCheckout: boolean;
@@ -103,11 +104,17 @@ export function PosCheckoutProvider({ children }: { children: ReactNode }) {
       return;
     }
     const shiftId = activeShift?.id;
-    if (!shiftId) {
+    if (!shiftId || checkout.hasDiscountError) {
       return;
     }
     activeMode.quickSale(buildFinalizeOptions(shiftId)).catch(() => undefined);
-  }, [requireActiveShift, activeShift?.id, activeMode, buildFinalizeOptions]);
+  }, [
+    requireActiveShift,
+    activeShift?.id,
+    activeMode,
+    buildFinalizeOptions,
+    checkout.hasDiscountError,
+  ]);
 
   const value: PosCheckoutContextValue = {
     addPaymentMethod: checkout.addPaymentMethod,
@@ -117,6 +124,7 @@ export function PosCheckoutProvider({ children }: { children: ReactNode }) {
     checkoutError: checkout.error ?? activeMode.error,
     finalizeSale,
     handleQuickSale,
+    hasDiscountError: checkout.hasDiscountError,
     hasPaymentDifference: checkout.hasPaymentDifference,
     isCreditSale: checkout.isCreditSale,
     isProcessingCheckout: activeMode.isProcessing,

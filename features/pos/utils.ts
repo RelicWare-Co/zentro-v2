@@ -112,6 +112,11 @@ export function calculateCartTotals(
     return lineSubtotal + modifiersSubtotal - item.discountAmount;
   });
 
+  const maxSaleDiscount = taxableBasesBeforeSaleDiscount.reduce(
+    (sum, base) => sum + base,
+    0
+  );
+
   const saleDiscountAllocations = allocateProportionalDiscount(
     taxableBasesBeforeSaleDiscount,
     saleDiscountAmount
@@ -142,6 +147,7 @@ export function calculateCartTotals(
     tax,
     saleDiscountAmount,
     itemsDiscountAmount,
+    maxSaleDiscount,
     discountAmount,
     totalAmount,
   };

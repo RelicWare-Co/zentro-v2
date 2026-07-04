@@ -72,6 +72,7 @@ export interface SaleModeCheckoutState {
   canReturnCashChange: boolean;
   cashChangeDue: number;
   error: Error | null;
+  hasDiscountError: boolean;
   hasPaymentDifference: boolean;
   isCreditSale: boolean;
   isProcessing: boolean;

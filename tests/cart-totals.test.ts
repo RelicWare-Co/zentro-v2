@@ -177,4 +177,31 @@ describe("calculateCartTotals", () => {
     expect(totals.discountAmount).toBe(2);
     expect(totals.totalAmount).toBe(0);
   });
+
+  test("sale-level discount exceeds taxable base — maxSaleDiscount exposes the limit, totalAmount clamps to 0", () => {
+    const items = [
+      makeItem({
+        product: makeProduct({ price: 10_000, taxRate: 19 }),
+        quantity: 1,
+      }),
+    ];
+    const totals = calculateCartTotals(items, "15000");
+    expect(totals.maxSaleDiscount).toBe(10_000);
+    expect(totals.saleDiscountAmount).toBe(15_000);
+    expect(totals.totalAmount).toBe(0);
+  });
+
+  test("sale-level discount exceeds taxable base with item-level discounts — maxSaleDiscount reflects net base", () => {
+    const items = [
+      makeItem({
+        product: makeProduct({ price: 10_000, taxRate: 0 }),
+        quantity: 1,
+        discountAmount: 3000,
+      }),
+    ];
+    const totals = calculateCartTotals(items, "8000");
+    expect(totals.maxSaleDiscount).toBe(7000);
+    expect(totals.saleDiscountAmount).toBe(8000);
+    expect(totals.totalAmount).toBe(0);
+  });
 });

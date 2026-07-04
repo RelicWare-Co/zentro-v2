@@ -1,7 +1,8 @@
-import { TextInput } from "@mantine/core";
+import { Text, TextInput } from "@mantine/core";
 import { ChevronRight, Tag } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { usePosPage } from "@/features/pos/pos-page-context";
+import { formatCurrency } from "@/features/pos/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn, formatMoneyInput, sanitizeMoneyInput } from "@/lib/utils";
 
@@ -70,25 +71,33 @@ export function CheckoutDiscountSection({
       </button>
 
       {isDiscountEnabled ? (
-        <TextInput
-          autoComplete="off"
-          classNames={{
-            input: cn(
-              "h-10 touch-manipulation border-zinc-700! bg-[#151515]! text-base text-white! focus-visible:border-[var(--color-voltage)]! md:text-sm",
-              inputClassName
-            ),
-          }}
-          id={discountInputId}
-          inputMode="numeric"
-          leftSection={<span className="text-zinc-500">$</span>}
-          onChange={(event) =>
-            actions.setDiscountInput(sanitizeMoneyInput(event.target.value))
-          }
-          placeholder="0"
-          ref={discountInputRef}
-          type="text"
-          value={formatMoneyInput(state.discountInput)}
-        />
+        <div className="space-y-1">
+          <TextInput
+            autoComplete="off"
+            classNames={{
+              input: cn(
+                "h-10 touch-manipulation border-zinc-700! bg-[#151515]! text-base text-white! focus-visible:border-[var(--color-voltage)]! md:text-sm",
+                inputClassName
+              ),
+            }}
+            id={discountInputId}
+            inputMode="numeric"
+            leftSection={<span className="text-zinc-500">$</span>}
+            onChange={(event) =>
+              actions.setDiscountInput(sanitizeMoneyInput(event.target.value))
+            }
+            placeholder="0"
+            ref={discountInputRef}
+            type="text"
+            value={formatMoneyInput(state.discountInput)}
+          />
+          {state.hasDiscountError ? (
+            <Text className="text-red-400 text-xs">
+              El descuento no puede superar{" "}
+              {formatCurrency(state.totals.maxSaleDiscount)}
+            </Text>
+          ) : null}
+        </div>
       ) : null}
     </div>
   );
