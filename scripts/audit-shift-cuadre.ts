@@ -532,7 +532,7 @@ function buildPipelineScenarios(): PipelineScenario[] {
           createdAt: 2000,
         },
       ],
-      sales: [{ status: "completed", totalAmount: 10_000 }],
+      sales: [{ id: "test-sale-1", status: "completed", totalAmount: 10_000 }],
     }),
     expectedCash: 62_000,
     expectedTotalPayments: 15_000,
@@ -561,8 +561,8 @@ function buildPipelineScenarios(): PipelineScenario[] {
       ],
       cashMovements: [],
       sales: [
-        { status: "completed", totalAmount: 10_000 },
-        { status: "cancelled", totalAmount: 5000 },
+        { id: "test-sale-1", status: "completed", totalAmount: 10_000 },
+        { id: "test-sale-cancelled", status: "cancelled", totalAmount: 5000 },
       ],
     }),
     expectedCash: 20_000,
@@ -650,8 +650,8 @@ function buildPipelineScenarios(): PipelineScenario[] {
         },
       ],
       sales: [
-        { status: "completed", totalAmount: 10_000 },
-        { status: "completed", totalAmount: 7000 },
+        { id: "test-sale-1", status: "completed", totalAmount: 10_000 },
+        { id: "test-sale-2", status: "completed", totalAmount: 7000 },
       ],
     }),
     expectedCash: 40_000,
@@ -823,7 +823,7 @@ function buildDescuadreScenarios(): DescuadreScenario[] {
           sale: { totalAmount: 10_000, status: "completed" },
         },
       ],
-      sales: [{ status: "completed", totalAmount: 10_000 }],
+      sales: [{ id: "test-sale-1", status: "completed", totalAmount: 10_000 }],
     }),
     shiftWithoutSaleRelation: makeShiftWithRelations({
       startingCash: 50_000,
@@ -871,9 +871,9 @@ function buildDescuadreScenarios(): DescuadreScenario[] {
         },
       ],
       sales: [
-        { status: "completed", totalAmount: 10_000 },
-        { status: "completed", totalAmount: 5000 },
-        { status: "completed", totalAmount: 10_000 },
+        { id: "test-sale-1", status: "completed", totalAmount: 10_000 },
+        { id: "test-sale-3", status: "completed", totalAmount: 5000 },
+        { id: "test-sale-1", status: "completed", totalAmount: 10_000 },
       ],
     }),
     shiftWithoutSaleRelation: makeShiftWithRelations({

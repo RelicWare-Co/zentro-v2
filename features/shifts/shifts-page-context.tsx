@@ -4,6 +4,7 @@ import {
   use,
   useCallback,
   useDeferredValue,
+  useEffect,
   useId,
   useMemo,
   useState,
@@ -12,7 +13,11 @@ import { useCursorListPagination } from "@/features/listing/hooks/use-cursor-lis
 import { DEFAULT_LIST_LIMIT } from "@/features/listing/listing.constants.shared";
 import { buildListRangeLabel } from "@/features/listing/listing-formatters.shared";
 import { createPaymentMethodLabelMap } from "@/features/pos/utils";
-import { useShiftsList } from "@/features/shifts/hooks/use-shifts";
+import { useShiftDetailState } from "@/features/shifts/hooks/use-shift-detail-state";
+import {
+  useShiftDetail,
+  useShiftsList,
+} from "@/features/shifts/hooks/use-shifts";
 import { useShiftsListParams } from "@/features/shifts/hooks/use-shifts-list-params";
 import type {
   ShiftListCursor,
@@ -51,11 +56,13 @@ export interface ShiftsPageState {
   filterOptions: ShiftsPageFilterOptions;
   filters: ShiftsPageFilters;
   hasMoreResults: boolean;
+  isDetailOpen: boolean;
   isMobileFilterOpen: boolean;
   nextCursor: ShiftListCursor | null;
   pageIndex: number;
   pageSize: number;
   rangeLabel: string;
+  selectedShiftId: string | null;
   shifts: ShiftListItem[];
   summary: ShiftsPageSummary;
   totalResults: number | null | undefined;
@@ -67,7 +74,9 @@ export interface ShiftsPageActions {
   clearFilters: () => void;
   goToNextPage: () => void;
   goToPreviousPage: () => void;
+  openShiftDetail: (shiftId: string) => void;
   setCashierId: (value: string) => void;
+  setDetailOpen: (open: boolean) => void;
   setDifferenceStatus: (value: string) => void;
   setEndDate: (value: string) => void;
   setHasMovements: (value: string) => void;
@@ -93,6 +102,7 @@ export interface ShiftsPageMeta {
     endDate: string;
   };
   paymentMethodLabels: Record<string, string>;
+  shiftDetailQuery: ReturnType<typeof useShiftDetail>;
   shiftsQuery: ReturnType<typeof useShiftsList>;
 }
 
@@ -135,6 +145,7 @@ export function ShiftsPageProvider({ children }: { children: ReactNode }) {
   const [pageSize, setPageSizeState] = useState(DEFAULT_LIST_LIMIT);
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+  const [shiftDetailState, dispatchShiftDetail] = useShiftDetailState();
 
   const shiftsFilterKey = useMemo(
     () =>
@@ -196,6 +207,30 @@ export function ShiftsPageProvider({ children }: { children: ReactNode }) {
   const totalResults = shiftsQuery.data?.total;
   const hasMoreResults = shiftsQuery.data?.hasMore ?? false;
   const nextCursor = shiftsQuery.data?.nextCursor ?? null;
+
+  const { isOpen: isDetailOpen, selectedShiftId } = shiftDetailState;
+  const shiftDetailQuery = useShiftDetail(
+    isDetailOpen ? selectedShiftId : null
+  );
+
+  useEffect(() => {
+    dispatchShiftDetail({
+      type: "sync",
+      fallbackShiftId: shifts[0]?.id ?? null,
+      shiftIds: new Set(shifts.map((s) => s.id)),
+    });
+  }, [shifts, dispatchShiftDetail]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const shiftIdParam = params.get("shiftId");
+    if (shiftIdParam) {
+      dispatchShiftDetail({ type: "open", shiftId: shiftIdParam });
+      params.delete("shiftId");
+      const newUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ""}`;
+      window.history.replaceState({}, "", newUrl);
+    }
+  }, [dispatchShiftDetail]);
 
   const summary = useMemo(
     () =>
@@ -293,6 +328,22 @@ export function ShiftsPageProvider({ children }: { children: ReactNode }) {
     }
   }, [goToNextPageWithCursor, nextCursor]);
 
+  const openShiftDetail = useCallback(
+    (shiftId: string) => {
+      dispatchShiftDetail({ type: "open", shiftId });
+    },
+    [dispatchShiftDetail]
+  );
+
+  const setDetailOpen = useCallback(
+    (open: boolean) => {
+      if (!open) {
+        dispatchShiftDetail({ type: "close" });
+      }
+    },
+    [dispatchShiftDetail]
+  );
+
   const value = useMemo<ShiftsPageContextValue>(
     () => ({
       state: {
@@ -319,6 +370,8 @@ export function ShiftsPageProvider({ children }: { children: ReactNode }) {
         activeFilterCount,
         activeAdvancedFilterCount,
         isMobileFilterOpen,
+        isDetailOpen,
+        selectedShiftId,
       },
       actions: {
         setSearchQuery,
@@ -337,6 +390,8 @@ export function ShiftsPageProvider({ children }: { children: ReactNode }) {
         applyDesktopFilters,
         goToPreviousPage,
         goToNextPage,
+        openShiftDetail,
+        setDetailOpen,
       },
       meta: {
         paymentMethodLabels,
@@ -351,6 +406,7 @@ export function ShiftsPageProvider({ children }: { children: ReactNode }) {
           startDate: startDateIdField,
           endDate: endDateIdField,
         },
+        shiftDetailQuery,
         shiftsQuery,
       },
     }),
@@ -376,6 +432,8 @@ export function ShiftsPageProvider({ children }: { children: ReactNode }) {
       activeFilterCount,
       activeAdvancedFilterCount,
       isMobileFilterOpen,
+      isDetailOpen,
+      selectedShiftId,
       setPageSize,
       clearFilters,
       applyMobileFilters,
@@ -392,7 +450,10 @@ export function ShiftsPageProvider({ children }: { children: ReactNode }) {
       hasMovementsIdField,
       startDateIdField,
       endDateIdField,
+      shiftDetailQuery,
       shiftsQuery,
+      openShiftDetail,
+      setDetailOpen,
     ]
   );
 

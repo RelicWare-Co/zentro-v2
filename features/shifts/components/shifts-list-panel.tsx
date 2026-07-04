@@ -4,7 +4,7 @@ import { ShiftListItemCard } from "@/features/shifts/components/shift-list-item"
 import { useShiftsPage } from "@/features/shifts/shifts-page-context";
 
 function ShiftsListContent() {
-  const { state, meta } = useShiftsPage();
+  const { state, actions, meta } = useShiftsPage();
   const shiftsQuery = meta.shiftsQuery;
 
   if (shiftsQuery.isLoading && !shiftsQuery.isPlaceholderData) {
@@ -46,7 +46,9 @@ function ShiftsListContent() {
     <div className="space-y-4">
       {state.shifts.map((shift) => (
         <ShiftListItemCard
+          isSelected={shift.id === state.selectedShiftId}
           key={shift.id}
+          onSelect={actions.openShiftDetail}
           paymentMethodLabels={meta.paymentMethodLabels}
           shift={shift}
         />

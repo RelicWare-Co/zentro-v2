@@ -17,7 +17,13 @@ function applyShiftRelations<T extends ReturnType<typeof zql.shift.where>>(
       cashMovementQuery.orderBy("createdAt", "desc").orderBy("id", "desc")
     )
     .related("closures")
-    .related("sales")
+    .related("sales", (saleQuery) =>
+      saleQuery.related("items", (itemQuery) =>
+        itemQuery.related("product", (productQuery) =>
+          productQuery.related("category")
+        )
+      )
+    )
     .related("payments", (paymentQuery) =>
       paymentQuery
         .related("sale")

@@ -29,7 +29,12 @@ export function usePosShiftContext() {
 
 export function PosShiftProvider({ children }: { children: ReactNode }) {
   const { paymentMethodOptions } = usePosCatalog();
-  const { activeModal, closeActiveModal, openActiveModal } = usePosModal();
+  const {
+    activeModal,
+    closeActiveModal,
+    openActiveModal,
+    showPostCloseConfirmation,
+  } = usePosModal();
 
   const { data: activeShiftData, isLoading: isActiveShiftLoading } =
     useActiveShift();
@@ -40,7 +45,8 @@ export function PosShiftProvider({ children }: { children: ReactNode }) {
     activeShift,
     paymentMethodOptions,
     isPosModalOpen(activeModal, POS_MODAL_IDS.CLOSE_SHIFT),
-    closeActiveModal
+    closeActiveModal,
+    showPostCloseConfirmation
   );
 
   const requireActiveShift = useCallback(() => {

@@ -3,6 +3,7 @@ import { CircleDollarSign, Clock3, Receipt, Store, Wallet } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link } from "@/components/link";
 import { formatCurrency } from "@/features/pos/utils";
+import { ShiftDetailSheet } from "@/features/shifts/components/shift-detail-sheet";
 import { ShiftsFilterToolbar } from "@/features/shifts/components/shifts-filter-toolbar";
 import { ShiftsListPanel } from "@/features/shifts/components/shifts-list-panel";
 import { ShiftsCompactMetricCard } from "@/features/shifts/components/shifts-ui-primitives";
@@ -100,11 +101,14 @@ function ShiftsPageRoot({ children }: { children: ReactNode }) {
 
 function ShiftsPageLayout() {
   return (
-    <ShiftsPageRoot>
-      <ShiftsPageHeader />
-      <ShiftsPageMetrics />
-      <ShiftsPageListSection />
-    </ShiftsPageRoot>
+    <>
+      <ShiftsPageRoot>
+        <ShiftsPageHeader />
+        <ShiftsPageMetrics />
+        <ShiftsPageListSection />
+      </ShiftsPageRoot>
+      <ShiftDetailSheet />
+    </>
   );
 }
 

@@ -51,8 +51,25 @@ export interface ShiftWithRelations {
     sale?: { totalAmount?: number | null; status?: string | null } | null;
   }>;
   sales?: Array<{
+    id: string;
     status?: string | null;
     totalAmount?: number | null;
+    items?: Array<{
+      id: string;
+      productId: string;
+      quantity: number;
+      unitPrice: number;
+      subtotal: number;
+      taxAmount: number;
+      discountAmount: number;
+      totalAmount: number;
+      product?: {
+        id: string;
+        name: string;
+        categoryId: string;
+        category?: { id: string; name: string } | null;
+      } | null;
+    }>;
   }>;
   startingCash?: number | null;
   status?: string | null;
@@ -225,7 +242,10 @@ export function buildExpectedAmountsByMethod(
   return expectedByMethod;
 }
 
-function buildShiftOperations(sales: ShiftWithRelations["sales"] | undefined) {
+function buildShiftOperations(
+  sales: ShiftWithRelations["sales"] | undefined,
+  payments: Array<{ saleId: string | null; appliedAmount: number | null }>
+) {
   const operations = {
     paidSalesCount: 0,
     paidSalesAmount: 0,
@@ -234,6 +254,15 @@ function buildShiftOperations(sales: ShiftWithRelations["sales"] | undefined) {
     creditSalesCount: 0,
     creditSalesAmount: 0,
   };
+
+  const paidBySale = new Map<string, number>();
+  for (const payment of payments) {
+    if (!payment.saleId) {
+      continue;
+    }
+    const current = paidBySale.get(payment.saleId) ?? 0;
+    paidBySale.set(payment.saleId, current + (payment.appliedAmount ?? 0));
+  }
 
   for (const row of sales ?? []) {
     switch (row.status) {
@@ -245,10 +274,14 @@ function buildShiftOperations(sales: ShiftWithRelations["sales"] | undefined) {
         operations.cancelledSalesCount += 1;
         operations.cancelledSalesAmount += normalizeNumber(row.totalAmount);
         break;
-      case "credit":
+      case "credit": {
         operations.creditSalesCount += 1;
-        operations.creditSalesAmount += normalizeNumber(row.totalAmount);
+        const totalAmount = normalizeNumber(row.totalAmount);
+        const paidAmount = paidBySale.get(row.id) ?? 0;
+        const balanceDue = Math.max(totalAmount - paidAmount, 0);
+        operations.creditSalesAmount += balanceDue;
         break;
+      }
       default:
         break;
     }
@@ -333,16 +366,25 @@ export function buildShiftListItem(shift: ShiftWithRelations): ShiftListItem {
       amount: movementRow.amount,
     }))
   );
-  const paymentBreakdown = [...expectedByMethod.entries()]
-    .map(([method, amount]) => ({ method, amount }))
-    .sort((left, right) => comparePaymentMethodIds(left.method, right.method));
-  const operations = buildShiftOperations(shift.sales);
-  const totalPayments = payments.reduce(
-    (total, paymentRow) => total + paymentRow.amount,
+  const totalExpected = [...expectedByMethod.values()].reduce(
+    (total, amount) => total + amount,
     0
   );
-  const totalExpected = paymentBreakdown.reduce(
-    (total, current) => total + current.amount,
+  const paymentBreakdown = [...expectedByMethod.entries()]
+    .map(([method, amount]) => ({
+      method,
+      amount:
+        method === "cash"
+          ? amount - normalizeNumber(shift.startingCash)
+          : amount,
+    }))
+    .sort((left, right) => comparePaymentMethodIds(left.method, right.method));
+  const operations = buildShiftOperations(
+    shift.sales,
+    payments.map((p) => ({ saleId: p.saleId, appliedAmount: p.appliedAmount }))
+  );
+  const totalPayments = payments.reduce(
+    (total, paymentRow) => total + paymentRow.amount,
     0
   );
   const totalActual = closures.reduce(
@@ -377,6 +419,190 @@ export function buildShiftListItem(shift: ShiftWithRelations): ShiftListItem {
       totalActual,
       totalDifference,
     },
+  };
+}
+
+export interface ShiftProductSummaryPayment {
+  amount: number;
+  method: string;
+}
+
+export interface ShiftProductSummaryItem {
+  categoryId: string;
+  categoryName: string;
+  payments: ShiftProductSummaryPayment[];
+  productId: string;
+  productName: string;
+  quantity: number;
+  totalAmount: number;
+  unitPrice: number;
+}
+
+export interface ShiftCategorySummary {
+  categoryId: string;
+  categoryName: string;
+  quantity: number;
+  totalAmount: number;
+}
+
+export interface ShiftProductSummary {
+  categories: ShiftCategorySummary[];
+  products: ShiftProductSummaryItem[];
+  totalAmount: number;
+  totalItems: number;
+}
+
+function buildSalePaymentMap(
+  payments: ShiftWithRelations["payments"]
+): Map<string, Array<{ amount: number; method: string }>> {
+  const salePayments = new Map<
+    string,
+    Array<{ amount: number; method: string }>
+  >();
+  for (const payment of payments ?? []) {
+    if (!payment.saleId) {
+      continue;
+    }
+    const existing = salePayments.get(payment.saleId) ?? [];
+    existing.push({
+      method: payment.method,
+      amount: normalizeNumber(payment.appliedAmount ?? payment.amount),
+    });
+    salePayments.set(payment.saleId, existing);
+  }
+  return salePayments;
+}
+
+interface ProductAccumulator {
+  categoryId: string;
+  categoryName: string;
+  payments: Map<string, number>;
+  productId: string;
+  productName: string;
+  quantity: number;
+  totalAmount: number;
+  unitPrice: number;
+}
+
+function upsertProduct(
+  productMap: Map<string, ProductAccumulator>,
+  item: {
+    productId: string;
+    quantity: number;
+    unitPrice: number;
+    totalAmount: number;
+    product?: {
+      name: string;
+      categoryId: string;
+      category?: { name: string } | null;
+    } | null;
+  }
+): ProductAccumulator {
+  const productId = item.productId;
+  const existing = productMap.get(productId);
+  const quantity = item.quantity;
+  const itemTotal = item.totalAmount;
+
+  if (existing) {
+    existing.quantity += quantity;
+    existing.totalAmount += itemTotal;
+    return existing;
+  }
+
+  const entry: ProductAccumulator = {
+    productId,
+    productName: item.product?.name ?? "Producto",
+    categoryId: item.product?.categoryId ?? "sin-categoria",
+    categoryName: item.product?.category?.name ?? "Sin categoría",
+    quantity,
+    totalAmount: itemTotal,
+    unitPrice: item.unitPrice,
+    payments: new Map(),
+  };
+  productMap.set(productId, entry);
+  return entry;
+}
+
+function allocatePaymentsToProduct(
+  productEntry: ProductAccumulator,
+  paymentsForSale: Array<{ amount: number; method: string }>,
+  itemTotal: number,
+  saleTotal: number
+) {
+  if (!(saleTotal > 0)) {
+    return;
+  }
+  const proportion = itemTotal / saleTotal;
+  for (const payment of paymentsForSale) {
+    const allocated = Math.round(payment.amount * proportion);
+    const current = productEntry.payments.get(payment.method) ?? 0;
+    productEntry.payments.set(payment.method, current + allocated);
+  }
+}
+
+function buildCategoryMap(
+  products: ShiftProductSummaryItem[]
+): Map<string, ShiftCategorySummary> {
+  const categoryMap = new Map<string, ShiftCategorySummary>();
+  for (const product of products) {
+    const existing = categoryMap.get(product.categoryId);
+    if (existing) {
+      existing.quantity += product.quantity;
+      existing.totalAmount += product.totalAmount;
+    } else {
+      categoryMap.set(product.categoryId, {
+        categoryId: product.categoryId,
+        categoryName: product.categoryName,
+        quantity: product.quantity,
+        totalAmount: product.totalAmount,
+      });
+    }
+  }
+  return categoryMap;
+}
+
+export function buildShiftProductSummary(
+  shift: ShiftWithRelations
+): ShiftProductSummary {
+  const salePayments = buildSalePaymentMap(shift.payments);
+  const productMap = new Map<string, ProductAccumulator>();
+
+  for (const sale of shift.sales ?? []) {
+    if (sale.status === "cancelled") {
+      continue;
+    }
+    const paymentsForSale = salePayments.get(sale.id) ?? [];
+    const saleTotal = normalizeNumber(sale.totalAmount);
+
+    for (const item of sale.items ?? []) {
+      const productEntry = upsertProduct(productMap, item);
+      allocatePaymentsToProduct(
+        productEntry,
+        paymentsForSale,
+        item.totalAmount,
+        saleTotal
+      );
+    }
+  }
+
+  const products = [...productMap.values()]
+    .map((p) => ({
+      ...p,
+      payments: [...p.payments.entries()]
+        .map(([method, amount]) => ({ amount, method }))
+        .sort((a, b) => b.amount - a.amount),
+    }))
+    .sort((a, b) => b.totalAmount - a.totalAmount);
+
+  const categories = [...buildCategoryMap(products).values()].sort(
+    (a, b) => b.totalAmount - a.totalAmount
+  );
+
+  return {
+    products,
+    categories,
+    totalItems: products.reduce((sum, p) => sum + p.quantity, 0),
+    totalAmount: products.reduce((sum, p) => sum + p.totalAmount, 0),
   };
 }
 

@@ -15,12 +15,24 @@ import {
 export function ShiftListItemCard({
   shift,
   paymentMethodLabels,
+  isSelected,
+  onSelect,
 }: {
   shift: ShiftListItem;
   paymentMethodLabels: Record<string, string>;
+  isSelected?: boolean;
+  onSelect?: (shiftId: string) => void;
 }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-zinc-800 bg-black/10 transition-colors hover:border-zinc-700 hover:bg-white/5">
+    <button
+      className={`w-full overflow-hidden rounded-xl border bg-black/10 text-left transition-colors hover:border-zinc-700 hover:bg-white/5 ${
+        isSelected
+          ? "border-[var(--color-voltage)]/30 bg-[var(--color-voltage)]/5"
+          : "border-zinc-800"
+      }`}
+      onClick={() => onSelect?.(shift.id)}
+      type="button"
+    >
       <div className="flex flex-col gap-4 border-zinc-800/50 border-b bg-black/20 p-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
           <div className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-zinc-800 bg-[var(--color-carbon)] text-zinc-400">
@@ -66,36 +78,32 @@ export function ShiftListItemCard({
           <h4 className="mb-3 font-semibold text-xs text-zinc-500 uppercase tracking-wider">
             Operaciones
           </h4>
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-xs text-zinc-500">
-                  Pagadas ({formatShiftCount(shift.operations.paidSalesCount)})
-                </p>
-                <p className="font-medium text-sm text-white">
-                  {formatCurrency(shift.operations.paidSalesAmount)}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-zinc-500">
-                  A crédito (
-                  {formatShiftCount(shift.operations.creditSalesCount)})
-                </p>
-                <p className="font-medium text-sm text-white">
-                  {formatCurrency(shift.operations.creditSalesAmount)}
-                </p>
-              </div>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-zinc-400">
+                Pagadas ({formatShiftCount(shift.operations.paidSalesCount)})
+              </span>
+              <span className="font-medium text-zinc-300">
+                {formatCurrency(shift.operations.paidSalesAmount)}
+              </span>
             </div>
-            <div className="border-zinc-800/50 border-t pt-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-zinc-400">
-                  Anuladas (
-                  {formatShiftCount(shift.operations.cancelledSalesCount)})
-                </span>
-                <span className="text-xs text-zinc-300">
-                  {formatCurrency(shift.operations.cancelledSalesAmount)}
-                </span>
-              </div>
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-zinc-400">
+                A crédito ({formatShiftCount(shift.operations.creditSalesCount)}
+                )
+              </span>
+              <span className="font-medium text-zinc-300">
+                {formatCurrency(shift.operations.creditSalesAmount)}
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-zinc-400">
+                Anuladas (
+                {formatShiftCount(shift.operations.cancelledSalesCount)})
+              </span>
+              <span className="font-medium text-zinc-300">
+                {formatCurrency(shift.operations.cancelledSalesAmount)}
+              </span>
             </div>
           </div>
         </div>
@@ -104,46 +112,35 @@ export function ShiftListItemCard({
           <h4 className="mb-3 font-semibold text-xs text-zinc-500 uppercase tracking-wider">
             Valores Esperados
           </h4>
-          <div className="space-y-3">
-            <div className="flex items-end justify-between">
-              <div>
-                <p className="text-xs text-zinc-500">Efectivo Total</p>
-                <p className="font-semibold text-base text-emerald-400">
-                  {formatCurrency(shift.totals.expectedCash)}
-                </p>
-                <p className="text-xs text-zinc-500">
-                  Base: {formatCurrency(shift.startingCash)}
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="text-xs text-zinc-500">
-                  Otros Pagos ({formatShiftCount(shift.payments.length)})
-                </p>
-                <p className="font-medium text-sm text-white">
-                  {formatCurrency(shift.totals.totalPayments)}
-                </p>
-              </div>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-zinc-400">Base</span>
+              <span className="font-medium text-zinc-300">
+                {formatCurrency(shift.startingCash)}
+              </span>
             </div>
-            {shift.paymentBreakdown.length > 0 ? (
-              <div className="space-y-1.5 border-zinc-800/50 border-t pt-2">
-                {shift.paymentBreakdown.map((paymentMethod) => (
-                  <div
-                    className="flex items-center justify-between text-xs"
-                    key={paymentMethod.method}
-                  >
-                    <span className="text-zinc-400">
-                      {formatPaymentMethodLabel(
-                        paymentMethod.method,
-                        paymentMethodLabels
-                      )}
-                    </span>
-                    <span className="font-medium text-zinc-300">
-                      {formatCurrency(paymentMethod.amount)}
-                    </span>
-                  </div>
-                ))}
+            {shift.paymentBreakdown.map((paymentMethod) => (
+              <div
+                className="flex items-center justify-between text-xs"
+                key={paymentMethod.method}
+              >
+                <span className="text-zinc-400">
+                  {formatPaymentMethodLabel(
+                    paymentMethod.method,
+                    paymentMethodLabels
+                  )}
+                </span>
+                <span className="font-medium text-zinc-300">
+                  {formatCurrency(paymentMethod.amount)}
+                </span>
               </div>
-            ) : null}
+            ))}
+            <div className="flex items-center justify-between border-zinc-800/50 border-t pt-2 text-sm">
+              <span className="font-medium text-zinc-300">Total</span>
+              <span className="font-semibold text-[var(--color-voltage)]">
+                {formatCurrency(shift.totals.totalExpected)}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -233,6 +230,6 @@ export function ShiftListItemCard({
           ) : null}
         </div>
       </div>
-    </div>
+    </button>
   );
 }
