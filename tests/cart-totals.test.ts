@@ -147,4 +147,20 @@ describe("calculateCartTotals", () => {
     expect(totals.discountAmount).toBe(2000);
     expect(totals.totalAmount).toBe(9520);
   });
+
+  test("sale-level discount that can't fully distribute — discountAmount equals allocated sum, not raw input", () => {
+    const items = [
+      makeItem({
+        product: makeProduct({ id: "p1", price: 1, taxRate: 0 }),
+        quantity: 1,
+      }),
+      makeItem({
+        product: makeProduct({ id: "p2", price: 1, taxRate: 0 }),
+        quantity: 1,
+      }),
+    ];
+    const totals = calculateCartTotals(items, "3");
+    expect(totals.discountAmount).toBe(2);
+    expect(totals.totalAmount).toBe(0);
+  });
 });

@@ -364,6 +364,41 @@ export function normalizeAndValidatePayments(
   return normalizedPayments;
 }
 
+export function validateReceiptTotals(
+  receiptTotals:
+    | {
+        subtotal: number;
+        taxAmount: number;
+        discountAmount: number;
+        totalAmount: number;
+      }
+    | undefined,
+  serverTotals: {
+    subtotal: number;
+    taxAmount: number;
+    discountAmount: number;
+    totalAmount: number;
+  }
+): void {
+  if (!receiptTotals) {
+    return;
+  }
+
+  const fields: Array<keyof typeof serverTotals> = [
+    "subtotal",
+    "taxAmount",
+    "discountAmount",
+    "totalAmount",
+  ];
+  for (const field of fields) {
+    if (receiptTotals[field] !== serverTotals[field]) {
+      throw new Error(
+        `El total reportado por el cliente (${field}: ${receiptTotals[field]}) no coincide con el calculado por el servidor (${field}: ${serverTotals[field]})`
+      );
+    }
+  }
+}
+
 export function validatePaymentRules(
   normalizedPayments: NormalizedPayment[],
   totalAmount: number,

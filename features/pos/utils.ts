@@ -118,6 +118,7 @@ export function calculateCartTotals(
   );
 
   let tax = 0;
+  let totalLineDiscount = 0;
   for (let index = 0; index < items.length; index += 1) {
     const item = items[index];
     const lineSubtotal = item.product.price * item.quantity;
@@ -130,9 +131,10 @@ export function calculateCartTotals(
       item.discountAmount + (saleDiscountAllocations[index] ?? 0);
     const taxableBase = lineSubtotal + modifiersSubtotal - lineDiscountAmount;
     tax += Math.round((taxableBase * item.product.taxRate) / 100);
+    totalLineDiscount += lineDiscountAmount;
   }
 
-  const discountAmount = saleDiscountAmount + itemsDiscountAmount;
+  const discountAmount = totalLineDiscount;
   const totalAmount = calculateTotal(subTotal, tax, discountAmount);
 
   return {

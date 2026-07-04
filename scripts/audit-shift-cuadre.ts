@@ -957,10 +957,10 @@ function runDescuadreDemos(): { count: number; allInflated: boolean } {
 
 async function auditShiftInDb(shiftId: string): Promise<void> {
   const { dbSqlite } = await import("@/database/drizzle/db");
-  const { shift, payment, cashMovement, shiftClosure } = await import(
+  const { shift, cashMovement, shiftClosure } = await import(
     "@/database/drizzle/schema/pos.schema"
   );
-  const { sale: saleTable } = await import(
+  const { payment, sale: saleTable } = await import(
     "@/database/drizzle/schema/sales.schema"
   );
 

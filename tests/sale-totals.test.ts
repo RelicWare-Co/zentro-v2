@@ -7,6 +7,7 @@ import {
   normalizeAndValidatePayments,
   type ProductInfo,
   validatePaymentRules,
+  validateReceiptTotals,
 } from "@/features/sales/sale-totals.shared";
 
 function makeProduct(overrides: Partial<ProductInfo> = {}): ProductInfo {
@@ -740,5 +741,51 @@ describe("cash change edge cases", () => {
         null
       )
     ).toThrow("total de la venta es 0");
+  });
+});
+
+describe("validateReceiptTotals", () => {
+  const serverTotals = {
+    subtotal: 10_000,
+    taxAmount: 1900,
+    discountAmount: 2000,
+    totalAmount: 9900,
+  };
+
+  test("passes when all fields match", () => {
+    expect(() =>
+      validateReceiptTotals({ ...serverTotals }, serverTotals)
+    ).not.toThrow();
+  });
+
+  test("passes when receiptTotals is undefined", () => {
+    expect(() => validateReceiptTotals(undefined, serverTotals)).not.toThrow();
+  });
+
+  test("throws when subtotal differs", () => {
+    expect(() =>
+      validateReceiptTotals({ ...serverTotals, subtotal: 9999 }, serverTotals)
+    ).toThrow("subtotal");
+  });
+
+  test("throws when taxAmount differs", () => {
+    expect(() =>
+      validateReceiptTotals({ ...serverTotals, taxAmount: 0 }, serverTotals)
+    ).toThrow("taxAmount");
+  });
+
+  test("throws when discountAmount differs", () => {
+    expect(() =>
+      validateReceiptTotals(
+        { ...serverTotals, discountAmount: 0 },
+        serverTotals
+      )
+    ).toThrow("discountAmount");
+  });
+
+  test("throws when totalAmount differs", () => {
+    expect(() =>
+      validateReceiptTotals({ ...serverTotals, totalAmount: 0 }, serverTotals)
+    ).toThrow("totalAmount");
   });
 });

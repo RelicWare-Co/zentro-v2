@@ -30,13 +30,6 @@ export type { SalesListParams } from "@/features/sales/sales.shared";
 export type CreateSaleInput = z.infer<typeof CreateSaleInputSchema>;
 export type CreateSaleResult = z.infer<typeof CreateSaleResultSchema>;
 
-export type CreateSaleMutationInput = CreateSaleInput & {
-  receiptTotals: Pick<
-    CreateSaleResult,
-    "subtotal" | "taxAmount" | "discountAmount" | "totalAmount"
-  >;
-};
-
 function buildSalesListQueryArgs(params: SalesListParams) {
   return {
     limit: normalizeSalesListLimit(params.limit),
@@ -223,34 +216,43 @@ export function useCancelSaleMutation() {
 }
 
 export function useCreateSaleMutation() {
-  return useZeroMutation(async (input: CreateSaleMutationInput, zero) => {
-    const { receiptTotals, ...saleInput } = input;
+  return useZeroMutation(async (input: CreateSaleInput, zero) => {
     const saleId = crypto.randomUUID();
 
     await waitForZeroMutation(
       zero.mutate(
         mutators.sales.create({
-          ...saleInput,
+          ...input,
           saleId,
         })
       ),
       { awaitServer: true }
     );
 
-    const tenderedAmount = (saleInput.payments ?? []).reduce(
+    const receiptTotals = input.receiptTotals;
+    const tenderedAmount = (input.payments ?? []).reduce(
       (sum, payment) => sum + payment.amount,
       0
     );
-    const paidAmount = Math.min(receiptTotals.totalAmount, tenderedAmount);
-    const isCreditSale = saleInput.isCreditSale ?? false;
+    const paidAmount = receiptTotals
+      ? Math.min(receiptTotals.totalAmount, tenderedAmount)
+      : tenderedAmount;
+    const isCreditSale = input.isCreditSale ?? false;
     const status = isCreditSale ? "credit" : "completed";
 
     return {
       saleId,
       status,
-      ...receiptTotals,
+      ...(receiptTotals ?? {
+        subtotal: 0,
+        taxAmount: 0,
+        discountAmount: 0,
+        totalAmount: 0,
+      }),
       paidAmount,
-      balanceDue: Math.max(receiptTotals.totalAmount - paidAmount, 0),
+      balanceDue: receiptTotals
+        ? Math.max(receiptTotals.totalAmount - paidAmount, 0)
+        : 0,
     };
   });
 }

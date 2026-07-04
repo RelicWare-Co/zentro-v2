@@ -178,6 +178,13 @@ const CreateSalePaymentSchema = z.object({
   reference: NullableStringSchema,
 });
 
+export const ReceiptTotalsSchema = z.object({
+  subtotal: z.number(),
+  taxAmount: z.number(),
+  discountAmount: z.number(),
+  totalAmount: z.number(),
+});
+
 export const CreateSaleInputSchema = z.object({
   shiftId: z.string().trim().min(1),
   customerId: NullableStringSchema,
@@ -188,6 +195,7 @@ export const CreateSaleInputSchema = z.object({
   payments: z.array(CreateSalePaymentSchema).optional(),
   isCreditSale: z.boolean().optional(),
   createdAt: z.number().int().min(0).optional(),
+  receiptTotals: ReceiptTotalsSchema.optional(),
 });
 
 export const CreateSaleResultSchema = z.object({

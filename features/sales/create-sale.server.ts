@@ -22,6 +22,7 @@ import {
   type PreparedItem,
   type ProductInfo,
   validatePaymentRules,
+  validateReceiptTotals,
 } from "@/features/sales/sale-totals.shared";
 import type {
   CreateSaleInputSchema,
@@ -305,6 +306,13 @@ export async function runCreateSale(
   if (totalAmount < 0) {
     throw new Error("El total de la venta no puede ser negativo");
   }
+
+  validateReceiptTotals(input.receiptTotals, {
+    subtotal,
+    taxAmount,
+    discountAmount,
+    totalAmount,
+  });
 
   const normalizedPayments = normalizeAndValidatePayments(
     input.payments,
