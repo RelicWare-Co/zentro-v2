@@ -407,6 +407,39 @@ describe("tax calculations in buildPreparedItems", () => {
     expect(result.preparedItems[0].taxAmount).toBe(400);
   });
 
+  test("product 10.000 + modifier 2.000 at 19% — tax includes modifier (regression for P1)", () => {
+    const productById = new Map([
+      ["prod-1", makeProduct({ id: "prod-1", price: 10_000, taxRate: 19 })],
+      [
+        "mod-1",
+        makeProduct({
+          id: "mod-1",
+          isModifier: true,
+          name: "Extra",
+          price: 2000,
+          taxRate: 19,
+        }),
+      ],
+    ]);
+    const result = buildPreparedItems(
+      [
+        {
+          productId: "prod-1",
+          quantity: 1,
+          unitPrice: 10_000,
+          modifiers: [
+            { modifierProductId: "mod-1", quantity: 1, unitPrice: 2000 },
+          ],
+        },
+      ],
+      productById
+    );
+    expect(result.subtotal).toBe(12_000);
+    expect(result.taxAmount).toBe(2280);
+    expect(result.preparedItems[0].taxAmount).toBe(2280);
+    expect(result.preparedItems[0].totalAmount).toBe(14_280);
+  });
+
   test("aggregates tax across multiple items with mixed rates", () => {
     const productById = new Map([
       ["prod-1", makeProduct({ id: "prod-1", price: 10_000, taxRate: 19 })],

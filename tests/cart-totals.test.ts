@@ -122,6 +122,20 @@ describe("calculateCartTotals", () => {
     expect(totals.totalAmount).toBe(17_850);
   });
 
+  test("product 10.000 + modifier 2.000 at 19% — tax includes modifier (regression for P1)", () => {
+    const items = [
+      makeItem({
+        product: makeProduct({ price: 10_000, taxRate: 19 }),
+        quantity: 1,
+        modifiers: [{ id: "mod-1", name: "Extra", price: 2000, quantity: 1 }],
+      }),
+    ];
+    const totals = calculateCartTotals(items, "0");
+    expect(totals.subTotal).toBe(12_000);
+    expect(totals.tax).toBe(2280);
+    expect(totals.totalAmount).toBe(14_280);
+  });
+
   test("tax-exempt product produces zero tax", () => {
     const items = [
       makeItem({
