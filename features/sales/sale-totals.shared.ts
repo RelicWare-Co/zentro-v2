@@ -307,7 +307,10 @@ export function buildPreparedItems(
   };
 }
 
-function allocateProportionalDiscount(bases: number[], discountAmount: number) {
+export function allocateProportionalDiscount(
+  bases: number[],
+  discountAmount: number
+) {
   if (discountAmount === 0) {
     return bases.map(() => 0);
   }

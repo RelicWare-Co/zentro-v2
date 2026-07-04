@@ -1,3 +1,4 @@
+import { allocateProportionalDiscount } from "@/features/sales/sale-totals.shared";
 import {
   buildPaymentMethodLabelMap,
   formatPaymentMethodIdLabel,
@@ -70,20 +71,6 @@ function calculateSubTotal(items: CartItem[]): number {
 }
 
 /**
- * Calcula los impuestos totales del carrito
- */
-function calculateTax(items: CartItem[]): number {
-  return items.reduce(
-    (sum, item) =>
-      sum +
-      Math.round(
-        (item.product.price * item.quantity * item.product.taxRate) / 100
-      ),
-    0
-  );
-}
-
-/**
  * Calcula el descuento total de los items del carrito
  */
 function calculateItemsDiscount(items: CartItem[]): number {
@@ -102,16 +89,49 @@ function calculateTotal(
 }
 
 /**
- * Calcula todos los totales del carrito en una sola operación
+ * Calcula todos los totales del carrito en una sola operación.
+ * Los impuestos se calculan sobre la base gravable neta
+ * (subtotal + modificadores − descuento de ítem − descuento de venta prorrateado),
+ * igual que el servidor en `buildPreparedItems`.
  */
 export function calculateCartTotals(
   items: CartItem[],
   discountInput: string
 ): CartTotals {
   const subTotal = calculateSubTotal(items);
-  const tax = calculateTax(items);
   const saleDiscountAmount = parseMoneyInput(discountInput);
   const itemsDiscountAmount = calculateItemsDiscount(items);
+
+  const taxableBasesBeforeSaleDiscount = items.map((item) => {
+    const lineSubtotal = item.product.price * item.quantity;
+    const modifiersSubtotal = item.modifiers.reduce(
+      (sum, modifier) =>
+        sum + modifier.price * modifier.quantity * item.quantity,
+      0
+    );
+    return lineSubtotal + modifiersSubtotal - item.discountAmount;
+  });
+
+  const saleDiscountAllocations = allocateProportionalDiscount(
+    taxableBasesBeforeSaleDiscount,
+    saleDiscountAmount
+  );
+
+  let tax = 0;
+  for (let index = 0; index < items.length; index += 1) {
+    const item = items[index];
+    const lineSubtotal = item.product.price * item.quantity;
+    const modifiersSubtotal = item.modifiers.reduce(
+      (sum, modifier) =>
+        sum + modifier.price * modifier.quantity * item.quantity,
+      0
+    );
+    const lineDiscountAmount =
+      item.discountAmount + (saleDiscountAllocations[index] ?? 0);
+    const taxableBase = lineSubtotal + modifiersSubtotal - lineDiscountAmount;
+    tax += Math.round((taxableBase * item.product.taxRate) / 100);
+  }
+
   const discountAmount = saleDiscountAmount + itemsDiscountAmount;
   const totalAmount = calculateTotal(subTotal, tax, discountAmount);
 
