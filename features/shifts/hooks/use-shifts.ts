@@ -9,6 +9,7 @@ import type {
 import type {
   ShiftCloseSummary,
   ShiftListItem,
+  ShiftProductSummary,
   ShiftsListParams,
   ShiftWithRelations,
 } from "@/features/shifts/shifts.shared";
@@ -16,6 +17,7 @@ import {
   buildShiftCloseSummary,
   buildShiftFilterOptions,
   buildShiftListItem,
+  buildShiftProductSummary,
   buildShiftsListPage,
   filterShiftsClientRefinements,
   normalizeShiftsListLimit,
@@ -301,6 +303,41 @@ export function useRegisterCashMovementMutation() {
       createdAt: input.createdAt ?? Date.now(),
     };
   });
+}
+
+export function useShiftDetail(shiftId: string | null) {
+  const [rows, status] = useZeroQuery(
+    queries.shifts.byId({ shiftId: shiftId ?? null })
+  );
+  const error = getZeroQueryError(status);
+  const shiftRow = rows[0] as ShiftWithRelations | undefined;
+
+  const shiftListItem = useMemo(
+    () => (shiftRow ? buildShiftListItem(shiftRow) : null),
+    [shiftRow]
+  );
+
+  const productSummary = useMemo<ShiftProductSummary>(
+    () =>
+      shiftRow
+        ? buildShiftProductSummary(shiftRow)
+        : { products: [], categories: [], totalItems: 0, totalAmount: 0 },
+    [shiftRow]
+  );
+
+  return {
+    data: shiftListItem,
+    productSummary,
+    error,
+    isError: Boolean(error),
+    isLoading: status.type === "unknown" && rows.length === 0,
+    refetch: () => {
+      if (status.type === "error") {
+        status.retry();
+      }
+      return Promise.resolve();
+    },
+  };
 }
 
 export function useCloseShiftMutation() {

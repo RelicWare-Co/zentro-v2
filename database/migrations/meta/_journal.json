@@ -50,6 +50,20 @@
       "when": 1782792000000,
       "tag": "0006_payment_applied_change",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1782901068974,
+      "tag": "0007_fixed_hardball",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1782941183917,
+      "tag": "0008_omniscient_miracleman",
+      "breakpoints": true
     }
   ]
 }

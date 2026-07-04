@@ -34,6 +34,12 @@ import {
   productRelations,
 } from "./schema/inventory.schema";
 import {
+  pedido,
+  pedidoItem,
+  pedidoItemRelations,
+  pedidoRelations,
+} from "./schema/orders.schema";
+import {
   cashMovement,
   cashMovementRelations,
   shift,
@@ -92,6 +98,10 @@ const schema = {
   organizationRelations,
   payment,
   paymentRelations,
+  pedido,
+  pedidoItem,
+  pedidoItemRelations,
+  pedidoRelations,
   product,
   productRelations,
   restaurantArea,

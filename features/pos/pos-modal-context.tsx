@@ -10,6 +10,8 @@ import { POS_MODAL_IDS } from "@/features/pos/pos-page-modals.shared";
 export interface PosModalContextValue {
   activeModal: string | null;
   closeActiveModal: () => void;
+  closedShiftId: string | null;
+  dismissPostCloseConfirmation: () => void;
   isMobileCartOpen: boolean;
   isQuickSaleMode: boolean;
   openActiveModal: (modal: string) => void;
@@ -20,6 +22,7 @@ export interface PosModalContextValue {
   openShiftFromRequired: () => void;
   openShiftModal: () => void;
   setIsMobileCartOpen: (open: boolean) => void;
+  showPostCloseConfirmation: (shiftId: string) => void;
   toggleQuickSaleMode: () => void;
 }
 
@@ -37,6 +40,7 @@ export function PosModalProvider({ children }: { children: ReactNode }) {
   const [isMobileCartOpen, setIsMobileCartOpen] = useState(false);
   const [activeModal, setActiveModal] = useState<string | null>(null);
   const [isQuickSaleMode, setIsQuickSaleMode] = useState(false);
+  const [closedShiftId, setClosedShiftId] = useState<string | null>(null);
 
   const closeActiveModal = useCallback(() => {
     setActiveModal(null);
@@ -74,9 +78,21 @@ export function PosModalProvider({ children }: { children: ReactNode }) {
     setActiveModal(POS_MODAL_IDS.CHECKOUT_DETAILS);
   }, []);
 
+  const showPostCloseConfirmation = useCallback((shiftId: string) => {
+    setClosedShiftId(shiftId);
+    setActiveModal(POS_MODAL_IDS.POST_CLOSE_CONFIRMATION);
+  }, []);
+
+  const dismissPostCloseConfirmation = useCallback(() => {
+    setClosedShiftId(null);
+    setActiveModal(null);
+  }, []);
+
   const value: PosModalContextValue = {
     activeModal,
     closeActiveModal,
+    closedShiftId,
+    dismissPostCloseConfirmation,
     isMobileCartOpen,
     isQuickSaleMode,
     openActiveModal,
@@ -87,6 +103,7 @@ export function PosModalProvider({ children }: { children: ReactNode }) {
     openShiftFromRequired,
     openShiftModal,
     setIsMobileCartOpen,
+    showPostCloseConfirmation,
     toggleQuickSaleMode,
   };
 

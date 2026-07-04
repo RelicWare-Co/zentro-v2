@@ -6,6 +6,7 @@ import { CloseShiftModal } from "@/features/pos/components/modals/close-shift-mo
 import { CreateCustomerModal } from "@/features/pos/components/modals/create-customer-modal";
 import { ModifierModal } from "@/features/pos/components/modals/modifier-modal";
 import { OpenShiftModal } from "@/features/pos/components/modals/open-shift-modal";
+import { PostCloseConfirmationModal } from "@/features/pos/components/modals/post-close-confirmation-modal";
 import { ShiftRequiredDialog } from "@/features/pos/components/modals/shift-required-dialog";
 import type { PosExtensionRenderProps } from "@/features/pos/pos-extension.shared";
 import { usePosPage } from "@/features/pos/pos-page-context";
@@ -36,6 +37,7 @@ export function PosModals() {
       <OpenShiftModal />
       <CashMovementModal />
       <CloseShiftModal />
+      <PostCloseConfirmationModal />
       <CreateCustomerModal />
       <ModifierModal />
       <ShiftRequiredDialog />

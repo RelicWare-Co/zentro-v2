@@ -4,6 +4,11 @@ import { getPublicZeroCacheURL } from "@/server/runtime-config.server";
 import { resolveZeroAuthFromSession } from "@/server/zero/context.server";
 
 export async function onCreatePageContext(pageContext: PageContextServer) {
+  // Public menu pages are SSR with +data and don't need auth/Zero context.
+  if (pageContext.urlPathname.startsWith("/o/")) {
+    return;
+  }
+
   const headers = pageContext.headersOriginal as Headers;
 
   let session: Awaited<ReturnType<typeof auth.api.getSession>> | null = null;

@@ -23,7 +23,8 @@ export function usePosShift(
   activeShift: ActiveShift | null,
   paymentMethodOptions: Array<{ id: string }>,
   isCloseShiftModalOpen: boolean,
-  closeModal: () => void
+  closeModal: () => void,
+  onCloseShiftSuccess?: (shiftId: string) => void
 ) {
   // Open shift form state
   const [startingCash, setStartingCash] = useState("");
@@ -160,6 +161,7 @@ export function usePosShift(
           closeModal();
           setClosureAmounts({});
           setCloseShiftNotes("");
+          onCloseShiftSuccess?.(activeShift.id);
         },
       }
     );
@@ -170,6 +172,7 @@ export function usePosShift(
     closureAmounts,
     shiftCloseSummary,
     closeModal,
+    onCloseShiftSuccess,
   ]);
 
   // Computed values

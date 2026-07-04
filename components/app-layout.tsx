@@ -12,6 +12,7 @@ import {
   Receipt,
   Settings,
   Shield,
+  ShoppingBag,
   Store,
   Users,
   UtensilsCrossed,
@@ -97,6 +98,7 @@ const baseNavItems = [
   { name: "Ventas", path: "/sales", icon: Receipt, order: 50 },
   { name: "Clientes", path: "/customers", icon: Users, order: 55 },
   { name: "Crédito", path: "/credit", icon: Wallet, order: 56 },
+  { name: "Pedidos", path: "/pedidos", icon: ShoppingBag, order: 57 },
   { name: "Productos", path: "/products", icon: Package, order: 60 },
   { name: "Configuración", path: "/settings", icon: Settings, order: 70 },
 ];

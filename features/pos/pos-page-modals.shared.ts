@@ -8,6 +8,7 @@ export const POS_MODAL_IDS = {
   CREATE_CUSTOMER: "create-customer",
   MODIFIER: "modifier",
   OPEN_SHIFT: "open-shift",
+  POST_CLOSE_CONFIRMATION: "post-close-confirmation",
   SHIFT_REQUIRED: "shift-required",
 } as const;
 
