@@ -271,7 +271,7 @@ export function ShiftDetailContent({
         </div>
       </div>
 
-      {shift.debtPaymentBreakdown.length > 0 ? (
+      {shift.debtPaymentBreakdown.filter((e) => e.amount !== 0).length > 0 ? (
         <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-5">
           <div className="flex items-center gap-2">
             <Receipt className="size-4 text-amber-400" />
@@ -283,19 +283,21 @@ export function ShiftDetailContent({
             Pagos a deuda existente registrados durante el turno.
           </p>
           <div className="mt-3 space-y-2">
-            {shift.debtPaymentBreakdown.map((entry) => (
-              <div
-                className="flex items-center justify-between rounded-lg border border-amber-500/10 bg-black/20 px-3 py-2"
-                key={entry.method}
-              >
-                <span className="text-amber-200/80 text-sm">
-                  {formatPaymentMethodLabel(entry.method, {})}
-                </span>
-                <span className="font-semibold text-amber-300 text-sm">
-                  {formatCurrency(entry.amount)}
-                </span>
-              </div>
-            ))}
+            {shift.debtPaymentBreakdown
+              .filter((e) => e.amount !== 0)
+              .map((entry) => (
+                <div
+                  className="flex items-center justify-between rounded-lg border border-amber-500/10 bg-black/20 px-3 py-2"
+                  key={entry.method}
+                >
+                  <span className="text-amber-200/80 text-sm">
+                    {formatPaymentMethodLabel(entry.method, {})}
+                  </span>
+                  <span className="font-semibold text-amber-300 text-sm">
+                    {formatCurrency(entry.amount)}
+                  </span>
+                </div>
+              ))}
           </div>
           <div className="mt-3 flex items-center justify-between border-amber-500/10 border-t pt-3">
             <span className="text-amber-300/60 text-xs">Total abonos</span>

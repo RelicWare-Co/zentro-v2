@@ -320,7 +320,7 @@ function normalizeShiftPayments(shift: ShiftWithRelations) {
           ? null
           : normalizeNumber(paymentRow.sale.totalAmount),
       isDebtPayment: (paymentRow.creditTransactions ?? []).some(
-        (tx) => tx.type === "payment" && tx.saleId == null
+        (tx) => tx.type === "payment"
       ),
       createdAt: toTimestamp(paymentRow.createdAt) ?? 0,
     }))
@@ -373,19 +373,6 @@ export function buildShiftListItem(shift: ShiftWithRelations): ShiftListItem {
       amount: movementRow.amount,
     }))
   );
-  const totalExpected = [...expectedByMethod.values()].reduce(
-    (total, amount) => total + amount,
-    0
-  );
-  const paymentBreakdown = [...expectedByMethod.entries()]
-    .map(([method, amount]) => ({
-      method,
-      amount:
-        method === "cash"
-          ? amount - normalizeNumber(shift.startingCash)
-          : amount,
-    }))
-    .sort((left, right) => comparePaymentMethodIds(left.method, right.method));
   const debtPaymentsByMethod = new Map<string, number>();
   for (const paymentRow of payments) {
     if (!paymentRow.isDebtPayment) {
@@ -399,6 +386,28 @@ export function buildShiftListItem(shift: ShiftWithRelations): ShiftListItem {
   const debtPaymentBreakdown = [...debtPaymentsByMethod.entries()]
     .map(([method, amount]) => ({ method, amount }))
     .sort((left, right) => comparePaymentMethodIds(left.method, right.method));
+
+  for (const [method, amount] of debtPaymentsByMethod) {
+    expectedByMethod.set(method, (expectedByMethod.get(method) ?? 0) - amount);
+  }
+  const paymentBreakdown = [...expectedByMethod.entries()]
+    .map(([method, amount]) => ({
+      method,
+      amount:
+        method === "cash"
+          ? amount - normalizeNumber(shift.startingCash)
+          : amount,
+    }))
+    .sort((left, right) => comparePaymentMethodIds(left.method, right.method));
+  const totalDebtPayments = debtPaymentBreakdown.reduce(
+    (total, entry) => total + entry.amount,
+    0
+  );
+  const totalExpected =
+    [...expectedByMethod.values()].reduce(
+      (total, amount) => total + amount,
+      0
+    ) + totalDebtPayments;
 
   const operations = buildShiftOperations(
     shift.sales,
@@ -772,6 +781,22 @@ export function buildShiftCloseSummary(
       amount: movementRow.amount,
     }))
   );
+  const debtPaymentsByMethod = new Map<string, number>();
+  for (const paymentRow of payments) {
+    if (!paymentRow.isDebtPayment) {
+      continue;
+    }
+    debtPaymentsByMethod.set(
+      paymentRow.method,
+      (debtPaymentsByMethod.get(paymentRow.method) ?? 0) + paymentRow.amount
+    );
+  }
+  for (const [method, amount] of debtPaymentsByMethod) {
+    expectedByMethod.set(method, (expectedByMethod.get(method) ?? 0) - amount);
+  }
+  const debtPaymentBreakdown = [...debtPaymentsByMethod.entries()]
+    .map(([method, amount]) => ({ method, amount }))
+    .sort((left, right) => comparePaymentMethodIds(left.method, right.method));
   const movementTotals = {
     inflow: 0,
     expense: 0,
@@ -816,10 +841,11 @@ export function buildShiftCloseSummary(
         difference: closure?.difference ?? null,
       };
     });
-  const totalExpected = summaryByMethod.reduce(
-    (total, current) => total + current.expectedAmount,
-    0
-  );
+  const totalExpected =
+    summaryByMethod.reduce(
+      (total, current) => total + current.expectedAmount,
+      0
+    ) + debtPaymentBreakdown.reduce((total, entry) => total + entry.amount, 0);
 
   return {
     shift: {
@@ -831,6 +857,7 @@ export function buildShiftCloseSummary(
     },
     summaryByMethod,
     totalExpected,
+    debtPaymentBreakdown,
     paymentMethods: buildPaymentMethodOptions(
       getAllPaymentMethods(organizationSettings),
       [

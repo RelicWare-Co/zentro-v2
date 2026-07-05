@@ -151,6 +151,9 @@ export const ShiftCloseSummaryResultSchema = z.object({
   }),
   summaryByMethod: ShiftSummaryByMethodSchema.array(),
   totalExpected: z.number(),
+  debtPaymentBreakdown: z.array(
+    z.object({ method: z.string(), amount: z.number() })
+  ),
   paymentMethods: z.array(z.object({ id: z.string(), label: z.string() })),
   movements: z.object({
     items: ShiftCloseMovementItemSchema.array(),

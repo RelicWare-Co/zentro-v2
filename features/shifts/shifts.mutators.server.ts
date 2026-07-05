@@ -73,7 +73,9 @@ export async function runCloseShiftServerMutator({
     zql.shift
       .where("id", args.shiftId)
       .where("organizationId", zeroContext.orgID)
-      .related("payments", (query) => query.related("sale"))
+      .related("payments", (query) =>
+        query.related("sale").related("creditTransactions")
+      )
       .related("cashMovements")
       .limit(1)
   );
@@ -85,7 +87,10 @@ export async function runCloseShiftServerMutator({
   const registeredPayments = (shiftRow.payments ?? [])
     .filter(
       (paymentRow) =>
-        !paymentRow.saleId || paymentRow.sale?.status !== "cancelled"
+        (!paymentRow.saleId || paymentRow.sale?.status !== "cancelled") &&
+        !(paymentRow.creditTransactions ?? []).some(
+          (tx) => tx.type === "payment"
+        )
     )
     .map((paymentRow) => ({
       method: paymentRow.method,

@@ -14,6 +14,7 @@
 import { creditMutators } from "@/features/credit/credit.mutators";
 import { customersMutators } from "@/features/customers/customers.mutators";
 import { modulesMutators } from "@/features/modules/modules.mutators";
+import { ordersMutators } from "@/features/orders/orders.mutators";
 import { organizationMutators } from "@/features/organization/organization.mutators";
 import { productsMutators } from "@/features/products/products.mutators";
 import { restaurantsMutators } from "@/features/restaurants/restaurants.mutators";
@@ -26,6 +27,7 @@ export const mutators = defineZentroMutators({
   ...productsMutators,
   ...creditMutators,
   ...salesMutators,
+  ...ordersMutators,
   ...organizationMutators,
   ...modulesMutators,
   ...restaurantsMutators,

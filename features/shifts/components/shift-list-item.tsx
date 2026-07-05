@@ -75,8 +75,8 @@ export function ShiftListItemCard({
 
       <div className="grid grid-cols-1 divide-y divide-zinc-800/50 lg:grid-cols-3 lg:divide-x lg:divide-y-0">
         <div className="p-4">
-          <h4 className="mb-3 font-semibold text-xs text-zinc-500 uppercase tracking-wider">
-            Operaciones
+          <h4 className="mb-3 font-semibold text-xs text-zinc-400 uppercase tracking-wider">
+            Operaciones de Venta
           </h4>
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs">
@@ -109,7 +109,7 @@ export function ShiftListItemCard({
         </div>
 
         <div className="bg-black/5 p-4">
-          <h4 className="mb-3 font-semibold text-xs text-zinc-500 uppercase tracking-wider">
+          <h4 className="mb-3 font-semibold text-xs text-zinc-400 uppercase tracking-wider">
             Valores Esperados
           </h4>
           <div className="space-y-2">
@@ -119,22 +119,51 @@ export function ShiftListItemCard({
                 {formatCurrency(shift.startingCash)}
               </span>
             </div>
-            {shift.paymentBreakdown.map((paymentMethod) => (
-              <div
-                className="flex items-center justify-between text-xs"
-                key={paymentMethod.method}
-              >
-                <span className="text-zinc-400">
-                  {formatPaymentMethodLabel(
-                    paymentMethod.method,
-                    paymentMethodLabels
-                  )}
-                </span>
-                <span className="font-medium text-zinc-300">
-                  {formatCurrency(paymentMethod.amount)}
-                </span>
+            {shift.paymentBreakdown
+              .filter((pm) => pm.amount !== 0)
+              .map((paymentMethod) => (
+                <div
+                  className="flex items-center justify-between text-xs"
+                  key={paymentMethod.method}
+                >
+                  <span className="text-zinc-400">
+                    {formatPaymentMethodLabel(
+                      paymentMethod.method,
+                      paymentMethodLabels
+                    )}
+                  </span>
+                  <span className="font-medium text-zinc-300">
+                    {formatCurrency(paymentMethod.amount)}
+                  </span>
+                </div>
+              ))}
+            {shift.debtPaymentBreakdown.filter((e) => e.amount !== 0).length >
+            0 ? (
+              <div className="border-zinc-800/30 border-t pt-2">
+                <p className="mb-1.5 font-medium text-xs text-zinc-400 uppercase tracking-wider">
+                  Ingresos adicionales
+                </p>
+                {shift.debtPaymentBreakdown
+                  .filter((e) => e.amount !== 0)
+                  .map((entry) => (
+                    <div
+                      className="flex items-center justify-between text-xs"
+                      key={entry.method}
+                    >
+                      <span className="text-zinc-400">
+                        Abono{" "}
+                        {formatPaymentMethodLabel(
+                          entry.method,
+                          paymentMethodLabels
+                        )}
+                      </span>
+                      <span className="font-medium text-zinc-300">
+                        {formatCurrency(entry.amount)}
+                      </span>
+                    </div>
+                  ))}
               </div>
-            ))}
+            ) : null}
             <div className="flex items-center justify-between border-zinc-800/50 border-t pt-2 text-sm">
               <span className="font-medium text-zinc-300">Total</span>
               <span className="font-semibold text-[var(--color-voltage)]">
@@ -146,7 +175,7 @@ export function ShiftListItemCard({
 
         <div className="bg-black/10 p-4">
           <div className="mb-3 flex items-center justify-between">
-            <h4 className="font-semibold text-xs text-zinc-500 uppercase tracking-wider">
+            <h4 className="font-semibold text-xs text-zinc-400 uppercase tracking-wider">
               Cierre y Conciliación
             </h4>
             {shift.closures.length > 0 ? (
@@ -161,28 +190,47 @@ export function ShiftListItemCard({
           </div>
 
           {shift.closures.length > 0 ? (
-            <div className="space-y-2">
-              {shift.closures.map((closure) => (
-                <div
-                  className="flex items-center justify-between text-xs"
-                  key={closure.paymentMethod}
-                >
-                  <span className="text-zinc-300">
-                    {formatPaymentMethodLabel(
-                      closure.paymentMethod,
-                      paymentMethodLabels
-                    )}
-                  </span>
-                  <div className="text-right">
-                    <span className="block font-medium text-white">
-                      {formatCurrency(closure.actualAmount)}
-                    </span>
-                    <span className="text-[10px] text-zinc-500">
-                      vs {formatCurrency(closure.expectedAmount)}
-                    </span>
+            <div className="space-y-3">
+              {shift.closures
+                .filter(
+                  (closure) =>
+                    closure.paymentMethod !== "card" &&
+                    closure.paymentMethod !== "transfer_nequi"
+                )
+                .map((closure) => (
+                  <div key={closure.paymentMethod}>
+                    <div className="mb-1.5 font-medium text-xs text-zinc-300">
+                      {formatPaymentMethodLabel(
+                        closure.paymentMethod,
+                        paymentMethodLabels
+                      )}
+                    </div>
+                    <div className="space-y-1 pl-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-zinc-500">Esperado</span>
+                        <span className="text-zinc-400">
+                          {formatCurrency(closure.expectedAmount)}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-zinc-500">Contado</span>
+                        <span className="font-medium text-white">
+                          {formatCurrency(closure.actualAmount)}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-zinc-500">Diferencia</span>
+                        <span
+                          className={`font-medium ${getDifferenceClassName(closure.actualAmount - closure.expectedAmount)}`}
+                        >
+                          {formatSignedCurrency(
+                            closure.actualAmount - closure.expectedAmount
+                          )}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
             </div>
           ) : (
             <p className="text-xs text-zinc-500 italic">
@@ -192,7 +240,7 @@ export function ShiftListItemCard({
 
           {shift.movements.length > 0 ? (
             <div className="mt-4 border-zinc-800/50 border-t pt-3">
-              <p className="mb-2 font-medium text-[10px] text-zinc-500 uppercase tracking-wider">
+              <p className="mb-2 font-medium text-[10px] text-zinc-400 uppercase tracking-wider">
                 Movimientos de caja ({shift.movements.length})
               </p>
               <div className="space-y-1.5">

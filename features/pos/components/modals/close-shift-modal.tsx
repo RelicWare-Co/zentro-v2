@@ -61,8 +61,11 @@ export function CloseShiftModal() {
       (row) => row.paymentMethod !== "cash"
     ) ?? [];
   const hasMovementItems = movementItems.length > 0;
+  const debtPaymentBreakdown =
+    shift.shiftCloseSummary?.debtPaymentBreakdown ?? [];
+  const hasDebtPayments = debtPaymentBreakdown.length > 0;
   const shouldShowSeparatorBeforeTotal =
-    hasMovementItems || nonCashSummaryRows.length > 0;
+    hasMovementItems || nonCashSummaryRows.length > 0 || hasDebtPayments;
 
   return (
     <Modal
@@ -81,114 +84,21 @@ export function CloseShiftModal() {
             <p className="text-sm text-zinc-400">Cargando resumen…</p>
           )}
           {shift.shiftCloseSummary && (
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-zinc-300">Base inicial</span>
-                <span className="font-medium text-white tabular-nums">
-                  {formatCurrency(shift.shiftCloseSummary.shift.startingCash)}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-zinc-300">Efectivo esperado</span>
-                <span className="font-medium text-white tabular-nums">
-                  {formatCurrency(cashSummary?.expectedAmount ?? 0)}
-                </span>
-              </div>
-              {hasMovementItems ? (
-                <>
-                  <Divider color="dark.4" my="xs" />
-                  <div className="space-y-2">
-                    <p className="font-semibold text-xs text-zinc-500 uppercase tracking-[0.18em]">
-                      Movimientos de caja
-                    </p>
-                    <div className="flex justify-between">
-                      <span className="text-zinc-300">Ingresos manuales</span>
-                      <span className="font-medium text-emerald-400 tabular-nums">
-                        +
-                        {formatCurrency(
-                          shift.shiftCloseSummary.movements.totals.inflow
-                        )}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-zinc-300">Gastos operativos</span>
-                      <span className="font-medium text-red-400 tabular-nums">
-                        -
-                        {formatCurrency(
-                          shift.shiftCloseSummary.movements.totals.expense
-                        )}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-zinc-300">Pagos a proveedor</span>
-                      <span className="font-medium text-red-400 tabular-nums">
-                        -
-                        {formatCurrency(
-                          shift.shiftCloseSummary.movements.totals.payout
-                        )}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-zinc-300">Ajuste neto</span>
-                      <span
-                        className={`font-medium tabular-nums ${
-                          shift.shiftCloseSummary.movements.totals.net >= 0
-                            ? "text-emerald-400"
-                            : "text-red-400"
-                        }`}
-                      >
-                        {shift.shiftCloseSummary.movements.totals.net >= 0
-                          ? "+"
-                          : ""}
-                        {formatCurrency(
-                          shift.shiftCloseSummary.movements.totals.net
-                        )}
-                      </span>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <p className="text-xs text-zinc-500">
-                  No hay movimientos de caja registrados en este turno.
-                </p>
-              )}
-              {nonCashSummaryRows.length > 0 ? (
-                <>
-                  <Divider color="dark.4" my="xs" />
-                  {nonCashSummaryRows.map((row) => (
-                    <div
-                      className="flex justify-between"
-                      key={`expected-${row.paymentMethod}`}
-                    >
-                      <span className="text-zinc-300">
-                        {formatPaymentMethodLabel(
-                          row.paymentMethod,
-                          paymentMethodLabels
-                        )}
-                      </span>
-                      <span className="font-medium text-white tabular-nums">
-                        {formatCurrency(row.expectedAmount)}
-                      </span>
-                    </div>
-                  ))}
-                </>
-              ) : null}
-              {shouldShowSeparatorBeforeTotal ? (
-                <Divider color="dark.4" my="xs" />
-              ) : null}
-              <div className="flex justify-between text-base">
-                <span className="font-semibold text-zinc-200">
-                  Total Esperado
-                </span>
-                <span className="font-bold text-[var(--color-voltage)] tabular-nums">
-                  {formatCurrency(shift.shiftCloseSummary.totalExpected)}
-                </span>
-              </div>
-            </div>
+            <SystemSummary
+              cashExpected={cashSummary?.expectedAmount ?? 0}
+              debtPaymentBreakdown={debtPaymentBreakdown}
+              hasMovementItems={hasMovementItems}
+              movementTotals={shift.shiftCloseSummary.movements.totals}
+              nonCashSummaryRows={nonCashSummaryRows}
+              paymentMethodLabels={paymentMethodLabels}
+              shouldShowSeparatorBeforeTotal={shouldShowSeparatorBeforeTotal}
+              startingCash={shift.shiftCloseSummary.shift.startingCash}
+              totalExpected={shift.shiftCloseSummary.totalExpected}
+            />
           )}
         </div>
 
-        {hasMovementItems ? (
+        {hasMovementItems && (
           <div className="rounded-lg border border-zinc-800 bg-[#0a0a0a] p-4">
             <h4 className="mb-3 font-medium text-sm text-zinc-400">
               Detalle de Movimientos
@@ -226,7 +136,7 @@ export function CloseShiftModal() {
               ))}
             </div>
           </div>
-        ) : null}
+        )}
 
         {shift.shiftCloseSummary && (
           <div className="grid gap-3">
@@ -323,6 +233,148 @@ export function CloseShiftModal() {
         </Button>
       </Group>
     </Modal>
+  );
+}
+
+function SystemSummary({
+  cashExpected,
+  debtPaymentBreakdown,
+  hasMovementItems,
+  movementTotals,
+  nonCashSummaryRows,
+  paymentMethodLabels,
+  startingCash,
+  totalExpected,
+  shouldShowSeparatorBeforeTotal,
+}: {
+  cashExpected: number;
+  debtPaymentBreakdown: Array<{ method: string; amount: number }>;
+  hasMovementItems: boolean;
+  movementTotals: {
+    inflow: number;
+    expense: number;
+    payout: number;
+    net: number;
+  };
+  nonCashSummaryRows: Array<{ paymentMethod: string; expectedAmount: number }>;
+  paymentMethodLabels: Record<string, string>;
+  startingCash: number;
+  totalExpected: number;
+  shouldShowSeparatorBeforeTotal: boolean;
+}) {
+  return (
+    <div className="space-y-2 text-sm">
+      <div className="flex justify-between">
+        <span className="text-zinc-300">Base inicial</span>
+        <span className="font-medium text-white tabular-nums">
+          {formatCurrency(startingCash)}
+        </span>
+      </div>
+      <div className="flex justify-between">
+        <span className="text-zinc-300">Efectivo esperado</span>
+        <span className="font-medium text-white tabular-nums">
+          {formatCurrency(cashExpected)}
+        </span>
+      </div>
+      {hasMovementItems && (
+        <>
+          <Divider color="dark.4" my="xs" />
+          <div className="space-y-2">
+            <p className="font-semibold text-xs text-zinc-500 uppercase tracking-[0.18em]">
+              Movimientos de caja
+            </p>
+            <div className="flex justify-between">
+              <span className="text-zinc-300">Ingresos manuales</span>
+              <span className="font-medium text-emerald-400 tabular-nums">
+                +{formatCurrency(movementTotals.inflow)}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-zinc-300">Gastos operativos</span>
+              <span className="font-medium text-red-400 tabular-nums">
+                -{formatCurrency(movementTotals.expense)}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-zinc-300">Pagos a proveedor</span>
+              <span className="font-medium text-red-400 tabular-nums">
+                -{formatCurrency(movementTotals.payout)}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-zinc-300">Ajuste neto</span>
+              <span
+                className={`font-medium tabular-nums ${
+                  movementTotals.net >= 0 ? "text-emerald-400" : "text-red-400"
+                }`}
+              >
+                {movementTotals.net >= 0 ? "+" : ""}
+                {formatCurrency(movementTotals.net)}
+              </span>
+            </div>
+          </div>
+        </>
+      )}
+      {!hasMovementItems && (
+        <p className="text-xs text-zinc-500">
+          No hay movimientos de caja registrados en este turno.
+        </p>
+      )}
+      {nonCashSummaryRows.filter((row) => row.expectedAmount !== 0).length >
+        0 && (
+        <>
+          <Divider color="dark.4" my="xs" />
+          {nonCashSummaryRows
+            .filter((row) => row.expectedAmount !== 0)
+            .map((row) => (
+              <div
+                className="flex justify-between"
+                key={`expected-${row.paymentMethod}`}
+              >
+                <span className="text-zinc-300">
+                  {formatPaymentMethodLabel(
+                    row.paymentMethod,
+                    paymentMethodLabels
+                  )}
+                </span>
+                <span className="font-medium text-white tabular-nums">
+                  {formatCurrency(row.expectedAmount)}
+                </span>
+              </div>
+            ))}
+        </>
+      )}
+      {debtPaymentBreakdown.filter((e) => e.amount !== 0).length > 0 && (
+        <>
+          <Divider color="dark.4" my="xs" />
+          <p className="font-semibold text-amber-500/70 text-xs uppercase tracking-[0.18em]">
+            Abonos recibidos
+          </p>
+          {debtPaymentBreakdown
+            .filter((e) => e.amount !== 0)
+            .map((entry) => (
+              <div
+                className="flex justify-between"
+                key={`debt-${entry.method}`}
+              >
+                <span className="text-amber-300/60">
+                  {formatPaymentMethodLabel(entry.method, paymentMethodLabels)}
+                </span>
+                <span className="font-medium text-amber-300/70 tabular-nums">
+                  {formatCurrency(entry.amount)}
+                </span>
+              </div>
+            ))}
+        </>
+      )}
+      {shouldShowSeparatorBeforeTotal && <Divider color="dark.4" my="xs" />}
+      <div className="flex justify-between text-base">
+        <span className="font-semibold text-zinc-200">Total Esperado</span>
+        <span className="font-bold text-[var(--color-voltage)] tabular-nums">
+          {formatCurrency(totalExpected)}
+        </span>
+      </div>
+    </div>
   );
 }
 
