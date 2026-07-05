@@ -257,10 +257,14 @@ export function usePosCheckout(
     [cart, cartTotals, discountInput, selectedCustomerId]
   );
 
+  const hasDiscountError =
+    cartTotals.saleDiscountAmount > cartTotals.maxSaleDiscount;
+
   const handleQuickSale = useCallback(() => {
     if (
       !activeShiftId ||
       cart.length === 0 ||
+      hasDiscountError ||
       createSaleMutation.isPending ||
       isQuickSaleSubmittingRef.current
     ) {
@@ -304,6 +308,7 @@ export function usePosCheckout(
     cart,
     createSaleMutation,
     cartTotals,
+    hasDiscountError,
     clearCart,
     resetDiscount,
     resetPayments,
@@ -397,6 +402,9 @@ export function usePosCheckout(
     if (!activeShiftId || cart.length === 0) {
       return false;
     }
+    if (hasDiscountError) {
+      return false;
+    }
     if (createSaleMutation.isPending) {
       return false;
     }
@@ -417,6 +425,7 @@ export function usePosCheckout(
   }, [
     activeShiftId,
     cart.length,
+    hasDiscountError,
     createSaleMutation.isPending,
     paymentDifference,
     canReturnCashChange,
@@ -447,6 +456,7 @@ export function usePosCheckout(
     canReturnCashChange,
     cashChangeDue,
     canFinalizeSale,
+    hasDiscountError,
     isProcessing: createSaleMutation.isPending,
     error: createSaleMutation.error,
   };

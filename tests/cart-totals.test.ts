@@ -122,6 +122,20 @@ describe("calculateCartTotals", () => {
     expect(totals.totalAmount).toBe(17_850);
   });
 
+  test("product 10.000 + modifier 2.000 at 19% — tax includes modifier (regression for P1)", () => {
+    const items = [
+      makeItem({
+        product: makeProduct({ price: 10_000, taxRate: 19 }),
+        quantity: 1,
+        modifiers: [{ id: "mod-1", name: "Extra", price: 2000, quantity: 1 }],
+      }),
+    ];
+    const totals = calculateCartTotals(items, "0");
+    expect(totals.subTotal).toBe(12_000);
+    expect(totals.tax).toBe(2280);
+    expect(totals.totalAmount).toBe(14_280);
+  });
+
   test("tax-exempt product produces zero tax", () => {
     const items = [
       makeItem({
@@ -161,6 +175,33 @@ describe("calculateCartTotals", () => {
     ];
     const totals = calculateCartTotals(items, "3");
     expect(totals.discountAmount).toBe(2);
+    expect(totals.totalAmount).toBe(0);
+  });
+
+  test("sale-level discount exceeds taxable base — maxSaleDiscount exposes the limit, totalAmount clamps to 0", () => {
+    const items = [
+      makeItem({
+        product: makeProduct({ price: 10_000, taxRate: 19 }),
+        quantity: 1,
+      }),
+    ];
+    const totals = calculateCartTotals(items, "15000");
+    expect(totals.maxSaleDiscount).toBe(10_000);
+    expect(totals.saleDiscountAmount).toBe(15_000);
+    expect(totals.totalAmount).toBe(0);
+  });
+
+  test("sale-level discount exceeds taxable base with item-level discounts — maxSaleDiscount reflects net base", () => {
+    const items = [
+      makeItem({
+        product: makeProduct({ price: 10_000, taxRate: 0 }),
+        quantity: 1,
+        discountAmount: 3000,
+      }),
+    ];
+    const totals = calculateCartTotals(items, "8000");
+    expect(totals.maxSaleDiscount).toBe(7000);
+    expect(totals.saleDiscountAmount).toBe(8000);
     expect(totals.totalAmount).toBe(0);
   });
 });

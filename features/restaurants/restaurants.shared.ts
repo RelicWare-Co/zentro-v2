@@ -150,10 +150,15 @@ export function buildOrderSummary(
     quantity: number;
     status?: string | null;
     totalAmount: number;
+    baseSubtotal?: number;
+    modifiersTotal?: number;
+    discountAmount?: number;
+    taxRate?: number | null;
   }>
 ) {
   let itemCount = 0;
   let totalAmount = 0;
+  let taxAmount = 0;
   let draftItemsCount = 0;
   let readyItemsCount = 0;
   let servedItemsCount = 0;
@@ -163,7 +168,16 @@ export function buildOrderSummary(
       continue;
     }
     itemCount += item.quantity;
-    totalAmount += item.totalAmount;
+
+    const baseSubtotal = item.baseSubtotal ?? 0;
+    const modifiersTotal = item.modifiersTotal ?? 0;
+    const discountAmount = item.discountAmount ?? 0;
+    const taxRate = item.taxRate ?? 0;
+    const taxableBase = baseSubtotal + modifiersTotal - discountAmount;
+    const itemTax = Math.round((taxableBase * taxRate) / 100);
+    taxAmount += itemTax;
+    totalAmount += item.totalAmount + itemTax;
+
     if (item.status === "draft") {
       draftItemsCount += item.quantity;
     }
@@ -178,6 +192,7 @@ export function buildOrderSummary(
   return {
     itemCount,
     totalAmount,
+    taxAmount,
     draftItemsCount,
     readyItemsCount,
     servedItemsCount,
@@ -366,6 +381,7 @@ export function buildRestaurantBootstrap(params: {
       orderNumber: number;
       itemCount: number;
       totalAmount: number;
+      taxAmount: number;
       draftItemsCount: number;
       readyItemsCount: number;
       servedItemsCount: number;

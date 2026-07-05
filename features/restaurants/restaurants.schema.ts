@@ -160,6 +160,7 @@ const RestaurantTableOpenOrderSchema = z.object({
   orderNumber: z.number(),
   itemCount: z.number(),
   totalAmount: z.number(),
+  taxAmount: z.number(),
   draftItemsCount: z.number(),
   readyItemsCount: z.number(),
   servedItemsCount: z.number(),
@@ -232,6 +233,7 @@ const RestaurantKitchenTicketSchema = z.object({
 const RestaurantOrderTotalsSchema = z.object({
   itemCount: z.number(),
   totalAmount: z.number(),
+  taxAmount: z.number(),
   draftItemsCount: z.number(),
   readyItemsCount: z.number(),
   servedItemsCount: z.number(),

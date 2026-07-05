@@ -54,6 +54,7 @@ export type CashMovementType = "expense" | "payout" | "inflow";
 export interface CartTotals {
   discountAmount: number;
   itemsDiscountAmount: number;
+  maxSaleDiscount: number;
   saleDiscountAmount: number;
   subTotal: number;
   tax: number;

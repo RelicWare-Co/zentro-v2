@@ -170,6 +170,7 @@ const blankTotals: CartTotals = {
   tax: 0,
   discountAmount: 0,
   itemsDiscountAmount: 0,
+  maxSaleDiscount: 0,
   saleDiscountAmount: 0,
   totalAmount: 0,
 };
