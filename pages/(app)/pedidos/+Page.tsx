@@ -357,11 +357,19 @@ function PedidoCard({
 
 function PedidosInbox() {
   const [pedidos] = useQuery(queries.orders.inbox({ status: undefined }));
+  const [showAll, setShowAll] = useState(false);
   const [paymentTarget, setPaymentTarget] = useState<{
     id: string;
     orderNumber: number;
     totalAmount: number | null;
   } | null>(null);
+
+  const filteredPedidos = pedidos?.filter((p) => {
+    if (showAll) {
+      return true;
+    }
+    return p.status === "pending" || p.status === "accepted";
+  });
 
   if (!pedidos) {
     return (
@@ -371,32 +379,43 @@ function PedidosInbox() {
     );
   }
 
-  if (pedidos.length === 0) {
-    return (
-      <Stack align="center" gap="md" py={80}>
-        <Clock className="size-12 text-zinc-700" />
-        <h2 className="font-semibold text-xl text-zinc-500">No hay pedidos</h2>
-        <p className="max-w-sm text-center text-sm text-zinc-600">
-          Los pedidos que lleguen desde la página web aparecerán aquí en tiempo
-          real.
-        </p>
-      </Stack>
-    );
-  }
-
   return (
     <>
-      <ScrollArea.Autosize mah="calc(100dvh - 200px)" offsetScrollbars>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {pedidos.map((pedido) => (
-            <PedidoCard
-              key={pedido.id}
-              onPay={setPaymentTarget}
-              pedido={pedido}
-            />
-          ))}
-        </div>
-      </ScrollArea.Autosize>
+      <Group justify="flex-end" mb="md">
+        <Button
+          onClick={() => setShowAll(!showAll)}
+          size="compact-sm"
+          variant="subtle"
+        >
+          {showAll ? "Solo activos" : "Ver todos"}
+        </Button>
+      </Group>
+
+      {filteredPedidos.length === 0 ? (
+        <Stack align="center" gap="md" py={80}>
+          <Clock className="size-12 text-zinc-700" />
+          <h2 className="font-semibold text-xl text-zinc-500">
+            {showAll ? "No hay pedidos" : "No hay pedidos activos"}
+          </h2>
+          <p className="max-w-sm text-center text-sm text-zinc-600">
+            {showAll
+              ? "Los pedidos que lleguen desde la página web aparecerán aquí en tiempo real."
+              : "Cuando aceptes o recibas pedidos, aparecerán aquí."}
+          </p>
+        </Stack>
+      ) : (
+        <ScrollArea.Autosize mah="calc(100dvh - 240px)" offsetScrollbars>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {filteredPedidos.map((pedido) => (
+              <PedidoCard
+                key={pedido.id}
+                onPay={setPaymentTarget}
+                pedido={pedido}
+              />
+            ))}
+          </div>
+        </ScrollArea.Autosize>
+      )}
 
       <PaymentDialog
         onClose={() => setPaymentTarget(null)}
