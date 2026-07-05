@@ -136,7 +136,8 @@ export function useRegisterCreditPaymentMutation() {
           paymentId,
           transactionId,
         })
-      )
+      ),
+      { awaitServer: true }
     );
 
     return {

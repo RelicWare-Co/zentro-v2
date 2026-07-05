@@ -27,6 +27,7 @@ function applyShiftRelations<T extends ReturnType<typeof zql.shift.where>>(
     .related("payments", (paymentQuery) =>
       paymentQuery
         .related("sale")
+        .related("creditTransactions")
         .orderBy("createdAt", "desc")
         .orderBy("id", "desc")
     );

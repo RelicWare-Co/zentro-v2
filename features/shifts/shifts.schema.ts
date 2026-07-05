@@ -100,6 +100,7 @@ const ShiftListItemSchema = z.object({
   notes: z.string().nullable(),
   operations: ShiftOperationsSchema,
   paymentBreakdown: ShiftPaymentBreakdownSchema.array(),
+  debtPaymentBreakdown: ShiftPaymentBreakdownSchema.array(),
   payments: ShiftPaymentSchema.array(),
   movements: ShiftMovementSchema.array(),
   closures: ShiftClosureSchema.array(),

@@ -43,8 +43,8 @@ export function ShiftDetailSheet() {
     >
       <div className="flex h-full flex-col">
         <div className="shrink-0 border-zinc-800 border-b px-6 py-4">
-          <p className="text-base text-zinc-400">
-            Resumen de productos vendidos y categorías del turno.
+          <p className="text-sm text-zinc-400">
+            Resumen de ventas y productos vendidos por categoría.
           </p>
         </div>
         <div className="flex-1 overflow-y-auto p-6">

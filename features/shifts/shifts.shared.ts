@@ -49,6 +49,10 @@ export interface ShiftWithRelations {
     saleId?: string | null;
     createdAt: number;
     sale?: { totalAmount?: number | null; status?: string | null } | null;
+    creditTransactions?: Array<{
+      type?: string | null;
+      saleId?: string | null;
+    }>;
   }>;
   sales?: Array<{
     id: string;
@@ -315,6 +319,9 @@ function normalizeShiftPayments(shift: ShiftWithRelations) {
         paymentRow.sale?.totalAmount === undefined
           ? null
           : normalizeNumber(paymentRow.sale.totalAmount),
+      isDebtPayment: (paymentRow.creditTransactions ?? []).some(
+        (tx) => tx.type === "payment" && tx.saleId == null
+      ),
       createdAt: toTimestamp(paymentRow.createdAt) ?? 0,
     }))
     .toSorted((left, right) => right.createdAt - left.createdAt);
@@ -379,6 +386,20 @@ export function buildShiftListItem(shift: ShiftWithRelations): ShiftListItem {
           : amount,
     }))
     .sort((left, right) => comparePaymentMethodIds(left.method, right.method));
+  const debtPaymentsByMethod = new Map<string, number>();
+  for (const paymentRow of payments) {
+    if (!paymentRow.isDebtPayment) {
+      continue;
+    }
+    debtPaymentsByMethod.set(
+      paymentRow.method,
+      (debtPaymentsByMethod.get(paymentRow.method) ?? 0) + paymentRow.amount
+    );
+  }
+  const debtPaymentBreakdown = [...debtPaymentsByMethod.entries()]
+    .map(([method, amount]) => ({ method, amount }))
+    .sort((left, right) => comparePaymentMethodIds(left.method, right.method));
+
   const operations = buildShiftOperations(
     shift.sales,
     payments.map((p) => ({ saleId: p.saleId, appliedAmount: p.appliedAmount }))
@@ -408,6 +429,7 @@ export function buildShiftListItem(shift: ShiftWithRelations): ShiftListItem {
     notes: shift.notes ?? null,
     operations,
     paymentBreakdown,
+    debtPaymentBreakdown,
     payments,
     movements,
     closures,
