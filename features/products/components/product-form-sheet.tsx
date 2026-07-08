@@ -1,13 +1,17 @@
-import { Button, Drawer, Select, TextInput } from "@mantine/core";
-import { type FormEvent, useState } from "react";
+import { ActionIcon, Button, Drawer, Select, TextInput } from "@mantine/core";
+import { Trash2 } from "lucide-react";
+import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { Link } from "@/components/link";
 import { generateEan13Barcode } from "@/features/products/barcode.shared";
 import {
+  ProductFormCollapse,
   ProductsField,
   ProductsToggleLine,
 } from "@/features/products/components/products-ui-primitives";
+import { useIngredients } from "@/features/products/hooks/use-products";
 import {
   getProductFormInitialValue,
+  type ProductFormIngredientEntry,
   parseOptionalStockField,
 } from "@/features/products/products-form.shared";
 import { useProductsPage } from "@/features/products/products-page-context";
@@ -39,6 +43,8 @@ function ProductFormSheetContent({
   lowStockThreshold: number;
   lastCreatedCategoryId: string | null;
 }) {
+  const { state, actions } = useProductsPage();
+  const { ingredients } = useIngredients();
   const [form, setForm] = useState(() => getProductFormInitialValue(product));
   const [hasExplicitCategorySelection, setHasExplicitCategorySelection] =
     useState(false);
@@ -46,46 +52,136 @@ function ProductFormSheetContent({
     form.categoryId ||
     (hasExplicitCategorySelection ? "" : (lastCreatedCategoryId ?? ""));
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const editingProductIngredients = state.editingProductIngredients;
+  useEffect(() => {
+    if (!product || editingProductIngredients.length === 0) {
+      return;
+    }
+    setForm((current) => {
+      if (current.ingredients.length > 0) {
+        return current;
+      }
+      return {
+        ...current,
+        ingredients: editingProductIngredients.map((entry) => ({
+          ingredientId: entry.ingredientId,
+          quantity: String(entry.quantity),
+        })),
+      };
+    });
+  }, [editingProductIngredients, product]);
+
+  const ingredientOptions = useMemo(
+    () =>
+      ingredients.map((ingredient) => ({
+        value: ingredient.id,
+        label: ingredient.name,
+      })),
+    [ingredients]
+  );
+
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: pure payload builder with conditional field overrides
+  const buildSaveProductPayload = () => {
     const isPassthrough = form.accountingTreatment === "passthrough";
-    await onSave({
+    const isIngredient = form.isIngredient;
+    const effectiveTreatment = isIngredient
+      ? ("revenue" as const)
+      : (form.accountingTreatment as "revenue" | "passthrough");
+    return {
       ...(product ? { id: product.id } : {}),
       name: form.name,
       categoryId: effectiveCategoryId || null,
       sku: form.sku || null,
       barcode: form.barcode || null,
-      price: parseMoneyInput(form.price),
+      price: isIngredient ? 0 : parseMoneyInput(form.price),
       cost: parseMoneyInput(form.cost),
       taxRate: Number(form.taxRate) || 0,
       ...(product ? {} : { stock: Number(form.stock) || 0 }),
       minStock: parseOptionalStockField(form.minStock),
       reorderQuantity: parseOptionalStockField(form.reorderQuantity),
       trackInventory: isPassthrough ? false : form.trackInventory,
-      isModifier: isPassthrough ? false : form.isModifier,
-      accountingTreatment: form.accountingTreatment as
-        | "revenue"
-        | "passthrough",
-      autoPayoutEnabled: isPassthrough ? form.autoPayoutEnabled : false,
+      isModifier: isPassthrough || isIngredient ? false : form.isModifier,
+      accountingTreatment: effectiveTreatment,
+      autoPayoutEnabled:
+        isPassthrough && !isIngredient ? form.autoPayoutEnabled : false,
       autoPayoutPaymentMethod: isPassthrough
         ? form.autoPayoutPaymentMethod
         : "cash",
+      isIngredient,
+    };
+  };
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const payload = buildSaveProductPayload();
+    await onSave(payload);
+    await saveRecipeIfApplicable(product, payload.isIngredient);
+  };
+
+  const saveRecipeIfApplicable = async (
+    product: ReturnType<typeof useProductsPage>["state"]["editingProduct"],
+    isIngredient: boolean
+  ) => {
+    if (!product || isIngredient) {
+      return;
+    }
+    const validIngredients = form.ingredients.filter(
+      (entry) => entry.ingredientId && Number(entry.quantity) > 0
+    );
+    await actions.saveProductIngredients({
+      productId: product.id,
+      ingredients: validIngredients.map((entry) => ({
+        ingredientId: entry.ingredientId,
+        quantity: Number(entry.quantity),
+      })),
     });
+  };
+
+  const addIngredientEntry = () => {
+    setForm((current) => ({
+      ...current,
+      ingredients: [
+        ...current.ingredients,
+        { ingredientId: "", quantity: "1" },
+      ],
+    }));
+  };
+
+  const updateIngredientEntry = (
+    index: number,
+    patch: Partial<ProductFormIngredientEntry>
+  ) => {
+    setForm((current) => ({
+      ...current,
+      ingredients: current.ingredients.map((entry, entryIndex) =>
+        entryIndex === index ? { ...entry, ...patch } : entry
+      ),
+    }));
+  };
+
+  const removeIngredientEntry = (index: number) => {
+    setForm((current) => ({
+      ...current,
+      ingredients: current.ingredients.filter(
+        (_, entryIndex) => entryIndex !== index
+      ),
+    }));
   };
 
   return (
     <form className="flex h-full flex-col" onSubmit={handleSubmit}>
-      <div className="flex-1 space-y-6 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-6">
         <p className="text-sm text-zinc-400">
           Datos de venta, inventario y clasificación.
         </p>
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="mt-6 grid gap-4 md:grid-cols-2">
           <ProductsField label="Tipo de producto">
             <Select
               data={[
                 { value: "revenue", label: "Contable" },
                 { value: "passthrough", label: "No contable" },
               ]}
+              disabled={form.isIngredient}
               onChange={(value) =>
                 setForm((current) => ({
                   ...current,
@@ -99,27 +195,9 @@ function ProductFormSheetContent({
                     : {}),
                 }))
               }
-              value={form.accountingTreatment}
+              value={form.isIngredient ? "revenue" : form.accountingTreatment}
             />
           </ProductsField>
-          {form.accountingTreatment === "passthrough" &&
-          form.autoPayoutEnabled ? (
-            <ProductsField label="Método de autosalida">
-              <Select
-                data={enabledPaymentMethods.map((method) => ({
-                  value: method.id,
-                  label: method.label,
-                }))}
-                onChange={(value) =>
-                  setForm((current) => ({
-                    ...current,
-                    autoPayoutPaymentMethod: value ?? "cash",
-                  }))
-                }
-                value={form.autoPayoutPaymentMethod}
-              />
-            </ProductsField>
-          ) : null}
           <ProductsField label="Nombre" required>
             <TextInput
               id="product-form-name"
@@ -201,22 +279,24 @@ function ProductFormSheetContent({
               </Button>
             </div>
           </ProductsField>
-          <ProductsField label="Precio unitario" required>
-            <TextInput
-              id="product-form-price"
-              inputMode="numeric"
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  price: sanitizeMoneyInput(event.target.value),
-                }))
-              }
-              placeholder="0"
-              required
-              type="text"
-              value={formatMoneyInput(form.price)}
-            />
-          </ProductsField>
+          {form.isIngredient ? null : (
+            <ProductsField label="Precio unitario" required>
+              <TextInput
+                id="product-form-price"
+                inputMode="numeric"
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    price: sanitizeMoneyInput(event.target.value),
+                  }))
+                }
+                placeholder="0"
+                required
+                type="text"
+                value={formatMoneyInput(form.price)}
+              />
+            </ProductsField>
+          )}
           <ProductsField label="Costo">
             <TextInput
               id="product-form-cost"
@@ -232,8 +312,12 @@ function ProductFormSheetContent({
               value={formatMoneyInput(form.cost)}
             />
           </ProductsField>
-          <ProductsField label="Impuesto (%)">
+          <ProductsField
+            label="Impuesto (%)"
+            required={form.accountingTreatment !== "passthrough"}
+          >
             <TextInput
+              disabled={form.accountingTreatment === "passthrough"}
               max={100}
               min={0}
               onChange={(event) =>
@@ -247,67 +331,68 @@ function ProductFormSheetContent({
               value={form.taxRate}
             />
           </ProductsField>
-          {form.trackInventory ? (
-            <>
-              {!product && (
-                <ProductsField label="Stock inicial">
-                  <TextInput
-                    id="product-form-stock"
-                    min={0}
-                    onChange={(event) =>
-                      setForm((current) => ({
-                        ...current,
-                        stock: event.target.value,
-                      }))
-                    }
-                    placeholder="0"
-                    type="number"
-                    value={form.stock}
-                  />
-                </ProductsField>
-              )}
-              <ProductsField label="Stock mínimo (alerta)">
-                <TextInput
-                  min={0}
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      minStock: event.target.value,
-                    }))
-                  }
-                  placeholder={`Vacío = ${lowStockThreshold}`}
-                  type="number"
-                  value={form.minStock}
-                />
-                <p className="mt-1 text-xs text-zinc-500">
-                  Vacío usa el umbral global ({lowStockThreshold}).{" "}
-                  <Link
-                    className="text-[var(--color-voltage)] hover:underline"
-                    href="/settings"
-                  >
-                    Editar en configuración
-                  </Link>
-                </p>
-              </ProductsField>
-              <ProductsField label="Cantidad sugerida de reposición">
-                <TextInput
-                  min={0}
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      reorderQuantity: event.target.value,
-                    }))
-                  }
-                  placeholder="Opcional"
-                  type="number"
-                  value={form.reorderQuantity}
-                />
-              </ProductsField>
-            </>
-          ) : null}
         </div>
 
-        <div className="grid gap-3 md:grid-cols-2">
+        <ProductFormCollapse visible={form.trackInventory}>
+          <div className="mt-6 grid gap-4 md:grid-cols-2">
+            {!product && (
+              <ProductsField label="Stock inicial">
+                <TextInput
+                  id="product-form-stock"
+                  min={0}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      stock: event.target.value,
+                    }))
+                  }
+                  placeholder="0"
+                  type="number"
+                  value={form.stock}
+                />
+              </ProductsField>
+            )}
+            <ProductsField label="Stock mínimo (alerta)">
+              <TextInput
+                min={0}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    minStock: event.target.value,
+                  }))
+                }
+                placeholder={`Vacío = ${lowStockThreshold}`}
+                type="number"
+                value={form.minStock}
+              />
+              <p className="mt-1 text-xs text-zinc-500">
+                Vacío usa el umbral global ({lowStockThreshold}).{" "}
+                <Link
+                  className="text-[var(--color-voltage)] hover:underline"
+                  href="/settings"
+                >
+                  Editar en configuración
+                </Link>
+              </p>
+            </ProductsField>
+            <ProductsField label="Cantidad sugerida de reposición">
+              <TextInput
+                min={0}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    reorderQuantity: event.target.value,
+                  }))
+                }
+                placeholder="Opcional"
+                type="number"
+                value={form.reorderQuantity}
+              />
+            </ProductsField>
+          </div>
+        </ProductFormCollapse>
+
+        <div className="mt-6 grid gap-3 md:grid-cols-2">
           <ProductsToggleLine
             checked={form.trackInventory}
             description="Actualiza stock y movimientos."
@@ -320,22 +405,47 @@ function ProductFormSheetContent({
             }
             title="Controlar inventario"
           />
+          {form.isIngredient ? null : (
+            <ProductsToggleLine
+              checked={form.isModifier}
+              description="Se usa como adicional en POS."
+              disabled={form.accountingTreatment === "passthrough"}
+              onCheckedChange={(checked) =>
+                setForm((current) => ({
+                  ...current,
+                  isModifier: checked,
+                }))
+              }
+              title="Es modificador"
+            />
+          )}
           <ProductsToggleLine
-            checked={form.isModifier}
-            description="Se usa como adicional en POS."
-            disabled={form.accountingTreatment === "passthrough"}
+            checked={form.isIngredient}
+            description="Insumo consumido por receta. No aparece en POS."
             onCheckedChange={(checked) =>
               setForm((current) => ({
                 ...current,
-                isModifier: checked,
+                isIngredient: checked,
+                ...(checked
+                  ? {
+                      price: "0",
+                      isModifier: false,
+                      accountingTreatment: "revenue",
+                      autoPayoutEnabled: false,
+                    }
+                  : {}),
               }))
             }
-            title="Es modificador"
+            title="Es insumo"
           />
         </div>
 
-        {form.accountingTreatment === "passthrough" ? (
-          <div className="space-y-3">
+        <ProductFormCollapse
+          visible={
+            form.accountingTreatment === "passthrough" && !form.isIngredient
+          }
+        >
+          <div className="mt-6">
             <ProductsToggleLine
               checked={form.autoPayoutEnabled}
               description="Crea una salida de caja automática al vender este producto."
@@ -347,15 +457,108 @@ function ProductFormSheetContent({
               }
               title="Autosalida de caja"
             />
-            <p className="text-xs text-zinc-500">
+            <ProductFormCollapse visible={form.autoPayoutEnabled}>
+              <div className="mt-3">
+                <ProductsField label="Método de autosalida">
+                  <Select
+                    data={enabledPaymentMethods.map((method) => ({
+                      value: method.id,
+                      label: method.label,
+                    }))}
+                    onChange={(value) =>
+                      setForm((current) => ({
+                        ...current,
+                        autoPayoutPaymentMethod: value ?? "cash",
+                      }))
+                    }
+                    value={form.autoPayoutPaymentMethod}
+                  />
+                </ProductsField>
+              </div>
+            </ProductFormCollapse>
+            <p className="mt-3 text-xs text-zinc-500">
               Los productos no contables se facturan y cobran normalmente, pero
               se excluyen de ingresos y reportes contables.
             </p>
           </div>
-        ) : null}
+        </ProductFormCollapse>
+
+        {form.isIngredient ? null : (
+          <div className="mt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium text-sm text-white">
+                  Receta (ingredientes)
+                </p>
+                <p className="text-xs text-zinc-500">
+                  Ingredientes consumidos automáticamente al vender este
+                  producto.
+                </p>
+              </div>
+              <Button
+                color="gray"
+                onClick={addIngredientEntry}
+                size="xs"
+                type="button"
+                variant="outline"
+              >
+                Agregar ingrediente
+              </Button>
+            </div>
+            {form.ingredients.length === 0 ? (
+              <p className="mt-3 text-sm text-zinc-500">
+                Sin ingredientes. Este producto no consume insumos al venderse.
+              </p>
+            ) : (
+              <div className="mt-3 space-y-2">
+                {form.ingredients.map((entry, index) => (
+                  <div
+                    className="flex items-center gap-2"
+                    // biome-ignore lint/suspicious/noArrayIndexKey: index combined with ingredientId for stable keys when adding new entries
+                    key={`ingredient-${entry.ingredientId || "new"}-${index}`}
+                  >
+                    <Select
+                      className="flex-1"
+                      data={ingredientOptions}
+                      onChange={(value) =>
+                        updateIngredientEntry(index, {
+                          ingredientId: value ?? "",
+                        })
+                      }
+                      placeholder="Seleccionar ingrediente"
+                      searchable
+                      value={entry.ingredientId}
+                    />
+                    <TextInput
+                      className="w-24"
+                      min={1}
+                      onChange={(event) =>
+                        updateIngredientEntry(index, {
+                          quantity: event.target.value,
+                        })
+                      }
+                      placeholder="Cant."
+                      type="number"
+                      value={entry.quantity}
+                    />
+                    <ActionIcon
+                      aria-label="Eliminar ingrediente"
+                      color="red"
+                      onClick={() => removeIngredientEntry(index)}
+                      type="button"
+                      variant="outline"
+                    >
+                      <Trash2 className="size-3.5" />
+                    </ActionIcon>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {error ? (
-          <p className="rounded-md border border-red-400/20 bg-red-400/10 p-3 font-medium text-red-300 text-sm">
+          <p className="mt-6 rounded-md border border-red-400/20 bg-red-400/10 p-3 font-medium text-red-300 text-sm">
             {getErrorMessage(error, "No se pudo guardar el producto.")}
           </p>
         ) : null}

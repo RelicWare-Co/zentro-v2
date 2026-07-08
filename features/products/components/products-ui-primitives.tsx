@@ -1,5 +1,24 @@
-import { Switch } from "@mantine/core";
+import { Collapse, Switch } from "@mantine/core";
 import type { ReactNode } from "react";
+
+export function ProductFormCollapse({
+  children,
+  visible,
+}: {
+  children: ReactNode;
+  visible: boolean;
+}) {
+  return (
+    <Collapse
+      animateOpacity
+      expanded={visible}
+      transitionDuration={200}
+      transitionTimingFunction="cubic-bezier(0.25, 0.46, 0.45, 0.94)"
+    >
+      {children}
+    </Collapse>
+  );
+}
 
 export function ProductsField({
   label,

@@ -30,6 +30,7 @@ export type {
   Pedido,
   PedidoItem,
   Product,
+  ProductIngredient,
   RestaurantArea,
   RestaurantKitchenTicket,
   RestaurantOrder,

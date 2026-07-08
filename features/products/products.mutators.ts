@@ -2,10 +2,13 @@ import type { z } from "zod";
 import { ToggleProductFavoriteInputSchema } from "@/features/pos/pos.schema";
 import {
   CreateCategorySchema,
+  CreateProductIngredientSchema,
   CreateProductSchema,
   DeleteCategorySchema,
+  DeleteProductIngredientSchema,
   DeleteProductSchema,
   RegisterInventoryMovementSchema,
+  SetProductIngredientsSchema,
   UpdateCategorySchema,
   UpdateProductSchema,
 } from "@/features/products/products.schema";
@@ -17,6 +20,7 @@ import {
   resolveTimestamp,
   toInteger,
   toNonNegativeInteger,
+  toPositiveInteger,
   type ZeroMutatorTransaction,
 } from "@/zero/sdk";
 
@@ -27,6 +31,7 @@ interface ProductUpdatePatch {
   barcode?: string | null;
   categoryId?: string | null;
   cost?: number;
+  isIngredient?: boolean;
   isModifier?: boolean;
   minStock?: number | null;
   name?: string;
@@ -53,6 +58,12 @@ export const createCategoryArgsSchema = CreateCategorySchema.extend({
 export const updateCategoryArgsSchema = UpdateCategorySchema;
 export const deleteCategoryArgsSchema = DeleteCategorySchema;
 export const toggleProductFavoriteArgsSchema = ToggleProductFavoriteInputSchema;
+export const createProductIngredientArgsSchema =
+  CreateProductIngredientSchema.extend({
+    id: DeleteProductSchema.shape.id,
+  });
+export const deleteProductIngredientArgsSchema = DeleteProductIngredientSchema;
+export const setProductIngredientsArgsSchema = SetProductIngredientsSchema;
 
 async function assertCategoryFromOrganization({
   categoryId,
@@ -194,6 +205,16 @@ function applyProductTypeUpdates(
   args: z.infer<typeof updateProductArgsSchema>,
   existingAccountingTreatment: string
 ) {
+  if (args.isIngredient) {
+    updates.isIngredient = true;
+    updates.isModifier = false;
+    updates.price = 0;
+    updates.accountingTreatment = "revenue";
+    return;
+  }
+  if (args.isIngredient !== undefined) {
+    updates.isIngredient = args.isIngredient;
+  }
   const effectiveTreatment =
     args.accountingTreatment ?? existingAccountingTreatment;
   if (effectiveTreatment === "passthrough") {
@@ -207,6 +228,51 @@ function applyProductTypeUpdates(
   if (args.isModifier !== undefined) {
     updates.isModifier = args.isModifier;
   }
+}
+
+function buildCreateProductInsertPayload(
+  args: z.infer<typeof createProductArgsSchema>,
+  organizationId: string,
+  categoryId: string | null,
+  normalizedName: string
+) {
+  const isIngredient = args.isIngredient ?? false;
+  const effectiveTreatment = isIngredient
+    ? "revenue"
+    : (args.accountingTreatment ?? "revenue");
+  const isPassthrough = effectiveTreatment === "passthrough";
+
+  return {
+    id: args.id,
+    organizationId,
+    categoryId,
+    name: normalizedName,
+    sku: normalizeOptionalString(args.sku),
+    barcode: normalizeOptionalString(args.barcode),
+    price: isIngredient ? 0 : toNonNegativeInteger(args.price, "price"),
+    cost: toNonNegativeInteger(args.cost ?? 0, "cost"),
+    taxRate: toNonNegativeInteger(args.taxRate ?? 0, "taxRate"),
+    stock: toNonNegativeInteger(args.stock ?? 0, "stock"),
+    minStock:
+      args.minStock === undefined || args.minStock === null
+        ? null
+        : toNonNegativeInteger(args.minStock, "minStock"),
+    reorderQuantity:
+      args.reorderQuantity === undefined || args.reorderQuantity === null
+        ? null
+        : toNonNegativeInteger(args.reorderQuantity, "reorderQuantity"),
+    accountingTreatment: effectiveTreatment,
+    trackInventory: isPassthrough ? false : (args.trackInventory ?? true),
+    isModifier:
+      isPassthrough || isIngredient ? false : (args.isModifier ?? false),
+    isIngredient,
+    isFavorite: false,
+    autoPayoutEnabled:
+      isPassthrough || isIngredient ? false : (args.autoPayoutEnabled ?? false),
+    autoPayoutPaymentMethod: args.autoPayoutPaymentMethod ?? "cash",
+    deletedAt: null,
+    createdAt: Date.now(),
+  };
 }
 
 export const productsMutators = {
@@ -226,40 +292,14 @@ export const productsMutators = {
           tx,
         });
 
-        await tx.mutate.product.insert({
-          id: args.id,
-          organizationId: zeroContext.orgID,
-          categoryId,
-          name: normalizedName,
-          sku: normalizeOptionalString(args.sku),
-          barcode: normalizeOptionalString(args.barcode),
-          price: toNonNegativeInteger(args.price, "price"),
-          cost: toNonNegativeInteger(args.cost ?? 0, "cost"),
-          taxRate: toNonNegativeInteger(args.taxRate ?? 0, "taxRate"),
-          stock: toNonNegativeInteger(args.stock ?? 0, "stock"),
-          minStock:
-            args.minStock === undefined || args.minStock === null
-              ? null
-              : toNonNegativeInteger(args.minStock, "minStock"),
-          reorderQuantity:
-            args.reorderQuantity === undefined || args.reorderQuantity === null
-              ? null
-              : toNonNegativeInteger(args.reorderQuantity, "reorderQuantity"),
-          accountingTreatment: args.accountingTreatment ?? "revenue",
-          trackInventory:
-            (args.accountingTreatment ?? "revenue") === "passthrough"
-              ? false
-              : (args.trackInventory ?? true),
-          isModifier:
-            (args.accountingTreatment ?? "revenue") === "passthrough"
-              ? false
-              : (args.isModifier ?? false),
-          isFavorite: false,
-          autoPayoutEnabled: args.autoPayoutEnabled ?? false,
-          autoPayoutPaymentMethod: args.autoPayoutPaymentMethod ?? "cash",
-          deletedAt: null,
-          createdAt: Date.now(),
-        });
+        await tx.mutate.product.insert(
+          buildCreateProductInsertPayload(
+            args,
+            zeroContext.orgID,
+            categoryId,
+            normalizedName
+          )
+        );
       }
     ),
     update: defineZentroMutator(
@@ -428,6 +468,87 @@ export const productsMutators = {
         });
 
         await tx.mutate.category.delete({ id: args.id });
+      }
+    ),
+  },
+  productIngredients: {
+    create: defineZentroMutator(
+      createProductIngredientArgsSchema,
+      async ({ args, ctx, tx }) => {
+        const zeroContext = assertOrgZeroContext(ctx);
+        await assertActiveProduct({
+          id: args.productId,
+          organizationId: zeroContext.orgID,
+          tx,
+        });
+        await assertActiveProduct({
+          id: args.ingredientId,
+          organizationId: zeroContext.orgID,
+          tx,
+        });
+
+        await tx.mutate.productIngredient.insert({
+          id: args.id,
+          organizationId: zeroContext.orgID,
+          productId: args.productId,
+          ingredientId: args.ingredientId,
+          quantity: toPositiveInteger(args.quantity, "quantity"),
+          createdAt: Date.now(),
+        });
+      }
+    ),
+    delete: defineZentroMutator(
+      deleteProductIngredientArgsSchema,
+      async ({ args, ctx, tx }) => {
+        const zeroContext = assertOrgZeroContext(ctx);
+        const existingRows = await tx.run(
+          zql.productIngredient
+            .where("id", args.id)
+            .where("organizationId", zeroContext.orgID)
+            .limit(1)
+        );
+        if (existingRows.length === 0) {
+          throw new Error("El ingrediente no existe en la organización actual");
+        }
+
+        await tx.mutate.productIngredient.delete({ id: args.id });
+      }
+    ),
+    setForProduct: defineZentroMutator(
+      setProductIngredientsArgsSchema,
+      async ({ args, ctx, tx }) => {
+        const zeroContext = assertOrgZeroContext(ctx);
+        await assertActiveProduct({
+          id: args.productId,
+          organizationId: zeroContext.orgID,
+          tx,
+        });
+
+        const existingRows = await tx.run(
+          zql.productIngredient
+            .where("organizationId", zeroContext.orgID)
+            .where("productId", args.productId)
+        );
+
+        for (const row of existingRows) {
+          await tx.mutate.productIngredient.delete({ id: row.id });
+        }
+
+        for (const ingredient of args.ingredients) {
+          await assertActiveProduct({
+            id: ingredient.ingredientId,
+            organizationId: zeroContext.orgID,
+            tx,
+          });
+          await tx.mutate.productIngredient.insert({
+            id: crypto.randomUUID(),
+            organizationId: zeroContext.orgID,
+            productId: args.productId,
+            ingredientId: ingredient.ingredientId,
+            quantity: toPositiveInteger(ingredient.quantity, "quantity"),
+            createdAt: Date.now(),
+          });
+        }
       }
     ),
   },

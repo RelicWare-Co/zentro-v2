@@ -46,6 +46,11 @@ export function ProductsTable() {
                 Modificador
               </Badge>
             ) : null}
+            {row.original.isIngredient ? (
+              <Badge color="grape" mt={4} tt="none" variant="light">
+                Insumo
+              </Badge>
+            ) : null}
           </div>
         ),
       }),
@@ -79,11 +84,14 @@ export function ProductsTable() {
       }),
       columnHelper.accessor("price", {
         header: "Precio",
-        cell: ({ getValue }) => (
-          <span className="font-medium text-zinc-200">
-            {formatProductCurrency(getValue())}
-          </span>
-        ),
+        cell: ({ row }) =>
+          row.original.isIngredient ? (
+            <span className="text-zinc-500">—</span>
+          ) : (
+            <span className="font-medium text-zinc-200">
+              {formatProductCurrency(row.original.price)}
+            </span>
+          ),
       }),
       columnHelper.display({
         id: "actions",

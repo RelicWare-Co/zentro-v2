@@ -6,7 +6,11 @@ import {
   user,
 } from "@/database/drizzle/schema/auth.schema";
 import { customer } from "@/database/drizzle/schema/customer.schema";
-import { category, product } from "@/database/drizzle/schema/inventory.schema";
+import {
+  category,
+  product,
+  productIngredient,
+} from "@/database/drizzle/schema/inventory.schema";
 import { shift } from "@/database/drizzle/schema/pos.schema";
 import {
   restaurantArea,
@@ -127,6 +131,7 @@ export async function seedProduct(
     cost?: number;
     taxRate?: number;
     isModifier?: boolean;
+    isIngredient?: boolean;
     trackInventory?: boolean;
     stock?: number;
     isFavorite?: boolean;
@@ -138,6 +143,7 @@ export async function seedProduct(
 ) {
   const id = crypto.randomUUID();
   const now = new Date();
+  const isIngredient = opts.isIngredient ?? false;
 
   await db.insert(product).values({
     id,
@@ -146,17 +152,44 @@ export async function seedProduct(
     name: opts.name ?? "Test Product",
     sku: opts.sku ?? null,
     barcode: opts.barcode ?? null,
-    price: opts.price ?? 10_000,
+    price: isIngredient ? 0 : (opts.price ?? 10_000),
     cost: opts.cost ?? 0,
     taxRate: opts.taxRate ?? 0,
-    isModifier: opts.isModifier ?? false,
+    isModifier: isIngredient ? false : (opts.isModifier ?? false),
+    isIngredient,
     trackInventory: opts.trackInventory ?? true,
     stock: opts.stock ?? 100,
     isFavorite: opts.isFavorite ?? false,
-    accountingTreatment: opts.accountingTreatment ?? "revenue",
-    autoPayoutEnabled: opts.autoPayoutEnabled ?? false,
+    accountingTreatment: isIngredient
+      ? "revenue"
+      : (opts.accountingTreatment ?? "revenue"),
+    autoPayoutEnabled: isIngredient ? false : (opts.autoPayoutEnabled ?? false),
     autoPayoutPaymentMethod: opts.autoPayoutPaymentMethod ?? "cash",
     deletedAt: opts.deletedAt ?? null,
+    createdAt: now,
+  });
+
+  return id;
+}
+
+export async function seedProductIngredient(
+  db: TestDb,
+  opts: {
+    organizationId: string;
+    productId: string;
+    ingredientId: string;
+    quantity: number;
+  }
+) {
+  const id = crypto.randomUUID();
+  const now = new Date();
+
+  await db.insert(productIngredient).values({
+    id,
+    organizationId: opts.organizationId,
+    productId: opts.productId,
+    ingredientId: opts.ingredientId,
+    quantity: opts.quantity,
     createdAt: now,
   });
 

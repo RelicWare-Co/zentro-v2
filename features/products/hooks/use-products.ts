@@ -6,11 +6,15 @@ import { getStockStatus } from "@/features/inventory/stock-status.shared";
 import type {
   CategorySchema,
   CreateCategorySchema,
+  CreateProductIngredientSchema,
   CreateProductSchema,
   DeleteCategorySchema,
+  DeleteProductIngredientSchema,
   DeleteProductSchema,
+  ProductIngredientSchema,
   ProductSchema,
   RegisterInventoryMovementSchema,
+  SetProductIngredientsSchema,
   UpdateCategorySchema,
   UpdateProductSchema,
 } from "@/features/products/products.schema";
@@ -25,6 +29,7 @@ import { queries } from "@/zero/queries";
 import type {
   Category as ZeroCategory,
   Product as ZeroProduct,
+  ProductIngredient as ZeroProductIngredient,
 } from "@/zero/schema";
 
 type ZeroProductWithCategory = ZeroProduct & {
@@ -33,6 +38,7 @@ type ZeroProductWithCategory = ZeroProduct & {
 
 export type Product = z.infer<typeof ProductSchema>;
 export type Category = z.infer<typeof CategorySchema>;
+export type ProductIngredient = z.infer<typeof ProductIngredientSchema>;
 type CreateProductInput = z.infer<typeof CreateProductSchema>;
 type UpdateProductInput = z.infer<typeof UpdateProductSchema>;
 type DeleteProductInput = z.infer<typeof DeleteProductSchema>;
@@ -42,6 +48,13 @@ type RegisterInventoryMovementInput = z.infer<
 type CreateCategoryInput = z.infer<typeof CreateCategorySchema>;
 type UpdateCategoryInput = z.infer<typeof UpdateCategorySchema>;
 type DeleteCategoryInput = z.infer<typeof DeleteCategorySchema>;
+type CreateProductIngredientInput = z.infer<
+  typeof CreateProductIngredientSchema
+>;
+type DeleteProductIngredientInput = z.infer<
+  typeof DeleteProductIngredientSchema
+>;
+type SetProductIngredientsInput = z.infer<typeof SetProductIngredientsSchema>;
 
 function normalizeProduct(product: ZeroProductWithCategory): Product {
   return {
@@ -59,6 +72,7 @@ function normalizeProduct(product: ZeroProductWithCategory): Product {
     reorderQuantity: product.reorderQuantity ?? null,
     trackInventory: product.trackInventory ?? true,
     isModifier: product.isModifier ?? false,
+    isIngredient: product.isIngredient ?? false,
     isFavorite: product.isFavorite ?? false,
     accountingTreatment: (product.accountingTreatment ?? "revenue") as
       | "revenue"
@@ -100,6 +114,48 @@ export function useProductById(productId: string | null | undefined) {
       productStatus.type === "unknown" &&
       !product,
     error: getZeroQueryError(productStatus),
+  };
+}
+
+function normalizeProductIngredient(
+  row: ZeroProductIngredient
+): ProductIngredient {
+  return {
+    id: row.id,
+    productId: row.productId,
+    ingredientId: row.ingredientId,
+    quantity: row.quantity,
+  };
+}
+
+export function useProductIngredients(productId: string | null | undefined) {
+  const normalizedProductId = productId?.trim() ?? "";
+  const [rows, status] = useZeroQuery(
+    queries.productIngredients.byProduct({
+      productId: normalizedProductId || null,
+    })
+  );
+  const productIngredients = useMemo(
+    () => rows.map(normalizeProductIngredient),
+    [rows]
+  );
+  return {
+    productIngredients,
+    isLoading:
+      Boolean(normalizedProductId) &&
+      status.type === "unknown" &&
+      productIngredients.length === 0,
+    error: getZeroQueryError(status),
+  };
+}
+
+export function useIngredients() {
+  const [rows, status] = useZeroQuery(queries.products.ingredients());
+  const ingredients = useMemo(() => rows.map(normalizeProduct), [rows]);
+  return {
+    ingredients,
+    isLoading: status.type === "unknown" && ingredients.length === 0,
+    error: getZeroQueryError(status),
   };
 }
 
@@ -241,6 +297,7 @@ export function useProductsMutations(options?: {
   onUpdateCategorySuccess?: () => void;
   onDeleteCategorySuccess?: () => void;
   onRegisterInventoryMovementSuccess?: () => void;
+  onSaveProductIngredientsSuccess?: () => void;
 }) {
   const createProductMutation = useZeroMutation(
     async (input: CreateProductInput, zero) => {
@@ -319,6 +376,39 @@ export function useProductsMutations(options?: {
     },
     { onSuccess: () => options?.onDeleteCategorySuccess?.() }
   );
+  const createProductIngredientMutation = useZeroMutation(
+    async (input: CreateProductIngredientInput, zero) => {
+      const id = crypto.randomUUID();
+      await waitForZeroMutation(
+        zero.mutate(
+          mutators.productIngredients.create({
+            ...input,
+            id,
+          })
+        )
+      );
+      return { id };
+    },
+    { onSuccess: () => options?.onSaveProductIngredientsSuccess?.() }
+  );
+  const deleteProductIngredientMutation = useZeroMutation(
+    async (input: DeleteProductIngredientInput, zero) => {
+      await waitForZeroMutation(
+        zero.mutate(mutators.productIngredients.delete(input))
+      );
+      return { success: true };
+    },
+    { onSuccess: () => options?.onSaveProductIngredientsSuccess?.() }
+  );
+  const setProductIngredientsMutation = useZeroMutation(
+    async (input: SetProductIngredientsInput, zero) => {
+      await waitForZeroMutation(
+        zero.mutate(mutators.productIngredients.setForProduct(input))
+      );
+      return { success: true };
+    },
+    { onSuccess: () => options?.onSaveProductIngredientsSuccess?.() }
+  );
 
   return {
     createProductMutation,
@@ -328,5 +418,8 @@ export function useProductsMutations(options?: {
     createCategoryMutation,
     updateCategoryMutation,
     deleteCategoryMutation,
+    createProductIngredientMutation,
+    deleteProductIngredientMutation,
+    setProductIngredientsMutation,
   };
 }

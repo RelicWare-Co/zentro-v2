@@ -30,6 +30,8 @@ import {
   inventoryMovement,
   inventoryMovementRelations,
   product,
+  productIngredient,
+  productIngredientRelations,
   productRelations,
 } from "./database/drizzle/schema/inventory.schema";
 import {
@@ -101,6 +103,8 @@ const drizzleSchema = {
   pedidoItemRelations,
   pedidoRelations,
   product,
+  productIngredient,
+  productIngredientRelations,
   productRelations,
   restaurantArea,
   restaurantAreaRelations,
@@ -215,6 +219,7 @@ export default drizzleZeroConfig(drizzleSchema, {
       cost: true,
       taxRate: true,
       isModifier: true,
+      isIngredient: true,
       trackInventory: true,
       stock: true,
       minStock: true,
@@ -224,6 +229,14 @@ export default drizzleZeroConfig(drizzleSchema, {
       autoPayoutEnabled: true,
       autoPayoutPaymentMethod: true,
       deletedAt: true,
+      createdAt: true,
+    },
+    productIngredient: {
+      id: true,
+      organizationId: true,
+      productId: true,
+      ingredientId: true,
+      quantity: true,
       createdAt: true,
     },
     inventoryMovement: {
