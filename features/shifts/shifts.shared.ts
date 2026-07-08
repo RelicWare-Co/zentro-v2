@@ -56,9 +56,11 @@ export interface ShiftWithRelations {
   }>;
   sales?: Array<{
     id: string;
+    passThroughTotalAmount?: number | null;
     status?: string | null;
     totalAmount?: number | null;
     items?: Array<{
+      accountingTreatment?: string | null;
       id: string;
       productId: string;
       quantity: number;
@@ -84,6 +86,17 @@ export interface ShiftWithRelations {
 }
 
 import { normalizeNumber } from "@/lib/domain-values.shared";
+
+function getAccountingSaleTotal(row: {
+  passThroughTotalAmount?: number | null;
+  totalAmount?: number | null;
+}) {
+  return Math.max(
+    normalizeNumber(row.totalAmount) -
+      normalizeNumber(row.passThroughTotalAmount),
+    0
+  );
+}
 
 export function toTimestamp(value: Date | number | string | null | undefined) {
   if (value == null) {
@@ -272,11 +285,11 @@ function buildShiftOperations(
     switch (row.status) {
       case "completed":
         operations.paidSalesCount += 1;
-        operations.paidSalesAmount += normalizeNumber(row.totalAmount);
+        operations.paidSalesAmount += getAccountingSaleTotal(row);
         break;
       case "cancelled":
         operations.cancelledSalesCount += 1;
-        operations.cancelledSalesAmount += normalizeNumber(row.totalAmount);
+        operations.cancelledSalesAmount += getAccountingSaleTotal(row);
         break;
       case "credit": {
         operations.creditSalesCount += 1;
@@ -518,6 +531,7 @@ interface ProductAccumulator {
 function upsertProduct(
   productMap: Map<string, ProductAccumulator>,
   item: {
+    accountingTreatment?: string | null;
     productId: string;
     quantity: number;
     unitPrice: number;
@@ -606,6 +620,9 @@ export function buildShiftProductSummary(
     const saleTotal = normalizeNumber(sale.totalAmount);
 
     for (const item of sale.items ?? []) {
+      if (item.accountingTreatment === "passthrough") {
+        continue;
+      }
       const productEntry = upsertProduct(productMap, item);
       allocatePaymentsToProduct(
         productEntry,

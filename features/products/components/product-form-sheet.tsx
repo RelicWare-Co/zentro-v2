@@ -21,6 +21,7 @@ import {
 function ProductFormSheetContent({
   product,
   categories,
+  enabledPaymentMethods,
   isPending,
   error,
   onSave,
@@ -30,6 +31,7 @@ function ProductFormSheetContent({
 }: {
   product: ReturnType<typeof useProductsPage>["state"]["editingProduct"];
   categories: ReturnType<typeof useProductsPage>["state"]["categories"];
+  enabledPaymentMethods: Array<{ id: string; label: string }>;
   isPending: boolean;
   error: unknown;
   onSave: ReturnType<typeof useProductsPage>["actions"]["saveProduct"];
@@ -46,6 +48,7 @@ function ProductFormSheetContent({
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const isPassthrough = form.accountingTreatment === "passthrough";
     await onSave({
       ...(product ? { id: product.id } : {}),
       name: form.name,
@@ -58,8 +61,15 @@ function ProductFormSheetContent({
       ...(product ? {} : { stock: Number(form.stock) || 0 }),
       minStock: parseOptionalStockField(form.minStock),
       reorderQuantity: parseOptionalStockField(form.reorderQuantity),
-      trackInventory: form.trackInventory,
-      isModifier: form.isModifier,
+      trackInventory: isPassthrough ? false : form.trackInventory,
+      isModifier: isPassthrough ? false : form.isModifier,
+      accountingTreatment: form.accountingTreatment as
+        | "revenue"
+        | "passthrough",
+      autoPayoutEnabled: isPassthrough ? form.autoPayoutEnabled : false,
+      autoPayoutPaymentMethod: isPassthrough
+        ? form.autoPayoutPaymentMethod
+        : "cash",
     });
   };
 
@@ -70,6 +80,46 @@ function ProductFormSheetContent({
           Datos de venta, inventario y clasificación.
         </p>
         <div className="grid gap-4 md:grid-cols-2">
+          <ProductsField label="Tipo de producto">
+            <Select
+              data={[
+                { value: "revenue", label: "Contable" },
+                { value: "passthrough", label: "No contable" },
+              ]}
+              onChange={(value) =>
+                setForm((current) => ({
+                  ...current,
+                  accountingTreatment: value ?? "revenue",
+                  ...(value === "passthrough"
+                    ? {
+                        trackInventory: false,
+                        isModifier: false,
+                        taxRate: "0",
+                      }
+                    : {}),
+                }))
+              }
+              value={form.accountingTreatment}
+            />
+          </ProductsField>
+          {form.accountingTreatment === "passthrough" &&
+          form.autoPayoutEnabled ? (
+            <ProductsField label="Método de autosalida">
+              <Select
+                data={enabledPaymentMethods.map((method) => ({
+                  value: method.id,
+                  label: method.label,
+                }))}
+                onChange={(value) =>
+                  setForm((current) => ({
+                    ...current,
+                    autoPayoutPaymentMethod: value ?? "cash",
+                  }))
+                }
+                value={form.autoPayoutPaymentMethod}
+              />
+            </ProductsField>
+          ) : null}
           <ProductsField label="Nombre" required>
             <TextInput
               id="product-form-name"
@@ -261,6 +311,7 @@ function ProductFormSheetContent({
           <ProductsToggleLine
             checked={form.trackInventory}
             description="Actualiza stock y movimientos."
+            disabled={form.accountingTreatment === "passthrough"}
             onCheckedChange={(checked) =>
               setForm((current) => ({
                 ...current,
@@ -272,6 +323,7 @@ function ProductFormSheetContent({
           <ProductsToggleLine
             checked={form.isModifier}
             description="Se usa como adicional en POS."
+            disabled={form.accountingTreatment === "passthrough"}
             onCheckedChange={(checked) =>
               setForm((current) => ({
                 ...current,
@@ -281,6 +333,26 @@ function ProductFormSheetContent({
             title="Es modificador"
           />
         </div>
+
+        {form.accountingTreatment === "passthrough" ? (
+          <div className="space-y-3">
+            <ProductsToggleLine
+              checked={form.autoPayoutEnabled}
+              description="Crea una salida de caja automática al vender este producto."
+              onCheckedChange={(checked) =>
+                setForm((current) => ({
+                  ...current,
+                  autoPayoutEnabled: checked,
+                }))
+              }
+              title="Autosalida de caja"
+            />
+            <p className="text-xs text-zinc-500">
+              Los productos no contables se facturan y cobran normalmente, pero
+              se excluyen de ingresos y reportes contables.
+            </p>
+          </div>
+        ) : null}
 
         {error ? (
           <p className="rounded-md border border-red-400/20 bg-red-400/10 p-3 font-medium text-red-300 text-sm">
@@ -315,6 +387,7 @@ export function ProductFormSheet() {
     >
       <ProductFormSheetContent
         categories={state.categories}
+        enabledPaymentMethods={state.enabledPaymentMethods}
         error={meta.productFormError}
         isPending={isPending}
         key={

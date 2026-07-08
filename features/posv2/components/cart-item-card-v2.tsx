@@ -93,7 +93,9 @@ export function CartItemCardV2({
         </div>
 
         <div className="mt-1 flex items-center justify-between gap-2">
-          {showDiscount && !readOnly ? (
+          {showDiscount &&
+          !readOnly &&
+          item.product.accountingTreatment !== "passthrough" ? (
             <div className="flex min-w-0 flex-1 items-center gap-1.5">
               <label
                 className={cn("shrink-0 text-[10px]", posV2MutedText)}

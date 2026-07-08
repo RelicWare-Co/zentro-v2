@@ -55,6 +55,9 @@ export interface CartTotals {
   discountAmount: number;
   itemsDiscountAmount: number;
   maxSaleDiscount: number;
+  passThroughSubtotal: number;
+  passThroughTaxAmount: number;
+  passThroughTotalAmount: number;
   saleDiscountAmount: number;
   subTotal: number;
   tax: number;

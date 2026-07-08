@@ -103,13 +103,17 @@ export function calculateCartTotals(
   const itemsDiscountAmount = calculateItemsDiscount(items);
 
   const taxableBasesBeforeSaleDiscount = items.map((item) => {
+    const isPassthrough = item.product.accountingTreatment === "passthrough";
     const lineSubtotal = item.product.price * item.quantity;
     const modifiersSubtotal = item.modifiers.reduce(
       (sum, modifier) =>
         sum + modifier.price * modifier.quantity * item.quantity,
       0
     );
-    return lineSubtotal + modifiersSubtotal - item.discountAmount;
+    // Passthrough items receive 0 sale-level discount allocation
+    return isPassthrough
+      ? 0
+      : lineSubtotal + modifiersSubtotal - item.discountAmount;
   });
 
   const maxSaleDiscount = taxableBasesBeforeSaleDiscount.reduce(
@@ -124,8 +128,11 @@ export function calculateCartTotals(
 
   let tax = 0;
   let totalLineDiscount = 0;
+  let passThroughSubtotal = 0;
+  let passThroughTaxAmount = 0;
   for (let index = 0; index < items.length; index += 1) {
     const item = items[index];
+    const isPassthrough = item.product.accountingTreatment === "passthrough";
     const lineSubtotal = item.product.price * item.quantity;
     const modifiersSubtotal = item.modifiers.reduce(
       (sum, modifier) =>
@@ -135,12 +142,18 @@ export function calculateCartTotals(
     const lineDiscountAmount =
       item.discountAmount + (saleDiscountAllocations[index] ?? 0);
     const taxableBase = lineSubtotal + modifiersSubtotal - lineDiscountAmount;
-    tax += Math.round((taxableBase * item.product.taxRate) / 100);
+    const lineTax = Math.round((taxableBase * item.product.taxRate) / 100);
+    tax += lineTax;
     totalLineDiscount += lineDiscountAmount;
+    if (isPassthrough) {
+      passThroughSubtotal += lineSubtotal + modifiersSubtotal;
+      passThroughTaxAmount += lineTax;
+    }
   }
 
   const discountAmount = totalLineDiscount;
   const totalAmount = calculateTotal(subTotal, tax, discountAmount);
+  const passThroughTotalAmount = passThroughSubtotal + passThroughTaxAmount;
 
   return {
     subTotal,
@@ -150,6 +163,9 @@ export function calculateCartTotals(
     maxSaleDiscount,
     discountAmount,
     totalAmount,
+    passThroughSubtotal,
+    passThroughTaxAmount,
+    passThroughTotalAmount,
   };
 }
 

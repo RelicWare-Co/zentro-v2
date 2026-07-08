@@ -66,7 +66,9 @@ export function CartItemCard({
           </div>
         </div>
 
-        {showDiscount && !readOnly ? (
+        {showDiscount &&
+        !readOnly &&
+        item.product.accountingTreatment !== "passthrough" ? (
           <div className="mt-1">
             <label
               className="text-[10px] text-zinc-500"

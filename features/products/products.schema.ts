@@ -25,6 +25,48 @@ function validateBarcodeValue(
   }
 }
 
+export const AccountingTreatmentSchema = z.enum(["revenue", "passthrough"]);
+
+function validatePassthroughProductRules(
+  input: {
+    accountingTreatment?: string;
+    isModifier?: boolean;
+    trackInventory?: boolean;
+    autoPayoutEnabled?: boolean;
+    autoPayoutPaymentMethod?: string;
+  },
+  ctx: z.RefinementCtx
+) {
+  const isPassthrough = input.accountingTreatment === "passthrough";
+  if (!isPassthrough) {
+    return;
+  }
+
+  if (input.isModifier) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Un producto no contable no puede ser modificador",
+      path: ["isModifier"],
+    });
+  }
+
+  if (input.trackInventory) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Un producto no contable no puede controlar inventario",
+      path: ["trackInventory"],
+    });
+  }
+
+  if (input.autoPayoutEnabled && !input.autoPayoutPaymentMethod?.trim()) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Debes seleccionar un método de pago para la autosalida de caja",
+      path: ["autoPayoutPaymentMethod"],
+    });
+  }
+}
+
 export const ProductSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -41,6 +83,9 @@ export const ProductSchema = z.object({
   trackInventory: z.boolean(),
   isModifier: z.boolean(),
   isFavorite: z.boolean(),
+  accountingTreatment: AccountingTreatmentSchema,
+  autoPayoutEnabled: z.boolean(),
+  autoPayoutPaymentMethod: z.string(),
   createdAt: z.number(),
 });
 
@@ -64,9 +109,13 @@ export const CreateProductSchema = z
     reorderQuantity: OptionalNonNegativeIntSchema,
     trackInventory: z.boolean().optional(),
     isModifier: z.boolean().optional(),
+    accountingTreatment: AccountingTreatmentSchema.optional(),
+    autoPayoutEnabled: z.boolean().optional(),
+    autoPayoutPaymentMethod: z.string().trim().min(1).optional(),
   })
   .superRefine((input, ctx) => {
     validateBarcodeValue(input.barcode, ctx);
+    validatePassthroughProductRules(input, ctx);
   });
 
 export const UpdateProductSchema = z
@@ -84,6 +133,9 @@ export const UpdateProductSchema = z
     reorderQuantity: OptionalNonNegativeIntSchema,
     trackInventory: z.boolean().optional(),
     isModifier: z.boolean().optional(),
+    accountingTreatment: AccountingTreatmentSchema.optional(),
+    autoPayoutEnabled: z.boolean().optional(),
+    autoPayoutPaymentMethod: z.string().trim().min(1).optional(),
   })
   .refine(
     (input) =>
@@ -98,7 +150,10 @@ export const UpdateProductSchema = z
       input.minStock !== undefined ||
       input.reorderQuantity !== undefined ||
       input.trackInventory !== undefined ||
-      input.isModifier !== undefined,
+      input.isModifier !== undefined ||
+      input.accountingTreatment !== undefined ||
+      input.autoPayoutEnabled !== undefined ||
+      input.autoPayoutPaymentMethod !== undefined,
     {
       message: "Debes enviar al menos un campo para actualizar",
     }
@@ -108,6 +163,9 @@ export const UpdateProductSchema = z
       return;
     }
     validateBarcodeValue(input.barcode, ctx);
+  })
+  .superRefine((input, ctx) => {
+    validatePassthroughProductRules(input, ctx);
   });
 
 export const RegisterInventoryMovementSchema = z.object({

@@ -130,6 +130,9 @@ export async function seedProduct(
     trackInventory?: boolean;
     stock?: number;
     isFavorite?: boolean;
+    accountingTreatment?: string;
+    autoPayoutEnabled?: boolean;
+    autoPayoutPaymentMethod?: string;
     deletedAt?: Date | null;
   }
 ) {
@@ -150,6 +153,9 @@ export async function seedProduct(
     trackInventory: opts.trackInventory ?? true,
     stock: opts.stock ?? 100,
     isFavorite: opts.isFavorite ?? false,
+    accountingTreatment: opts.accountingTreatment ?? "revenue",
+    autoPayoutEnabled: opts.autoPayoutEnabled ?? false,
+    autoPayoutPaymentMethod: opts.autoPayoutPaymentMethod ?? "cash",
     deletedAt: opts.deletedAt ?? null,
     createdAt: now,
   });

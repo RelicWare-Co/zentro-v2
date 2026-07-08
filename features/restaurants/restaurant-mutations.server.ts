@@ -379,6 +379,7 @@ async function getProductSnapshot(
         price: number;
         taxRate: number;
         isModifier: boolean;
+        accountingTreatment: string;
       }
     >();
   }
@@ -390,6 +391,7 @@ async function getProductSnapshot(
       price: product.price,
       taxRate: product.taxRate,
       isModifier: product.isModifier,
+      accountingTreatment: product.accountingTreatment,
     })
     .from(product)
     .where(
@@ -628,6 +630,12 @@ export async function runAddRestaurantOrderItem(
   const baseProduct = productSnapshot.get(productId);
   if (!baseProduct || baseProduct.isModifier) {
     throw new Error("El producto seleccionado no es válido para el menú.");
+  }
+  if (
+    baseProduct.accountingTreatment === "passthrough" &&
+    modifierProductIds.length > 0
+  ) {
+    throw new Error("Un producto no contable no puede tener modificadores.");
   }
 
   for (const modifierProductId of modifierProductIds) {

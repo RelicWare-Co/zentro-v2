@@ -60,6 +60,11 @@ function normalizeProduct(product: ZeroProductWithCategory): Product {
     trackInventory: product.trackInventory ?? true,
     isModifier: product.isModifier ?? false,
     isFavorite: product.isFavorite ?? false,
+    accountingTreatment: (product.accountingTreatment ?? "revenue") as
+      | "revenue"
+      | "passthrough",
+    autoPayoutEnabled: product.autoPayoutEnabled ?? false,
+    autoPayoutPaymentMethod: product.autoPayoutPaymentMethod ?? "cash",
     createdAt: product.createdAt,
   };
 }

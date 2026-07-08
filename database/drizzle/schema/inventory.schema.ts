@@ -50,6 +50,13 @@ export const product = pgTable(
     minStock: integer("min_stock"),
     reorderQuantity: integer("reorder_quantity"),
     isFavorite: boolean("is_favorite").default(false).notNull(),
+    accountingTreatment: text("accounting_treatment")
+      .default("revenue")
+      .notNull(), // 'revenue' o 'passthrough' (no contable)
+    autoPayoutEnabled: boolean("auto_payout_enabled").default(false).notNull(), // Autosalida de caja al vender
+    autoPayoutPaymentMethod: text("auto_payout_payment_method")
+      .default("cash")
+      .notNull(), // Método afectado por la autosalida
     deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "date" }), // Soft delete: null = activo, fecha = eliminado
     createdAt: timestamp("created_at", {
       withTimezone: true,

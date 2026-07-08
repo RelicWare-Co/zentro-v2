@@ -21,6 +21,9 @@ import {
 } from "@/zero/sdk";
 
 interface ProductUpdatePatch {
+  accountingTreatment?: string;
+  autoPayoutEnabled?: boolean;
+  autoPayoutPaymentMethod?: string;
   barcode?: string | null;
   categoryId?: string | null;
   cost?: number;
@@ -130,7 +133,8 @@ async function assertActiveCategory({
 }
 
 function buildProductUpdatePatch(
-  args: z.infer<typeof updateProductArgsSchema>
+  args: z.infer<typeof updateProductArgsSchema>,
+  existingAccountingTreatment: string
 ) {
   const updates: ProductUpdatePatch = {};
 
@@ -171,14 +175,38 @@ function buildProductUpdatePatch(
         ? null
         : toNonNegativeInteger(args.reorderQuantity, "reorderQuantity");
   }
+  applyProductTypeUpdates(updates, args, existingAccountingTreatment);
+  if (args.accountingTreatment !== undefined) {
+    updates.accountingTreatment = args.accountingTreatment;
+  }
+  if (args.autoPayoutEnabled !== undefined) {
+    updates.autoPayoutEnabled = args.autoPayoutEnabled;
+  }
+  if (args.autoPayoutPaymentMethod !== undefined) {
+    updates.autoPayoutPaymentMethod = args.autoPayoutPaymentMethod;
+  }
+
+  return updates;
+}
+
+function applyProductTypeUpdates(
+  updates: ProductUpdatePatch,
+  args: z.infer<typeof updateProductArgsSchema>,
+  existingAccountingTreatment: string
+) {
+  const effectiveTreatment =
+    args.accountingTreatment ?? existingAccountingTreatment;
+  if (effectiveTreatment === "passthrough") {
+    updates.trackInventory = false;
+    updates.isModifier = false;
+    return;
+  }
   if (args.trackInventory !== undefined) {
     updates.trackInventory = args.trackInventory;
   }
   if (args.isModifier !== undefined) {
     updates.isModifier = args.isModifier;
   }
-
-  return updates;
 }
 
 export const productsMutators = {
@@ -217,9 +245,18 @@ export const productsMutators = {
             args.reorderQuantity === undefined || args.reorderQuantity === null
               ? null
               : toNonNegativeInteger(args.reorderQuantity, "reorderQuantity"),
-          trackInventory: args.trackInventory ?? true,
-          isModifier: args.isModifier ?? false,
+          accountingTreatment: args.accountingTreatment ?? "revenue",
+          trackInventory:
+            (args.accountingTreatment ?? "revenue") === "passthrough"
+              ? false
+              : (args.trackInventory ?? true),
+          isModifier:
+            (args.accountingTreatment ?? "revenue") === "passthrough"
+              ? false
+              : (args.isModifier ?? false),
           isFavorite: false,
+          autoPayoutEnabled: args.autoPayoutEnabled ?? false,
+          autoPayoutPaymentMethod: args.autoPayoutPaymentMethod ?? "cash",
           deletedAt: null,
           createdAt: Date.now(),
         });
@@ -229,13 +266,16 @@ export const productsMutators = {
       updateProductArgsSchema,
       async ({ args, ctx, tx }) => {
         const zeroContext = assertOrgZeroContext(ctx);
-        await assertActiveProduct({
+        const existingProduct = await assertActiveProduct({
           id: args.id,
           organizationId: zeroContext.orgID,
           tx,
         });
 
-        const updates = buildProductUpdatePatch(args);
+        const updates = buildProductUpdatePatch(
+          args,
+          existingProduct.accountingTreatment ?? "revenue"
+        );
         if (args.categoryId !== undefined) {
           updates.categoryId = await assertCategoryFromOrganization({
             categoryId: args.categoryId,

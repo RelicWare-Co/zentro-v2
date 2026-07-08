@@ -28,11 +28,13 @@ export function ProductsToggleLine({
   description,
   checked,
   onCheckedChange,
+  disabled,
 }: {
   title: string;
   description: string;
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
+  disabled?: boolean;
 }) {
   return (
     <div className="flex items-center justify-between gap-4 rounded-xl border border-zinc-800 bg-black/20 p-4">
@@ -43,6 +45,7 @@ export function ProductsToggleLine({
       <Switch
         checked={checked}
         color="voltage.5"
+        disabled={disabled}
         onChange={(event) => onCheckedChange(event.currentTarget.checked)}
       />
     </div>

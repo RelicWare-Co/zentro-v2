@@ -19,6 +19,9 @@ function makeProduct(overrides: Partial<ProductInfo> = {}): ProductInfo {
     stock: 100,
     taxRate: 10,
     trackInventory: true,
+    accountingTreatment: "revenue",
+    autoPayoutEnabled: false,
+    autoPayoutPaymentMethod: "cash",
     ...overrides,
   };
 }

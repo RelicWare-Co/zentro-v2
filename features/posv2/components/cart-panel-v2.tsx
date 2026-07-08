@@ -141,8 +141,10 @@ function CartPanelV2FooterAction({
 
 export function CartPanelV2({ className }: CartPanelV2Props) {
   const { state, actions } = usePosPage();
-  const { subTotal, tax, discountAmount, totalAmount } = state.totals;
+  const { subTotal, tax, discountAmount, totalAmount, passThroughTotalAmount } =
+    state.totals;
   const hasDiscount = discountAmount > 0;
+  const hasPassThrough = passThroughTotalAmount > 0;
   const tableSession = state.tableSession;
 
   let emptyCartMessage = "Escanea o selecciona un producto";
@@ -260,6 +262,16 @@ export function CartPanelV2({ className }: CartPanelV2Props) {
                   <span>Descuento</span>
                   <span className="tabular-nums">
                     -{formatCurrency(discountAmount)}
+                  </span>
+                </div>
+              )}
+              {hasPassThrough && (
+                <div
+                  className={cn("flex justify-between text-xs", posV2MutedText)}
+                >
+                  <span>No contable</span>
+                  <span className="tabular-nums">
+                    {formatCurrency(passThroughTotalAmount)}
                   </span>
                 </div>
               )}

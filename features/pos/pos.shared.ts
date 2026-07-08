@@ -34,6 +34,7 @@ export function buildPosProduct(row: PosProductWithCategory): Product {
     stock: row.stock ?? 0,
     isModifier: row.isModifier ?? false,
     isFavorite: row.isFavorite ?? false,
+    accountingTreatment: row.accountingTreatment ?? "revenue",
   };
 }
 

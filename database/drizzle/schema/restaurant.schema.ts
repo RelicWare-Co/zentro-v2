@@ -163,6 +163,9 @@ export const restaurantOrderItem = pgTable(
     unitPrice: integer("unit_price").notNull(),
     taxRate: integer("tax_rate").default(0).notNull(),
     discountAmount: integer("discount_amount").default(0).notNull(),
+    accountingTreatment: text("accounting_treatment")
+      .notNull()
+      .default("revenue"),
     notes: text("notes"),
     status: text("status").notNull().default("draft"),
     createdAt: timestamp("created_at", {

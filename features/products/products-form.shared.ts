@@ -1,6 +1,9 @@
 import type { Product } from "@/features/products/hooks/use-products";
 
 export interface ProductFormState {
+  accountingTreatment: string;
+  autoPayoutEnabled: boolean;
+  autoPayoutPaymentMethod: string;
   barcode: string;
   categoryId: string;
   cost: string;
@@ -28,6 +31,9 @@ export const EMPTY_PRODUCT_FORM: ProductFormState = {
   reorderQuantity: "",
   trackInventory: true,
   isModifier: false,
+  accountingTreatment: "revenue",
+  autoPayoutEnabled: false,
+  autoPayoutPaymentMethod: "cash",
 };
 
 export function parseOptionalStockField(value: string): number | null {
@@ -68,5 +74,8 @@ export function getProductFormInitialValue(
         : String(product.reorderQuantity),
     trackInventory: product.trackInventory,
     isModifier: product.isModifier,
+    accountingTreatment: product.accountingTreatment ?? "revenue",
+    autoPayoutEnabled: product.autoPayoutEnabled ?? false,
+    autoPayoutPaymentMethod: product.autoPayoutPaymentMethod ?? "cash",
   };
 }

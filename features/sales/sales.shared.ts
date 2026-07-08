@@ -29,6 +29,7 @@ export interface SaleWithRelations {
   discountAmount?: number | null;
   id: string;
   items?: Array<{
+    accountingTreatment?: string | null;
     discountAmount?: number | null;
     id: string;
     modifiers?: Array<{
@@ -49,6 +50,9 @@ export interface SaleWithRelations {
     unitPrice: number;
   }>;
   organizationId: string;
+  passThroughSubtotal?: number | null;
+  passThroughTaxAmount?: number | null;
+  passThroughTotalAmount?: number | null;
   payments?: Array<{
     appliedAmount?: number | null;
     amount: number;
@@ -237,6 +241,9 @@ export function buildSaleDetail(row: SaleWithRelations): SaleDetail {
     taxAmount: normalizeNumber(row.taxAmount),
     discountAmount: normalizeNumber(row.discountAmount),
     totalAmount,
+    passThroughSubtotal: normalizeNumber(row.passThroughSubtotal),
+    passThroughTaxAmount: normalizeNumber(row.passThroughTaxAmount),
+    passThroughTotalAmount: normalizeNumber(row.passThroughTotalAmount),
     paidAmount: effectivePaidAmount,
     balanceDue:
       row.status === "cancelled"
@@ -277,6 +284,7 @@ export function buildSaleDetail(row: SaleWithRelations): SaleDetail {
         taxAmount: normalizeNumber(itemRow.taxAmount),
         discountAmount: normalizeNumber(itemRow.discountAmount),
         totalAmount: normalizeNumber(itemRow.totalAmount),
+        accountingTreatment: itemRow.accountingTreatment ?? "revenue",
         modifiers: (itemRow.modifiers ?? []).map((modifierRow) => ({
           id: modifierRow.id,
           modifierProductId: modifierRow.modifierProductId,
