@@ -1,6 +1,8 @@
-import { Box, Card, Container, Title } from "@mantine/core";
+import { Box, Card, Container, Drawer, Stack, Title } from "@mantine/core";
+import { ShoppingBag } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { PublicCatalogItem } from "@/features/orders/orders.schema";
+import { formatCurrency } from "@/features/pos/utils";
 import { PublicCartSummary } from "./public-cart-summary";
 import { PublicCategoryTabs } from "./public-category-tabs";
 import { PublicOrderForm } from "./public-order-form";
@@ -31,6 +33,7 @@ export function PublicCatalogMenu({
     orderNumber: number;
     organizationName: string;
   } | null>(null);
+  const [mobileCartOpen, setMobileCartOpen] = useState(false);
 
   const categories = useMemo(() => {
     const map = new Map<string, string>();
@@ -182,75 +185,162 @@ export function PublicCatalogMenu({
     );
   }
 
+  const totalCartItems = cartLines.reduce(
+    (sum, line) => sum + line.quantity,
+    0
+  );
+
   return (
-    <Container className="grid gap-6 lg:grid-cols-[1fr_380px]" size="xl">
-      <Box>
-        <Box mb="lg">
-          <Title order={1}>{organizationName}</Title>
-        </Box>
+    <>
+      <Container
+        className="flex flex-col gap-6 px-4 sm:px-6 lg:grid lg:grid-cols-[1fr_360px]"
+        size="xl"
+      >
+        <Box>
+          <Box mb="lg" mt="lg">
+            <Title order={1}>{organizationName}</Title>
+          </Box>
 
-        <Box className="sticky top-0 z-20 -mx-2 mb-4 bg-[var(--color-page-bg)] px-2 pt-1 pb-3">
-          <PublicCategoryTabs
-            activeCategoryId={activeCategoryId}
-            categories={categories}
-            onCategoryChange={setActiveCategoryId}
-          />
-        </Box>
+          <Box className="sticky top-0 z-20 -mx-4 mb-4 border-zinc-800 border-b bg-[var(--color-void)] px-4 pt-1 pb-3 sm:-mx-6 sm:px-6">
+            <PublicCategoryTabs
+              activeCategoryId={activeCategoryId}
+              categories={categories}
+              onCategoryChange={setActiveCategoryId}
+            />
+          </Box>
 
-        <div className="space-y-6">
-          {groupedProducts.map((group) => {
-            const category = categories.find((c) => c.id === group.categoryId);
-            return (
-              <div key={group.categoryId}>
-                {activeCategoryId === "all" && (
-                  <h2 className="mb-3 font-semibold text-lg text-white">
-                    {category?.name ?? "Sin categoría"}
-                  </h2>
-                )}
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-                  {group.items.map((product) => (
-                    <PublicProductCard
-                      key={product.id}
-                      onAdd={handleAdd}
-                      onAdjust={handleAdjust}
-                      product={product}
-                      quantity={quantities[product.id] ?? 0}
-                    />
-                  ))}
+          <div className="space-y-6">
+            {groupedProducts.map((group) => {
+              const category = categories.find(
+                (c) => c.id === group.categoryId
+              );
+              return (
+                <div key={group.categoryId}>
+                  {activeCategoryId === "all" && (
+                    <h2 className="mb-3 font-semibold text-lg text-white">
+                      {category?.name ?? "Sin categoría"}
+                    </h2>
+                  )}
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-3 xl:grid-cols-4">
+                    {group.items.map((product) => (
+                      <PublicProductCard
+                        key={product.id}
+                        onAdd={handleAdd}
+                        onAdjust={handleAdjust}
+                        product={product}
+                        quantity={quantities[product.id] ?? 0}
+                      />
+                    ))}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-      </Box>
+              );
+            })}
+          </div>
+        </Box>
 
-      <Box className="lg:sticky lg:top-6">
-        <Card padding="lg" radius="lg" shadow="sm" withBorder>
-          <h2 className="mb-4 font-semibold text-lg text-white">Tu pedido</h2>
+        <Box className="hidden lg:sticky lg:top-6 lg:block lg:self-start">
+          <Card
+            className="border-zinc-800 bg-zinc-900/80"
+            padding={32}
+            radius="lg"
+            withBorder
+          >
+            <h2 className="mb-5 font-semibold text-lg text-white">Tu pedido</h2>
+            <PublicCartSummary
+              lines={cartLines}
+              onAdjust={handleAdjust}
+              onRemove={handleRemove}
+              total={cartTotal}
+            />
+            {cartLines.length > 0 ? (
+              <Box mt="lg" pt="lg" style={{ borderTop: "1px solid #27272a" }}>
+                <PublicOrderForm
+                  cartLines={cartLines}
+                  cartTotal={cartTotal}
+                  isSubmitting={isSubmitting}
+                  onSubmit={handleSubmit}
+                  slug={slug}
+                  submitError={submitError}
+                />
+              </Box>
+            ) : null}
+          </Card>
+        </Box>
+      </Container>
+
+      {cartLines.length > 0 && (
+        <div className="fixed right-0 bottom-0 left-0 z-50 border-zinc-800 border-t bg-[#0a0a0a]/95 px-4 py-3 backdrop-blur-md lg:hidden">
+          <button
+            className="flex w-full items-center justify-between gap-3"
+            onClick={() => setMobileCartOpen(true)}
+            type="button"
+          >
+            <div className="flex items-center gap-3">
+              <div className="relative flex size-10 items-center justify-center rounded-full bg-[var(--color-voltage)]">
+                <ShoppingBag className="size-5 text-black" />
+                <span className="absolute -top-1 -right-1 flex size-5 items-center justify-center rounded-full bg-red-500 font-bold text-[10px] text-white">
+                  {totalCartItems}
+                </span>
+              </div>
+              <span className="font-medium text-sm text-white">
+                {totalCartItems} artículo{totalCartItems === 1 ? "" : "s"}
+              </span>
+            </div>
+            <span className="font-bold text-[var(--color-voltage)]">
+              {formatCurrency(cartTotal)}
+            </span>
+          </button>
+        </div>
+      )}
+
+      <Drawer
+        classNames={{
+          content: "max-h-[90dvh]!",
+          close: "text-zinc-400! hover:text-white! hover:bg-white/5!",
+        }}
+        onClose={() => setMobileCartOpen(false)}
+        opened={mobileCartOpen}
+        position="bottom"
+        radius="lg"
+        size="lg"
+        styles={{
+          header: {
+            paddingLeft: 24,
+            paddingRight: 24,
+            paddingTop: 20,
+            paddingBottom: 0,
+          },
+          body: {
+            paddingLeft: 24,
+            paddingRight: 24,
+            paddingTop: 16,
+            paddingBottom: 32,
+            overflowY: "auto",
+          },
+        }}
+        title="Tu pedido"
+      >
+        <Stack gap="lg">
           <PublicCartSummary
             lines={cartLines}
             onAdjust={handleAdjust}
             onRemove={handleRemove}
             total={cartTotal}
           />
-          {cartLines.length > 0 ? (
-            <Box
-              mt="lg"
-              pt="lg"
-              style={{ borderTop: "1px solid var(--mantine-color-dark-4)" }}
-            >
-              <PublicOrderForm
-                cartLines={cartLines}
-                cartTotal={cartTotal}
-                isSubmitting={isSubmitting}
-                onSubmit={handleSubmit}
-                slug={slug}
-                submitError={submitError}
-              />
-            </Box>
-          ) : null}
-        </Card>
-      </Box>
-    </Container>
+          {cartLines.length > 0 && (
+            <PublicOrderForm
+              cartLines={cartLines}
+              cartTotal={cartTotal}
+              isSubmitting={isSubmitting}
+              onSubmit={handleSubmit}
+              slug={slug}
+              submitError={submitError}
+            />
+          )}
+        </Stack>
+      </Drawer>
+
+      <div className="h-16 lg:hidden" />
+    </>
   );
 }

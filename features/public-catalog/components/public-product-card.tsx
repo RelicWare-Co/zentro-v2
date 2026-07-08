@@ -22,7 +22,7 @@ export function PublicProductCard({
   return (
     <div
       className={cn(
-        "group flex h-full flex-col overflow-hidden rounded-xl border transition-all",
+        "group flex flex-col overflow-hidden rounded-xl border transition-all",
         isInCart
           ? "border-[var(--color-voltage)]/40 bg-[var(--color-voltage)]/5"
           : "border-zinc-800/60 bg-black/20 hover:border-zinc-700 hover:bg-black/30"
@@ -30,50 +30,51 @@ export function PublicProductCard({
     >
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-zinc-900">
         <div className="flex size-full items-center justify-center">
-          <Package className="size-8 text-zinc-700 transition-colors group-hover:text-zinc-600" />
+          <Package className="size-6 text-zinc-700 transition-colors group-hover:text-zinc-600 sm:size-8" />
         </div>
       </div>
 
-      <Stack className="flex-1 gap-1 p-3" gap="xs">
-        <Text fw={500} lineClamp={2} size="sm">
+      <Stack className="flex-1 gap-1 p-1.5 sm:p-3" gap="xs">
+        <Text fw={500} lineClamp={2} size="xs">
           {product.name}
         </Text>
 
-        <Text c="voltage.5" className="mt-auto pt-1" fw={700} size="md">
+        <Text c="voltage.5" fw={700} size="sm">
           {formatCurrency(product.price)}
         </Text>
 
-        <Box pt="xs">
+        <Box pb={2} pt={2}>
           {isInCart ? (
             <Group gap="xs" justify="center">
               <Button
                 onClick={() => onAdjust(product.id, -1)}
-                size="compact-sm"
+                size="compact-sm sm:compact-xs"
                 variant="default"
               >
-                <Minus className="size-3.5" />
+                <Minus className="size-4 sm:size-5" />
               </Button>
-              <Text fw={600} size="sm" ta="center" w={36}>
+              <Text fw={600} size="xs" ta="center" w={28}>
                 {quantity}
               </Text>
               <Button
                 onClick={() => onAdd(product)}
-                size="compact-sm"
+                size="compact-sm sm:compact-xs"
                 variant="default"
               >
-                <Plus className="size-3.5" />
+                <Plus className="size-4 sm:size-5" />
               </Button>
             </Group>
           ) : (
-            <Button
-              className="w-full"
-              leftSection={<Plus className="size-3.5" />}
-              onClick={() => onAdd(product)}
-              size="compact-sm"
-              variant="light"
-            >
-              Agregar
-            </Button>
+            <Group justify="center">
+              <Button
+                leftSection={<Plus className="size-4 sm:size-5" />}
+                onClick={() => onAdd(product)}
+                size="xs"
+                variant="default"
+              >
+                Agregar
+              </Button>
+            </Group>
           )}
         </Box>
       </Stack>

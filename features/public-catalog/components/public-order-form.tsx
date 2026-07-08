@@ -61,12 +61,14 @@ export function PublicOrderForm({
   return (
     <Stack gap="md">
       <SegmentedControl<"takeaway" | "delivery">
+        color="voltage.5"
         data={[
           { label: "Para llevar", value: "takeaway" },
           { label: "A domicilio", value: "delivery" },
         ]}
         fullWidth
         onChange={setFulfillment}
+        radius="md"
         value={fulfillment}
       />
 
@@ -74,6 +76,7 @@ export function PublicOrderForm({
         label="Nombre"
         onChange={(e) => setContactName(e.target.value)}
         placeholder="Tu nombre"
+        radius="md"
         required
         value={contactName}
       />
@@ -82,6 +85,7 @@ export function PublicOrderForm({
         leftSection={<Phone className="size-4" />}
         onChange={(e) => setContactPhone(e.target.value)}
         placeholder="300 000 0000"
+        radius="md"
         required
         value={contactPhone}
       />
@@ -94,6 +98,7 @@ export function PublicOrderForm({
             minRows={2}
             onChange={(e) => setDeliveryAddress(e.target.value)}
             placeholder="Calle 123 #45-67, Apto 301"
+            radius="md"
             required
             value={deliveryAddress}
           />
@@ -102,6 +107,7 @@ export function PublicOrderForm({
             minRows={1}
             onChange={(e) => setDeliveryNotes(e.target.value)}
             placeholder="Tocar timbre 2B, dejar en portería…"
+            radius="md"
             value={deliveryNotes}
           />
         </>
@@ -112,6 +118,7 @@ export function PublicOrderForm({
         minRows={1}
         onChange={(e) => setNotes(e.target.value)}
         placeholder="Sin cebolla, extra salsa…"
+        radius="md"
         value={notes}
       />
 
@@ -136,6 +143,7 @@ export function PublicOrderForm({
             notes,
           })
         }
+        radius="md"
         size="lg"
       >
         {isSubmitting

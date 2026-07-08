@@ -34,17 +34,17 @@ export function PublicCartSummary({
   }
 
   return (
-    <Stack gap="xs">
+    <Stack gap="sm">
       {lines.map((line) => (
         <Group
           align="center"
-          className="rounded-lg border border-zinc-800 bg-black/20 p-2"
-          gap="sm"
+          className="rounded-xl border border-zinc-800 bg-zinc-900/50 px-4 py-3"
+          gap="md"
           justify="space-between"
           key={line.product.id}
         >
           <Box className="min-w-0 flex-1">
-            <Text fw={500} lineClamp={1} size="sm">
+            <Text c="white" fw={500} lineClamp={1} size="sm">
               {line.product.name}
             </Text>
             <Text c="zinc.5" size="xs">
@@ -59,7 +59,7 @@ export function PublicCartSummary({
             >
               <Minus className="size-3" />
             </Button>
-            <Text fw={600} size="sm" ta="center" w={24}>
+            <Text c="white" fw={600} size="sm" ta="center" w={24}>
               {line.quantity}
             </Text>
             <Button
@@ -80,9 +80,16 @@ export function PublicCartSummary({
           </Group>
         </Group>
       ))}
-      <Group justify="flex-end" pt="xs">
-        <Text fw={700} size="lg">
-          Total: {formatCurrency(total)}
+      <Group
+        justify="space-between"
+        pt="sm"
+        style={{ borderTop: "1px solid #27272a" }}
+      >
+        <Text c="white" fw={500} size="sm">
+          Total
+        </Text>
+        <Text c="white" fw={700} size="lg">
+          {formatCurrency(total)}
         </Text>
       </Group>
     </Stack>
