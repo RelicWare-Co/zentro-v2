@@ -114,6 +114,7 @@ export const mantineTheme = createTheme({
   // Inherit the font stack defined by the global stylesheet / Tailwind.
   fontFamily: "inherit",
   headings: { fontFamily: "inherit" },
+  respectReducedMotion: true,
   components: {
     TextInput: TextInput.extend({ classNames: darkInputClassNames }),
     Textarea: Textarea.extend({ classNames: darkInputClassNames }),

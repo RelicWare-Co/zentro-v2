@@ -3,7 +3,11 @@ import { createError } from "evlog";
 import type { z } from "zod";
 import type { Database, dbSqlite } from "@/database/drizzle/db";
 import { customer } from "@/database/drizzle/schema/customer.schema";
-import { product } from "@/database/drizzle/schema/inventory.schema";
+import {
+  product,
+  productIngredient,
+} from "@/database/drizzle/schema/inventory.schema";
+import { cashMovement } from "@/database/drizzle/schema/pos.schema";
 import {
   payment,
   sale,
@@ -93,6 +97,9 @@ async function loadProducts(
       isModifier: product.isModifier,
       trackInventory: product.trackInventory,
       stock: product.stock,
+      accountingTreatment: product.accountingTreatment,
+      autoPayoutEnabled: product.autoPayoutEnabled,
+      autoPayoutPaymentMethod: product.autoPayoutPaymentMethod,
     })
     .from(product)
     .where(
@@ -117,6 +124,130 @@ async function loadProducts(
   return productById;
 }
 
+async function loadIngredientRecipes(
+  tx: CreateSaleDbExecutor,
+  sellableProductIds: string[],
+  organizationId: string
+) {
+  if (sellableProductIds.length === 0) {
+    return new Map<string, Array<{ ingredientId: string; quantity: number }>>();
+  }
+
+  const recipeRows = await tx
+    .select({
+      productId: productIngredient.productId,
+      ingredientId: productIngredient.ingredientId,
+      quantity: productIngredient.quantity,
+    })
+    .from(productIngredient)
+    .where(
+      and(
+        eq(productIngredient.organizationId, organizationId),
+        inArray(productIngredient.productId, sellableProductIds)
+      )
+    );
+
+  const recipesByProduct = new Map<
+    string,
+    Array<{ ingredientId: string; quantity: number }>
+  >();
+  for (const row of recipeRows) {
+    const existing = recipesByProduct.get(row.productId) ?? [];
+    existing.push({ ingredientId: row.ingredientId, quantity: row.quantity });
+    recipesByProduct.set(row.productId, existing);
+  }
+
+  return recipesByProduct;
+}
+
+async function loadIngredientProducts(
+  tx: CreateSaleDbExecutor,
+  ingredientIds: string[],
+  organizationId: string
+) {
+  if (ingredientIds.length === 0) {
+    return new Map<string, ProductInfo>();
+  }
+
+  const ingredientProductRows = await tx
+    .select({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      taxRate: product.taxRate,
+      isModifier: product.isModifier,
+      trackInventory: product.trackInventory,
+      stock: product.stock,
+      accountingTreatment: product.accountingTreatment,
+      autoPayoutEnabled: product.autoPayoutEnabled,
+      autoPayoutPaymentMethod: product.autoPayoutPaymentMethod,
+    })
+    .from(product)
+    .where(
+      and(
+        eq(product.organizationId, organizationId),
+        isNull(product.deletedAt),
+        inArray(product.id, ingredientIds)
+      )
+    );
+
+  return new Map<string, ProductInfo>(
+    ingredientProductRows.map((row) => [row.id, row])
+  );
+}
+
+async function expandIngredientConsumption(
+  tx: CreateSaleDbExecutor,
+  input: {
+    organizationId: string;
+    preparedItems: PreparedItem[];
+    productById: Map<string, ProductInfo>;
+    referencedProductIds: string[];
+    stockDeltas: Map<string, number>;
+  }
+) {
+  const recipesByProduct = await loadIngredientRecipes(
+    tx,
+    input.referencedProductIds,
+    input.organizationId
+  );
+  if (recipesByProduct.size === 0) {
+    return;
+  }
+
+  const ingredientIds = new Set<string>();
+  for (const ingredients of recipesByProduct.values()) {
+    for (const ingredient of ingredients) {
+      ingredientIds.add(ingredient.ingredientId);
+    }
+  }
+
+  const ingredientProducts = await loadIngredientProducts(
+    tx,
+    [...ingredientIds],
+    input.organizationId
+  );
+  for (const [ingredientId, ingredientProduct] of ingredientProducts) {
+    if (!input.productById.has(ingredientId)) {
+      input.productById.set(ingredientId, ingredientProduct);
+    }
+  }
+
+  for (const item of input.preparedItems) {
+    const recipe = recipesByProduct.get(item.productId);
+    if (!recipe) {
+      continue;
+    }
+    for (const ingredient of recipe) {
+      const consumed = item.quantity * ingredient.quantity;
+      input.stockDeltas.set(
+        ingredient.ingredientId,
+        (input.stockDeltas.get(ingredient.ingredientId) ?? 0) - consumed
+      );
+    }
+  }
+}
+
 async function insertSaleRecords(
   tx: CreateSaleDbExecutor,
   saleId: string,
@@ -129,6 +260,9 @@ async function insertSaleRecords(
     taxAmount: number;
     discountAmount: number;
     totalAmount: number;
+    passThroughSubtotal: number;
+    passThroughTaxAmount: number;
+    passThroughTotalAmount: number;
   },
   saleStatus: string,
   createdAt: Date,
@@ -145,6 +279,9 @@ async function insertSaleRecords(
     taxAmount: totals.taxAmount,
     discountAmount: totals.discountAmount,
     totalAmount: totals.totalAmount,
+    passThroughSubtotal: totals.passThroughSubtotal,
+    passThroughTaxAmount: totals.passThroughTaxAmount,
+    passThroughTotalAmount: totals.passThroughTotalAmount,
     status: saleStatus,
     createdAt,
   });
@@ -162,6 +299,7 @@ async function insertSaleRecords(
       taxAmount: line.taxAmount,
       discountAmount: line.discountAmount,
       totalAmount: line.totalAmount,
+      accountingTreatment: line.accountingTreatment,
     }))
   );
 
@@ -237,6 +375,83 @@ function applySalePayments(
   });
 }
 
+async function insertAutoPayouts(
+  tx: CreateSaleDbExecutor,
+  input: {
+    preparedItems: PreparedItem[];
+    productById: Map<string, ProductInfo>;
+    saleId: string;
+    shiftId: string;
+    organizationId: string;
+    createdAt: Date;
+    enabledPaymentMethodIds: Set<string>;
+  }
+) {
+  const payoutsByProduct = new Map<
+    string,
+    { amount: number; paymentMethod: string; productName: string }
+  >();
+
+  for (const item of input.preparedItems) {
+    if (item.accountingTreatment !== "passthrough") {
+      continue;
+    }
+    const productInfo = input.productById.get(item.productId);
+    if (!productInfo?.autoPayoutEnabled) {
+      continue;
+    }
+
+    const existing = payoutsByProduct.get(item.productId);
+    if (existing) {
+      existing.amount += item.totalAmount;
+    } else {
+      payoutsByProduct.set(item.productId, {
+        amount: item.totalAmount,
+        paymentMethod: productInfo.autoPayoutPaymentMethod,
+        productName: productInfo.name,
+      });
+    }
+  }
+
+  if (payoutsByProduct.size === 0) {
+    return;
+  }
+
+  const rows: Array<{
+    id: string;
+    organizationId: string;
+    shiftId: string;
+    type: "payout";
+    paymentMethod: string;
+    amount: number;
+    description: string;
+    sourceType: string;
+    sourceSaleId: string;
+    createdAt: Date;
+  }> = [];
+  for (const [, payout] of payoutsByProduct) {
+    if (!input.enabledPaymentMethodIds.has(payout.paymentMethod)) {
+      throw new Error(
+        `Método de autosalida no habilitado: ${payout.paymentMethod}`
+      );
+    }
+    rows.push({
+      id: crypto.randomUUID(),
+      organizationId: input.organizationId,
+      shiftId: input.shiftId,
+      type: "payout" as const,
+      paymentMethod: payout.paymentMethod,
+      amount: payout.amount,
+      description: `Autosalida - ${payout.productName}`,
+      sourceType: "sale_auto_payout",
+      sourceSaleId: input.saleId,
+      createdAt: input.createdAt,
+    });
+  }
+
+  await tx.insert(cashMovement).values(rows);
+}
+
 export async function runCreateSale(
   tx: CreateSaleDbExecutor,
   input: CreateSaleInputWithId,
@@ -297,8 +512,19 @@ export async function runCreateSale(
     subtotal,
     taxAmount,
     itemDiscountAmount,
+    passThroughSubtotal,
+    passThroughTaxAmount,
+    passThroughTotalAmount,
   } = buildPreparedItems(input.items, productById, {
     saleLevelDiscount,
+  });
+
+  await expandIngredientConsumption(tx, {
+    organizationId,
+    preparedItems,
+    productById,
+    referencedProductIds: [...referencedProductIds],
+    stockDeltas,
   });
 
   const discountAmount = itemDiscountAmount;
@@ -324,6 +550,18 @@ export async function runCreateSale(
     isCreditSale,
     customerId
   );
+
+  if (
+    isCreditSale &&
+    passThroughTotalAmount > 0 &&
+    normalizedPayments.reduce((sum, p) => sum + p.amount, 0) <
+      passThroughTotalAmount
+  ) {
+    throw new Error(
+      "La venta a crédito con productos no contables requiere pagos inmediatos por al menos el total no contable"
+    );
+  }
+
   const registeredPayments = applySalePayments(normalizedPayments, totalAmount);
 
   const saleStatus = isCreditSale ? "credit" : "completed";
@@ -339,7 +577,15 @@ export async function runCreateSale(
     input.shiftId,
     customerId,
     userId,
-    { subtotal, taxAmount, discountAmount, totalAmount },
+    {
+      subtotal,
+      taxAmount,
+      discountAmount,
+      totalAmount,
+      passThroughSubtotal,
+      passThroughTaxAmount,
+      passThroughTotalAmount,
+    },
     saleStatus,
     createdAt,
     preparedItems,
@@ -353,6 +599,16 @@ export async function runCreateSale(
     products: productById,
     source: saleMovementSource(saleId),
     createdAt,
+  });
+
+  await insertAutoPayouts(tx, {
+    preparedItems,
+    productById,
+    saleId,
+    shiftId: input.shiftId,
+    organizationId,
+    createdAt,
+    enabledPaymentMethodIds,
   });
 
   const balanceDue = Math.max(totalAmount - appliedPaidAmount, 0);
@@ -374,6 +630,9 @@ export async function runCreateSale(
     taxAmount,
     discountAmount,
     totalAmount,
+    passThroughSubtotal,
+    passThroughTaxAmount,
+    passThroughTotalAmount,
     paidAmount: appliedPaidAmount,
     balanceDue,
   };

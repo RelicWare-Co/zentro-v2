@@ -1,0 +1,1 @@
+ALTER TABLE "restaurant_order_item" ADD COLUMN "accounting_treatment" text DEFAULT 'revenue' NOT NULL;

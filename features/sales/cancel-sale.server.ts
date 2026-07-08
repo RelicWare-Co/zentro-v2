@@ -2,6 +2,7 @@ import { and, eq, ne } from "drizzle-orm";
 import type { z } from "zod";
 import type { Database } from "@/database/drizzle/db";
 import { creditTransaction } from "@/database/drizzle/schema/credit.schema";
+import { cashMovement } from "@/database/drizzle/schema/pos.schema";
 import { payment, sale } from "@/database/drizzle/schema/sales.schema";
 import { reverseCreditSaleCharges } from "@/features/credit/credit-operations.server";
 import { restoreSaleInventory } from "@/features/inventory/inventory-operations.server";
@@ -119,6 +120,50 @@ async function insertPaymentReversals(
   );
 }
 
+async function insertAutoPayoutReversals(
+  tx: CancelSaleDbExecutor,
+  saleId: string,
+  organizationId: string,
+  cancelledAt: Date
+) {
+  const autoPayouts = await tx
+    .select({
+      id: cashMovement.id,
+      shiftId: cashMovement.shiftId,
+      type: cashMovement.type,
+      paymentMethod: cashMovement.paymentMethod,
+      amount: cashMovement.amount,
+      description: cashMovement.description,
+    })
+    .from(cashMovement)
+    .where(
+      and(
+        eq(cashMovement.organizationId, organizationId),
+        eq(cashMovement.sourceSaleId, saleId),
+        eq(cashMovement.sourceType, "sale_auto_payout")
+      )
+    );
+
+  if (autoPayouts.length === 0) {
+    return;
+  }
+
+  await tx.insert(cashMovement).values(
+    autoPayouts.map((payout) => ({
+      id: crypto.randomUUID(),
+      organizationId,
+      shiftId: payout.shiftId,
+      type: payout.type,
+      paymentMethod: payout.paymentMethod,
+      amount: -payout.amount,
+      description: `Reversa - ${payout.description}`,
+      sourceType: "sale_auto_payout_reversal",
+      sourceSaleId: saleId,
+      createdAt: cancelledAt,
+    }))
+  );
+}
+
 export async function runCancelSale(
   tx: CancelSaleDbExecutor,
   input: CancelSaleInput,
@@ -214,6 +259,13 @@ export async function runCancelSale(
       cancelledAt
     );
   }
+
+  await insertAutoPayoutReversals(
+    tx,
+    targetSale.id,
+    organizationId,
+    cancelledAt
+  );
 
   await restoreSaleInventory(tx, {
     organizationId,

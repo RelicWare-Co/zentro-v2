@@ -16,6 +16,9 @@ import {
 type CreateSaleInput = z.infer<typeof CreateSaleInputSchema>;
 
 export interface ProductInfo {
+  accountingTreatment: string;
+  autoPayoutEnabled: boolean;
+  autoPayoutPaymentMethod: string;
   id: string;
   isModifier: boolean;
   name: string;
@@ -36,6 +39,7 @@ export interface PreparedModifier {
 }
 
 export interface PreparedItem {
+  accountingTreatment: string;
   discountAmount: number;
   id: string;
   modifiers: PreparedModifier[];
@@ -159,6 +163,104 @@ export function buildPreparedModifiers(
   return { preparedModifiers, modifiersSubtotal };
 }
 
+interface ItemDraft {
+  baseDiscountAmount: number;
+  baseProduct: ProductInfo;
+  isPassthrough: boolean;
+  lineSubtotal: number;
+  modifiersSubtotal: number;
+  preparedModifiers: PreparedModifier[];
+  quantity: number;
+  saleItemId: string;
+  taxableBaseBeforeSaleDiscount: number;
+  taxRate: number;
+  unitPrice: number;
+}
+
+function buildItemDraft(
+  item: CreateSaleInput["items"][number],
+  itemIndex: number,
+  productById: Map<string, ProductInfo>,
+  addStockDelta: (productId: string, delta: number) => void
+): ItemDraft {
+  const baseProduct = productById.get(item.productId);
+
+  if (!baseProduct) {
+    throw new Error(`Producto inválido en ítem ${itemIndex + 1}`);
+  }
+  if (baseProduct.isModifier) {
+    throw new Error(
+      `El producto ${baseProduct.name} solo puede venderse como modificador`
+    );
+  }
+
+  const isPassthrough = baseProduct.accountingTreatment === "passthrough";
+  const quantity = toPositiveInteger(
+    item.quantity,
+    `items[${itemIndex}].quantity`
+  );
+  const unitPrice = toNonNegativeInteger(
+    item.unitPrice ?? baseProduct.price,
+    `items[${itemIndex}].unitPrice`
+  );
+  const lineTaxRate = toNonNegativeInteger(
+    item.taxRate ?? baseProduct.taxRate,
+    `items[${itemIndex}].taxRate`
+  );
+  const baseDiscountAmount = toNonNegativeInteger(
+    item.discountAmount ?? 0,
+    `items[${itemIndex}].discountAmount`
+  );
+
+  if (isPassthrough) {
+    if ((item.modifiers ?? []).length > 0) {
+      throw new Error(
+        `El producto ${baseProduct.name} es no contable y no puede tener modificadores`
+      );
+    }
+    if (baseDiscountAmount > 0) {
+      throw new Error(
+        `El producto ${baseProduct.name} es no contable y no puede tener descuento`
+      );
+    }
+  }
+
+  const saleItemId = crypto.randomUUID();
+  const { preparedModifiers, modifiersSubtotal } = buildPreparedModifiers(
+    item.modifiers,
+    quantity,
+    itemIndex,
+    productById,
+    saleItemId,
+    (productId, delta) => addStockDelta(productId, delta)
+  );
+
+  const lineSubtotal = quantity * unitPrice;
+  const lineTaxableBaseBeforeSaleDiscount =
+    lineSubtotal + modifiersSubtotal - baseDiscountAmount;
+  if (lineTaxableBaseBeforeSaleDiscount < 0) {
+    throw new Error(
+      `La base gravable del ítem ${itemIndex + 1} no puede ser negativa`
+    );
+  }
+
+  addStockDelta(baseProduct.id, -quantity);
+
+  return {
+    baseDiscountAmount,
+    baseProduct,
+    isPassthrough,
+    lineSubtotal,
+    modifiersSubtotal,
+    preparedModifiers,
+    quantity,
+    saleItemId,
+    taxRate: lineTaxRate,
+    taxableBaseBeforeSaleDiscount: lineTaxableBaseBeforeSaleDiscount,
+    unitPrice,
+  };
+}
+
 export function buildPreparedItems(
   items: CreateSaleInput["items"],
   productById: Map<string, ProductInfo>,
@@ -173,100 +275,47 @@ export function buildPreparedItems(
     options.saleLevelDiscount ?? 0,
     "saleLevelDiscount"
   );
-  const drafts: Array<{
-    baseDiscountAmount: number;
-    baseProduct: ProductInfo;
-    lineSubtotal: number;
-    modifiersSubtotal: number;
-    preparedModifiers: PreparedModifier[];
-    quantity: number;
-    saleItemId: string;
-    taxRate: number;
-    taxableBaseBeforeSaleDiscount: number;
-    unitPrice: number;
-  }> = [];
+  const drafts: ItemDraft[] = [];
   let subtotal = 0;
-  let taxableBaseBeforeSaleDiscount = 0;
+  let revenueTaxableBaseBeforeSaleDiscount = 0;
 
   for (let itemIndex = 0; itemIndex < items.length; itemIndex += 1) {
-    const item = items[itemIndex];
-    const baseProduct = productById.get(item.productId);
-
-    if (!baseProduct) {
-      throw new Error(`Producto inválido en ítem ${itemIndex + 1}`);
-    }
-    if (baseProduct.isModifier) {
-      throw new Error(
-        `El producto ${baseProduct.name} solo puede venderse como modificador`
-      );
-    }
-
-    const quantity = toPositiveInteger(
-      item.quantity,
-      `items[${itemIndex}].quantity`
-    );
-    const unitPrice = toNonNegativeInteger(
-      item.unitPrice ?? baseProduct.price,
-      `items[${itemIndex}].unitPrice`
-    );
-    const lineTaxRate = toNonNegativeInteger(
-      item.taxRate ?? baseProduct.taxRate,
-      `items[${itemIndex}].taxRate`
-    );
-    const baseDiscountAmount = toNonNegativeInteger(
-      item.discountAmount ?? 0,
-      `items[${itemIndex}].discountAmount`
-    );
-
-    const saleItemId = crypto.randomUUID();
-    const { preparedModifiers, modifiersSubtotal } = buildPreparedModifiers(
-      item.modifiers,
-      quantity,
+    const draft = buildItemDraft(
+      items[itemIndex],
       itemIndex,
       productById,
-      saleItemId,
-      (productId, delta) => addStockDelta(productId, delta)
+      addStockDelta
     );
-
-    const lineSubtotal = quantity * unitPrice;
-    const lineTaxableBaseBeforeSaleDiscount =
-      lineSubtotal + modifiersSubtotal - baseDiscountAmount;
-    if (lineTaxableBaseBeforeSaleDiscount < 0) {
-      throw new Error(
-        `La base gravable del ítem ${itemIndex + 1} no puede ser negativa`
-      );
+    drafts.push(draft);
+    subtotal += draft.lineSubtotal + draft.modifiersSubtotal;
+    if (!draft.isPassthrough) {
+      revenueTaxableBaseBeforeSaleDiscount +=
+        draft.taxableBaseBeforeSaleDiscount;
     }
-
-    drafts.push({
-      baseDiscountAmount,
-      baseProduct,
-      lineSubtotal,
-      modifiersSubtotal,
-      preparedModifiers,
-      quantity,
-      saleItemId,
-      taxRate: lineTaxRate,
-      taxableBaseBeforeSaleDiscount: lineTaxableBaseBeforeSaleDiscount,
-      unitPrice,
-    });
-
-    addStockDelta(baseProduct.id, -quantity);
-    subtotal += lineSubtotal + modifiersSubtotal;
-    taxableBaseBeforeSaleDiscount += lineTaxableBaseBeforeSaleDiscount;
   }
 
-  if (saleLevelDiscount > taxableBaseBeforeSaleDiscount) {
-    throw new Error("El total de la venta no puede ser negativo");
+  if (saleLevelDiscount > revenueTaxableBaseBeforeSaleDiscount) {
+    throw new Error(
+      "El descuento no puede superar el total de productos contables"
+    );
   }
 
+  // Allocate sale-level discount only among revenue items.
+  // Passthrough items receive 0 allocation.
+  const revenueBases = drafts.map((draft) =>
+    draft.isPassthrough ? 0 : draft.taxableBaseBeforeSaleDiscount
+  );
   const saleDiscountAllocations = allocateProportionalDiscount(
-    drafts.map((draft) => draft.taxableBaseBeforeSaleDiscount),
+    revenueBases,
     saleLevelDiscount
   );
 
   const preparedItems: PreparedItem[] = [];
   let taxAmount = 0;
   let itemDiscountAmount = 0;
+  let passThroughSubtotal = 0;
+  let passThroughTaxAmount = 0;
+  let passThroughTotalAmount = 0;
 
   for (let itemIndex = 0; itemIndex < drafts.length; itemIndex += 1) {
     const draft = drafts[itemIndex];
@@ -282,6 +331,7 @@ export function buildPreparedItems(
       lineDiscountAmount;
 
     preparedItems.push({
+      accountingTreatment: draft.baseProduct.accountingTreatment,
       id: draft.saleItemId,
       productId: draft.baseProduct.id,
       quantity: draft.quantity,
@@ -296,6 +346,12 @@ export function buildPreparedItems(
 
     taxAmount += lineTaxAmount;
     itemDiscountAmount += lineDiscountAmount;
+
+    if (draft.isPassthrough) {
+      passThroughSubtotal += draft.lineSubtotal + draft.modifiersSubtotal;
+      passThroughTaxAmount += lineTaxAmount;
+      passThroughTotalAmount += lineTotalAmount;
+    }
   }
 
   return {
@@ -304,6 +360,9 @@ export function buildPreparedItems(
     subtotal,
     taxAmount,
     itemDiscountAmount,
+    passThroughSubtotal,
+    passThroughTaxAmount,
+    passThroughTotalAmount,
   };
 }
 

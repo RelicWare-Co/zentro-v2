@@ -1,4 +1,4 @@
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, ne } from "drizzle-orm";
 import type { Database } from "@/database/drizzle/db";
 import { organization } from "@/database/drizzle/schema/auth.schema";
 import { category, product } from "@/database/drizzle/schema/inventory.schema";
@@ -46,7 +46,8 @@ export async function getPublicCatalogBySlug({
       and(
         eq(product.organizationId, org.id),
         isNull(product.deletedAt),
-        eq(product.isModifier, false)
+        eq(product.isModifier, false),
+        ne(product.accountingTreatment, "passthrough")
       )
     )
     .orderBy(category.name, product.name);

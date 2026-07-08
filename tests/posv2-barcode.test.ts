@@ -23,6 +23,7 @@ function createProduct(overrides: Partial<Product> = {}): Product {
     stock: 10,
     isModifier: false,
     isFavorite: false,
+    accountingTreatment: "revenue",
     ...overrides,
   };
 }

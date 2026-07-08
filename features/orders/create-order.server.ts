@@ -1,4 +1,4 @@
-import { and, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, ne, sql } from "drizzle-orm";
 import { createError } from "evlog";
 import type { z } from "zod";
 import type { Database } from "@/database/drizzle/db";
@@ -72,6 +72,7 @@ async function loadOrderProducts(
         eq(product.organizationId, organizationId),
         isNull(product.deletedAt),
         eq(product.isModifier, false),
+        ne(product.accountingTreatment, "passthrough"),
         inArray(product.id, productIds)
       )
     );

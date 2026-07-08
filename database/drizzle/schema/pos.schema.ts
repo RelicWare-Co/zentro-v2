@@ -46,12 +46,17 @@ export const cashMovement = pgTable(
     paymentMethod: text("payment_method").notNull().default("cash"),
     amount: integer("amount").notNull(),
     description: text("description").notNull(),
+    sourceType: text("source_type"), // 'sale_auto_payout' para autosalidas de venta passthrough
+    sourceSaleId: text("source_sale_id"), // Venta que originó la autosalida (sin cascade para proteger historial)
     createdAt: timestamp("created_at", {
       withTimezone: true,
       mode: "date",
     }).notNull(),
   },
-  (table) => [index("cash_mov_shiftId_idx").on(table.shiftId)]
+  (table) => [
+    index("cash_mov_shiftId_idx").on(table.shiftId),
+    index("cash_mov_sourceSaleId_idx").on(table.sourceSaleId),
+  ]
 );
 
 // Conteo al cerrar caja, detallado por método de pago

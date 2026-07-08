@@ -25,6 +25,86 @@ function validateBarcodeValue(
   }
 }
 
+export const AccountingTreatmentSchema = z.enum(["revenue", "passthrough"]);
+
+function validatePassthroughProductRules(
+  input: {
+    accountingTreatment?: string;
+    isModifier?: boolean;
+    trackInventory?: boolean;
+    autoPayoutEnabled?: boolean;
+    autoPayoutPaymentMethod?: string;
+  },
+  ctx: z.RefinementCtx
+) {
+  const isPassthrough = input.accountingTreatment === "passthrough";
+  if (!isPassthrough) {
+    return;
+  }
+
+  if (input.isModifier) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Un producto no contable no puede ser modificador",
+      path: ["isModifier"],
+    });
+  }
+
+  if (input.trackInventory) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Un producto no contable no puede controlar inventario",
+      path: ["trackInventory"],
+    });
+  }
+
+  if (input.autoPayoutEnabled && !input.autoPayoutPaymentMethod?.trim()) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Debes seleccionar un método de pago para la autosalida de caja",
+      path: ["autoPayoutPaymentMethod"],
+    });
+  }
+}
+
+function validateIngredientProductRules(
+  input: {
+    isIngredient?: boolean;
+    price?: number;
+    isModifier?: boolean;
+    accountingTreatment?: string;
+  },
+  ctx: z.RefinementCtx
+) {
+  if (!input.isIngredient) {
+    return;
+  }
+
+  if (input.price !== undefined && input.price !== 0) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Un insumo no puede tener precio (debe ser 0)",
+      path: ["price"],
+    });
+  }
+
+  if (input.isModifier) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Un insumo no puede ser modificador",
+      path: ["isModifier"],
+    });
+  }
+
+  if (input.accountingTreatment && input.accountingTreatment !== "revenue") {
+    ctx.addIssue({
+      code: "custom",
+      message: "Un insumo debe ser contable (revenue)",
+      path: ["accountingTreatment"],
+    });
+  }
+}
+
 export const ProductSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -40,7 +120,11 @@ export const ProductSchema = z.object({
   reorderQuantity: z.number().nullable().optional(),
   trackInventory: z.boolean(),
   isModifier: z.boolean(),
+  isIngredient: z.boolean(),
   isFavorite: z.boolean(),
+  accountingTreatment: AccountingTreatmentSchema,
+  autoPayoutEnabled: z.boolean(),
+  autoPayoutPaymentMethod: z.string(),
   createdAt: z.number(),
 });
 
@@ -64,9 +148,15 @@ export const CreateProductSchema = z
     reorderQuantity: OptionalNonNegativeIntSchema,
     trackInventory: z.boolean().optional(),
     isModifier: z.boolean().optional(),
+    isIngredient: z.boolean().optional().default(false),
+    accountingTreatment: AccountingTreatmentSchema.optional(),
+    autoPayoutEnabled: z.boolean().optional(),
+    autoPayoutPaymentMethod: z.string().trim().min(1).optional(),
   })
   .superRefine((input, ctx) => {
     validateBarcodeValue(input.barcode, ctx);
+    validatePassthroughProductRules(input, ctx);
+    validateIngredientProductRules(input, ctx);
   });
 
 export const UpdateProductSchema = z
@@ -84,6 +174,10 @@ export const UpdateProductSchema = z
     reorderQuantity: OptionalNonNegativeIntSchema,
     trackInventory: z.boolean().optional(),
     isModifier: z.boolean().optional(),
+    isIngredient: z.boolean().optional(),
+    accountingTreatment: AccountingTreatmentSchema.optional(),
+    autoPayoutEnabled: z.boolean().optional(),
+    autoPayoutPaymentMethod: z.string().trim().min(1).optional(),
   })
   .refine(
     (input) =>
@@ -98,7 +192,11 @@ export const UpdateProductSchema = z
       input.minStock !== undefined ||
       input.reorderQuantity !== undefined ||
       input.trackInventory !== undefined ||
-      input.isModifier !== undefined,
+      input.isModifier !== undefined ||
+      input.isIngredient !== undefined ||
+      input.accountingTreatment !== undefined ||
+      input.autoPayoutEnabled !== undefined ||
+      input.autoPayoutPaymentMethod !== undefined,
     {
       message: "Debes enviar al menos un campo para actualizar",
     }
@@ -108,6 +206,12 @@ export const UpdateProductSchema = z
       return;
     }
     validateBarcodeValue(input.barcode, ctx);
+  })
+  .superRefine((input, ctx) => {
+    validatePassthroughProductRules(input, ctx);
+  })
+  .superRefine((input, ctx) => {
+    validateIngredientProductRules(input, ctx);
   });
 
 export const RegisterInventoryMovementSchema = z.object({
@@ -171,4 +275,33 @@ export const ListProductsResultSchema = z.object({
   total: z.number().int(),
   page: z.number().int(),
   pageSize: z.number().int(),
+});
+
+export const ProductIngredientSchema = z.object({
+  id: z.string(),
+  productId: z.string(),
+  ingredientId: z.string(),
+  quantity: z.number().int().positive(),
+});
+
+export const CreateProductIngredientSchema = z.object({
+  productId: z.string().trim().min(1),
+  ingredientId: z.string().trim().min(1),
+  quantity: z.number().int().positive(),
+});
+
+export const DeleteProductIngredientSchema = z.object({
+  id: z.string().trim().min(1),
+});
+
+export const SetProductIngredientsSchema = z.object({
+  productId: z.string().trim().min(1),
+  ingredients: z
+    .array(
+      z.object({
+        ingredientId: z.string().trim().min(1),
+        quantity: z.number().int().positive(),
+      })
+    )
+    .max(200),
 });

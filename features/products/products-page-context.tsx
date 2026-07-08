@@ -13,6 +13,8 @@ import { ALL_FILTER_VALUE } from "@/features/listing/listing.constants.shared";
 import {
   type Category,
   type Product,
+  type ProductIngredient,
+  useProductIngredients,
   useProductsMutations,
   useProductsQueries,
 } from "@/features/products/hooks/use-products";
@@ -22,7 +24,10 @@ import {
   type ProductsTab,
   UNCATEGORIZED_FILTER_VALUE,
 } from "@/features/products/products-page.constants.shared";
-import { parseOrganizationSettingsMetadata } from "@/features/settings/settings.shared";
+import {
+  getEnabledPaymentMethods,
+  parseOrganizationSettingsMetadata,
+} from "@/features/settings/settings.shared";
 import { queries } from "@/zero/queries";
 
 export type InventoryMovementType = "restock" | "waste" | "adjustment";
@@ -40,6 +45,8 @@ export interface ProductsPageState {
   catalogProducts: Product[];
   categories: Category[];
   editingProduct: Product | null;
+  editingProductIngredients: ProductIngredient[];
+  enabledPaymentMethods: Array<{ id: string; label: string }>;
   error: unknown;
   filters: ProductsPageFilters;
   inventoryNotes: string;
@@ -94,6 +101,14 @@ export interface ProductsPageActions {
     reorderQuantity: number | null;
     trackInventory: boolean;
     isModifier: boolean;
+    accountingTreatment?: "revenue" | "passthrough";
+    autoPayoutEnabled?: boolean;
+    autoPayoutPaymentMethod?: string;
+    isIngredient?: boolean;
+  }) => Promise<void>;
+  saveProductIngredients: (payload: {
+    productId: string;
+    ingredients: Array<{ ingredientId: string; quantity: number }>;
   }) => Promise<void>;
   setActiveTab: (tab: ProductsTab) => void;
   setCategoryFilter: (value: string) => void;
@@ -183,13 +198,18 @@ export function ProductsPageProvider({ children }: { children: ReactNode }) {
     useState(false);
 
   const [organizationRows] = useZeroQuery(queries.organization.current());
-  const lowStockThreshold = useMemo(() => {
+  const { lowStockThreshold, enabledPaymentMethods } = useMemo(() => {
     const settings = parseOrganizationSettingsMetadata(
       typeof organizationRows[0]?.metadata === "string"
         ? organizationRows[0]?.metadata
         : null
     );
-    return settings.inventory.lowStockThreshold;
+    return {
+      lowStockThreshold: settings.inventory.lowStockThreshold,
+      enabledPaymentMethods: getEnabledPaymentMethods(settings).map(
+        (method) => ({ id: method.id, label: method.label })
+      ),
+    };
   }, [organizationRows]);
 
   const mutations = useProductsMutations({
@@ -257,6 +277,11 @@ export function ProductsPageProvider({ children }: { children: ReactNode }) {
     categoryId: null,
     lowStockThreshold,
   });
+
+  const { productIngredients: editingProductIngredients } =
+    useProductIngredients(
+      isProductSheetOpen ? (editingProduct?.id ?? null) : null
+    );
 
   const productsWithInventory = useMemo(
     () => catalogProducts.filter((product) => product.trackInventory),
@@ -418,6 +443,10 @@ export function ProductsPageProvider({ children }: { children: ReactNode }) {
       reorderQuantity: number | null;
       trackInventory: boolean;
       isModifier: boolean;
+      accountingTreatment?: "revenue" | "passthrough";
+      autoPayoutEnabled?: boolean;
+      autoPayoutPaymentMethod?: string;
+      isIngredient?: boolean;
     }) => {
       if (payload.id) {
         await mutations.updateProductMutation.mutateAsync({
@@ -426,9 +455,22 @@ export function ProductsPageProvider({ children }: { children: ReactNode }) {
         });
         return;
       }
-      await mutations.createProductMutation.mutateAsync(payload);
+      await mutations.createProductMutation.mutateAsync({
+        ...payload,
+        isIngredient: payload.isIngredient ?? false,
+      });
     },
     [mutations.createProductMutation, mutations.updateProductMutation]
+  );
+
+  const saveProductIngredients = useCallback(
+    async (payload: {
+      productId: string;
+      ingredients: Array<{ ingredientId: string; quantity: number }>;
+    }) => {
+      await mutations.setProductIngredientsMutation.mutateAsync(payload);
+    },
+    [mutations.setProductIngredientsMutation]
   );
 
   const productFormError =
@@ -453,6 +495,7 @@ export function ProductsPageProvider({ children }: { children: ReactNode }) {
         barcodeCatalogProducts,
         catalogProducts,
         categories,
+        enabledPaymentMethods,
         total,
         productsWithInventory,
         lowStockThreshold,
@@ -462,6 +505,7 @@ export function ProductsPageProvider({ children }: { children: ReactNode }) {
         error,
         isProductSheetOpen,
         editingProduct,
+        editingProductIngredients,
         lastCreatedCategoryId,
         productToDelete,
         isCategoryDialogOpen,
@@ -499,6 +543,7 @@ export function ProductsPageProvider({ children }: { children: ReactNode }) {
         setInventoryProduct,
         setIsBarcodeScannerConnected,
         saveProduct,
+        saveProductIngredients,
         setProductToDelete,
       },
       meta: {
@@ -518,6 +563,7 @@ export function ProductsPageProvider({ children }: { children: ReactNode }) {
       barcodeCatalogProducts,
       catalogProducts,
       categories,
+      enabledPaymentMethods,
       lowStockThreshold,
       isBarcodeScannerConnected,
       total,
@@ -527,6 +573,7 @@ export function ProductsPageProvider({ children }: { children: ReactNode }) {
       error,
       isProductSheetOpen,
       editingProduct,
+      editingProductIngredients,
       lastCreatedCategoryId,
       productToDelete,
       isCategoryDialogOpen,
@@ -554,6 +601,7 @@ export function ProductsPageProvider({ children }: { children: ReactNode }) {
       closeInventoryDialog,
       saveInventoryMovement,
       saveProduct,
+      saveProductIngredients,
       mutations,
       resolvedCategoryId,
       productFormError,

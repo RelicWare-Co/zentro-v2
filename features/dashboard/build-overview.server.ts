@@ -338,6 +338,8 @@ export async function runBuildDashboardOverview(
       dateKey: saleDateKey.as("date_key"),
       taxAmount: sale.taxAmount,
       totalAmount: sale.totalAmount,
+      passThroughTotalAmount: sale.passThroughTotalAmount,
+      passThroughTaxAmount: sale.passThroughTaxAmount,
     })
     .from(sale)
     .where(
@@ -388,13 +390,13 @@ export async function runBuildDashboardOverview(
     salesWindow.shiftIds.length > 0
       ? db
           .select({
-            grossSales: sql<number>`coalesce(sum(${sale.totalAmount}), 0)`,
-            netRevenue: sql<number>`coalesce(sum(${sale.totalAmount} - ${sale.taxAmount}), 0)`,
-            revenue: sql<number>`coalesce(sum(${sale.totalAmount} - ${sale.taxAmount}), 0)`,
+            grossSales: sql<number>`coalesce(sum(${sale.totalAmount} - ${sale.passThroughTotalAmount}), 0)`,
+            netRevenue: sql<number>`coalesce(sum((${sale.totalAmount} - ${sale.passThroughTotalAmount}) - (${sale.taxAmount} - ${sale.passThroughTaxAmount})), 0)`,
+            revenue: sql<number>`coalesce(sum((${sale.totalAmount} - ${sale.passThroughTotalAmount}) - (${sale.taxAmount} - ${sale.passThroughTaxAmount})), 0)`,
             salesCount: sql<number>`count(*)`,
-            avgTicket: sql<number>`coalesce(avg(${sale.totalAmount} - ${sale.taxAmount}), 0)`,
+            avgTicket: sql<number>`coalesce(avg((${sale.totalAmount} - ${sale.passThroughTotalAmount}) - (${sale.taxAmount} - ${sale.passThroughTaxAmount})), 0)`,
             distinctCustomers: sql<number>`count(distinct ${sale.customerId})`,
-            taxCollected: sql<number>`coalesce(sum(${sale.taxAmount}), 0)`,
+            taxCollected: sql<number>`coalesce(sum(${sale.taxAmount} - ${sale.passThroughTaxAmount}), 0)`,
           })
           .from(sale)
           .where(
@@ -404,13 +406,13 @@ export async function runBuildDashboardOverview(
     salesWindow.previousShiftId
       ? db
           .select({
-            grossSales: sql<number>`coalesce(sum(${sale.totalAmount}), 0)`,
-            netRevenue: sql<number>`coalesce(sum(${sale.totalAmount} - ${sale.taxAmount}), 0)`,
-            revenue: sql<number>`coalesce(sum(${sale.totalAmount} - ${sale.taxAmount}), 0)`,
+            grossSales: sql<number>`coalesce(sum(${sale.totalAmount} - ${sale.passThroughTotalAmount}), 0)`,
+            netRevenue: sql<number>`coalesce(sum((${sale.totalAmount} - ${sale.passThroughTotalAmount}) - (${sale.taxAmount} - ${sale.passThroughTaxAmount})), 0)`,
+            revenue: sql<number>`coalesce(sum((${sale.totalAmount} - ${sale.passThroughTotalAmount}) - (${sale.taxAmount} - ${sale.passThroughTaxAmount})), 0)`,
             salesCount: sql<number>`count(*)`,
-            avgTicket: sql<number>`coalesce(avg(${sale.totalAmount} - ${sale.taxAmount}), 0)`,
+            avgTicket: sql<number>`coalesce(avg((${sale.totalAmount} - ${sale.passThroughTotalAmount}) - (${sale.taxAmount} - ${sale.passThroughTaxAmount})), 0)`,
             distinctCustomers: sql<number>`count(distinct ${sale.customerId})`,
-            taxCollected: sql<number>`coalesce(sum(${sale.taxAmount}), 0)`,
+            taxCollected: sql<number>`coalesce(sum(${sale.taxAmount} - ${sale.passThroughTaxAmount}), 0)`,
           })
           .from(sale)
           .where(
@@ -422,11 +424,11 @@ export async function runBuildDashboardOverview(
       : Promise.resolve([]),
     db
       .select({
-        grossSales: sql<number>`coalesce(sum(${sale.totalAmount}), 0)`,
-        netRevenue: sql<number>`coalesce(sum(${sale.totalAmount} - ${sale.taxAmount}), 0)`,
-        revenue: sql<number>`coalesce(sum(${sale.totalAmount} - ${sale.taxAmount}), 0)`,
+        grossSales: sql<number>`coalesce(sum(${sale.totalAmount} - ${sale.passThroughTotalAmount}), 0)`,
+        netRevenue: sql<number>`coalesce(sum((${sale.totalAmount} - ${sale.passThroughTotalAmount}) - (${sale.taxAmount} - ${sale.passThroughTaxAmount})), 0)`,
+        revenue: sql<number>`coalesce(sum((${sale.totalAmount} - ${sale.passThroughTotalAmount}) - (${sale.taxAmount} - ${sale.passThroughTaxAmount})), 0)`,
         salesCount: sql<number>`count(*)`,
-        taxCollected: sql<number>`coalesce(sum(${sale.taxAmount}), 0)`,
+        taxCollected: sql<number>`coalesce(sum(${sale.taxAmount} - ${sale.passThroughTaxAmount}), 0)`,
       })
       .from(sale)
       .where(
@@ -438,11 +440,11 @@ export async function runBuildDashboardOverview(
       ),
     db
       .select({
-        grossSales: sql<number>`coalesce(sum(${sale.totalAmount}), 0)`,
-        netRevenue: sql<number>`coalesce(sum(${sale.totalAmount} - ${sale.taxAmount}), 0)`,
-        revenue: sql<number>`coalesce(sum(${sale.totalAmount} - ${sale.taxAmount}), 0)`,
+        grossSales: sql<number>`coalesce(sum(${sale.totalAmount} - ${sale.passThroughTotalAmount}), 0)`,
+        netRevenue: sql<number>`coalesce(sum((${sale.totalAmount} - ${sale.passThroughTotalAmount}) - (${sale.taxAmount} - ${sale.passThroughTaxAmount})), 0)`,
+        revenue: sql<number>`coalesce(sum((${sale.totalAmount} - ${sale.passThroughTotalAmount}) - (${sale.taxAmount} - ${sale.passThroughTaxAmount})), 0)`,
         salesCount: sql<number>`count(*)`,
-        taxCollected: sql<number>`coalesce(sum(${sale.taxAmount}), 0)`,
+        taxCollected: sql<number>`coalesce(sum(${sale.taxAmount} - ${sale.passThroughTaxAmount}), 0)`,
       })
       .from(sale)
       .where(
@@ -512,11 +514,11 @@ export async function runBuildDashboardOverview(
     db
       .select({
         dateKey: salesTrendDays.dateKey,
-        grossSales: sql<number>`coalesce(sum(${salesTrendDays.totalAmount}), 0)`,
-        netRevenue: sql<number>`coalesce(sum(${salesTrendDays.totalAmount} - ${salesTrendDays.taxAmount}), 0)`,
-        revenue: sql<number>`coalesce(sum(${salesTrendDays.totalAmount} - ${salesTrendDays.taxAmount}), 0)`,
+        grossSales: sql<number>`coalesce(sum(${salesTrendDays.totalAmount} - ${salesTrendDays.passThroughTotalAmount}), 0)`,
+        netRevenue: sql<number>`coalesce(sum((${salesTrendDays.totalAmount} - ${salesTrendDays.passThroughTotalAmount}) - (${salesTrendDays.taxAmount} - ${salesTrendDays.passThroughTaxAmount})), 0)`,
+        revenue: sql<number>`coalesce(sum((${salesTrendDays.totalAmount} - ${salesTrendDays.passThroughTotalAmount}) - (${salesTrendDays.taxAmount} - ${salesTrendDays.passThroughTaxAmount})), 0)`,
         salesCount: sql<number>`count(*)`,
-        taxCollected: sql<number>`coalesce(sum(${salesTrendDays.taxAmount}), 0)`,
+        taxCollected: sql<number>`coalesce(sum(${salesTrendDays.taxAmount} - ${salesTrendDays.passThroughTaxAmount}), 0)`,
       })
       .from(salesTrendDays)
       .groupBy(salesTrendDays.dateKey)
@@ -600,6 +602,7 @@ export async function runBuildDashboardOverview(
       .where(
         and(
           eq(saleItem.organizationId, auth.organizationId),
+          ne(saleItem.accountingTreatment, "passthrough"),
           gte(sale.createdAt, topProductsStart),
           lt(sale.createdAt, tomorrowStart)
         )
@@ -638,6 +641,7 @@ export async function runBuildDashboardOverview(
       .where(
         and(
           eq(saleItem.organizationId, auth.organizationId),
+          ne(saleItem.accountingTreatment, "passthrough"),
           gte(sale.createdAt, zonedMidnightUtc(today, timeZone)),
           lt(sale.createdAt, tomorrowStart)
         )
@@ -677,6 +681,7 @@ export async function runBuildDashboardOverview(
           .where(
             and(
               eq(saleItem.organizationId, auth.organizationId),
+              ne(saleItem.accountingTreatment, "passthrough"),
               inArray(sale.shiftId, salesWindow.shiftIds)
             )
           )

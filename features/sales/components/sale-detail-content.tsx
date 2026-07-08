@@ -79,7 +79,14 @@ export function SaleDetailContent({
               key={item.id}
             >
               <div className="flex items-center justify-between">
-                <p className="font-medium text-white">{item.name}</p>
+                <div className="flex items-center gap-2">
+                  <p className="font-medium text-white">{item.name}</p>
+                  {item.accountingTreatment === "passthrough" ? (
+                    <span className="rounded bg-zinc-700 px-1.5 py-0.5 font-medium text-[10px] text-zinc-300">
+                      No contable
+                    </span>
+                  ) : null}
+                </div>
                 <p className="text-sm text-zinc-300">
                   {item.quantity} x {formatSalesCurrency(item.unitPrice)}
                 </p>
@@ -179,11 +186,29 @@ export function SaleDetailContent({
           </div>
         ) : null}
         <div className="mt-2 flex items-center justify-between border-zinc-800 border-t pt-2">
-          <span className="font-medium text-white">Total</span>
+          <span className="font-medium text-white">Total facturado</span>
           <span className="font-bold text-[var(--color-voltage)] text-lg">
             {formatSalesCurrency(sale.totalAmount)}
           </span>
         </div>
+        {sale.passThroughTotalAmount > 0 ? (
+          <>
+            <div className="mt-1 flex items-center justify-between text-sm">
+              <span className="text-zinc-400">Total contable</span>
+              <span className="text-white">
+                {formatSalesCurrency(
+                  sale.totalAmount - sale.passThroughTotalAmount
+                )}
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-zinc-400">Total no contable</span>
+              <span className="text-zinc-300">
+                {formatSalesCurrency(sale.passThroughTotalAmount)}
+              </span>
+            </div>
+          </>
+        ) : null}
         <div className="mt-1 flex items-center justify-between text-sm">
           <span className="text-zinc-400">Pagado</span>
           <span className="text-white">

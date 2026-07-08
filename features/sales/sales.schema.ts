@@ -118,6 +118,7 @@ const SaleDetailItemSchema = z.object({
   taxAmount: z.number(),
   discountAmount: z.number(),
   totalAmount: z.number(),
+  accountingTreatment: z.string(),
   modifiers: SaleDetailItemModifierSchema.array(),
 });
 
@@ -148,6 +149,9 @@ export const SaleDetailSchema = z.object({
   taxAmount: z.number(),
   discountAmount: z.number(),
   totalAmount: z.number(),
+  passThroughSubtotal: z.number(),
+  passThroughTaxAmount: z.number(),
+  passThroughTotalAmount: z.number(),
   paidAmount: z.number(),
   balanceDue: z.number(),
   customer: SaleDetailCustomerSchema.nullable(),
@@ -205,6 +209,9 @@ export const CreateSaleResultSchema = z.object({
   taxAmount: z.number(),
   discountAmount: z.number(),
   totalAmount: z.number(),
+  passThroughSubtotal: z.number(),
+  passThroughTaxAmount: z.number(),
+  passThroughTotalAmount: z.number(),
   paidAmount: z.number(),
   balanceDue: z.number(),
 });

@@ -4,19 +4,52 @@
 // + movement insert to applyInventoryDeltas from inventory-operations.server.ts.
 // This ensures authoritative Drizzle-level updates instead of Zero mutator calls.
 
-import { and, eq, isNull } from "drizzle-orm";
-import { product } from "@/database/drizzle/schema/inventory.schema";
+import { and, eq, inArray, isNull } from "drizzle-orm";
+import {
+  product,
+  productIngredient,
+} from "@/database/drizzle/schema/inventory.schema";
 import {
   applyInventoryDeltas,
   type InventoryMovementSource,
 } from "@/features/inventory/inventory-operations.server";
-import { registerInventoryMovementArgsSchema } from "@/features/products/products.mutators";
+import {
+  createProductIngredientArgsSchema,
+  registerInventoryMovementArgsSchema,
+  setProductIngredientsArgsSchema,
+} from "@/features/products/products.mutators";
 import {
   normalizeOptionalString,
   resolveTimestamp,
   toInteger,
+  toPositiveInteger,
 } from "@/lib/domain-values.shared";
 import { defineZentroServerMutator } from "@/zero/sdk.server";
+
+async function assertProductInOrg(
+  drizzleTx: Parameters<
+    Parameters<typeof defineZentroServerMutator>[1]
+  >[0]["drizzleTx"],
+  productId: string,
+  organizationId: string
+) {
+  const [row] = await drizzleTx
+    .select({ id: product.id })
+    .from(product)
+    .where(
+      and(
+        eq(product.id, productId),
+        eq(product.organizationId, organizationId),
+        isNull(product.deletedAt)
+      )
+    )
+    .limit(1);
+  if (!row) {
+    throw new Error(
+      `Producto no encontrado o inactivo en la organización actual: ${productId}`
+    );
+  }
+}
 
 export const productsServerMutators = {
   registerInventoryMovement: defineZentroServerMutator(
@@ -99,5 +132,82 @@ export const productsServerMutators = {
       });
     },
     { operationName: "El registro de movimientos de inventario" }
+  ),
+};
+
+export const productIngredientsServerMutators = {
+  create: defineZentroServerMutator(
+    createProductIngredientArgsSchema,
+    async ({ drizzleTx, args, auth }) => {
+      await assertProductInOrg(drizzleTx, args.productId, auth.organizationId);
+      await assertProductInOrg(
+        drizzleTx,
+        args.ingredientId,
+        auth.organizationId
+      );
+
+      await drizzleTx.insert(productIngredient).values({
+        id: args.id,
+        organizationId: auth.organizationId,
+        productId: args.productId,
+        ingredientId: args.ingredientId,
+        quantity: toPositiveInteger(args.quantity, "quantity"),
+        createdAt: new Date(),
+      });
+    },
+    { operationName: "La creación de ingrediente de producto" }
+  ),
+  setForProduct: defineZentroServerMutator(
+    setProductIngredientsArgsSchema,
+    async ({ drizzleTx, args, auth }) => {
+      await assertProductInOrg(drizzleTx, args.productId, auth.organizationId);
+
+      const ingredientIds = args.ingredients.map(
+        (i: { ingredientId: string; quantity: number }) => i.ingredientId
+      );
+      if (ingredientIds.length > 0) {
+        const rows = await drizzleTx
+          .select({ id: product.id })
+          .from(product)
+          .where(
+            and(
+              eq(product.organizationId, auth.organizationId),
+              isNull(product.deletedAt),
+              inArray(product.id, ingredientIds)
+            )
+          );
+        if (rows.length !== ingredientIds.length) {
+          throw new Error(
+            "Uno o más ingredientes no existen en la organización actual"
+          );
+        }
+      }
+
+      await drizzleTx
+        .delete(productIngredient)
+        .where(
+          and(
+            eq(productIngredient.organizationId, auth.organizationId),
+            eq(productIngredient.productId, args.productId)
+          )
+        );
+
+      if (args.ingredients.length > 0) {
+        const now = new Date();
+        await drizzleTx.insert(productIngredient).values(
+          args.ingredients.map(
+            (ingredient: { ingredientId: string; quantity: number }) => ({
+              id: crypto.randomUUID(),
+              organizationId: auth.organizationId,
+              productId: args.productId,
+              ingredientId: ingredient.ingredientId,
+              quantity: toPositiveInteger(ingredient.quantity, "quantity"),
+              createdAt: now,
+            })
+          )
+        );
+      }
+    },
+    { operationName: "La actualización de ingredientes de producto" }
   ),
 };

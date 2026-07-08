@@ -45,11 +45,19 @@ export const product = pgTable(
     cost: integer("cost").default(0),
     taxRate: integer("tax_rate").default(0).notNull(), // % de impuesto (ej: 19 para IVA 19%, 0 para excluido)
     isModifier: boolean("is_modifier").default(false).notNull(), // True para adiciones (ej: extra queso)
+    isIngredient: boolean("is_ingredient").default(false).notNull(), // True para insumos consumidos por receta
     trackInventory: boolean("track_inventory").default(true).notNull(),
     stock: integer("stock").default(0).notNull(), // Cache del stock actual
     minStock: integer("min_stock"),
     reorderQuantity: integer("reorder_quantity"),
     isFavorite: boolean("is_favorite").default(false).notNull(),
+    accountingTreatment: text("accounting_treatment")
+      .default("revenue")
+      .notNull(), // 'revenue' o 'passthrough' (no contable)
+    autoPayoutEnabled: boolean("auto_payout_enabled").default(false).notNull(), // Autosalida de caja al vender
+    autoPayoutPaymentMethod: text("auto_payout_payment_method")
+      .default("cash")
+      .notNull(), // Método afectado por la autosalida
     deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "date" }), // Soft delete: null = activo, fecha = eliminado
     createdAt: timestamp("created_at", {
       withTimezone: true,
@@ -90,6 +98,32 @@ export const inventoryMovement = pgTable(
   (table) => [index("inv_mov_productId_idx").on(table.productId)]
 );
 
+export const productIngredient = pgTable(
+  "product_ingredient",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    productId: text("product_id")
+      .notNull()
+      .references(() => product.id, { onDelete: "cascade" }), // producto vendible
+    ingredientId: text("ingredient_id")
+      .notNull()
+      .references(() => product.id, { onDelete: "cascade" }), // producto insumo
+    quantity: integer("quantity").notNull(), // por unidad vendida
+    createdAt: timestamp("created_at", {
+      withTimezone: true,
+      mode: "date",
+    }).notNull(),
+  },
+  (table) => [
+    index("product_ingredient_org_idx").on(table.organizationId),
+    index("product_ingredient_product_idx").on(table.productId),
+    index("product_ingredient_ingredient_idx").on(table.ingredientId),
+  ]
+);
+
 export const categoryRelations = relations(category, ({ one, many }) => ({
   organization: one(organization, {
     fields: [category.organizationId],
@@ -110,7 +144,31 @@ export const productRelations = relations(product, ({ one, many }) => ({
   inventoryMovements: many(inventoryMovement),
   saleItems: many(saleItem),
   modifierItems: many(saleItemModifier),
+  ingredientRecipes: many(productIngredient, { relationName: "recipeProduct" }),
+  usedAsIngredientIn: many(productIngredient, {
+    relationName: "ingredientProduct",
+  }),
 }));
+
+export const productIngredientRelations = relations(
+  productIngredient,
+  ({ one }) => ({
+    organization: one(organization, {
+      fields: [productIngredient.organizationId],
+      references: [organization.id],
+    }),
+    product: one(product, {
+      fields: [productIngredient.productId],
+      references: [product.id],
+      relationName: "recipeProduct",
+    }),
+    ingredient: one(product, {
+      fields: [productIngredient.ingredientId],
+      references: [product.id],
+      relationName: "ingredientProduct",
+    }),
+  })
+);
 
 export const inventoryMovementRelations = relations(
   inventoryMovement,

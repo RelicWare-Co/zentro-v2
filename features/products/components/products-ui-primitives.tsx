@@ -1,5 +1,24 @@
-import { Switch } from "@mantine/core";
+import { Collapse, Switch } from "@mantine/core";
 import type { ReactNode } from "react";
+
+export function ProductFormCollapse({
+  children,
+  visible,
+}: {
+  children: ReactNode;
+  visible: boolean;
+}) {
+  return (
+    <Collapse
+      animateOpacity
+      expanded={visible}
+      transitionDuration={200}
+      transitionTimingFunction="cubic-bezier(0.25, 0.46, 0.45, 0.94)"
+    >
+      {children}
+    </Collapse>
+  );
+}
 
 export function ProductsField({
   label,
@@ -28,11 +47,13 @@ export function ProductsToggleLine({
   description,
   checked,
   onCheckedChange,
+  disabled,
 }: {
   title: string;
   description: string;
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
+  disabled?: boolean;
 }) {
   return (
     <div className="flex items-center justify-between gap-4 rounded-xl border border-zinc-800 bg-black/20 p-4">
@@ -43,6 +64,7 @@ export function ProductsToggleLine({
       <Switch
         checked={checked}
         color="voltage.5"
+        disabled={disabled}
         onChange={(event) => onCheckedChange(event.currentTarget.checked)}
       />
     </div>

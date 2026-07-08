@@ -5,13 +5,38 @@ import "@mantine/notifications/styles.css";
 import "./tailwind.css";
 import { MantineProvider } from "@mantine/core";
 import { Notifications } from "@mantine/notifications";
-import type { ReactNode } from "react";
+import { type ComponentType, type ReactNode, useEffect, useState } from "react";
 import { usePageContext } from "vike-react/usePageContext";
 import { AppLayout } from "@/components/app-layout";
 import { OrganizationTransitionProvider } from "@/features/organization/organization-transition-context";
 import { mantineCssVariablesResolver, mantineTheme } from "@/lib/mantine-theme";
 import { TanstackQueryProvider } from "@/lib/query-provider";
-import { ZeroProviderGate } from "@/zero/zero-provider-gate.client";
+
+interface ZeroProviderGateProps {
+  allowAnonymous?: boolean;
+  children: ReactNode;
+}
+
+function ClientZeroProviderGate(props: ZeroProviderGateProps) {
+  const [Component, setComponent] =
+    useState<ComponentType<ZeroProviderGateProps> | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    import("@/zero/zero-provider-gate.client").then((module) => {
+      if (!cancelled) {
+        setComponent(() => module.ZeroProviderGate);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return Component ? <Component {...props} /> : null;
+}
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const pageContext = usePageContext();
@@ -25,12 +50,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     // /o is SSR with +data — no Zero, TanStack Query, or org context needed.
     content = children;
   } else if (isAuthPage) {
-    content = <ZeroProviderGate allowAnonymous>{children}</ZeroProviderGate>;
+    content = (
+      <ClientZeroProviderGate allowAnonymous>{children}</ClientZeroProviderGate>
+    );
   } else {
     content = (
-      <ZeroProviderGate>
+      <ClientZeroProviderGate>
         <AppLayout>{children}</AppLayout>
-      </ZeroProviderGate>
+      </ClientZeroProviderGate>
     );
   }
 

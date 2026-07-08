@@ -14,6 +14,10 @@ const productByIdArgsSchema = z.object({
   productId: z.string().trim().optional().nullable(),
 });
 
+const productIngredientsByProductArgsSchema = z.object({
+  productId: z.string().trim().optional().nullable(),
+});
+
 const posCatalogArgsSchema = productsSearchArgsSchema;
 
 function normalizeProductLimit(limit?: number) {
@@ -31,6 +35,7 @@ function buildPosCatalogQuery(
     .where("organizationId", organizationId)
     .where("deletedAt", "IS", null)
     .where("isModifier", false)
+    .where("isIngredient", false)
     .related("category");
 
   if (normalizedCategoryId === "uncategorized") {
@@ -193,6 +198,21 @@ export const productsQueries = {
       return zql.product
         .where("organizationId", ctx.orgID)
         .where("isModifier", true)
+        .where("isIngredient", false)
+        .where("deletedAt", "IS", null)
+        .related("category")
+        .orderBy("name", "asc")
+        .orderBy("id", "asc")
+        .limit(500);
+    }),
+    ingredients: defineZentroQuery(({ ctx }) => {
+      if (!hasOrgContext(ctx)) {
+        return denyQuery(zql.product);
+      }
+
+      return zql.product
+        .where("organizationId", ctx.orgID)
+        .where("isIngredient", true)
         .where("deletedAt", "IS", null)
         .related("category")
         .orderBy("name", "asc")
@@ -218,5 +238,22 @@ export const productsQueries = {
         }
       ),
     },
+  },
+  productIngredients: {
+    byProduct: defineZentroQuery(
+      productIngredientsByProductArgsSchema,
+      ({ args, ctx }) => {
+        const normalizedProductId = args.productId?.trim() ?? "";
+        if (!(hasOrgContext(ctx) && normalizedProductId)) {
+          return denyQuery(zql.productIngredient);
+        }
+
+        return zql.productIngredient
+          .where("organizationId", ctx.orgID)
+          .where("productId", normalizedProductId)
+          .orderBy("id", "asc")
+          .limit(500);
+      }
+    ),
   },
 };

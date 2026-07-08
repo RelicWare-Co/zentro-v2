@@ -15,6 +15,7 @@ export const PosProductSchema = z.object({
   stock: z.number(),
   isModifier: z.boolean(),
   isFavorite: z.boolean(),
+  accountingTreatment: z.string(),
 });
 
 export const SearchPosProductsInputSchema = z.object({

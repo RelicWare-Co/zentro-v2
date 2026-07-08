@@ -133,7 +133,7 @@ export async function runBuildAdminOrganizations(
     db
       .select({
         organizationId: sale.organizationId,
-        revenue: sql<number>`coalesce(sum(${sale.totalAmount}), 0)`,
+        revenue: sql<number>`coalesce(sum(${sale.totalAmount} - ${sale.passThroughTotalAmount}), 0)`,
         salesCount: sql<number>`count(*)`,
       })
       .from(sale)
@@ -148,7 +148,7 @@ export async function runBuildAdminOrganizations(
     db
       .select({
         organizationId: sale.organizationId,
-        revenue: sql<number>`coalesce(sum(${sale.totalAmount}), 0)`,
+        revenue: sql<number>`coalesce(sum(${sale.totalAmount} - ${sale.passThroughTotalAmount}), 0)`,
         salesCount: sql<number>`count(*)`,
       })
       .from(sale)
@@ -273,6 +273,7 @@ export async function runBuildAdminOrganizationDetail(
     .select({
       dateKey: saleDateKey.as("date_key"),
       totalAmount: sale.totalAmount,
+      passThroughTotalAmount: sale.passThroughTotalAmount,
     })
     .from(sale)
     .where(
@@ -311,7 +312,7 @@ export async function runBuildAdminOrganizationDetail(
       .orderBy(asc(member.createdAt)),
     db
       .select({
-        revenue: sql<number>`coalesce(sum(${sale.totalAmount}), 0)`,
+        revenue: sql<number>`coalesce(sum(${sale.totalAmount} - ${sale.passThroughTotalAmount}), 0)`,
         salesCount: sql<number>`count(*)`,
       })
       .from(sale)
@@ -324,7 +325,7 @@ export async function runBuildAdminOrganizationDetail(
       ),
     db
       .select({
-        revenue: sql<number>`coalesce(sum(${sale.totalAmount}), 0)`,
+        revenue: sql<number>`coalesce(sum(${sale.totalAmount} - ${sale.passThroughTotalAmount}), 0)`,
         salesCount: sql<number>`count(*)`,
       })
       .from(sale)
@@ -337,7 +338,7 @@ export async function runBuildAdminOrganizationDetail(
       ),
     db
       .select({
-        revenue: sql<number>`coalesce(sum(${sale.totalAmount}), 0)`,
+        revenue: sql<number>`coalesce(sum(${sale.totalAmount} - ${sale.passThroughTotalAmount}), 0)`,
         salesCount: sql<number>`count(*)`,
         lastSaleAt: sql<Date | null>`max(${sale.createdAt})`,
       })
@@ -365,7 +366,7 @@ export async function runBuildAdminOrganizationDetail(
     db
       .select({
         dateKey: salesTrendDays.dateKey,
-        revenue: sql<number>`coalesce(sum(${salesTrendDays.totalAmount}), 0)`,
+        revenue: sql<number>`coalesce(sum(${salesTrendDays.totalAmount} - ${salesTrendDays.passThroughTotalAmount}), 0)`,
         salesCount: sql<number>`count(*)`,
       })
       .from(salesTrendDays)

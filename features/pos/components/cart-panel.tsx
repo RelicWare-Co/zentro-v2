@@ -171,6 +171,9 @@ const blankTotals: CartTotals = {
   discountAmount: 0,
   itemsDiscountAmount: 0,
   maxSaleDiscount: 0,
+  passThroughSubtotal: 0,
+  passThroughTaxAmount: 0,
+  passThroughTotalAmount: 0,
   saleDiscountAmount: 0,
   totalAmount: 0,
 };
@@ -416,6 +419,14 @@ function CartSummary({ totals }: { totals: CartTotals }) {
           <span>Descuento</span>
           <span className="tabular-nums">
             -{formatCurrency(totals.discountAmount)}
+          </span>
+        </div>
+      )}
+      {totals.passThroughTotalAmount > 0 && (
+        <div className="flex justify-between text-xs text-zinc-500">
+          <span>No contable</span>
+          <span className="tabular-nums">
+            {formatCurrency(totals.passThroughTotalAmount)}
           </span>
         </div>
       )}

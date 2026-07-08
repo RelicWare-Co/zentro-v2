@@ -31,6 +31,8 @@ import {
   inventoryMovement,
   inventoryMovementRelations,
   product,
+  productIngredient,
+  productIngredientRelations,
   productRelations,
 } from "./schema/inventory.schema";
 import {
@@ -103,6 +105,8 @@ const schema = {
   pedidoItemRelations,
   pedidoRelations,
   product,
+  productIngredient,
+  productIngredientRelations,
   productRelations,
   restaurantArea,
   restaurantAreaRelations,

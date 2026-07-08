@@ -38,6 +38,7 @@ function buildTableCartItem(item: TableOrderItem): CartItem {
     stock: 0,
     isModifier: false,
     isFavorite: false,
+    accountingTreatment: "revenue",
   };
 
   return {

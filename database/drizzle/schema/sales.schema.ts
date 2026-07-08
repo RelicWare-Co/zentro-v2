@@ -24,6 +24,13 @@ export const sale = pgTable(
     taxAmount: integer("tax_amount").notNull().default(0), // Total de impuestos de la venta
     discountAmount: integer("discount_amount").notNull().default(0), // Total de descuentos aplicados
     totalAmount: integer("total_amount").notNull(), // subtotal + taxAmount - discountAmount
+    passThroughSubtotal: integer("pass_through_subtotal").notNull().default(0), // Subtotal de items no contables
+    passThroughTaxAmount: integer("pass_through_tax_amount")
+      .notNull()
+      .default(0), // Impuesto de items no contables
+    passThroughTotalAmount: integer("pass_through_total_amount")
+      .notNull()
+      .default(0), // Total de items no contables
     status: text("status").notNull().default("completed"), // 'completed', 'credit' (fiado), 'cancelled'
     createdAt: timestamp("created_at", {
       withTimezone: true,
@@ -58,6 +65,9 @@ export const saleItem = pgTable(
     taxAmount: integer("tax_amount").notNull().default(0), // Monto de impuesto calculado
     discountAmount: integer("discount_amount").notNull().default(0), // Descuento aplicado al item
     totalAmount: integer("total_amount").notNull().default(0), // subtotal + taxAmount - discountAmount
+    accountingTreatment: text("accounting_treatment")
+      .notNull()
+      .default("revenue"), // Snapshot: 'revenue' o 'passthrough'
   },
   (table) => [index("saleItem_organizationId_idx").on(table.organizationId)]
 );

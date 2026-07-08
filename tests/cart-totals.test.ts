@@ -16,6 +16,7 @@ function makeProduct(overrides: Partial<Product> = {}): Product {
     stock: 0,
     isModifier: false,
     isFavorite: false,
+    accountingTreatment: "revenue",
     ...overrides,
   };
 }
