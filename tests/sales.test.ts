@@ -1627,7 +1627,9 @@ describe("sale creation transactions", () => {
           },
           { db, organizationId, userId }
         )
-      ).rejects.toThrow("no puede ser negativo");
+      ).rejects.toThrow(
+        "El descuento no puede superar el total de productos contables"
+      );
 
       await cleanup();
     });

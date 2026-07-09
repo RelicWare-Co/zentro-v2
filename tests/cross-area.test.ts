@@ -154,8 +154,9 @@ describe("cross-area end-to-end flows", () => {
       expect(shiftRow.totals.totalPayments).toBe(25_000);
       expect(shiftRow.paymentBreakdown.length).toBe(1);
       expect(shiftRow.paymentBreakdown[0].method).toBe("cash");
-      // paymentBreakdown includes startingCash (10000) + cash after change (24000)
-      expect(shiftRow.paymentBreakdown[0].amount).toBe(34_000);
+      // paymentBreakdown EXCLUDES startingCash, showing only cash from operations.
+      // Cash sale of 24000 (paid 25000 cash - 1000 change) → 24000 from operations.
+      expect(shiftRow.paymentBreakdown[0].amount).toBe(24_000);
 
       // Step 9: Close summary expected cash = startingCash + cashSales - change
       // = 10000 + 25000 - 1000 = 34000
@@ -303,8 +304,10 @@ describe("cross-area end-to-end flows", () => {
       expect(shiftDetail.operations.cancelledSalesAmount).toBe(24_000);
       expect(shiftDetail.totals.totalPayments).toBe(0);
       expect(shiftDetail.totals.totalExpected).toBe(10_000);
+      // paymentBreakdown EXCLUDES startingCash, showing only cash from operations.
+      // Sale was cancelled, so no payments remain. startingCash (10000) is subtracted: 10000 - 10000 = 0.
       expect(shiftDetail.paymentBreakdown).toEqual([
-        { method: "cash", amount: 10_000 },
+        { method: "cash", amount: 0 },
       ]);
 
       const closeSummary = await getShiftCloseSummaryViaZero({
@@ -437,7 +440,9 @@ describe("cross-area end-to-end flows", () => {
         (p: { method: string }) => p.method === "card"
       );
       expect(cashBreakdown).toBeDefined();
-      expect(cashBreakdown?.amount).toBe(12_000); // 5000 starting + 5000 sale + 2000 inflow
+      // paymentBreakdown EXCLUDES startingCash, showing only cash from operations.
+      // 5000 (cash sale) + 2000 (inflow) = 7000 (startingCash 5000 excluded).
+      expect(cashBreakdown?.amount).toBe(7000);
       expect(cardBreakdown).toBeDefined();
       expect(cardBreakdown?.amount).toBe(6000);
 
