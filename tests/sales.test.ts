@@ -1002,7 +1002,11 @@ describe("sale creation transactions", () => {
       await db
         .update(organization)
         .set({
-          metadata: serializeOrganizationSettingsMetadata(settings as any),
+          metadata: serializeOrganizationSettingsMetadata(
+            settings as Parameters<
+              typeof serializeOrganizationSettingsMetadata
+            >[0]
+          ),
         })
         .where(eq(organization.id, organizationId));
 
@@ -1156,7 +1160,11 @@ describe("sale creation transactions", () => {
       await db
         .update(organization)
         .set({
-          metadata: serializeOrganizationSettingsMetadata(settings as any),
+          metadata: serializeOrganizationSettingsMetadata(
+            settings as Parameters<
+              typeof serializeOrganizationSettingsMetadata
+            >[0]
+          ),
         })
         .where(eq(organization.id, organizationId));
 
@@ -1218,7 +1226,11 @@ describe("sale creation transactions", () => {
       await db
         .update(organization)
         .set({
-          metadata: serializeOrganizationSettingsMetadata(settings as any),
+          metadata: serializeOrganizationSettingsMetadata(
+            settings as Parameters<
+              typeof serializeOrganizationSettingsMetadata
+            >[0]
+          ),
         })
         .where(eq(organization.id, organizationId));
 

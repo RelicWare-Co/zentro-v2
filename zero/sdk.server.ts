@@ -66,10 +66,12 @@ export function defineZentroServerMutator<TSchema extends z.ZodType>(
   options?: { operationName?: string }
 ) {
   const operationName = options?.operationName ?? "Esta operación";
-  // biome-ignore lint/suspicious/noExplicitAny: args type is enforced by the generic TSchema
-  return defineZentroMutator(schema as any, async ({ tx, args, ctx }) => {
-    const auth = resolveServerAuth(ctx);
-    const drizzleTx = requireServerDrizzleTransaction(tx, operationName);
-    await runner({ drizzleTx, args: args as z.infer<TSchema>, auth });
-  });
+  return defineZentroMutator(
+    schema as Parameters<typeof defineZentroMutator>[0],
+    async ({ tx, args, ctx }) => {
+      const auth = resolveServerAuth(ctx);
+      const drizzleTx = requireServerDrizzleTransaction(tx, operationName);
+      await runner({ drizzleTx, args: args as z.infer<TSchema>, auth });
+    }
+  );
 }
