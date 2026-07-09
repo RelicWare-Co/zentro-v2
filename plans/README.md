@@ -29,7 +29,7 @@ fork — was intentionally excluded as a deliberate fork).
 | 012 | Split the largest modules by concern | P3 | L | 008 | TODO |
 | 013 | Slim the sales list query — drop payments and items from list rows | P2 | M | 008 | TODO |
 | 014 | Replace `console.error` in print-thermal-receipt with a toast | P2 | S | — | DONE |
-| 015 | Remove `as any` type escapes in production code and tests | P3 | S | 008 | TODO |
+| 015 | Remove `as any` type escapes in production code and tests | P3 | S | 008 | DONE |
 | 016 | Replace `Number(...) \|\| 0` with normalized helpers in product form | P2 | S | 008 | DONE |
 | 017 | Add Playwright E2E for shift lifecycle and credit POS | P3 | M | — | TODO |
 
