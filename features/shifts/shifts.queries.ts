@@ -33,6 +33,25 @@ function applyShiftRelations<T extends ReturnType<typeof zql.shift.where>>(
     );
 }
 
+function applyShiftListRelations<T extends ReturnType<typeof zql.shift.where>>(
+  query: T
+) {
+  return query
+    .related("user")
+    .related("cashMovements", (cashMovementQuery) =>
+      cashMovementQuery.orderBy("createdAt", "desc").orderBy("id", "desc")
+    )
+    .related("closures")
+    .related("sales")
+    .related("payments", (paymentQuery) =>
+      paymentQuery
+        .related("sale")
+        .related("creditTransactions")
+        .orderBy("createdAt", "desc")
+        .orderBy("id", "desc")
+    );
+}
+
 function buildShiftDetailQuery(shiftId: string, organizationId: string) {
   return applyShiftRelations(
     zql.shift.where("id", shiftId).where("organizationId", organizationId)
@@ -60,7 +79,7 @@ function buildShiftsListQuery(
   const normalizedTerminalName = args.terminalName?.trim() ?? "";
   const normalizedPaymentMethod = args.paymentMethod?.trim() ?? "";
 
-  let query = applyShiftRelations(
+  let query = applyShiftListRelations(
     zql.shift.where("organizationId", organizationId)
   );
 
