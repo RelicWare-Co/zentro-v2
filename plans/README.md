@@ -22,7 +22,7 @@ fork — was intentionally excluded as a deliberate fork).
 | 005 | Playwright E2E for POS checkout & shift lifecycle | P2 | M | — | BLOCKED (checkout/split specs added; shift-close UI flow hits duplicate Zero mutate processing under Playwright) |
 | 006 | Reduce the production container to runtime dependencies | P1 | M | — | DONE (reviewed: 1,016 MB → 671 MB; runtime and migration smoke tests pass) |
 | 007 | Implement POS extension slots | P2 | M | — | DONE |
-| 008 | Fix tsc/test DB type mismatch (typecheck gate) | P1 | M | — | TODO |
+| 008 | Fix tsc/test DB type mismatch (typecheck gate) | P1 | M | — | DONE |
 | 009 | Slim the shifts list query — drop deep sales graph from list rows | P2 | M | 008 | TODO |
 | 010 | Decide the fate of `features/pos` vs `features/posv2` | P3 | M | — | TODO (decision plan — awaiting maintainer decision) |
 | 011 | Consolidate the duplicated COP currency formatter | P2 | S | 008 | TODO |
