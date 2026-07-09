@@ -27,7 +27,7 @@ fork — was intentionally excluded as a deliberate fork).
 | 010 | Decide the fate of `features/pos` vs `features/posv2` | P3 | M | — | TODO (decision plan — awaiting maintainer decision) |
 | 011 | Consolidate the duplicated COP currency formatter | P2 | S | 008 | DONE |
 | 012 | Split the largest modules by concern | P3 | L | 008 | TODO |
-| 013 | Slim the sales list query — drop payments and items from list rows | P2 | M | 008 | TODO |
+| 013 | Slim the sales list query — drop payments and items from list rows | P2 | M | 008 | BLOCKED (list UI renders itemCount/balanceDue/paymentMethods from payments+items; needs server-side summary or product decision to drop those fields) |
 | 014 | Replace `console.error` in print-thermal-receipt with a toast | P2 | S | — | DONE |
 | 015 | Remove `as any` type escapes in production code and tests | P3 | S | 008 | DONE |
 | 016 | Replace `Number(...) \|\| 0` with normalized helpers in product form | P2 | S | 008 | DONE |
