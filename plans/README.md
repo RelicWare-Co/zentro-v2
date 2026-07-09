@@ -25,7 +25,7 @@ fork — was intentionally excluded as a deliberate fork).
 | 008 | Fix tsc/test DB type mismatch (typecheck gate) | P1 | M | — | DONE |
 | 009 | Slim the shifts list query — drop deep sales graph from list rows | P2 | M | 008 | TODO |
 | 010 | Decide the fate of `features/pos` vs `features/posv2` | P3 | M | — | TODO (decision plan — awaiting maintainer decision) |
-| 011 | Consolidate the duplicated COP currency formatter | P2 | S | 008 | TODO |
+| 011 | Consolidate the duplicated COP currency formatter | P2 | S | 008 | DONE |
 | 012 | Split the largest modules by concern | P3 | L | 008 | TODO |
 | 013 | Slim the sales list query — drop payments and items from list rows | P2 | M | 008 | TODO |
 | 014 | Replace `console.error` in print-thermal-receipt with a toast | P2 | S | — | DONE |
