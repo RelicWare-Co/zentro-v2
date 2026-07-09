@@ -50,7 +50,10 @@ bun run e2e:playwright:report       # open last HTML report
 | `auth/` | Login, register, org selection, org creation |
 | `products/` | Product CRUD smoke flows |
 | `pos/` | POS checkout and split-payment flows |
-| `helpers/` | Shared login, org selection, and product form steps |
+| `shifts/` | Shift lifecycle: open, cash movement, sale, close |
+| `credit/` | Credit-sale POS flow and balance verification |
+| `sales/` | Sales advanced filters (Select inside Popover) |
+| `helpers/` | Shared login, org selection, product, customer, settings, and POS form steps |
 
 Each spec is isolated: top-level tests launch `/login` and sign in when needed.
 
@@ -58,5 +61,12 @@ After login, org selection is detected by the heading **Elige Cómo Quieres Entr
 
 Product flows target `#product-form-*` ids on the create-product sheet. Do not fill money fields via shared placeholder `0`; use the dedicated price/cost/stock inputs.
 
-TODO: add shift lifecycle coverage once the close-shift flow is stable under the Zero dev runner; the current blocker is duplicate mutate processing during automated shift close.
-TODO: add credit-sale POS coverage after the E2E helpers can enable credit settings and create customers with credit accounts through the UI.
+Shift lifecycle coverage (`shifts/shift-lifecycle.spec.ts`) opens a shift, registers a cash
+movement, completes a cash sale, and closes the shift with reconciliation. If the known
+"duplicate Zero mutate processing" blocker resurfaces during automated shift close, the
+close portion should be marked `test.skip` until the Zero dev runner is stable.
+
+Credit-sale POS coverage (`credit/credit-sale.spec.ts`) enables credit settings, creates a
+customer, makes a credit sale in POS, verifies the credit account balance on the credit
+page, and records an abono (payment). Credit accounts are created automatically on the
+first credit sale via `recordCreditSaleCharge`.

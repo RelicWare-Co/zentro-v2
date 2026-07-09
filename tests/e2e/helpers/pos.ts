@@ -3,6 +3,12 @@ import { expect, type Page } from "@playwright/test";
 const posPageUrl = /\/pos(?:\/|$)/;
 const openShiftButtonName = /^Abrir Turno$/;
 const closeShiftButtonName = "Cerrar Turno Definitivamente";
+const cashMovementButtonName = /Movimiento de Caja/;
+const movementTypeLabels: Record<string, string> = {
+  expense: "Gasto Operativo",
+  inflow: "Ingreso (Entrada manual)",
+  payout: "Pago a Proveedor",
+};
 
 export async function openPosPage(page: Page): Promise<void> {
   await page.goto("/pos");
@@ -117,6 +123,70 @@ export async function completeSplitSale(
     .fill("4242");
 
   await page.getByRole("button", { name: "Finalizar Venta" }).click();
+  await expect(page.getByText("Escanea o selecciona un producto")).toBeVisible({
+    timeout: 30_000,
+  });
+}
+
+export async function registerCashMovement(
+  page: Page,
+  options: {
+    type?: "inflow" | "expense" | "payout";
+    amount: string;
+    description: string;
+  }
+): Promise<void> {
+  await page.getByRole("button", { name: cashMovementButtonName }).click();
+  const movementDialog = page.getByRole("dialog", {
+    name: "Movimiento del Turno",
+  });
+  await expect(movementDialog).toBeVisible({ timeout: 15_000 });
+
+  const movementType = options.type ?? "inflow";
+  const typeLabel =
+    movementTypeLabels[movementType] ?? movementTypeLabels.inflow;
+  await movementDialog.getByLabel("Tipo de Movimiento").click();
+  await page.getByRole("option", { name: typeLabel, exact: false }).click();
+
+  await movementDialog.getByLabel("Monto").fill(options.amount);
+  await movementDialog.getByLabel("Descripción").fill(options.description);
+
+  await movementDialog
+    .getByRole("button", { name: "Registrar Movimiento" })
+    .click();
+  await expect(movementDialog).not.toBeVisible({ timeout: 30_000 });
+}
+
+export async function completeCreditSale(
+  page: Page,
+  options: { customerName: string; partialPayment?: string }
+): Promise<void> {
+  await page.getByRole("button", { name: "Cobrar" }).click();
+  await expect(page.getByRole("heading", { name: "Cobrar Orden" })).toBeVisible(
+    {
+      timeout: 15_000,
+    }
+  );
+
+  const checkoutDialog = page.getByRole("dialog", { name: "Cobrar Orden" });
+  await checkoutDialog
+    .getByRole("button", { name: "Cliente Mostrador" })
+    .click();
+  await page
+    .getByRole("option", { name: options.customerName, exact: false })
+    .click();
+
+  await checkoutDialog.getByLabel("Dejar saldo a crédito").check();
+  if (options.partialPayment) {
+    await checkoutDialog
+      .getByPlaceholder("Monto")
+      .first()
+      .fill(options.partialPayment);
+  }
+
+  await checkoutDialog
+    .getByRole("button", { name: "Registrar Venta con Saldo" })
+    .click();
   await expect(page.getByText("Escanea o selecciona un producto")).toBeVisible({
     timeout: 30_000,
   });

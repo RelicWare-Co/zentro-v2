@@ -31,7 +31,7 @@ fork — was intentionally excluded as a deliberate fork).
 | 014 | Replace `console.error` in print-thermal-receipt with a toast | P2 | S | — | DONE |
 | 015 | Remove `as any` type escapes in production code and tests | P3 | S | 008 | DONE |
 | 016 | Replace `Number(...) \|\| 0` with normalized helpers in product form | P2 | S | 008 | DONE |
-| 017 | Add Playwright E2E for shift lifecycle and credit POS | P3 | M | — | TODO |
+| 017 | Add Playwright E2E for shift lifecycle and credit POS | P3 | M | — | DONE |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale)
 
