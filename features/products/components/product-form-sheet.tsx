@@ -16,6 +16,10 @@ import {
 } from "@/features/products/products-form.shared";
 import { useProductsPage } from "@/features/products/products-page-context";
 import {
+  normalizeNumber,
+  toNonNegativeInteger,
+} from "@/lib/domain-values.shared";
+import {
   formatMoneyInput,
   getErrorMessage,
   parseMoneyInput,
@@ -95,8 +99,12 @@ function ProductFormSheetContent({
       barcode: form.barcode || null,
       price: isIngredient ? 0 : parseMoneyInput(form.price),
       cost: parseMoneyInput(form.cost),
-      taxRate: Number(form.taxRate) || 0,
-      ...(product ? {} : { stock: Number(form.stock) || 0 }),
+      taxRate: toNonNegativeInteger(normalizeNumber(form.taxRate), "taxRate"),
+      ...(product
+        ? {}
+        : {
+            stock: toNonNegativeInteger(normalizeNumber(form.stock), "stock"),
+          }),
       minStock: parseOptionalStockField(form.minStock),
       reorderQuantity: parseOptionalStockField(form.reorderQuantity),
       trackInventory: isPassthrough ? false : form.trackInventory,
