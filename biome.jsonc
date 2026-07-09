@@ -58,6 +58,16 @@
           }
         }
       }
+    },
+    {
+      "includes": ["features/shifts/shifts.shared.ts"],
+      "linter": {
+        "rules": {
+          "performance": {
+            "noBarrelFile": "off"
+          }
+        }
+      }
     }
   ]
 }
