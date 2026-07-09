@@ -1,11 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import { zeroDrizzle } from "@rocicorp/zero/server/adapters/drizzle";
 import { eq } from "drizzle-orm";
 import { product } from "@/database/drizzle/schema/inventory.schema";
 import { resolveAppliedSalePaidAmount } from "@/features/pos/pos.shared";
 import { serverMutators } from "@/zero/mutators.server";
 import { queries } from "@/zero/queries";
-import { schema as zeroSchema } from "@/zero/schema";
 import {
   seedCategory,
   seedCustomer,
@@ -429,7 +427,7 @@ describe("POS checkout", () => {
     test("soft-deleted customer does not appear in search results", async () => {
       const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db);
-      const zeroDb = zeroDrizzle(zeroSchema, db);
+      const zeroDb = createZeroTestDb(db);
       const zeroContext = createZeroContext(userId, organizationId);
 
       const customerId = await seedCustomer(db, {

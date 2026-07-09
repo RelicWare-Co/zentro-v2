@@ -1,5 +1,4 @@
 import { describe, expect, test } from "bun:test";
-import { zeroDrizzle } from "@rocicorp/zero/server/adapters/drizzle";
 import { eq } from "drizzle-orm";
 import {
   inventoryMovement,
@@ -9,7 +8,6 @@ import {
 import { createCoreSale } from "@/features/sales/create-sale.server";
 import { serverMutators } from "@/zero/mutators.server";
 import { queries } from "@/zero/queries";
-import { schema as zeroSchema } from "@/zero/schema";
 import {
   seedOrganizationWithMember,
   seedProduct,
@@ -18,13 +16,13 @@ import {
 } from "./helpers/seed";
 import { createTestDb } from "./helpers/test-db";
 import { cancelSaleViaZero } from "./helpers/zero-sales";
-import { createZeroContext } from "./helpers/zero-shifts";
+import { createZeroContext, createZeroTestDb } from "./helpers/zero-shifts";
 
 describe("ingredient products", () => {
   test("creating an ingredient product forces price 0 and isModifier false", async () => {
     const { db, cleanup } = await createTestDb();
     const { organizationId, userId } = await seedOrganizationWithMember(db);
-    const zeroDb = zeroDrizzle(zeroSchema, db);
+    const zeroDb = createZeroTestDb(db);
     const ctx = createZeroContext(userId, organizationId);
     const productId = crypto.randomUUID();
 
@@ -60,7 +58,7 @@ describe("ingredient products", () => {
   test("POS catalog excludes ingredient products", async () => {
     const { db, cleanup } = await createTestDb();
     const { organizationId, userId } = await seedOrganizationWithMember(db);
-    const zeroDb = zeroDrizzle(zeroSchema, db);
+    const zeroDb = createZeroTestDb(db);
     const ctx = createZeroContext(userId, organizationId);
 
     const sellableId = await seedProduct(db, {
@@ -90,7 +88,7 @@ describe("ingredient products", () => {
   test("ingredients query returns only ingredient products", async () => {
     const { db, cleanup } = await createTestDb();
     const { organizationId, userId } = await seedOrganizationWithMember(db);
-    const zeroDb = zeroDrizzle(zeroSchema, db);
+    const zeroDb = createZeroTestDb(db);
     const ctx = createZeroContext(userId, organizationId);
 
     const ingredientId = await seedProduct(db, {
@@ -118,7 +116,7 @@ describe("product ingredient recipes", () => {
   test("setForProduct replaces recipe ingredients", async () => {
     const { db, cleanup } = await createTestDb();
     const { organizationId, userId } = await seedOrganizationWithMember(db);
-    const zeroDb = zeroDrizzle(zeroSchema, db);
+    const zeroDb = createZeroTestDb(db);
     const ctx = createZeroContext(userId, organizationId);
 
     const latteId = await seedProduct(db, {
@@ -176,7 +174,7 @@ describe("product ingredient recipes", () => {
   test("setForProduct with empty array clears all ingredients", async () => {
     const { db, cleanup } = await createTestDb();
     const { organizationId, userId } = await seedOrganizationWithMember(db);
-    const zeroDb = zeroDrizzle(zeroSchema, db);
+    const zeroDb = createZeroTestDb(db);
     const ctx = createZeroContext(userId, organizationId);
 
     const latteId = await seedProduct(db, {
@@ -284,7 +282,7 @@ describe("ingredient consumption on sale", () => {
   test("cancelling a sale restores ingredient stock", async () => {
     const { db, cleanup } = await createTestDb();
     const { organizationId, userId } = await seedOrganizationWithMember(db);
-    const zeroDb = zeroDrizzle(zeroSchema, db);
+    const zeroDb = createZeroTestDb(db);
     const ctx = createZeroContext(userId, organizationId);
 
     const latteId = await seedProduct(db, {

@@ -15,7 +15,10 @@ import { zeroDrizzle } from "@rocicorp/zero/server/adapters/drizzle";
 import { db } from "@/database/drizzle/db";
 import { schema } from "./schema";
 
-export const dbProvider = zeroDrizzle(schema, db);
+export const dbProvider = zeroDrizzle(
+  schema,
+  db as unknown as Parameters<typeof zeroDrizzle>[1]
+);
 
 declare module "@rocicorp/zero" {
   interface DefaultTypes {

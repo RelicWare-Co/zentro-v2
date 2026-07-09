@@ -1,10 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import { zeroDrizzle } from "@rocicorp/zero/server/adapters/drizzle";
 import { buildOrganizationAccessPolicy } from "@/features/organization/organization-policy.shared";
 import { createCoreSale } from "@/features/sales/create-sale.server";
 import { serverMutators } from "@/zero/mutators.server";
 import { queries } from "@/zero/queries";
-import { type ZeroContext, schema as zeroSchema } from "@/zero/schema";
+import type { ZeroContext } from "@/zero/schema";
 import {
   seedCustomer,
   seedOrganizationWithMember,
@@ -13,6 +12,7 @@ import {
 } from "./helpers/seed";
 import { createTestDb } from "./helpers/test-db";
 import { cancelSaleViaZero } from "./helpers/zero-sales";
+import { createZeroTestDb } from "./helpers/zero-shifts";
 
 function createZeroContext(userId: string, organizationId: string) {
   return {
@@ -41,7 +41,7 @@ describe("Zero inventory movements list", () => {
       stock: 20,
       trackInventory: true,
     });
-    const zeroDb = zeroDrizzle(zeroSchema, db);
+    const zeroDb = createZeroTestDb(db);
     const ctx = createZeroContext(userId, organizationId);
     const now = Date.now();
 
@@ -111,7 +111,7 @@ describe("Zero inventory movements list", () => {
 
   test("denies list without organization context", async () => {
     const { db, cleanup } = await createTestDb();
-    const zeroDb = zeroDrizzle(zeroSchema, db);
+    const zeroDb = createZeroTestDb(db);
 
     const rows = await zeroDb.run(
       queries.products.movements.list.fn({
@@ -140,7 +140,7 @@ describe("Zero inventory movements list", () => {
       stock: 50,
       trackInventory: true,
     });
-    const zeroDb = zeroDrizzle(zeroSchema, db);
+    const zeroDb = createZeroTestDb(db);
     const ctx = createZeroContext(userId, organizationId);
     const now = Date.now();
 
@@ -228,7 +228,7 @@ describe("Zero inventory movements list", () => {
       stock: 50,
       trackInventory: true,
     });
-    const zeroDb = zeroDrizzle(zeroSchema, db);
+    const zeroDb = createZeroTestDb(db);
     const ctx = createZeroContext(userId, organizationId);
     const now = Date.now();
     const day2 = now - 2 * 24 * 60 * 60 * 1000;
@@ -296,7 +296,7 @@ describe("Zero inventory movements list", () => {
   test("sale-created movements appear with type 'sale'", async () => {
     const { db, cleanup } = await createTestDb();
     const { organizationId, userId } = await seedOrganizationWithMember(db);
-    const zeroDb = zeroDrizzle(zeroSchema, db);
+    const zeroDb = createZeroTestDb(db);
     const ctx = createZeroContext(userId, organizationId);
     const [productId, shiftId] = await Promise.all([
       seedProduct(db, {
@@ -342,7 +342,7 @@ describe("Zero inventory movements list", () => {
   test("cancellation creates adjustment movement restoring stock", async () => {
     const { db, cleanup } = await createTestDb();
     const { organizationId, userId } = await seedOrganizationWithMember(db);
-    const zeroDb = zeroDrizzle(zeroSchema, db);
+    const zeroDb = createZeroTestDb(db);
     const ctx = createZeroContext(userId, organizationId);
     const [productId, shiftId] = await Promise.all([
       seedProduct(db, {

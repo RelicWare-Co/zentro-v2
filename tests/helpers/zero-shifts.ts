@@ -60,7 +60,10 @@ export function createZeroContext(
 }
 
 export function createZeroTestDb(db: TestDb) {
-  return zeroDrizzle(zeroSchema, db);
+  return zeroDrizzle(
+    zeroSchema,
+    db as unknown as Parameters<typeof zeroDrizzle>[1]
+  );
 }
 
 export async function openShiftViaZero({

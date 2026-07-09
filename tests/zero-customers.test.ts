@@ -1,17 +1,17 @@
 import { describe, expect, test } from "bun:test";
-import { zeroDrizzle } from "@rocicorp/zero/server/adapters/drizzle";
 import { buildOrganizationAccessPolicy } from "@/features/organization/organization-policy.shared";
 import { serverMutators } from "@/zero/mutators.server";
 import { queries } from "@/zero/queries";
-import { type ZeroContext, schema as zeroSchema } from "@/zero/schema";
+import type { ZeroContext } from "@/zero/schema";
 import { seedOrganizationWithMember } from "./helpers/seed";
 import { createTestDb } from "./helpers/test-db";
+import { createZeroTestDb } from "./helpers/zero-shifts";
 
 describe("Zero customers", () => {
   test("customer search and CRUD run through Zero without oRPC", async () => {
     const { db, cleanup } = await createTestDb();
     const { organizationId, userId } = await seedOrganizationWithMember(db);
-    const zeroDb = zeroDrizzle(zeroSchema, db);
+    const zeroDb = createZeroTestDb(db);
     const ctx = {
       id: userId,
       orgID: organizationId,
@@ -132,7 +132,7 @@ describe("Zero customers", () => {
   test("document number can be reused after the prior holder is soft-deleted", async () => {
     const { db, cleanup } = await createTestDb();
     const { organizationId, userId } = await seedOrganizationWithMember(db);
-    const zeroDb = zeroDrizzle(zeroSchema, db);
+    const zeroDb = createZeroTestDb(db);
     const ctx = {
       id: userId,
       orgID: organizationId,

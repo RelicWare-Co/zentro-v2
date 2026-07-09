@@ -1,17 +1,17 @@
 import { describe, expect, test } from "bun:test";
-import { zeroDrizzle } from "@rocicorp/zero/server/adapters/drizzle";
 import { eq } from "drizzle-orm";
 import { category, product } from "@/database/drizzle/schema/inventory.schema";
 import { buildOrganizationAccessPolicy } from "@/features/organization/organization-policy.shared";
 import { serverMutators } from "@/zero/mutators.server";
 import { queries } from "@/zero/queries";
-import { type ZeroContext, schema as zeroSchema } from "@/zero/schema";
+import type { ZeroContext } from "@/zero/schema";
 import {
   seedCategory,
   seedOrganizationWithMember,
   seedProduct,
 } from "./helpers/seed";
 import { createTestDb } from "./helpers/test-db";
+import { createZeroTestDb } from "./helpers/zero-shifts";
 
 function createZeroContext(userId: string, organizationId: string) {
   return {
@@ -28,7 +28,7 @@ describe("Zero products", () => {
   test("category creation normalizes name and description", async () => {
     const { db, cleanup } = await createTestDb();
     const { organizationId, userId } = await seedOrganizationWithMember(db);
-    const zeroDb = zeroDrizzle(zeroSchema, db);
+    const zeroDb = createZeroTestDb(db);
     const ctx = createZeroContext(userId, organizationId);
     const categoryId = crypto.randomUUID();
 
@@ -58,7 +58,7 @@ describe("Zero products", () => {
   test("product CRUD and search run through Zero without oRPC", async () => {
     const { db, cleanup } = await createTestDb();
     const { organizationId, userId } = await seedOrganizationWithMember(db);
-    const zeroDb = zeroDrizzle(zeroSchema, db);
+    const zeroDb = createZeroTestDb(db);
     const ctx = createZeroContext(userId, organizationId);
     const categoryId = await seedCategory(db, {
       organizationId,
@@ -169,7 +169,7 @@ describe("Zero products", () => {
       organizationId: otherOrgId,
       name: "External Category",
     });
-    const zeroDb = zeroDrizzle(zeroSchema, db);
+    const zeroDb = createZeroTestDb(db);
     const ctx = createZeroContext(userId, organizationId);
 
     await expect(
@@ -202,7 +202,7 @@ describe("Zero products", () => {
       stock: 100,
       trackInventory: true,
     });
-    const zeroDb = zeroDrizzle(zeroSchema, db);
+    const zeroDb = createZeroTestDb(db);
     const ctx = createZeroContext(userId, organizationId);
 
     await zeroDb.transaction((tx) =>
@@ -251,7 +251,7 @@ describe("Zero products", () => {
       stock: 10,
       trackInventory: true,
     });
-    const zeroDb = zeroDrizzle(zeroSchema, db);
+    const zeroDb = createZeroTestDb(db);
     const ctx = createZeroContext(userId, organizationId);
 
     await zeroDb.transaction((tx) =>
