@@ -22,8 +22,8 @@ import {
 } from "@/components/ui/table";
 import { ProductStockBadge } from "@/features/products/components/product-stock-badge";
 import type { Product } from "@/features/products/hooks/use-products";
-import { formatProductCurrency } from "@/features/products/products-formatters.shared";
 import { useProductsPage } from "@/features/products/products-page-context";
+import { formatCurrency } from "@/lib/format-currency.shared";
 
 const columnHelper = createColumnHelper<Product>();
 
@@ -89,7 +89,7 @@ export function ProductsTable() {
             <span className="text-zinc-500">—</span>
           ) : (
             <span className="font-medium text-zinc-200">
-              {formatProductCurrency(row.original.price)}
+              {formatCurrency(row.original.price)}
             </span>
           ),
       }),

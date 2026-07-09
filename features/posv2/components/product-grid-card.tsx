@@ -1,7 +1,7 @@
 import { Heart, Package } from "lucide-react";
 import { usePosPage } from "@/features/pos/pos-page-context";
 import type { Product } from "@/features/pos/types";
-import { calculatePriceWithTax, formatCurrency } from "@/features/pos/utils";
+import { calculatePriceWithTax } from "@/features/pos/utils";
 import {
   posV2AccentBg,
   posV2AccentFocusRing,
@@ -15,6 +15,7 @@ import {
   posV2OrderCarbonBg,
   posV2OrderSurfaceBg,
 } from "@/features/posv2/components/pos-v2-order-styles";
+import { formatCurrency } from "@/lib/format-currency.shared";
 import { cn } from "@/lib/utils";
 
 export function ProductGridCard({

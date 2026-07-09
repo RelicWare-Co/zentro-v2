@@ -36,8 +36,8 @@ import {
 import {
   formatCompactCurrency,
   formatCount,
-  formatCurrency,
 } from "@/features/dashboard/dashboard-formatters.shared";
+import { formatCurrency } from "@/lib/format-currency.shared";
 import { getErrorMessage } from "@/lib/utils";
 
 const trendDayFormatter = new Intl.DateTimeFormat("es-CO", {

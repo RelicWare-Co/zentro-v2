@@ -5,12 +5,10 @@ import {
   DashboardPanelShell,
   EmptyState,
 } from "@/features/dashboard/components/dashboard-ui-primitives";
-import {
-  formatCount,
-  formatCurrency,
-} from "@/features/dashboard/dashboard-formatters.shared";
+import { formatCount } from "@/features/dashboard/dashboard-formatters.shared";
 import { useDashboardData } from "@/features/dashboard/dashboard-page-context";
 import { getStockStatus } from "@/features/inventory/stock-status.shared";
+import { formatCurrency } from "@/lib/format-currency.shared";
 
 function productsPageStockFilterHref(
   product: { minStock: number | null; stock: number },

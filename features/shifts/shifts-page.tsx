@@ -2,7 +2,6 @@ import { Button } from "@mantine/core";
 import { CircleDollarSign, Clock3, Receipt, Store, Wallet } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link } from "@/components/link";
-import { formatCurrency } from "@/features/pos/utils";
 import { ShiftDetailSheet } from "@/features/shifts/components/shift-detail-sheet";
 import { ShiftsFilterToolbar } from "@/features/shifts/components/shifts-filter-toolbar";
 import { ShiftsListPanel } from "@/features/shifts/components/shifts-list-panel";
@@ -12,6 +11,7 @@ import {
   ShiftsPageProvider,
   useShiftsPage,
 } from "@/features/shifts/shifts-page-context";
+import { formatCurrency } from "@/lib/format-currency.shared";
 
 function ShiftsPageHeader() {
   const { state } = useShiftsPage();

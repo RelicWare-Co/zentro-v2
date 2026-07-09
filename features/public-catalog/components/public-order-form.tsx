@@ -11,7 +11,7 @@ import {
 import { MapPin, Phone } from "lucide-react";
 import { useState } from "react";
 import type { PublicCatalogItem } from "@/features/orders/orders.schema";
-import { formatCurrency } from "@/features/pos/utils";
+import { formatCurrency } from "@/lib/format-currency.shared";
 
 interface CartLine {
   product: PublicCatalogItem;

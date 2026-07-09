@@ -12,7 +12,7 @@ import {
   User,
 } from "lucide-react";
 import { useState } from "react";
-import { formatCurrency, formatPaymentMethodLabel } from "@/features/pos/utils";
+import { formatPaymentMethodLabel } from "@/features/pos/utils";
 import type {
   ShiftListItem,
   ShiftProductSummary,
@@ -24,6 +24,7 @@ import {
   formatShiftStatus,
   getShiftStatusBadgeClass,
 } from "@/features/shifts/shifts-formatters.shared";
+import { formatCurrency } from "@/lib/format-currency.shared";
 
 function InfoField({
   icon: Icon,

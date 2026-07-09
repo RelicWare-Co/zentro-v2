@@ -3,7 +3,8 @@ import {
   type ThermalReceiptItem,
 } from "@/features/pos/components/thermal-receipt";
 import type { ThermalReceiptDocument } from "@/features/pos/printing/thermal-receipt-document";
-import { formatCurrency, formatPaymentMethodLabel } from "@/features/pos/utils";
+import { formatPaymentMethodLabel } from "@/features/pos/utils";
+import { formatCurrency } from "@/lib/format-currency.shared";
 
 const receiptDateTimeFormatter = new Intl.DateTimeFormat("es-CO", {
   dateStyle: "medium",

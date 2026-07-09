@@ -14,9 +14,9 @@ import {
 } from "@/features/pos/pos-page-modals.shared";
 import {
   createPaymentMethodLabelMap,
-  formatCurrency,
   formatPaymentMethodLabel,
 } from "@/features/pos/utils";
+import { formatCurrency } from "@/lib/format-currency.shared";
 import {
   formatMoneyInput,
   parseMoneyInput,

@@ -1,13 +1,13 @@
 import { Button } from "@mantine/core";
 import { Pencil } from "lucide-react";
 import { usePosPage } from "@/features/pos/pos-page-context";
-import { formatCurrency } from "@/features/pos/utils";
 import {
   posV2AccentSoftHoverBg,
   posV2AccentText,
   posV2MutedText,
   posV2OrderSurfaceClassName,
 } from "@/features/posv2/components/pos-v2-order-styles";
+import { formatCurrency } from "@/lib/format-currency.shared";
 import { cn } from "@/lib/utils";
 
 export function AccountCreditSummary() {

@@ -3,13 +3,13 @@ import { History, Plus, Receipt } from "lucide-react";
 import { VirtualList } from "@/components/ui/virtual-list";
 import type { CreditTransaction } from "@/features/credit/credit.shared";
 import {
-  creditCurrencyFormatter,
   creditDateTimeFormatter,
   formatCreditTransactionType,
   getCreditTransactionAmountClass,
   getCreditTransactionTypeBadgeClass,
 } from "@/features/credit/credit-formatters.shared";
 import { useCreditPage } from "@/features/credit/credit-page-context";
+import { formatCurrency } from "@/lib/format-currency.shared";
 
 function CreditTransactionRow({
   data: tx,
@@ -43,7 +43,7 @@ function CreditTransactionRow({
           className={`font-semibold tabular-nums ${getCreditTransactionAmountClass(tx.type)}`}
         >
           {tx.type === "payment" ? "-" : "+"}
-          {creditCurrencyFormatter.format(tx.amount)}
+          {formatCurrency(tx.amount)}
         </p>
       </div>
     </div>
@@ -99,9 +99,7 @@ export function CreditLedgerSheet() {
           <p className="text-sm text-zinc-400">
             {state.selectedAccount?.customerName}: Saldo pendiente:{" "}
             <span className="font-semibold text-[var(--color-voltage)]">
-              {creditCurrencyFormatter.format(
-                state.selectedAccount?.balance ?? 0
-              )}
+              {formatCurrency(state.selectedAccount?.balance ?? 0)}
             </span>
           </p>
         </div>

@@ -8,10 +8,10 @@ import {
 import {
   dashboardDateTimeFormatter,
   formatCount,
-  formatCurrency,
   formatPaymentMethod,
 } from "@/features/dashboard/dashboard-formatters.shared";
 import { useDashboardData } from "@/features/dashboard/dashboard-page-context";
+import { formatCurrency } from "@/lib/format-currency.shared";
 
 export function DashboardOperationPanel() {
   const { activeShift, paymentMix, paymentMethodLabels, stats } =

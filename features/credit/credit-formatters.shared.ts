@@ -1,9 +1,3 @@
-export const creditCurrencyFormatter = new Intl.NumberFormat("es-CO", {
-  style: "currency",
-  currency: "COP",
-  maximumFractionDigits: 0,
-});
-
 export const creditDateTimeFormatter = new Intl.DateTimeFormat("es-CO", {
   day: "numeric",
   month: "short",

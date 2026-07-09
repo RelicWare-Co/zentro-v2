@@ -1,8 +1,9 @@
 import { TextInput } from "@mantine/core";
 import { Minus, Plus, Trash2 } from "lucide-react";
+import { formatCurrency } from "@/lib/format-currency.shared";
 import { cn, formatMoneyInput, sanitizeMoneyInput } from "@/lib/utils";
 import type { CartItem } from "../types";
-import { calculateItemTotal, formatCurrency } from "../utils";
+import { calculateItemTotal } from "../utils";
 
 interface CartItemCardProps {
   item: CartItem;

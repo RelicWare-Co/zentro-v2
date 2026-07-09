@@ -1,6 +1,6 @@
 import { ThermalReceipt } from "@/features/pos/components/thermal-receipt";
 import type { ThermalReceiptDocument } from "@/features/pos/printing/thermal-receipt-document";
-import { formatCurrency } from "@/features/pos/utils";
+import { formatCurrency } from "@/lib/format-currency.shared";
 
 const ticketDateTimeFormatter = new Intl.DateTimeFormat("es-CO", {
   dateStyle: "short",

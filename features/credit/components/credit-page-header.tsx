@@ -1,6 +1,6 @@
 import { Badge } from "@mantine/core";
-import { creditCurrencyFormatter } from "@/features/credit/credit-formatters.shared";
 import { useCreditPage } from "@/features/credit/credit-page-context";
+import { formatCurrency } from "@/lib/format-currency.shared";
 
 export function CreditPageHeader() {
   const { state } = useCreditPage();
@@ -17,7 +17,7 @@ export function CreditPageHeader() {
         <p className="text-sm text-zinc-400">
           Saldo total pendiente:{" "}
           <span className="font-semibold text-[var(--color-voltage)]">
-            {creditCurrencyFormatter.format(state.totalBalance)}
+            {formatCurrency(state.totalBalance)}
           </span>
         </p>
       </div>

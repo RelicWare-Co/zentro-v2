@@ -3,6 +3,7 @@ import {
   SALE_STATUS_VALUES,
   type SalesView,
 } from "@/features/sales/sales-page.constants.shared";
+import { formatCurrency } from "@/lib/format-currency.shared";
 import { parseMoneyInput } from "@/lib/utils";
 
 export const salesDateTimeFormatter = new Intl.DateTimeFormat("es-CO", {
@@ -17,12 +18,6 @@ export const salesDayFormatter = new Intl.DateTimeFormat("es-CO", {
   month: "long",
 });
 
-const currencyFormatter = new Intl.NumberFormat("es-CO", {
-  style: "currency",
-  currency: "COP",
-  maximumFractionDigits: 0,
-});
-
 export function getCurrentSalesDateFilterValue() {
   const now = new Date();
   const month = `${now.getMonth() + 1}`.padStart(2, "0");
@@ -31,7 +26,7 @@ export function getCurrentSalesDateFilterValue() {
 }
 
 export function formatSalesCurrency(amount: number): string {
-  return currencyFormatter.format(amount);
+  return formatCurrency(amount);
 }
 
 export function formatSaleStatus(status: string) {

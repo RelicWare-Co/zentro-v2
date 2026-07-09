@@ -1,7 +1,6 @@
 import { ArrowDownLeft } from "lucide-react";
 import { useMemo, useState } from "react";
 import { usePosPage } from "@/features/pos/pos-page-context";
-import { formatCurrency } from "@/features/pos/utils";
 import { AccountCreditSummary } from "@/features/posv2/components/checkout-account-credit-section";
 import { CardTransferCheckoutSection } from "@/features/posv2/components/checkout-card-transfer-section";
 import { CashCheckoutSection } from "@/features/posv2/components/checkout-cash-section";
@@ -21,6 +20,7 @@ import {
   posV2OrderBorder,
   posV2OrderSurfaceClassName,
 } from "@/features/posv2/components/pos-v2-order-styles";
+import { formatCurrency } from "@/lib/format-currency.shared";
 import { cn } from "@/lib/utils";
 
 function getPaymentValidationState(

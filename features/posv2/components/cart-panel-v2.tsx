@@ -12,7 +12,6 @@ import {
   type PosTableSessionState,
   usePosPage,
 } from "@/features/pos/pos-page-context";
-import { formatCurrency } from "@/features/pos/utils";
 import { CheckoutSectionV2 } from "@/features/posv2/components/checkout-section-v2";
 import {
   posV2AccentText,
@@ -24,6 +23,7 @@ import {
   posV2OrderPanelBg,
   posV2SurfaceButtonClassName,
 } from "@/features/posv2/components/pos-v2-order-styles";
+import { formatCurrency } from "@/lib/format-currency.shared";
 import { cn } from "@/lib/utils";
 import { CartItemCardV2 } from "./cart-item-card-v2";
 

@@ -9,12 +9,12 @@ import {
   isPosModalOpen,
   POS_MODAL_IDS,
 } from "@/features/pos/pos-page-modals.shared";
-import { formatCurrency } from "@/features/pos/utils";
 import {
   posV2AccentText,
   posV2OrderCanvasBg,
   posV2OrderInputClassName,
 } from "@/features/posv2/components/pos-v2-order-styles";
+import { formatCurrency } from "@/lib/format-currency.shared";
 import { cn, formatMoneyInput, sanitizeMoneyInput } from "@/lib/utils";
 
 export function CheckoutDetailsModal() {

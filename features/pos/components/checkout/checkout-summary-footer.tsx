@@ -1,5 +1,5 @@
 import { usePosPage } from "@/features/pos/pos-page-context";
-import { formatCurrency } from "@/features/pos/utils";
+import { formatCurrency } from "@/lib/format-currency.shared";
 import { cn } from "@/lib/utils";
 import {
   getFooterLabel,

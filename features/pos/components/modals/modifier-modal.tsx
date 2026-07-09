@@ -5,7 +5,7 @@ import {
   isPosModalOpen,
   POS_MODAL_IDS,
 } from "@/features/pos/pos-page-modals.shared";
-import { formatCurrency } from "@/features/pos/utils";
+import { formatCurrency } from "@/lib/format-currency.shared";
 
 export function ModifierModal() {
   const { state, actions } = usePosPage();

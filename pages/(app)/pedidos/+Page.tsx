@@ -23,7 +23,7 @@ import {
   UtensilsCrossed,
 } from "lucide-react";
 import { useState } from "react";
-import { formatCurrency } from "@/features/pos/utils";
+import { formatCurrency } from "@/lib/format-currency.shared";
 import { mutators } from "@/zero/mutators";
 import { queries } from "@/zero/queries";
 

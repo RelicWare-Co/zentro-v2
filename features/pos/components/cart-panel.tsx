@@ -8,12 +8,11 @@ import {
   Zap,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-
+import { formatCurrency } from "@/lib/format-currency.shared";
 import { cn } from "@/lib/utils";
 import type { PosTableSessionState } from "../pos-page-context";
 import type { PosTableOrderItemStatus } from "../sale-modes/types";
 import type { CartItem, CartTotals } from "../types";
-import { formatCurrency } from "../utils";
 import { CartItemCard } from "./cart-item-card";
 import { SaleSuccessNotice } from "./sale-success-notice";
 import { buildTableItemStatusBadge } from "./table-item-status.shared";

@@ -34,10 +34,10 @@ import {
 import {
   formatCompactCurrency,
   formatCount,
-  formatCurrency,
   formatDelta,
   getPercentChange,
 } from "@/features/dashboard/dashboard-formatters.shared";
+import { formatCurrency } from "@/lib/format-currency.shared";
 
 const trendDayFormatter = new Intl.DateTimeFormat("es-CO", {
   day: "numeric",

@@ -1,7 +1,7 @@
 import { TextInput } from "@mantine/core";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import type { CartItem } from "@/features/pos/types";
-import { calculateItemTotal, formatCurrency } from "@/features/pos/utils";
+import { calculateItemTotal } from "@/features/pos/utils";
 import {
   posV2MutedText,
   posV2OrderBorder,
@@ -12,6 +12,7 @@ import {
   posV2OrderSurfaceClassName,
   posV2SubtleText,
 } from "@/features/posv2/components/pos-v2-order-styles";
+import { formatCurrency } from "@/lib/format-currency.shared";
 import { cn, formatMoneyInput, sanitizeMoneyInput } from "@/lib/utils";
 
 interface CartItemCardV2Props {

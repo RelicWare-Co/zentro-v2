@@ -2,8 +2,8 @@ import { Text, TextInput } from "@mantine/core";
 import { ChevronRight, Tag } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { usePosPage } from "@/features/pos/pos-page-context";
-import { formatCurrency } from "@/features/pos/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { formatCurrency } from "@/lib/format-currency.shared";
 import { cn, formatMoneyInput, sanitizeMoneyInput } from "@/lib/utils";
 
 interface CheckoutDiscountSectionProps {

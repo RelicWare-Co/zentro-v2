@@ -1,8 +1,8 @@
 import { Alert, Button, Drawer, Select, TextInput } from "@mantine/core";
 import { CalendarClock } from "lucide-react";
 import { type FormEvent, useState } from "react";
-import { creditCurrencyFormatter } from "@/features/credit/credit-formatters.shared";
 import { useCreditPage } from "@/features/credit/credit-page-context";
+import { formatCurrency } from "@/lib/format-currency.shared";
 import {
   formatMoneyInput,
   getErrorMessage,
@@ -53,9 +53,7 @@ function CreditPaymentSheetForm() {
         <p className="text-sm text-zinc-400">
           {state.selectedAccount?.customerName}: Saldo pendiente:{" "}
           <span className="font-semibold text-[var(--color-voltage)]">
-            {creditCurrencyFormatter.format(
-              state.selectedAccount?.balance ?? 0
-            )}
+            {formatCurrency(state.selectedAccount?.balance ?? 0)}
           </span>
         </p>
 
@@ -93,7 +91,7 @@ function CreditPaymentSheetForm() {
             {isOverpayment ? (
               <p className="mt-1 text-red-400 text-sm">
                 El monto no puede superar el saldo pendiente (
-                {creditCurrencyFormatter.format(maxAmount)}).
+                {formatCurrency(maxAmount)}).
               </p>
             ) : null}
           </div>

@@ -4,6 +4,6 @@ const currencyFormatter = new Intl.NumberFormat("es-CO", {
   maximumFractionDigits: 0,
 });
 
-export function formatProductCurrency(amount: number): string {
+export function formatCurrency(amount: number): string {
   return currencyFormatter.format(amount);
 }

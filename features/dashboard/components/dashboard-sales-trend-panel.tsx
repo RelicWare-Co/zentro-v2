@@ -7,10 +7,10 @@ import {
 import {
   formatCompactCurrency,
   formatCount,
-  formatCurrency,
   formatShortDay,
 } from "@/features/dashboard/dashboard-formatters.shared";
 import { useDashboardData } from "@/features/dashboard/dashboard-page-context";
+import { formatCurrency } from "@/lib/format-currency.shared";
 
 export function DashboardSalesTrendPanel() {
   const { salesTrend } = useDashboardData();

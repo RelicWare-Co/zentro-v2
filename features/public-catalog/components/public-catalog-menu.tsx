@@ -2,7 +2,7 @@ import { Box, Card, Container, Drawer, Stack, Title } from "@mantine/core";
 import { ShoppingBag } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { PublicCatalogItem } from "@/features/orders/orders.schema";
-import { formatCurrency } from "@/features/pos/utils";
+import { formatCurrency } from "@/lib/format-currency.shared";
 import { PublicCartSummary } from "./public-cart-summary";
 import { PublicCategoryTabs } from "./public-category-tabs";
 import { PublicOrderForm } from "./public-order-form";

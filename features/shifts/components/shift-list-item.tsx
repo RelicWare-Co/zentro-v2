@@ -1,6 +1,6 @@
 import { Badge } from "@mantine/core";
 import { User } from "lucide-react";
-import { formatCurrency, formatPaymentMethodLabel } from "@/features/pos/utils";
+import { formatPaymentMethodLabel } from "@/features/pos/utils";
 import type { ShiftListItem } from "@/features/shifts/shifts.shared";
 import {
   formatMovementType,
@@ -11,6 +11,7 @@ import {
   getDifferenceClassName,
   getShiftStatusBadgeClass,
 } from "@/features/shifts/shifts-formatters.shared";
+import { formatCurrency } from "@/lib/format-currency.shared";
 
 export function ShiftListItemCard({
   shift,

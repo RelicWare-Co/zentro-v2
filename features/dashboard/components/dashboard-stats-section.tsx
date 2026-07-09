@@ -8,11 +8,11 @@ import {
 import { CompactStatCard } from "@/features/dashboard/components/dashboard-ui-primitives";
 import {
   formatCount,
-  formatCurrency,
   formatDelta,
   getPercentChange,
 } from "@/features/dashboard/dashboard-formatters.shared";
 import { useDashboardData } from "@/features/dashboard/dashboard-page-context";
+import { formatCurrency } from "@/lib/format-currency.shared";
 
 export function DashboardStatsSection() {
   const { stats, salesWindow, lowStockThreshold } = useDashboardData();

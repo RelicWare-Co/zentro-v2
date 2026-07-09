@@ -1,9 +1,9 @@
-import { formatCurrency } from "@/features/pos/utils";
 import {
   SHIFT_DIFFERENCE_STATUS_VALUES,
   SHIFT_HAS_MOVEMENTS_VALUES,
   SHIFT_STATUS_VALUES,
 } from "@/features/shifts/shifts-page.constants.shared";
+import { formatCurrency } from "@/lib/format-currency.shared";
 
 export const shiftsDateTimeFormatter = new Intl.DateTimeFormat("es-CO", {
   day: "numeric",

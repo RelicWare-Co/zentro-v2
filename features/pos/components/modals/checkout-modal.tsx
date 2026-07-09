@@ -12,8 +12,8 @@ import {
   isPosModalOpen,
   POS_MODAL_IDS,
 } from "@/features/pos/pos-page-modals.shared";
-import { formatCurrency } from "@/features/pos/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { formatCurrency } from "@/lib/format-currency.shared";
 
 export function CheckoutModal() {
   const { state, actions, meta } = usePosPage();

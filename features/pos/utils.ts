@@ -7,19 +7,6 @@ import {
 import { parseMoneyInput } from "@/lib/utils";
 import type { CartItem, CartTotals, Product } from "./types";
 
-const currencyFormatter = new Intl.NumberFormat("es-CO", {
-  style: "currency",
-  currency: "COP",
-  maximumFractionDigits: 0,
-});
-
-/**
- * Formatea un número como moneda colombiana (COP)
- */
-export function formatCurrency(amount: number): string {
-  return currencyFormatter.format(amount);
-}
-
 /**
  * Calcula el precio de un producto con impuestos incluidos
  */

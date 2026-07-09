@@ -1,7 +1,7 @@
 import { Box, Button, Group, Stack, Text } from "@mantine/core";
 import { Minus, Package, Plus } from "lucide-react";
 import type { PublicCatalogItem } from "@/features/orders/orders.schema";
-import { formatCurrency } from "@/features/pos/utils";
+import { formatCurrency } from "@/lib/format-currency.shared";
 import { cn } from "@/lib/utils";
 
 interface PublicProductCardProps {

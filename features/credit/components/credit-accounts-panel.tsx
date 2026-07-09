@@ -4,8 +4,8 @@ import { useId } from "react";
 import { TableCell, TableHead, TableRow } from "@/components/ui/table";
 import { VirtualTable } from "@/components/ui/virtual-table";
 import type { CreditAccount } from "@/features/credit/credit.shared";
-import { creditCurrencyFormatter } from "@/features/credit/credit-formatters.shared";
 import { useCreditPage } from "@/features/credit/credit-page-context";
+import { formatCurrency } from "@/lib/format-currency.shared";
 
 function CreditAccountRow({
   data: account,
@@ -34,7 +34,7 @@ function CreditAccountRow({
         <p
           className={`font-semibold tabular-nums ${account.balance > 0 ? "text-[var(--color-voltage)]" : "text-zinc-400"}`}
         >
-          {creditCurrencyFormatter.format(account.balance)}
+          {formatCurrency(account.balance)}
         </p>
       </TableCell>
       <TableCell className="text-right">

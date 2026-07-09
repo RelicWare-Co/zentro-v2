@@ -3,15 +3,13 @@ import {
   DashboardPanelShell,
   EmptyState,
 } from "@/features/dashboard/components/dashboard-ui-primitives";
-import {
-  dashboardDateTimeFormatter,
-  formatCurrency,
-} from "@/features/dashboard/dashboard-formatters.shared";
+import { dashboardDateTimeFormatter } from "@/features/dashboard/dashboard-formatters.shared";
 import { useDashboardData } from "@/features/dashboard/dashboard-page-context";
 import {
   formatSaleStatus,
   getSaleStatusBadgeClass,
 } from "@/features/sales/sales-formatters.shared";
+import { formatCurrency } from "@/lib/format-currency.shared";
 
 export function DashboardRecentSalesPanel() {
   const { recentSales } = useDashboardData();

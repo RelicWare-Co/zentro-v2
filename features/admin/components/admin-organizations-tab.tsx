@@ -24,10 +24,8 @@ import {
   DashboardPanelShell,
   EmptyState,
 } from "@/features/dashboard/components/dashboard-ui-primitives";
-import {
-  formatCount,
-  formatCurrency,
-} from "@/features/dashboard/dashboard-formatters.shared";
+import { formatCount } from "@/features/dashboard/dashboard-formatters.shared";
+import { formatCurrency } from "@/lib/format-currency.shared";
 
 function OrganizationsSummaryCards({
   organizations,

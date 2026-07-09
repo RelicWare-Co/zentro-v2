@@ -1,7 +1,6 @@
 import { Badge, Button, SegmentedControl } from "@mantine/core";
 import { ChefHat, LayoutGrid, Plus, Users } from "lucide-react";
 import { useMemo, useState } from "react";
-import { formatCurrency } from "@/features/pos/utils";
 import {
   CreateRestaurantAreaDialog,
   CreateRestaurantTableDialog,
@@ -14,6 +13,7 @@ import {
   getTableStatusLabel,
   type RestaurantTableSummary,
 } from "@/features/restaurants/restaurants-ui.shared";
+import { formatCurrency } from "@/lib/format-currency.shared";
 import { cn } from "@/lib/utils";
 
 const statusStyles: Record<
