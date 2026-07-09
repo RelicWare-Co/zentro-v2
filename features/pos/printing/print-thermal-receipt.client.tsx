@@ -1,3 +1,4 @@
+import { notifications } from "@mantine/notifications";
 import { ThermalReceipt } from "@/features/pos/components/thermal-receipt";
 import { printReceiptAsPdf } from "@/features/pos/printing/print-receipt-as-pdf.client";
 import { getPosPrinterManager } from "@/features/pos/printing/printer-manager.client";
@@ -25,10 +26,14 @@ export async function printThermalReceipt(
     await getPosPrinterManager().printReceipt(document, organizationId);
     return true;
   } catch (error) {
-    console.error(
-      "No se pudo imprimir en impresora POS, fallback a PDF",
-      error
-    );
+    notifications.show({
+      title: "Impresora térmica no disponible",
+      message:
+        error instanceof Error
+          ? error.message
+          : "Se generará un PDF como respaldo.",
+      color: "yellow",
+    });
     return printReceiptAsPdf(document, settings);
   }
 }
