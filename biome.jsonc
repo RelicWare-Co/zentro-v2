@@ -38,6 +38,16 @@
           }
         }
       }
+    },
+    {
+      "includes": ["features/restaurants/restaurant-mutations.server.ts"],
+      "linter": {
+        "rules": {
+          "performance": {
+            "noBarrelFile": "off"
+          }
+        }
+      }
     }
   ]
 }
