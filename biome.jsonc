@@ -48,6 +48,16 @@
           }
         }
       }
+    },
+    {
+      "includes": ["features/dashboard/build-overview.server.ts"],
+      "linter": {
+        "rules": {
+          "performance": {
+            "noBarrelFile": "off"
+          }
+        }
+      }
     }
   ]
 }
