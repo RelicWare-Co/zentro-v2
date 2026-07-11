@@ -34,6 +34,10 @@ export const sendRestaurantOrderToKitchenArgsSchema = zod.object({
   orderId: zod.string().trim().min(1),
   ticketId: zod.string().trim().min(1),
 });
+export const cancelRestaurantOrderArgsSchema = zod.object({
+  orderId: zod.string().trim().min(1),
+  reason: zod.string().trim().min(1).max(500),
+});
 export const updateRestaurantOrderItemStatusArgsSchema = zod.object({
   orderItemId: zod.string().trim().min(1),
   status: zod.enum(["ready", "served"]),
@@ -108,6 +112,12 @@ export const restaurantsMutators = {
     ),
     sendToKitchen: defineZentroMutator(
       sendRestaurantOrderToKitchenArgsSchema,
+      async () => {
+        // Server-only restaurant writes; client completes without optimistic writes.
+      }
+    ),
+    cancelOrder: defineZentroMutator(
+      cancelRestaurantOrderArgsSchema,
       async () => {
         // Server-only restaurant writes; client completes without optimistic writes.
       }

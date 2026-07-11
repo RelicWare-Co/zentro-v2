@@ -219,6 +219,7 @@ export function useTableSaleAdapter(
       draftItemsCount: tableOrder.draftItemsCount,
       isLoading: tableOrder.isLoading,
       isSendingToKitchen: tableOrder.isSendingToKitchen,
+      isCancellingOrder: tableOrder.isCancellingOrder,
       isClosingOrder: tableOrder.isClosingOrder,
     };
   }, [isActive, tableOrder]);
@@ -248,6 +249,21 @@ export function useTableSaleAdapter(
     await tableOrder.sendToKitchen();
   }, [tableOrder.sendToKitchen]);
 
+  const cancelOrder = useCallback(
+    async (reason: string) => {
+      const tableName = tableOrder.table?.name ?? "La mesa";
+      await tableOrder.cancelTableOrder(reason);
+      checkout.resetPayments();
+      resetDiscount();
+      tableOrder.exitTable();
+      notifications.show({
+        message: `${tableName} cancelada y liberada`,
+        color: "green",
+      });
+    },
+    [tableOrder, checkout.resetPayments, resetDiscount]
+  );
+
   return {
     modeId: tableSaleModeFactory.modeId,
     isActive,
@@ -272,6 +288,7 @@ export function useTableSaleAdapter(
     enter,
     exit,
     sendToKitchen,
+    cancelOrder,
   };
 }
 

@@ -1,6 +1,7 @@
 import type { RestaurantDbExecutor } from "@/features/restaurants/restaurant-mutations.server";
 import {
   runAddRestaurantOrderItem,
+  runCancelRestaurantOrder,
   runCloseRestaurantOrder,
   runCreateRestaurantArea,
   runCreateRestaurantTable,
@@ -16,6 +17,7 @@ import {
 } from "@/features/restaurants/restaurant-mutations.server";
 import {
   addRestaurantOrderItemArgsSchema,
+  cancelRestaurantOrderArgsSchema,
   closeRestaurantOrderArgsSchema,
   createRestaurantAreaArgsSchema,
   createRestaurantTableArgsSchema,
@@ -84,6 +86,11 @@ export const restaurantsServerMutators = {
   sendToKitchen: defineZentroServerMutator(
     sendRestaurantOrderToKitchenArgsSchema,
     restaurantRunner(runSendRestaurantOrderToKitchen),
+    { operationName: RESTAURANT_OP_NAME }
+  ),
+  cancelOrder: defineZentroServerMutator(
+    cancelRestaurantOrderArgsSchema,
+    restaurantRunner(runCancelRestaurantOrder),
     { operationName: RESTAURANT_OP_NAME }
   ),
   updateItemStatus: defineZentroServerMutator(

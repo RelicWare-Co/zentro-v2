@@ -86,6 +86,9 @@ export const restaurantOrder = pgTable(
     closedByUserId: text("closed_by_user_id").references(() => user.id, {
       onDelete: "set null",
     }),
+    cancelledByUserId: text("cancelled_by_user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
     saleId: text("sale_id").references(() => sale.id, { onDelete: "set null" }),
     orderNumber: integer("order_number").notNull(),
     status: text("status").notNull().default("open"),
@@ -99,6 +102,11 @@ export const restaurantOrder = pgTable(
       .$onUpdate(() => new Date())
       .notNull(),
     closedAt: timestamp("closed_at", { withTimezone: true, mode: "date" }),
+    cancelledAt: timestamp("cancelled_at", {
+      withTimezone: true,
+      mode: "date",
+    }),
+    cancellationReason: text("cancellation_reason"),
   },
   (table) => [
     index("restaurantOrder_tableId_idx").on(table.tableId),
@@ -278,6 +286,11 @@ export const restaurantOrderRelations = relations(
       fields: [restaurantOrder.closedByUserId],
       references: [user.id],
       relationName: "restaurantOrderClosedBy",
+    }),
+    cancelledByUser: one(user, {
+      fields: [restaurantOrder.cancelledByUserId],
+      references: [user.id],
+      relationName: "restaurantOrderCancelledBy",
     }),
     sale: one(sale, {
       fields: [restaurantOrder.saleId],

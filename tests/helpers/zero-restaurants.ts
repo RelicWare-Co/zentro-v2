@@ -9,6 +9,7 @@ import {
 import { sale } from "@/database/drizzle/schema/sales.schema";
 import type {
   AddRestaurantOrderItemInputSchema,
+  CancelRestaurantOrderInputSchema,
   CloseRestaurantOrderInputSchema,
   CreateRestaurantAreaInputSchema,
   CreateRestaurantTableInputSchema,
@@ -147,6 +148,7 @@ export async function getKitchenBoardViaZero({
 }
 
 type AddOrderItemInput = z.infer<typeof AddRestaurantOrderItemInputSchema>;
+type CancelOrderInput = z.infer<typeof CancelRestaurantOrderInputSchema>;
 type SendToKitchenInput = z.infer<
   typeof SendRestaurantOrderToKitchenInputSchema
 >;
@@ -254,6 +256,20 @@ export async function sendRestaurantOrderToKitchenViaZero({
       items: itemRows,
     },
   };
+}
+
+export async function cancelRestaurantOrderViaZero({
+  zeroDb,
+  ctx,
+  input,
+}: {
+  zeroDb: ZeroTestDb;
+  ctx: ZeroContext;
+  input: CancelOrderInput;
+}) {
+  await zeroDb.transaction((tx) =>
+    serverMutators.restaurants.cancelOrder.fn({ args: input, ctx, tx })
+  );
 }
 
 export async function closeRestaurantOrderViaZero({

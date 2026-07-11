@@ -18,6 +18,7 @@ import {
 import { createTestDb, type TestDb } from "./helpers/test-db";
 import {
   addRestaurantOrderItemViaZero,
+  cancelRestaurantOrderViaZero,
   closeRestaurantOrderViaZero,
   createRestaurantAreaViaZero,
   createRestaurantTableViaZero,
@@ -25,6 +26,7 @@ import {
   deleteRestaurantTableViaZero,
   getKitchenBoardViaZero,
   getRestaurantBootstrapViaZero,
+  getRestaurantTableDetailViaZero,
   sendRestaurantOrderToKitchenViaZero,
   updateRestaurantAreaViaZero,
   updateRestaurantTableViaZero,
@@ -233,7 +235,115 @@ describe("restaurant module", () => {
     });
   });
 
-  describe("VAL-REST-004: close order creates a sale and marks order closed", () => {
+  describe("VAL-REST-004: cancel order releases the table without creating a sale", () => {
+    test("cancels an order already sent to kitchen", async () => {
+      const { db, cleanup } = await createTestDb();
+      const { organizationId, userId } = await seedOrganizationWithMember(db, {
+        memberRole: "owner",
+      });
+      await setRestaurantModuleEnabled(db, organizationId, true);
+
+      const areaId = await seedRestaurantArea(db, {
+        organizationId,
+        name: "Terrace",
+      });
+      const [tableId, productId] = await Promise.all([
+        seedRestaurantTable(db, {
+          organizationId,
+          areaId,
+          name: "T1",
+        }),
+        seedProduct(db, {
+          organizationId,
+          name: "Burger",
+          price: 15_000,
+          stock: 10,
+          trackInventory: true,
+        }),
+      ]);
+
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
+      const addResult = await addRestaurantOrderItemViaZero({
+        db,
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          tableId,
+          productId,
+          quantity: 1,
+        },
+      });
+      await sendRestaurantOrderToKitchenViaZero({
+        db,
+        zeroDb,
+        ctx: zeroCtx,
+        input: { orderId: addResult.orderId },
+      });
+
+      await cancelRestaurantOrderViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          orderId: addResult.orderId,
+          reason: "El cliente se retiró",
+        },
+      });
+
+      const [orderRow] = await db
+        .select()
+        .from(restaurantOrder)
+        .where(eq(restaurantOrder.id, addResult.orderId));
+      expect(orderRow?.status).toBe("cancelled");
+      expect(orderRow?.cancelledByUserId).toBe(userId);
+      expect(orderRow?.cancellationReason).toBe("El cliente se retiró");
+      expect(orderRow?.cancelledAt).toBeInstanceOf(Date);
+      expect(orderRow?.saleId).toBeNull();
+
+      const itemRows = await db
+        .select()
+        .from(restaurantOrderItem)
+        .where(eq(restaurantOrderItem.orderId, addResult.orderId));
+      expect(itemRows).toHaveLength(1);
+      expect(itemRows[0]?.status).toBe("cancelled");
+      expect(itemRows[0]?.cancelledAt).toBeInstanceOf(Date);
+
+      const ticketRows = await db
+        .select()
+        .from(restaurantKitchenTicket)
+        .where(eq(restaurantKitchenTicket.orderId, addResult.orderId));
+      expect(ticketRows).toHaveLength(1);
+      expect(ticketRows[0]?.status).toBe("cancelled");
+
+      const [tableDetail, kitchenBoard, saleRows] = await Promise.all([
+        getRestaurantTableDetailViaZero({
+          zeroDb,
+          ctx: zeroCtx,
+          tableId,
+        }),
+        getKitchenBoardViaZero({ zeroDb, ctx: zeroCtx }),
+        db.select().from(sale),
+      ]);
+      expect(tableDetail.openOrder).toBeNull();
+      expect(kitchenBoard.tickets).toHaveLength(0);
+      expect(saleRows).toHaveLength(0);
+
+      await expect(
+        cancelRestaurantOrderViaZero({
+          zeroDb,
+          ctx: zeroCtx,
+          input: {
+            orderId: addResult.orderId,
+            reason: "Segundo intento",
+          },
+        })
+      ).rejects.toThrow("La cuenta no existe o ya no está abierta.");
+
+      await cleanup();
+    });
+  });
+
+  describe("VAL-REST-005: close order creates a sale and marks order closed", () => {
     test("close order creates sale and marks order closed", async () => {
       const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db, {

@@ -398,6 +398,7 @@ export default drizzleZeroConfig(drizzleSchema, {
       tableId: true,
       openedByUserId: true,
       closedByUserId: true,
+      cancelledByUserId: true,
       saleId: true,
       orderNumber: true,
       status: true,
@@ -406,6 +407,8 @@ export default drizzleZeroConfig(drizzleSchema, {
       createdAt: true,
       updatedAt: true,
       closedAt: true,
+      cancelledAt: true,
+      cancellationReason: true,
     },
     restaurantKitchenTicket: {
       id: true,

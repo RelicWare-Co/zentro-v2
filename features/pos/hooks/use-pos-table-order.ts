@@ -6,6 +6,7 @@ import type { CartItem, CartItemModifier, Product } from "@/features/pos/types";
 import { calculateCartTotals } from "@/features/pos/utils";
 import {
   useAddRestaurantOrderItemMutation,
+  useCancelRestaurantOrderMutation,
   useCloseRestaurantOrderMutation,
   useDeleteRestaurantDraftItemMutation,
   useRestaurantTableDetail,
@@ -78,6 +79,7 @@ export function usePosTableOrder(
   const updateDraftItemMutation = useUpdateRestaurantDraftItemMutation();
   const deleteDraftItemMutation = useDeleteRestaurantDraftItemMutation();
   const sendToKitchenMutation = useSendRestaurantOrderToKitchenMutation();
+  const cancelOrderMutation = useCancelRestaurantOrderMutation();
   const closeOrderMutation = useCloseRestaurantOrderMutation();
 
   const activeItems = useMemo(
@@ -317,6 +319,19 @@ export function usePosTableOrder(
     [openOrder, closeOrderMutation]
   );
 
+  const cancelTableOrder = useCallback(
+    async (reason: string) => {
+      if (!openOrder) {
+        throw new Error("La mesa no tiene una cuenta abierta.");
+      }
+      await cancelOrderMutation.mutateAsync({
+        orderId: openOrder.id,
+        reason,
+      });
+    },
+    [openOrder, cancelOrderMutation]
+  );
+
   return {
     activeTableId,
     table,
@@ -334,8 +349,10 @@ export function usePosTableOrder(
     removeItem,
     sendToKitchen,
     closeTableOrder,
+    cancelTableOrder,
     isAddingItem: addItemMutation.isPending,
     isSendingToKitchen: sendToKitchenMutation.isPending,
+    isCancellingOrder: cancelOrderMutation.isPending,
     isClosingOrder: closeOrderMutation.isPending,
     closeOrderError: closeOrderMutation.error,
   };

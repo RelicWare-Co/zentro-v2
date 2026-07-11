@@ -49,6 +49,11 @@ export const SendRestaurantOrderToKitchenInputSchema = z.object({
   orderId: z.string().trim().min(1),
 });
 
+export const CancelRestaurantOrderInputSchema = z.object({
+  orderId: z.string().trim().min(1),
+  reason: z.string().trim().min(1).max(500),
+});
+
 export const UpdateRestaurantOrderItemStatusInputSchema = z.object({
   orderItemId: z.string().trim().min(1),
   status: z.enum(["ready", "served"]),

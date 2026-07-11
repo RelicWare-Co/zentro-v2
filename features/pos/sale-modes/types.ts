@@ -15,6 +15,7 @@ export type PosTableOrderItemStatus = "draft" | "sent" | "ready" | "served";
 export interface PosTableSessionState {
   areaName: string;
   draftItemsCount: number;
+  isCancellingOrder: boolean;
   isClosingOrder: boolean;
   isLoading: boolean;
   isSendingToKitchen: boolean;
@@ -94,6 +95,7 @@ export interface SaleModeCheckoutState {
 export interface SaleModeAdapter {
   addToCart(product: Product, modifiers: CartItemModifier[]): void;
   readonly allowCreditSales: boolean;
+  cancelOrder?: (reason: string) => Promise<void>;
   readonly cart: CartItem[];
   readonly checkout: SaleModeCheckoutState;
   clearCart(): void;

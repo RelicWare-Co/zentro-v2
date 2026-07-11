@@ -1,5 +1,6 @@
-import { Button } from "@mantine/core";
+import { Button, Group, Modal, Stack, Text, Textarea } from "@mantine/core";
 import {
+  Ban,
   LogOut,
   Search,
   Send,
@@ -313,6 +314,7 @@ interface CartPanelProps {
   className?: string;
   isQuickSaleMode?: boolean;
   isTableSelectorOpen?: boolean;
+  onCancelTableOrder?: (reason: string) => Promise<void>;
   onCheckout: () => void;
   onClearCart: () => void;
   onExitTable?: () => void;
@@ -463,12 +465,14 @@ function CartEmptyState({
 function CartFooter({
   cart,
   isQuickSaleMode,
+  onRequestCancel,
   onCheckout,
   onSendToKitchen,
   tableSession,
 }: {
   cart: CartItem[];
   isQuickSaleMode: boolean;
+  onRequestCancel?: () => void;
   onCheckout: () => void;
   onSendToKitchen?: () => void;
   tableSession?: PosTableSessionState | null;
@@ -495,6 +499,24 @@ function CartFooter({
                   ? ` (${tableSession.draftItemsCount})`
                   : ""
               }`}
+        </Button>
+      ) : null}
+
+      {tableSession && onRequestCancel ? (
+        <Button
+          color="red"
+          disabled={
+            tableSession.isCancellingOrder || tableSession.isClosingOrder
+          }
+          fullWidth
+          leftSection={<Ban aria-hidden="true" className="size-4" />}
+          onClick={onRequestCancel}
+          type="button"
+          variant="outline"
+        >
+          {tableSession.isCancellingOrder
+            ? "Cancelando orden..."
+            : "Cancelar orden"}
         </Button>
       ) : null}
 
@@ -594,8 +616,12 @@ export function CartPanel({
   isTableSelectorOpen,
   tableSession,
   className,
+  onCancelTableOrder,
   saleSuccessToken,
 }: CartPanelProps) {
+  const [cancelError, setCancelError] = useState<string | null>(null);
+  const [cancelReason, setCancelReason] = useState("");
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const anim = useCartAnimation(
     tableSession,
     isTableSelectorOpen,
@@ -608,6 +634,36 @@ export function CartPanel({
     anim.showBlankState,
     anim.baseTableSession
   );
+
+  const closeCancelModal = () => {
+    if (tableSession?.isCancellingOrder) {
+      return;
+    }
+    setCancelError(null);
+    setCancelReason("");
+    setIsCancelModalOpen(false);
+  };
+
+  const submitCancellation = async () => {
+    const reason = cancelReason.trim();
+    if (!reason) {
+      setCancelError("Indica el motivo de la cancelación.");
+      return;
+    }
+    if (!onCancelTableOrder) {
+      return;
+    }
+
+    setCancelError(null);
+    try {
+      await onCancelTableOrder(reason);
+      closeCancelModal();
+    } catch (error) {
+      setCancelError(
+        error instanceof Error ? error.message : "No se pudo cancelar la orden."
+      );
+    }
+  };
 
   return (
     <div
@@ -655,6 +711,11 @@ export function CartPanel({
                 cart={anim.baseCart}
                 isQuickSaleMode={Boolean(isQuickSaleMode)}
                 onCheckout={onCheckout}
+                onRequestCancel={
+                  onCancelTableOrder && anim.baseTableSession
+                    ? () => setIsCancelModalOpen(true)
+                    : undefined
+                }
                 onSendToKitchen={onSendToKitchen}
                 tableSession={anim.baseTableSession}
               />
@@ -720,6 +781,49 @@ export function CartPanel({
           totals={anim.mesasSnapshot.totals}
         />
       )}
+
+      <Modal
+        centered
+        onClose={closeCancelModal}
+        opened={isCancelModalOpen}
+        title="Cancelar orden"
+      >
+        <Stack gap="md">
+          <Text c="dimmed" size="sm">
+            La orden se retirará de cocina y la mesa quedará disponible. Esta
+            acción no genera cobro ni puede deshacerse.
+          </Text>
+          <Textarea
+            data-autofocus
+            error={cancelError}
+            label="Motivo de cancelación"
+            maxLength={500}
+            minRows={3}
+            onChange={(event) => setCancelReason(event.target.value)}
+            placeholder="Ej. El cliente se retiró"
+            required
+            value={cancelReason}
+          />
+          <Group justify="flex-end">
+            <Button
+              disabled={tableSession?.isCancellingOrder}
+              onClick={closeCancelModal}
+              type="button"
+              variant="default"
+            >
+              Volver
+            </Button>
+            <Button
+              color="red"
+              loading={tableSession?.isCancellingOrder}
+              onClick={submitCancellation}
+              type="button"
+            >
+              Cancelar orden
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
 
       <SaleSuccessNotice token={saleSuccessToken} />
     </div>
