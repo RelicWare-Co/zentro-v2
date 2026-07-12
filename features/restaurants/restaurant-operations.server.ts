@@ -265,7 +265,7 @@ export async function getNextOrderNumber(
 }
 
 export async function getNextAreaSortOrder(
-  database: RestaurantDatabase | RestaurantTransaction,
+  database: Pick<RestaurantDbExecutor, "select">,
   organizationId: string
 ) {
   const [row] = await database

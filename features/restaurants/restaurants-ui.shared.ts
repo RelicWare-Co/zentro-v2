@@ -5,6 +5,19 @@ export type RestaurantTableSummary =
 
 export type RestaurantAreaSummary = RestaurantBootstrap["areas"][number];
 
+export type RestaurantAreaKind = "delivery" | "pickup" | "general";
+
+export function getRestaurantAreaKind(name: string): RestaurantAreaKind {
+  const normalizedName = name.trim().toLocaleLowerCase("es-CO");
+  if (normalizedName === "domicilios") {
+    return "delivery";
+  }
+  if (normalizedName === "recogida") {
+    return "pickup";
+  }
+  return "general";
+}
+
 export type TableOccupancyStatus =
   | "free"
   | "draft"
