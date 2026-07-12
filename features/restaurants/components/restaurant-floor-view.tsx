@@ -7,7 +7,7 @@ import {
   Plus,
   Users,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
   CreateRestaurantAreaDialog,
   CreateRestaurantTableDialog,
@@ -48,6 +48,16 @@ function AreaIcon({ name }: { name: string }) {
     return <PackageCheck aria-hidden="true" className="size-4" />;
   }
   return <LayoutGrid aria-hidden="true" className="size-4" />;
+}
+
+function getActiveTables(tables: RestaurantTableSummary[]) {
+  const activeTables: RestaurantTableSummary[] = [];
+  for (const table of tables) {
+    if (table.isActive) {
+      activeTables.push(table);
+    }
+  }
+  return activeTables;
 }
 
 function TableTile({
@@ -144,10 +154,7 @@ export function RestaurantFloorView({
   const [isCreateAreaOpen, setIsCreateAreaOpen] = useState(false);
   const [isCreateTableOpen, setIsCreateTableOpen] = useState(false);
 
-  const stats = useMemo(
-    () => countFloorStats(bootstrap.areas),
-    [bootstrap.areas]
-  );
+  const stats = countFloorStats(bootstrap.areas);
 
   const resolvedAreaId =
     activeAreaId === "all" ||
@@ -307,16 +314,14 @@ export function RestaurantFloorView({
                 ) : null}
 
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-                  {area.tables
-                    .filter((table) => table.isActive)
-                    .map((table) => (
-                      <TableTile
-                        isSelected={table.id === selectedTableId}
-                        key={table.id}
-                        onSelect={onSelectTable}
-                        table={table}
-                      />
-                    ))}
+                  {getActiveTables(area.tables).map((table) => (
+                    <TableTile
+                      isSelected={table.id === selectedTableId}
+                      key={table.id}
+                      onSelect={onSelectTable}
+                      table={table}
+                    />
+                  ))}
                   {canManageLayout ? (
                     <QuickAddTableCard
                       onClick={() => {
