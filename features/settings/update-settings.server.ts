@@ -4,6 +4,7 @@ import type { Database } from "@/database/drizzle/db";
 import { member, organization } from "@/database/drizzle/schema/auth.schema";
 import { organizationModuleEntitlement } from "@/database/drizzle/schema/feature.schema";
 import { MODULE_KEYS } from "@/features/modules/module-keys";
+import { ensureDefaultRestaurantAreas } from "@/features/restaurants/restaurant-areas.server";
 import { getRestaurantModuleToggleSettings } from "@/features/restaurants/restaurants-settings.shared";
 import {
   buildModuleAccessStates,
@@ -18,7 +19,10 @@ import {
 } from "@/features/settings/settings.shared";
 import type { ZeroContext } from "@/zero/sdk";
 
-export type UpdateSettingsDbExecutor = Pick<Database, "select" | "update">;
+export type UpdateSettingsDbExecutor = Pick<
+  Database,
+  "select" | "insert" | "update"
+>;
 
 type UpdateOrganizationSettingsInput = z.infer<typeof UpdateSettingsSchema>;
 
@@ -102,6 +106,10 @@ export async function runUpdateOrganizationSettings(
     throw new Error(
       "No puedes cambiar la activación del módulo de restaurantes."
     );
+  }
+
+  if (getRestaurantModuleToggleSettings(normalizedSettings).enabled) {
+    await ensureDefaultRestaurantAreas(tx, organizationId);
   }
 
   await tx

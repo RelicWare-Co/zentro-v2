@@ -1,6 +1,13 @@
 import { Badge, Button, SegmentedControl } from "@mantine/core";
-import { ChefHat, LayoutGrid, Plus, Users } from "lucide-react";
-import { useMemo, useState } from "react";
+import {
+  Bike,
+  ChefHat,
+  LayoutGrid,
+  PackageCheck,
+  Plus,
+  Users,
+} from "lucide-react";
+import { useState } from "react";
 import {
   CreateRestaurantAreaDialog,
   CreateRestaurantTableDialog,
@@ -9,6 +16,7 @@ import {
 import type { RestaurantBootstrap } from "@/features/restaurants/restaurants.shared";
 import {
   countFloorStats,
+  getRestaurantAreaKind,
   getTableOccupancyStatus,
   getTableStatusLabel,
   type RestaurantTableSummary,
@@ -30,6 +38,27 @@ const statusStyles: Record<
   occupied:
     "border-[var(--color-voltage)]/40 bg-[var(--color-voltage)]/10 hover:border-[var(--color-voltage)]/70 shadow-[0_0_24px_-8px_rgba(217,241,92,0.35)]",
 };
+
+function AreaIcon({ name }: { name: string }) {
+  const kind = getRestaurantAreaKind(name);
+  if (kind === "delivery") {
+    return <Bike aria-hidden="true" className="size-4" />;
+  }
+  if (kind === "pickup") {
+    return <PackageCheck aria-hidden="true" className="size-4" />;
+  }
+  return <LayoutGrid aria-hidden="true" className="size-4" />;
+}
+
+function getActiveTables(tables: RestaurantTableSummary[]) {
+  const activeTables: RestaurantTableSummary[] = [];
+  for (const table of tables) {
+    if (table.isActive) {
+      activeTables.push(table);
+    }
+  }
+  return activeTables;
+}
 
 function TableTile({
   isSelected,
@@ -125,10 +154,7 @@ export function RestaurantFloorView({
   const [isCreateAreaOpen, setIsCreateAreaOpen] = useState(false);
   const [isCreateTableOpen, setIsCreateTableOpen] = useState(false);
 
-  const stats = useMemo(
-    () => countFloorStats(bootstrap.areas),
-    [bootstrap.areas]
-  );
+  const stats = countFloorStats(bootstrap.areas);
 
   const resolvedAreaId =
     activeAreaId === "all" ||
@@ -242,6 +268,7 @@ export function RestaurantFloorView({
                   value: area.id,
                   label: (
                     <span className="inline-flex items-center gap-1">
+                      <AreaIcon name={area.name} />
                       {area.name}
                       <span className="text-xs opacity-70">
                         ({area.tables.filter((table) => table.isActive).length})
@@ -261,7 +288,10 @@ export function RestaurantFloorView({
                 {resolvedAreaId === "all" ? (
                   <div className="mb-4 flex items-center justify-between gap-3">
                     <h2 className="font-medium text-lg text-white">
-                      {area.name}
+                      <span className="inline-flex items-center gap-2">
+                        <AreaIcon name={area.name} />
+                        {area.name}
+                      </span>
                     </h2>
                     {canManageLayout ? (
                       <Button
@@ -284,16 +314,14 @@ export function RestaurantFloorView({
                 ) : null}
 
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-                  {area.tables
-                    .filter((table) => table.isActive)
-                    .map((table) => (
-                      <TableTile
-                        isSelected={table.id === selectedTableId}
-                        key={table.id}
-                        onSelect={onSelectTable}
-                        table={table}
-                      />
-                    ))}
+                  {getActiveTables(area.tables).map((table) => (
+                    <TableTile
+                      isSelected={table.id === selectedTableId}
+                      key={table.id}
+                      onSelect={onSelectTable}
+                      table={table}
+                    />
+                  ))}
                   {canManageLayout ? (
                     <QuickAddTableCard
                       onClick={() => {
