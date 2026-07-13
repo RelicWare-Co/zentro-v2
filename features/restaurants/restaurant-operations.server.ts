@@ -144,7 +144,8 @@ export async function assertAreaFromOrganization(
     .where(
       and(
         eq(restaurantArea.organizationId, organizationId),
-        eq(restaurantArea.id, areaId)
+        eq(restaurantArea.id, areaId),
+        isNull(restaurantArea.deletedAt)
       )
     )
     .limit(1);
@@ -272,7 +273,12 @@ export async function getNextAreaSortOrder(
   const [row] = await database
     .select({ sortOrder: restaurantArea.sortOrder })
     .from(restaurantArea)
-    .where(eq(restaurantArea.organizationId, organizationId))
+    .where(
+      and(
+        eq(restaurantArea.organizationId, organizationId),
+        isNull(restaurantArea.deletedAt)
+      )
+    )
     .orderBy(desc(restaurantArea.sortOrder))
     .limit(1);
 

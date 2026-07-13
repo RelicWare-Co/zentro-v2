@@ -780,6 +780,19 @@ describe("restaurant module", () => {
         .where(eq(restaurantOrder.id, orderId));
       expect(orderRow?.tableId).toBe(tableId);
 
+      const areasAfterDelete = await deleteRestaurantAreaViaZero({
+        zeroDb,
+        ctx,
+        input: { id: areaId },
+      });
+      expect(areasAfterDelete).toEqual([]);
+
+      const [areaRow] = await db
+        .select({ deletedAt: restaurantArea.deletedAt })
+        .from(restaurantArea)
+        .where(eq(restaurantArea.id, areaId));
+      expect(areaRow?.deletedAt).toBeInstanceOf(Date);
+
       await cleanup();
     });
   });

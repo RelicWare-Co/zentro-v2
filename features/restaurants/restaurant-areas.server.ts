@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import type { z } from "zod";
 import {
   restaurantArea,
@@ -41,7 +41,12 @@ export async function ensureDefaultRestaurantAreas(
   const existingAreas = await db
     .select({ name: restaurantArea.name })
     .from(restaurantArea)
-    .where(eq(restaurantArea.organizationId, organizationId));
+    .where(
+      and(
+        eq(restaurantArea.organizationId, organizationId),
+        isNull(restaurantArea.deletedAt)
+      )
+    );
   const existingNames = new Set(existingAreas.map((area) => area.name));
   const missingNames = DEFAULT_RESTAURANT_AREA_NAMES.filter(
     (name) => !existingNames.has(name)
@@ -148,7 +153,8 @@ export async function runDeleteRestaurantArea(
     .where(
       and(
         eq(restaurantTable.organizationId, auth.organizationId),
-        eq(restaurantTable.areaId, args.id)
+        eq(restaurantTable.areaId, args.id),
+        isNull(restaurantTable.deletedAt)
       )
     )
     .limit(1);
@@ -167,11 +173,13 @@ export async function runDeleteRestaurantArea(
   }
 
   await db
-    .delete(restaurantArea)
+    .update(restaurantArea)
+    .set({ deletedAt: new Date(), updatedAt: new Date() })
     .where(
       and(
         eq(restaurantArea.organizationId, auth.organizationId),
-        eq(restaurantArea.id, args.id)
+        eq(restaurantArea.id, args.id),
+        isNull(restaurantArea.deletedAt)
       )
     );
 }

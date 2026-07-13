@@ -378,6 +378,7 @@ export default drizzleZeroConfig(drizzleSchema, {
       organizationId: true,
       name: true,
       sortOrder: true,
+      deletedAt: true,
       createdAt: true,
       updatedAt: true,
     },

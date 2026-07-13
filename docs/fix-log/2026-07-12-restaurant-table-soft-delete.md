@@ -1,9 +1,10 @@
-# Restaurant table soft delete
+# Restaurant area and table soft delete
 
 ## Symptom
 
 Administrators could not remove a restaurant table once it had any order
-history. The API returned `No puedes eliminar una mesa que ya tiene historial.`
+history. After table soft deletion, they also could not remove its now-empty
+area because the area validation still counted soft-deleted tables.
 
 ## Root cause
 
@@ -14,12 +15,15 @@ would risk breaking historical reporting.
 
 ## Solution
 
-- Added nullable `restaurant_table.deleted_at` and replicated it through Zero.
-- Changed table deletion to mark the table as deleted and keep its order IDs.
-- Hide deleted tables from the restaurant layout and table-detail queries.
+- Added nullable `deleted_at` columns to restaurant tables and areas and
+  replicated them through Zero.
+- Changed table and area deletion to mark their rows as deleted and keep order
+  IDs intact.
+- Hide deleted areas and tables from the restaurant layout and table-detail
+  queries.
 - Keep deletion blocked only while the table has an open order.
-- Use a partial unique index for active table names, allowing a replacement
-  table with the same name after deletion.
+- Use partial unique indexes for active area and table names, allowing a
+  replacement with the same name after deletion.
 
 ## Verification
 
@@ -27,6 +31,6 @@ would risk breaking historical reporting.
 - `bunx tsc --noEmit`
 - `bun run check`
 
-The regression test creates a closed order, soft-deletes its table, verifies
-that the table is absent from the active configuration, and confirms that the
+The regression test creates a closed order, soft-deletes its table and area,
+verifies both are absent from the active configuration, and confirms that the
 order still references the table.

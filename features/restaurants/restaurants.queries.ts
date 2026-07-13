@@ -15,6 +15,7 @@ export const restaurantsQueries = {
 
       return zql.restaurantArea
         .where("organizationId", ctx.orgID)
+        .where("deletedAt", "IS", null)
         .related("tables", (query) =>
           query
             .where("deletedAt", "IS", null)

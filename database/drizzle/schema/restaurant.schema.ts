@@ -22,6 +22,7 @@ export const restaurantArea = pgTable(
       .references(() => organization.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
     sortOrder: integer("sort_order").default(0).notNull(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "date" }),
     createdAt: timestamp("created_at", {
       withTimezone: true,
       mode: "date",
@@ -31,10 +32,9 @@ export const restaurantArea = pgTable(
       .notNull(),
   },
   (table) => [
-    uniqueIndex("restaurantArea_org_name_uidx").on(
-      table.organizationId,
-      table.name
-    ),
+    uniqueIndex("restaurantArea_org_name_uidx")
+      .on(table.organizationId, table.name)
+      .where(sql`${table.deletedAt} is null`),
   ]
 );
 

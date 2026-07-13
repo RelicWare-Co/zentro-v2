@@ -59,7 +59,7 @@ export const saleItem = pgTable(
       .notNull()
       .references(() => product.id),
     quantity: integer("quantity").notNull(),
-    unitPrice: integer("unit_price").notNull(), // Precio unitario congelado al momento de la venta
+    unitPrice: integer("unit_price").notNull(), // Precio de venta congelado al momento de la venta
     subtotal: integer("subtotal").notNull(), // quantity * unitPrice
     taxRate: integer("tax_rate").notNull().default(0), // % de impuesto aplicado (congelado)
     taxAmount: integer("tax_amount").notNull().default(0), // Monto de impuesto calculado

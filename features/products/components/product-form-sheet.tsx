@@ -288,7 +288,7 @@ function ProductFormSheetContent({
             </div>
           </ProductsField>
           {form.isIngredient ? null : (
-            <ProductsField label="Precio unitario" required>
+            <ProductsField label="Precio de venta" required>
               <TextInput
                 id="product-form-price"
                 inputMode="numeric"
