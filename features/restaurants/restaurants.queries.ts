@@ -16,7 +16,10 @@ export const restaurantsQueries = {
       return zql.restaurantArea
         .where("organizationId", ctx.orgID)
         .related("tables", (query) =>
-          query.orderBy("sortOrder", "asc").orderBy("name", "asc")
+          query
+            .where("deletedAt", "IS", null)
+            .orderBy("sortOrder", "asc")
+            .orderBy("name", "asc")
         )
         .orderBy("sortOrder", "asc")
         .orderBy("name", "asc");
@@ -53,6 +56,7 @@ export const restaurantsQueries = {
         return zql.restaurantTable
           .where("id", normalizedTableId)
           .where("organizationId", ctx.orgID)
+          .where("deletedAt", "IS", null)
           .related("area")
           .limit(1);
       }

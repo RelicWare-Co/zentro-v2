@@ -389,6 +389,7 @@ export default drizzleZeroConfig(drizzleSchema, {
       seats: true,
       sortOrder: true,
       isActive: true,
+      deletedAt: true,
       createdAt: true,
       updatedAt: true,
     },

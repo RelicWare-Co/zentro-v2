@@ -6,6 +6,7 @@ import {
   restaurantKitchenTicket,
   restaurantOrder,
   restaurantOrderItem,
+  restaurantTable,
 } from "@/database/drizzle/schema/restaurant.schema";
 import { sale } from "@/database/drizzle/schema/sales.schema";
 import { serializeOrganizationSettingsMetadata } from "@/features/settings/settings.shared";
@@ -642,7 +643,7 @@ describe("restaurant module", () => {
       await cleanup();
     });
 
-    test("manager can create, update, and delete area and table", async () => {
+    test("manager can create, update, and delete active restaurant configuration", async () => {
       const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db, {
         memberRole: "owner",
@@ -703,12 +704,81 @@ describe("restaurant module", () => {
       });
       expect(deleteTableResult[0].tables.length).toBe(0);
 
+      const emptyAreaResult = await createRestaurantAreaViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: { name: "Empty garden" },
+      });
+      const emptyAreaId = emptyAreaResult.find(
+        (area) => area.name === "Empty garden"
+      )?.id;
+      expect(emptyAreaId).toBeString();
+
       const deleteAreaResult = await deleteRestaurantAreaViaZero({
         zeroDb,
         ctx: zeroCtx,
-        input: { id: areaId },
+        input: { id: emptyAreaId ?? "" },
       });
-      expect(deleteAreaResult.length).toBe(0);
+      expect(deleteAreaResult.map((area) => area.name)).toEqual([
+        "Garden Updated",
+      ]);
+
+      await cleanup();
+    });
+
+    test("manager can soft-delete a table with closed order history", async () => {
+      const { db, cleanup } = await createTestDb();
+      const { organizationId, userId } = await seedOrganizationWithMember(db, {
+        memberRole: "owner",
+      });
+      await setRestaurantModuleEnabled(db, organizationId, true);
+
+      const areaId = await seedRestaurantArea(db, {
+        organizationId,
+        name: "Historic area",
+      });
+      const tableId = await seedRestaurantTable(db, {
+        organizationId,
+        areaId,
+        name: "Historic table",
+      });
+      const orderId = crypto.randomUUID();
+      const now = new Date();
+      await db.insert(restaurantOrder).values({
+        id: orderId,
+        organizationId,
+        tableId,
+        openedByUserId: userId,
+        orderNumber: 1,
+        status: "closed",
+        guestCount: 2,
+        createdAt: now,
+        updatedAt: now,
+        closedAt: now,
+      });
+
+      const zeroDb = createZeroTestDb(db);
+      const ctx = createZeroContext(userId, organizationId);
+
+      const configuration = await deleteRestaurantTableViaZero({
+        zeroDb,
+        ctx,
+        input: { id: tableId },
+      });
+
+      expect(configuration[0]?.tables).toEqual([]);
+
+      const [tableRow] = await db
+        .select({ deletedAt: restaurantTable.deletedAt })
+        .from(restaurantTable)
+        .where(eq(restaurantTable.id, tableId));
+      expect(tableRow?.deletedAt).toBeInstanceOf(Date);
+
+      const [orderRow] = await db
+        .select({ tableId: restaurantOrder.tableId })
+        .from(restaurantOrder)
+        .where(eq(restaurantOrder.id, orderId));
+      expect(orderRow?.tableId).toBe(tableId);
 
       await cleanup();
     });

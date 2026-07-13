@@ -1,0 +1,1 @@
+ALTER TABLE "restaurant_table" ADD COLUMN "deleted_at" timestamp with time zone;

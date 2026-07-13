@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import type { z } from "zod";
 import {
   restaurantOrder,
@@ -107,21 +107,24 @@ export async function runDeleteRestaurantTable(
     .where(
       and(
         eq(restaurantOrder.organizationId, auth.organizationId),
-        eq(restaurantOrder.tableId, args.id)
+        eq(restaurantOrder.tableId, args.id),
+        eq(restaurantOrder.status, "open")
       )
     )
     .limit(1);
 
   if (orderRow) {
-    throw new Error("No puedes eliminar una mesa que ya tiene historial.");
+    throw new Error("No puedes eliminar una mesa que tiene una orden abierta.");
   }
 
   await db
-    .delete(restaurantTable)
+    .update(restaurantTable)
+    .set({ deletedAt: new Date(), updatedAt: new Date() })
     .where(
       and(
         eq(restaurantTable.organizationId, auth.organizationId),
-        eq(restaurantTable.id, args.id)
+        eq(restaurantTable.id, args.id),
+        isNull(restaurantTable.deletedAt)
       )
     );
 }

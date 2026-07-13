@@ -1,0 +1,2 @@
+DROP INDEX "restaurantTable_org_area_name_uidx";--> statement-breakpoint
+CREATE UNIQUE INDEX "restaurantTable_org_area_name_uidx" ON "restaurant_table" USING btree ("organization_id","area_id","name") WHERE "restaurant_table"."deleted_at" is null;

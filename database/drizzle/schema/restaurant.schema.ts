@@ -1,4 +1,4 @@
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   boolean,
   foreignKey,
@@ -52,6 +52,7 @@ export const restaurantTable = pgTable(
     seats: integer("seats").default(0).notNull(),
     sortOrder: integer("sort_order").default(0).notNull(),
     isActive: boolean("is_active").default(true).notNull(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "date" }),
     createdAt: timestamp("created_at", {
       withTimezone: true,
       mode: "date",
@@ -62,11 +63,9 @@ export const restaurantTable = pgTable(
   },
   (table) => [
     index("restaurantTable_areaId_idx").on(table.areaId),
-    uniqueIndex("restaurantTable_org_area_name_uidx").on(
-      table.organizationId,
-      table.areaId,
-      table.name
-    ),
+    uniqueIndex("restaurantTable_org_area_name_uidx")
+      .on(table.organizationId, table.areaId, table.name)
+      .where(sql`${table.deletedAt} is null`),
   ]
 );
 

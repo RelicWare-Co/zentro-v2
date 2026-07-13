@@ -175,7 +175,8 @@ export async function assertTableFromOrganization(
     .where(
       and(
         eq(restaurantTable.organizationId, organizationId),
-        eq(restaurantTable.id, tableId)
+        eq(restaurantTable.id, tableId),
+        isNull(restaurantTable.deletedAt)
       )
     )
     .limit(1);
@@ -289,7 +290,8 @@ export async function getNextTableSortOrder(
     .where(
       and(
         eq(restaurantTable.organizationId, organizationId),
-        eq(restaurantTable.areaId, areaId)
+        eq(restaurantTable.areaId, areaId),
+        isNull(restaurantTable.deletedAt)
       )
     )
     .orderBy(desc(restaurantTable.sortOrder))
