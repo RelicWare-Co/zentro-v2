@@ -83,6 +83,7 @@ export const updateRestaurantTableArgsSchema = zod.object({
 export const deleteRestaurantTableArgsSchema = zod.object({
   id: zod.string().trim().min(1),
 });
+export const ensureDefaultRestaurantAreasArgsSchema = zod.object({});
 
 export const restaurantsMutators = {
   restaurants: {
@@ -148,6 +149,12 @@ export const restaurantsMutators = {
     ),
     deleteArea: defineZentroMutator(
       deleteRestaurantAreaArgsSchema,
+      async () => {
+        // Server-only restaurant writes; client completes without optimistic writes.
+      }
+    ),
+    ensureDefaultAreas: defineZentroMutator(
+      ensureDefaultRestaurantAreasArgsSchema,
       async () => {
         // Server-only restaurant writes; client completes without optimistic writes.
       }

@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { eq } from "drizzle-orm";
 import { organization } from "@/database/drizzle/schema/auth.schema";
 import {
+  restaurantArea,
   restaurantKitchenTicket,
   restaurantOrder,
   restaurantOrderItem,
@@ -24,6 +25,7 @@ import {
   createRestaurantTableViaZero,
   deleteRestaurantAreaViaZero,
   deleteRestaurantTableViaZero,
+  ensureDefaultRestaurantAreasViaZero,
   getKitchenBoardViaZero,
   getRestaurantBootstrapViaZero,
   getRestaurantTableDetailViaZero,
@@ -82,6 +84,37 @@ async function setKitchenDisplayEnabled(
 }
 
 describe("restaurant module", () => {
+  describe("VAL-REST-000: special areas can be restored for existing organizations", () => {
+    test("creates only the missing delivery and pickup areas", async () => {
+      const { db, cleanup } = await createTestDb();
+      const { organizationId, userId } = await seedOrganizationWithMember(db, {
+        memberRole: "owner",
+      });
+      await setRestaurantModuleEnabled(db, organizationId, true);
+      await seedRestaurantArea(db, {
+        organizationId,
+        name: "Domicilios",
+      });
+
+      const zeroDb = createZeroTestDb(db);
+      const ctx = createZeroContext(userId, organizationId);
+
+      await ensureDefaultRestaurantAreasViaZero({ zeroDb, ctx });
+      await ensureDefaultRestaurantAreasViaZero({ zeroDb, ctx });
+
+      const areas = await db
+        .select({ name: restaurantArea.name })
+        .from(restaurantArea)
+        .where(eq(restaurantArea.organizationId, organizationId));
+      expect(areas.map((area) => area.name).sort()).toEqual([
+        "Domicilios",
+        "Recogida",
+      ]);
+
+      await cleanup();
+    });
+  });
+
   describe("VAL-REST-001: bootstrap rejects when restaurant module is disabled", () => {
     test("restaurant bootstrap rejects when module disabled", async () => {
       const { db, cleanup } = await createTestDb();

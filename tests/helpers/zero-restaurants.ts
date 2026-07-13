@@ -160,6 +160,19 @@ type DeleteAreaInput = z.infer<typeof DeleteRestaurantAreaInputSchema>;
 type CreateTableInput = z.infer<typeof CreateRestaurantTableInputSchema>;
 type DeleteTableInput = z.infer<typeof DeleteRestaurantTableInputSchema>;
 
+export async function ensureDefaultRestaurantAreasViaZero({
+  zeroDb,
+  ctx,
+}: {
+  zeroDb: ZeroTestDb;
+  ctx: ZeroContext;
+}) {
+  await zeroDb.transaction((tx) =>
+    serverMutators.restaurants.ensureDefaultAreas.fn({ args: {}, ctx, tx })
+  );
+  return getRestaurantConfigurationViaZero({ zeroDb, ctx });
+}
+
 export async function addRestaurantOrderItemViaZero({
   db,
   zeroDb,

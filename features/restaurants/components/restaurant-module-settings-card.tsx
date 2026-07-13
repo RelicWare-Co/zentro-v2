@@ -1,5 +1,5 @@
 import { Alert, Button, Divider, Switch, TextInput } from "@mantine/core";
-import { Plus, Trash2, UtensilsCrossed } from "lucide-react";
+import { Plus, RefreshCw, Trash2, UtensilsCrossed } from "lucide-react";
 import { useState } from "react";
 import type { ModuleAccessState } from "@/features/modules/module-access.shared";
 import type { RestaurantConfiguration } from "@/features/restaurants/hooks/use-restaurants";
@@ -8,6 +8,7 @@ import {
   useCreateRestaurantTableMutation,
   useDeleteRestaurantAreaMutation,
   useDeleteRestaurantTableMutation,
+  useEnsureDefaultRestaurantAreasMutation,
   useUpdateRestaurantTableMutation,
 } from "@/features/restaurants/hooks/use-restaurants";
 import type { OrganizationSettings } from "@/features/settings/settings.shared";
@@ -29,6 +30,8 @@ export function RestaurantModuleSettingsCard(
   const createRestaurantTableMutation = useCreateRestaurantTableMutation();
   const deleteRestaurantAreaMutation = useDeleteRestaurantAreaMutation();
   const deleteRestaurantTableMutation = useDeleteRestaurantTableMutation();
+  const ensureDefaultRestaurantAreasMutation =
+    useEnsureDefaultRestaurantAreasMutation();
   const updateRestaurantTableMutation = useUpdateRestaurantTableMutation();
   const [newAreaName, setNewAreaName] = useState("");
   const [newTableDrafts, setNewTableDrafts] = useState<
@@ -47,6 +50,9 @@ export function RestaurantModuleSettingsCard(
     }
     if (deleteRestaurantTableMutation.error instanceof Error) {
       return deleteRestaurantTableMutation.error.message;
+    }
+    if (ensureDefaultRestaurantAreasMutation.error instanceof Error) {
+      return ensureDefaultRestaurantAreasMutation.error.message;
     }
     if (updateRestaurantTableMutation.error instanceof Error) {
       return updateRestaurantTableMutation.error.message;
@@ -232,6 +238,32 @@ export function RestaurantModuleSettingsCard(
         <Divider color="dark.4" />
 
         <div className="space-y-4">
+          <div className="flex flex-col gap-3 rounded-lg border border-zinc-800 bg-black/10 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="font-medium text-white">Zonas especiales</p>
+              <p className="text-sm text-zinc-400">
+                Crea Domicilios y Recogida si faltan en esta organización.
+              </p>
+            </div>
+            <Button
+              disabled={
+                !(
+                  props.canManageSettings &&
+                  props.settings.modules.restaurants.enabled
+                ) || ensureDefaultRestaurantAreasMutation.isPending
+              }
+              leftSection={<RefreshCw aria-hidden="true" className="size-4" />}
+              loading={ensureDefaultRestaurantAreasMutation.isPending}
+              onClick={() => {
+                ensureDefaultRestaurantAreasMutation.mutate(undefined);
+              }}
+              type="button"
+              variant="outline"
+            >
+              Crear zonas faltantes
+            </Button>
+          </div>
+
           <div className="grid items-end gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
             <TextInput
               autoComplete="off"

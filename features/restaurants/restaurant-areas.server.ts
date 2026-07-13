@@ -65,6 +65,18 @@ export async function ensureDefaultRestaurantAreas(
   );
 }
 
+export async function runEnsureDefaultRestaurantAreas(
+  db: RestaurantDbExecutor,
+  auth: RestaurantAuth
+) {
+  await assertManagerAccess({
+    db,
+    organizationId: auth.organizationId,
+    user: { id: auth.userId },
+  });
+  await ensureDefaultRestaurantAreas(db, auth.organizationId);
+}
+
 export async function runCreateRestaurantArea(
   db: RestaurantDbExecutor,
   args: z.infer<typeof CreateRestaurantAreaInputSchema>,

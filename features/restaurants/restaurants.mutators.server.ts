@@ -8,6 +8,7 @@ import {
   runDeleteRestaurantArea,
   runDeleteRestaurantDraftItem,
   runDeleteRestaurantTable,
+  runEnsureDefaultRestaurantAreas,
   runSendRestaurantOrderToKitchen,
   runUpdateRestaurantArea,
   runUpdateRestaurantDraftItem,
@@ -24,6 +25,7 @@ import {
   deleteRestaurantAreaArgsSchema,
   deleteRestaurantDraftItemArgsSchema,
   deleteRestaurantTableArgsSchema,
+  ensureDefaultRestaurantAreasArgsSchema,
   sendRestaurantOrderToKitchenArgsSchema,
   updateRestaurantAreaArgsSchema,
   updateRestaurantDraftItemArgsSchema,
@@ -116,6 +118,16 @@ export const restaurantsServerMutators = {
   deleteArea: defineZentroServerMutator(
     deleteRestaurantAreaArgsSchema,
     restaurantRunner(runDeleteRestaurantArea),
+    { operationName: RESTAURANT_OP_NAME }
+  ),
+  ensureDefaultAreas: defineZentroServerMutator(
+    ensureDefaultRestaurantAreasArgsSchema,
+    async ({ drizzleTx, auth }) => {
+      await runEnsureDefaultRestaurantAreas(drizzleTx as RestaurantDbExecutor, {
+        organizationId: auth.organizationId,
+        userId: auth.userId,
+      });
+    },
     { operationName: RESTAURANT_OP_NAME }
   ),
   createTable: defineZentroServerMutator(

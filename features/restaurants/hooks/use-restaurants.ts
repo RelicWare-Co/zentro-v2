@@ -455,6 +455,14 @@ export function useDeleteRestaurantAreaMutation() {
   );
 }
 
+export function useEnsureDefaultRestaurantAreasMutation() {
+  return useZeroMutation(async (_input: undefined, zero) => {
+    await waitForZeroMutation(
+      zero.mutate(mutators.restaurants.ensureDefaultAreas({}))
+    );
+  });
+}
+
 export function useCreateRestaurantTableMutation() {
   return useZeroMutation(
     async (input: z.infer<typeof CreateRestaurantTableInputSchema>, zero) => {
