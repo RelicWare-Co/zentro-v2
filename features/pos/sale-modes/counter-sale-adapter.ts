@@ -8,6 +8,10 @@ import type {
   SalePayment,
 } from "@/features/pos/sale-modes/types";
 
+async function noOpAsync() {
+  // Los comentarios de cocina aplican únicamente a órdenes de mesa.
+}
+
 export function useCounterSaleAdapter(
   params: SaleModeFactoryParams
 ): SaleModeAdapter {
@@ -64,6 +68,7 @@ export function useCounterSaleAdapter(
     removeFromCart: cart.removeFromCart,
     clearCart: cart.clearCart,
     updateItemDiscount: cart.updateItemDiscount,
+    updateItemNotes: noOpAsync,
     setDiscountInput: cart.setDiscountInput,
     getProductQuantity: cart.getProductQuantity,
     finalizeSale,

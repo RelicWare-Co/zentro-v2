@@ -1,7 +1,13 @@
 import { notifications } from "@mantine/notifications";
 import { useQuery as useZeroQuery } from "@rocicorp/zero/react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { PosTableOrderItemStatus } from "@/features/pos/sale-modes/types";
+import {
+  buildDraftItemUpdateInput,
+  createItemMutationQueue,
+  getEffectiveItemQuantity,
+  type ItemQuantityOverrides,
+} from "@/features/pos/table-order-item-edits.shared";
 import type { CartItem, CartItemModifier, Product } from "@/features/pos/types";
 import { calculateCartTotals } from "@/features/pos/utils";
 import {
@@ -20,12 +26,27 @@ import { queries } from "@/zero/queries";
 
 type TableOpenOrder = NonNullable<RestaurantTableDetail["openOrder"]>;
 type TableOrderItem = TableOpenOrder["items"][number];
+type ItemNotesOverrides = Record<string, string | null>;
 
 function getErrorDescription(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
 
-function buildTableCartItem(item: TableOrderItem): CartItem {
+function getEffectiveItemNotes(
+  item: TableOrderItem,
+  itemNotesOverrides: ItemNotesOverrides
+) {
+  if (Object.hasOwn(itemNotesOverrides, item.id)) {
+    return itemNotesOverrides[item.id] ?? null;
+  }
+  return item.notes ?? null;
+}
+
+function buildTableCartItem(
+  item: TableOrderItem,
+  quantity: number,
+  notes: string | null
+): CartItem {
   const product: Product = {
     id: item.productId,
     name: item.productName,
@@ -45,7 +66,7 @@ function buildTableCartItem(item: TableOrderItem): CartItem {
   return {
     id: item.id,
     product,
-    quantity: item.quantity,
+    quantity,
     modifiers: item.modifiers.map((modifier) => ({
       id: modifier.modifierProductId,
       name: modifier.name,
@@ -53,6 +74,7 @@ function buildTableCartItem(item: TableOrderItem): CartItem {
       quantity: modifier.quantity,
     })),
     discountAmount: item.discountAmount,
+    notes,
   };
 }
 
@@ -67,6 +89,13 @@ export function usePosTableOrder(
   enabled = true
 ) {
   const [activeTableId, setActiveTableId] = useState<string | null>(null);
+  const [itemNotesOverrides, setItemNotesOverrides] =
+    useState<ItemNotesOverrides>({});
+  const [itemQuantityOverrides, setItemQuantityOverrides] =
+    useState<ItemQuantityOverrides>({});
+  const itemNotesOverridesRef = useRef<ItemNotesOverrides>({});
+  const itemQuantityOverridesRef = useRef<ItemQuantityOverrides>({});
+  const itemMutationQueueRef = useRef(createItemMutationQueue());
   const tableDetailQuery = useRestaurantTableDetail(
     enabled ? activeTableId : null
   );
@@ -87,9 +116,66 @@ export function usePosTableOrder(
     [openOrder?.items]
   );
 
+  useEffect(() => {
+    setItemNotesOverrides((previousOverrides) => {
+      let changed = false;
+      const remainingOverrides: ItemNotesOverrides = {};
+
+      for (const [itemId, notes] of Object.entries(previousOverrides)) {
+        const item = activeItems.find((activeItem) => activeItem.id === itemId);
+        if (item && (item.notes ?? null) !== notes) {
+          remainingOverrides[itemId] = notes;
+        } else {
+          changed = true;
+        }
+      }
+
+      if (changed) {
+        itemNotesOverridesRef.current = remainingOverrides;
+        return remainingOverrides;
+      }
+
+      return previousOverrides;
+    });
+  }, [activeItems]);
+
+  useEffect(() => {
+    setItemQuantityOverrides((previousOverrides) => {
+      let changed = false;
+      const remainingOverrides: ItemQuantityOverrides = {};
+
+      for (const [itemId, quantity] of Object.entries(previousOverrides)) {
+        const item = activeItems.find((activeItem) => activeItem.id === itemId);
+        if (item && item.quantity !== quantity) {
+          remainingOverrides[itemId] = quantity;
+        } else {
+          changed = true;
+        }
+      }
+
+      if (changed) {
+        itemQuantityOverridesRef.current = remainingOverrides;
+        return remainingOverrides;
+      }
+
+      return previousOverrides;
+    });
+  }, [activeItems]);
+
   const cart = useMemo(
-    () => activeItems.map((item) => buildTableCartItem(item)),
-    [activeItems]
+    () =>
+      activeItems.map((item) =>
+        buildTableCartItem(
+          item,
+          getEffectiveItemQuantity(
+            item.id,
+            item.quantity,
+            itemQuantityOverrides
+          ),
+          getEffectiveItemNotes(item, itemNotesOverrides)
+        )
+      ),
+    [activeItems, itemNotesOverrides, itemQuantityOverrides]
   );
 
   const totals = useMemo(
@@ -115,12 +201,22 @@ export function usePosTableOrder(
       if (!enabled) {
         return;
       }
+      itemNotesOverridesRef.current = {};
+      itemQuantityOverridesRef.current = {};
+      itemMutationQueueRef.current.clear();
+      setItemNotesOverrides({});
+      setItemQuantityOverrides({});
       setActiveTableId(tableId);
     },
     [enabled]
   );
 
   const exitTable = useCallback(() => {
+    itemNotesOverridesRef.current = {};
+    itemQuantityOverridesRef.current = {};
+    itemMutationQueueRef.current.clear();
+    setItemNotesOverrides({});
+    setItemQuantityOverrides({});
     setActiveTableId(null);
   }, []);
 
@@ -151,6 +247,12 @@ export function usePosTableOrder(
     [enabled, activeTableId, addItemMutation]
   );
 
+  const enqueueItemMutation = useCallback(
+    (itemId: string, mutation: () => Promise<void>) =>
+      itemMutationQueueRef.current.enqueue(itemId, mutation),
+    []
+  );
+
   const updateItemQuantity = useCallback(
     async (orderItemId: string, delta: number) => {
       const item = activeItems.find(
@@ -167,18 +269,44 @@ export function usePosTableOrder(
         });
         return;
       }
-      const nextQuantity = item.quantity + delta;
+      const nextQuantity =
+        getEffectiveItemQuantity(
+          item.id,
+          item.quantity,
+          itemQuantityOverridesRef.current
+        ) + delta;
       try {
         if (nextQuantity <= 0) {
-          await deleteDraftItemMutation.mutateAsync({ orderItemId });
+          await enqueueItemMutation(orderItemId, async () => {
+            await deleteDraftItemMutation.mutateAsync({ orderItemId });
+          });
           return;
         }
-        await updateDraftItemMutation.mutateAsync({
-          orderItemId,
-          quantity: nextQuantity,
-          notes: undefined,
+
+        const nextOverrides = {
+          ...itemQuantityOverridesRef.current,
+          [orderItemId]: nextQuantity,
+        };
+        itemQuantityOverridesRef.current = nextOverrides;
+        setItemQuantityOverrides(nextOverrides);
+
+        await enqueueItemMutation(orderItemId, async () => {
+          await updateDraftItemMutation.mutateAsync(
+            buildDraftItemUpdateInput({
+              itemId: orderItemId,
+              replicatedQuantity: item.quantity,
+              quantityOverrides: itemQuantityOverridesRef.current,
+              notes: undefined,
+            })
+          );
         });
       } catch (error) {
+        if (itemQuantityOverridesRef.current[orderItemId] === nextQuantity) {
+          const { [orderItemId]: _discarded, ...remainingOverrides } =
+            itemQuantityOverridesRef.current;
+          itemQuantityOverridesRef.current = remainingOverrides;
+          setItemQuantityOverrides(remainingOverrides);
+        }
         notifications.show({
           title: "No se pudo actualizar el ítem",
           message: getErrorDescription(error, "Inténtalo de nuevo."),
@@ -186,7 +314,12 @@ export function usePosTableOrder(
         });
       }
     },
-    [activeItems, deleteDraftItemMutation, updateDraftItemMutation]
+    [
+      activeItems,
+      deleteDraftItemMutation,
+      enqueueItemMutation,
+      updateDraftItemMutation,
+    ]
   );
 
   const removeItem = useCallback(
@@ -206,7 +339,9 @@ export function usePosTableOrder(
         return;
       }
       try {
-        await deleteDraftItemMutation.mutateAsync({ orderItemId });
+        await enqueueItemMutation(orderItemId, async () => {
+          await deleteDraftItemMutation.mutateAsync({ orderItemId });
+        });
       } catch (error) {
         notifications.show({
           title: "No se pudo eliminar el ítem",
@@ -215,19 +350,57 @@ export function usePosTableOrder(
         });
       }
     },
-    [activeItems, deleteDraftItemMutation]
+    [activeItems, deleteDraftItemMutation, enqueueItemMutation]
+  );
+
+  const updateItemNotes = useCallback(
+    async (orderItemId: string, notes: string | null) => {
+      const item = activeItems.find(
+        (orderItem) => orderItem.id === orderItemId
+      );
+      if (!item) {
+        throw new Error("El ítem ya no está disponible en la orden.");
+      }
+      if (item.status !== "draft") {
+        throw new Error("Solo puedes editar ítems pendientes de envío.");
+      }
+
+      const normalizedNotes = notes?.trim() || null;
+      await enqueueItemMutation(orderItemId, async () => {
+        await updateDraftItemMutation.mutateAsync(
+          buildDraftItemUpdateInput({
+            itemId: orderItemId,
+            replicatedQuantity: item.quantity,
+            quantityOverrides: itemQuantityOverridesRef.current,
+            notes: normalizedNotes,
+          })
+        );
+      });
+      const nextOverrides = {
+        ...itemNotesOverridesRef.current,
+        [orderItemId]: normalizedNotes,
+      };
+      itemNotesOverridesRef.current = nextOverrides;
+      setItemNotesOverrides(nextOverrides);
+    },
+    [activeItems, enqueueItemMutation, updateDraftItemMutation]
   );
 
   const sendToKitchen = useCallback(async () => {
     if (!(openOrder && table)) {
       return;
     }
+    await itemMutationQueueRef.current.waitForAll();
     const draftItems = openOrder.items
       .filter((item) => item.status === "draft")
       .map((item) => ({
         productName: item.productName,
-        quantity: item.quantity,
-        notes: item.notes ?? null,
+        quantity: getEffectiveItemQuantity(
+          item.id,
+          item.quantity,
+          itemQuantityOverridesRef.current
+        ),
+        notes: getEffectiveItemNotes(item, itemNotesOverridesRef.current),
         modifiers: item.modifiers.map((modifier) => ({
           name: modifier.name,
           quantity: modifier.quantity,
@@ -347,6 +520,7 @@ export function usePosTableOrder(
     addProduct,
     updateItemQuantity,
     removeItem,
+    updateItemNotes,
     sendToKitchen,
     closeTableOrder,
     cancelTableOrder,

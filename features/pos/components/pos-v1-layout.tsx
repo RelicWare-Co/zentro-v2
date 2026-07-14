@@ -102,6 +102,7 @@ export function PosV1Layout() {
             onRemoveItem={actions.removeFromCart}
             onSendToKitchen={actions.sendTableOrderToKitchen}
             onUpdateItemDiscount={actions.updateItemDiscount}
+            onUpdateItemNotes={actions.updateItemNotes}
             onUpdateQuantity={actions.updateQuantity}
             saleSuccessToken={state.saleSuccessToken}
             tableSession={state.tableSession}
@@ -147,6 +148,7 @@ export function PosV1Layout() {
                 onRemoveItem={actions.removeFromCart}
                 onSendToKitchen={actions.sendTableOrderToKitchen}
                 onUpdateItemDiscount={actions.updateItemDiscount}
+                onUpdateItemNotes={actions.updateItemNotes}
                 onUpdateQuantity={actions.updateQuantity}
                 saleSuccessToken={state.saleSuccessToken}
                 tableSession={state.tableSession}

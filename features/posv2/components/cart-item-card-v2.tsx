@@ -1,5 +1,5 @@
-import { TextInput } from "@mantine/core";
-import { Minus, Plus, Trash2 } from "lucide-react";
+import { Menu, TextInput } from "@mantine/core";
+import { MessageSquareText, Minus, Plus, Trash2 } from "lucide-react";
 import type { CartItem } from "@/features/pos/types";
 import { calculateItemTotal } from "@/features/pos/utils";
 import {
@@ -17,6 +17,7 @@ import { cn, formatMoneyInput, sanitizeMoneyInput } from "@/lib/utils";
 
 interface CartItemCardV2Props {
   item: CartItem;
+  onEditComment?: () => void;
   onRemove: () => void;
   onUpdateDiscount: (value: string) => void;
   onUpdateQuantity: (delta: number) => void;
@@ -29,6 +30,7 @@ interface CartItemCardV2Props {
 
 export function CartItemCardV2({
   item,
+  onEditComment,
   onUpdateQuantity,
   onRemove,
   onUpdateDiscount,
@@ -36,7 +38,7 @@ export function CartItemCardV2({
   showDiscount = true,
   statusBadge = null,
 }: CartItemCardV2Props) {
-  return (
+  const card = (
     <div
       className={cn(
         "group p-3 transition-colors",
@@ -87,6 +89,18 @@ export function CartItemCardV2({
                 ))}
               </div>
             )}
+            {item.notes ? (
+              <p className="mt-2 flex items-start gap-1.5 whitespace-pre-wrap break-words text-amber-100 text-xs leading-snug">
+                <MessageSquareText
+                  aria-hidden="true"
+                  className="mt-0.5 size-3 shrink-0"
+                />
+                <span>
+                  <span className="font-semibold">Nota: </span>
+                  {item.notes}
+                </span>
+              </p>
+            ) : null}
           </div>
           <div className="shrink-0 text-right font-bold text-sm text-white tabular-nums">
             {formatCurrency(calculateItemTotal(item))}
@@ -176,6 +190,20 @@ export function CartItemCardV2({
                   <Plus className="size-3" />
                 </button>
               </div>
+              {onEditComment ? (
+                <button
+                  aria-label={
+                    item.notes
+                      ? "Editar comentario para cocina"
+                      : "Agregar comentario para cocina"
+                  }
+                  className="rounded-lg p-1.5 text-amber-200 transition-colors hover:bg-amber-400/10 hover:text-amber-100"
+                  onClick={onEditComment}
+                  type="button"
+                >
+                  <MessageSquareText className="size-4" />
+                </button>
+              ) : null}
               <button
                 aria-label="Eliminar producto"
                 className={cn(
@@ -192,5 +220,23 @@ export function CartItemCardV2({
         </div>
       </div>
     </div>
+  );
+
+  if (!onEditComment) {
+    return card;
+  }
+
+  return (
+    <Menu shadow="md" width={220}>
+      <Menu.ContextMenu>{card}</Menu.ContextMenu>
+      <Menu.Dropdown>
+        <Menu.Item
+          leftSection={<MessageSquareText className="size-4" />}
+          onClick={onEditComment}
+        >
+          {item.notes ? "Editar comentario" : "Agregar comentario"}
+        </Menu.Item>
+      </Menu.Dropdown>
+    </Menu>
   );
 }

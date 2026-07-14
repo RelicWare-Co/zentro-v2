@@ -245,6 +245,13 @@ export function useTableSaleAdapter(
     [tableOrder.removeItem]
   );
 
+  const updateItemNotes = useCallback<SaleModeAdapter["updateItemNotes"]>(
+    async (cartItemId, notes) => {
+      await tableOrder.updateItemNotes(cartItemId, notes);
+    },
+    [tableOrder.updateItemNotes]
+  );
+
   const sendToKitchen = useCallback(async () => {
     await tableOrder.sendToKitchen();
   }, [tableOrder.sendToKitchen]);
@@ -281,6 +288,7 @@ export function useTableSaleAdapter(
     removeFromCart,
     clearCart: noOp,
     updateItemDiscount: noOp,
+    updateItemNotes,
     setDiscountInput,
     getProductQuantity,
     finalizeSale,

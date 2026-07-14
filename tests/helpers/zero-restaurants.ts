@@ -17,6 +17,7 @@ import type {
   DeleteRestaurantTableInputSchema,
   SendRestaurantOrderToKitchenInputSchema,
   UpdateRestaurantAreaInputSchema,
+  UpdateRestaurantDraftItemInputSchema,
   UpdateRestaurantTableInputSchema,
 } from "@/features/restaurants/restaurants.schema";
 import {
@@ -148,6 +149,9 @@ export async function getKitchenBoardViaZero({
 }
 
 type AddOrderItemInput = z.infer<typeof AddRestaurantOrderItemInputSchema>;
+type UpdateDraftItemInput = z.infer<
+  typeof UpdateRestaurantDraftItemInputSchema
+>;
 type CancelOrderInput = z.infer<typeof CancelRestaurantOrderInputSchema>;
 type SendToKitchenInput = z.infer<
   typeof SendRestaurantOrderToKitchenInputSchema
@@ -218,6 +222,20 @@ export async function addRestaurantOrderItemViaZero({
     itemId: itemRow.id,
     tableId: orderRow?.tableId ?? input.tableId,
   };
+}
+
+export async function updateRestaurantDraftItemViaZero({
+  zeroDb,
+  ctx,
+  input,
+}: {
+  zeroDb: ZeroTestDb;
+  ctx: ZeroContext;
+  input: UpdateDraftItemInput;
+}) {
+  await zeroDb.transaction((tx) =>
+    serverMutators.restaurants.updateDraftItem.fn({ args: input, ctx, tx })
+  );
 }
 
 export async function sendRestaurantOrderToKitchenViaZero({

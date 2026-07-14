@@ -119,6 +119,7 @@ export interface SaleModeAdapter {
   readonly totalItems: number;
   readonly totals: CartTotals;
   updateItemDiscount(cartItemId: string, value: string): void;
+  updateItemNotes(cartItemId: string, notes: string | null): Promise<void>;
   updateQuantity(cartItemId: string, delta: number): void;
 }
 

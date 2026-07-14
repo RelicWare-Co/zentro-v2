@@ -43,6 +43,7 @@ export interface PosCartContextValue {
   totalItems: number;
   totals: CartTotals;
   updateItemDiscount: (cartItemId: string, value: string) => void;
+  updateItemNotes: (cartItemId: string, notes: string | null) => Promise<void>;
   updateModifierQuantity: (modifierId: string, delta: number) => void;
   updateQuantity: (cartItemId: string, delta: number) => void;
 }
@@ -175,6 +176,13 @@ export function PosCartProvider({ children }: { children: ReactNode }) {
     [activeMode]
   );
 
+  const updateItemNotesAction = useCallback(
+    async (cartItemId: string, notes: string | null) => {
+      await activeMode.updateItemNotes(cartItemId, notes);
+    },
+    [activeMode]
+  );
+
   const setDiscountInputAction = useCallback(
     (value: string) => {
       activeMode.setDiscountInput(value);
@@ -247,6 +255,7 @@ export function PosCartProvider({ children }: { children: ReactNode }) {
     totalItems: activeMode.totalItems,
     totals: activeMode.totals,
     updateItemDiscount: updateItemDiscountAction,
+    updateItemNotes: updateItemNotesAction,
     updateModifierQuantity,
     updateQuantity: updateQuantityAction,
   };

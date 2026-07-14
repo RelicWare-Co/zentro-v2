@@ -355,7 +355,8 @@ export function useUpdateRestaurantDraftItemMutation() {
       zero
     ) => {
       await waitForZeroMutation(
-        zero.mutate(mutators.restaurants.updateDraftItem(input))
+        zero.mutate(mutators.restaurants.updateDraftItem(input)),
+        { awaitServer: true }
       );
       return { success: true as const };
     }

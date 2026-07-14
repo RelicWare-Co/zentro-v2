@@ -35,6 +35,7 @@ export interface CartItem {
   discountAmount: number;
   id: string; // ID único para permitir múltiples productos iguales con diferentes modificadores
   modifiers: CartItemModifier[];
+  notes?: string | null;
   product: Product;
   quantity: number;
 }

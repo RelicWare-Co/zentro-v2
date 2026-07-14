@@ -32,6 +32,7 @@ import {
   getRestaurantTableDetailViaZero,
   sendRestaurantOrderToKitchenViaZero,
   updateRestaurantAreaViaZero,
+  updateRestaurantDraftItemViaZero,
   updateRestaurantTableViaZero,
 } from "./helpers/zero-restaurants";
 import { createZeroContext, createZeroTestDb } from "./helpers/zero-shifts";
@@ -264,6 +265,132 @@ describe("restaurant module", () => {
       expect(itemRows.length).toBe(1);
       expect(itemRows[0].status).toBe("sent");
       expect(itemRows[0].kitchenTicketId).toBe(sendResult.ticket.id);
+
+      await cleanup();
+    });
+  });
+
+  describe("VAL-REST-003A: draft item notes persist and reach the kitchen", () => {
+    test("persists a note, includes it in table and kitchen reads, and locks it after sending", async () => {
+      const { db, cleanup } = await createTestDb();
+      const { organizationId, userId } = await seedOrganizationWithMember(db, {
+        memberRole: "owner",
+      });
+      await setRestaurantModuleEnabled(db, organizationId, true);
+
+      const areaId = await seedRestaurantArea(db, {
+        organizationId,
+        name: "Terraza",
+      });
+      const [tableId, productId] = await Promise.all([
+        seedRestaurantTable(db, {
+          organizationId,
+          areaId,
+          name: "T1",
+        }),
+        seedProduct(db, {
+          organizationId,
+          name: "Hamburguesa",
+          price: 15_000,
+          stock: 10,
+          trackInventory: false,
+        }),
+      ]);
+
+      const zeroDb = createZeroTestDb(db);
+      const zeroCtx = createZeroContext(userId, organizationId);
+      const addResult = await addRestaurantOrderItemViaZero({
+        db,
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          tableId,
+          productId,
+          quantity: 1,
+        },
+      });
+
+      await updateRestaurantDraftItemViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          orderItemId: addResult.itemId,
+          quantity: 1,
+          notes: "Sin cebolla",
+        },
+      });
+
+      const [itemRow, tableDetail] = await Promise.all([
+        db
+          .select({ notes: restaurantOrderItem.notes })
+          .from(restaurantOrderItem)
+          .where(eq(restaurantOrderItem.id, addResult.itemId)),
+        getRestaurantTableDetailViaZero({
+          zeroDb,
+          ctx: zeroCtx,
+          tableId,
+        }),
+      ]);
+      expect(itemRow[0]?.notes).toBe("Sin cebolla");
+      expect(tableDetail.openOrder?.items[0]?.notes).toBe("Sin cebolla");
+
+      await updateRestaurantDraftItemViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          orderItemId: addResult.itemId,
+          quantity: 1,
+          notes: null,
+        },
+      });
+      const [clearedItemRow, clearedTableDetail] = await Promise.all([
+        db
+          .select({ notes: restaurantOrderItem.notes })
+          .from(restaurantOrderItem)
+          .where(eq(restaurantOrderItem.id, addResult.itemId)),
+        getRestaurantTableDetailViaZero({
+          zeroDb,
+          ctx: zeroCtx,
+          tableId,
+        }),
+      ]);
+      expect(clearedItemRow[0]?.notes).toBeNull();
+      expect(clearedTableDetail.openOrder?.items[0]?.notes).toBeNull();
+
+      await updateRestaurantDraftItemViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          orderItemId: addResult.itemId,
+          quantity: 1,
+          notes: "Sin cebolla",
+        },
+      });
+
+      await sendRestaurantOrderToKitchenViaZero({
+        db,
+        zeroDb,
+        ctx: zeroCtx,
+        input: { orderId: addResult.orderId },
+      });
+
+      const kitchenBoard = await getKitchenBoardViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+      });
+      expect(kitchenBoard.tickets[0]?.items[0]?.notes).toBe("Sin cebolla");
+
+      await expect(
+        updateRestaurantDraftItemViaZero({
+          zeroDb,
+          ctx: zeroCtx,
+          input: {
+            orderItemId: addResult.itemId,
+            quantity: 1,
+            notes: "Sin tomate",
+          },
+        })
+      ).rejects.toThrow("Solo puedes editar ítems que aún no fueron enviados.");
 
       await cleanup();
     });

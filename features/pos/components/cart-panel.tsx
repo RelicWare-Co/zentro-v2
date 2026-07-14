@@ -15,6 +15,7 @@ import type { PosTableSessionState } from "../pos-page-context";
 import type { PosTableOrderItemStatus } from "../sale-modes/types";
 import type { CartItem, CartTotals } from "../types";
 import { CartItemCard } from "./cart-item-card";
+import { CartItemCommentDialog } from "./cart-item-comment-dialog";
 import { SaleSuccessNotice } from "./sale-success-notice";
 import { buildTableItemStatusBadge } from "./table-item-status.shared";
 
@@ -321,6 +322,10 @@ interface CartPanelProps {
   onRemoveItem: (cartItemId: string) => void;
   onSendToKitchen?: () => void;
   onUpdateItemDiscount: (cartItemId: string, value: string) => void;
+  onUpdateItemNotes: (
+    cartItemId: string,
+    notes: string | null
+  ) => Promise<void>;
   onUpdateQuantity: (cartItemId: string, delta: number) => void;
   saleSuccessToken: number | null;
   tableSession?: PosTableSessionState | null;
@@ -540,6 +545,7 @@ function CartItemList({
   emptyMessage,
   isTable,
   itemStatusById,
+  onEditItemComment,
   onRemoveItem,
   onUpdateItemDiscount,
   onUpdateQuantity,
@@ -550,6 +556,7 @@ function CartItemList({
   emptyMessage: string;
   isTable: boolean;
   itemStatusById?: Record<string, PosTableOrderItemStatus>;
+  onEditItemComment?: (item: CartItem) => void;
   onRemoveItem: (cartItemId: string) => void;
   onUpdateItemDiscount: (cartItemId: string, value: string) => void;
   onUpdateQuantity: (cartItemId: string, delta: number) => void;
@@ -564,6 +571,11 @@ function CartItemList({
           <CartItemCard
             item={item}
             key={item.id}
+            onEditComment={
+              isTable && !itemReadOnly && onEditItemComment
+                ? () => onEditItemComment(item)
+                : undefined
+            }
             onRemove={itemReadOnly ? noop : () => onRemoveItem(item.id)}
             onUpdateDiscount={
               itemReadOnly
@@ -607,6 +619,7 @@ export function CartPanel({
   totals,
   onUpdateQuantity,
   onRemoveItem,
+  onUpdateItemNotes,
   onUpdateItemDiscount,
   onClearCart,
   onCheckout,
@@ -621,6 +634,7 @@ export function CartPanel({
 }: CartPanelProps) {
   const [cancelError, setCancelError] = useState<string | null>(null);
   const [cancelReason, setCancelReason] = useState("");
+  const [commentItemId, setCommentItemId] = useState<string | null>(null);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const anim = useCartAnimation(
     tableSession,
@@ -634,6 +648,7 @@ export function CartPanel({
     anim.showBlankState,
     anim.baseTableSession
   );
+  const commentItem = cart.find((item) => item.id === commentItemId) ?? null;
 
   const closeCancelModal = () => {
     if (tableSession?.isCancellingOrder) {
@@ -695,6 +710,7 @@ export function CartPanel({
             isTable={Boolean(anim.baseTableSession)}
             itemStatusById={anim.baseTableSession?.itemStatusById}
             items={anim.baseCart}
+            onEditItemComment={(item) => setCommentItemId(item.id)}
             onRemoveItem={onRemoveItem}
             onUpdateItemDiscount={onUpdateItemDiscount}
             onUpdateQuantity={onUpdateQuantity}
@@ -824,6 +840,12 @@ export function CartPanel({
           </Group>
         </Stack>
       </Modal>
+
+      <CartItemCommentDialog
+        item={commentItem}
+        onClose={() => setCommentItemId(null)}
+        onSave={onUpdateItemNotes}
+      />
 
       <SaleSuccessNotice token={saleSuccessToken} />
     </div>

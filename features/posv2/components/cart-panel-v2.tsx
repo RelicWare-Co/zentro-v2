@@ -7,6 +7,8 @@ import {
   Trash2,
   UtensilsCrossed,
 } from "lucide-react";
+import { useState } from "react";
+import { CartItemCommentDialog } from "@/features/pos/components/cart-item-comment-dialog";
 import { buildTableItemStatusBadge } from "@/features/pos/components/table-item-status.shared";
 import {
   type PosTableSessionState,
@@ -141,11 +143,14 @@ function CartPanelV2FooterAction({
 
 export function CartPanelV2({ className }: CartPanelV2Props) {
   const { state, actions } = usePosPage();
+  const [commentItemId, setCommentItemId] = useState<string | null>(null);
   const { subTotal, tax, discountAmount, totalAmount, passThroughTotalAmount } =
     state.totals;
   const hasDiscount = discountAmount > 0;
   const hasPassThrough = passThroughTotalAmount > 0;
   const tableSession = state.tableSession;
+  const commentItem =
+    state.cart.find((item) => item.id === commentItemId) ?? null;
 
   let emptyCartMessage = "Escanea o selecciona un producto";
   if (tableSession) {
@@ -188,10 +193,16 @@ export function CartPanelV2({ className }: CartPanelV2Props) {
         <div className="space-y-1.5 px-2 py-2">
           {state.cart.map((item) => {
             const itemStatus = tableSession?.itemStatusById[item.id];
+            const itemReadOnly = Boolean(itemStatus && itemStatus !== "draft");
             return (
               <CartItemCardV2
                 item={item}
                 key={item.id}
+                onEditComment={
+                  tableSession && !itemReadOnly
+                    ? () => setCommentItemId(item.id)
+                    : undefined
+                }
                 onRemove={() => actions.removeFromCart(item.id)}
                 onUpdateDiscount={(value) =>
                   actions.updateItemDiscount(item.id, value)
@@ -199,7 +210,7 @@ export function CartPanelV2({ className }: CartPanelV2Props) {
                 onUpdateQuantity={(delta) =>
                   actions.updateQuantity(item.id, delta)
                 }
-                readOnly={Boolean(itemStatus && itemStatus !== "draft")}
+                readOnly={itemReadOnly}
                 showDiscount={!tableSession}
                 statusBadge={buildTableItemStatusBadge(itemStatus)}
               />
@@ -314,6 +325,12 @@ export function CartPanelV2({ className }: CartPanelV2Props) {
           </div>
         </div>
       ) : null}
+
+      <CartItemCommentDialog
+        item={commentItem}
+        onClose={() => setCommentItemId(null)}
+        onSave={actions.updateItemNotes}
+      />
     </div>
   );
 }
