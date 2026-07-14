@@ -1,9 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import { eq } from "drizzle-orm";
 import { organization } from "@/database/drizzle/schema/auth.schema";
+import { product } from "@/database/drizzle/schema/inventory.schema";
 import {
   restaurantArea,
   restaurantKitchenTicket,
+  restaurantKitchenTicketLine,
   restaurantOrder,
   restaurantOrderItem,
   restaurantTable,
@@ -25,6 +27,7 @@ import {
   createRestaurantAreaViaZero,
   createRestaurantTableViaZero,
   deleteRestaurantAreaViaZero,
+  deleteRestaurantOrderItemViaZero,
   deleteRestaurantTableViaZero,
   ensureDefaultRestaurantAreasViaZero,
   getKitchenBoardViaZero,
@@ -32,7 +35,8 @@ import {
   getRestaurantTableDetailViaZero,
   sendRestaurantOrderToKitchenViaZero,
   updateRestaurantAreaViaZero,
-  updateRestaurantDraftItemViaZero,
+  updateRestaurantOrderItemStatusViaZero,
+  updateRestaurantOrderItemViaZero,
   updateRestaurantTableViaZero,
 } from "./helpers/zero-restaurants";
 import { createZeroContext, createZeroTestDb } from "./helpers/zero-shifts";
@@ -249,7 +253,8 @@ describe("restaurant module", () => {
       });
       expect(sendResult.ticket.id).toBeString();
       expect(sendResult.ticket.sequenceNumber).toBe(1);
-      expect(sendResult.ticket.items.length).toBe(1);
+      expect(sendResult.ticket.kind).toBe("initial");
+      expect(sendResult.ticket.lines).toHaveLength(1);
 
       const ticketRows = await db
         .select()
@@ -270,8 +275,8 @@ describe("restaurant module", () => {
     });
   });
 
-  describe("VAL-REST-003A: draft item notes persist and reach the kitchen", () => {
-    test("persists a note, includes it in table and kitchen reads, and locks it after sending", async () => {
+  describe("VAL-REST-003A: item notes persist and create immutable corrections", () => {
+    test("sends a correction for a note change without altering the original ticket", async () => {
       const { db, cleanup } = await createTestDb();
       const { organizationId, userId } = await seedOrganizationWithMember(db, {
         memberRole: "owner",
@@ -310,7 +315,7 @@ describe("restaurant module", () => {
         },
       });
 
-      await updateRestaurantDraftItemViaZero({
+      await updateRestaurantOrderItemViaZero({
         zeroDb,
         ctx: zeroCtx,
         input: {
@@ -334,7 +339,7 @@ describe("restaurant module", () => {
       expect(itemRow[0]?.notes).toBe("Sin cebolla");
       expect(tableDetail.openOrder?.items[0]?.notes).toBe("Sin cebolla");
 
-      await updateRestaurantDraftItemViaZero({
+      await updateRestaurantOrderItemViaZero({
         zeroDb,
         ctx: zeroCtx,
         input: {
@@ -357,7 +362,7 @@ describe("restaurant module", () => {
       expect(clearedItemRow[0]?.notes).toBeNull();
       expect(clearedTableDetail.openOrder?.items[0]?.notes).toBeNull();
 
-      await updateRestaurantDraftItemViaZero({
+      await updateRestaurantOrderItemViaZero({
         zeroDb,
         ctx: zeroCtx,
         input: {
@@ -367,7 +372,7 @@ describe("restaurant module", () => {
         },
       });
 
-      await sendRestaurantOrderToKitchenViaZero({
+      const initialSend = await sendRestaurantOrderToKitchenViaZero({
         db,
         zeroDb,
         ctx: zeroCtx,
@@ -378,19 +383,588 @@ describe("restaurant module", () => {
         zeroDb,
         ctx: zeroCtx,
       });
-      expect(kitchenBoard.tickets[0]?.items[0]?.notes).toBe("Sin cebolla");
+      expect(kitchenBoard.tickets[0]?.lines[0]?.notes).toBe("Sin cebolla");
+
+      await updateRestaurantOrderItemViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          orderItemId: addResult.itemId,
+          quantity: 1,
+          notes: "Sin tomate",
+        },
+      });
+      const pendingCorrectionDetail = await getRestaurantTableDetailViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        tableId,
+      });
+      expect(pendingCorrectionDetail.openOrder?.hasPendingKitchenChanges).toBe(
+        true
+      );
+
+      const correctionSend = await sendRestaurantOrderToKitchenViaZero({
+        db,
+        zeroDb,
+        ctx: zeroCtx,
+        input: { orderId: addResult.orderId },
+      });
+      expect(correctionSend.ticket.kind).toBe("correction");
+      expect(correctionSend.ticket.sequenceNumber).toBe(2);
+
+      const ticketLines = await db
+        .select({
+          kitchenTicketId: restaurantKitchenTicketLine.kitchenTicketId,
+          notes: restaurantKitchenTicketLine.notes,
+          operation: restaurantKitchenTicketLine.operation,
+        })
+        .from(restaurantKitchenTicketLine)
+        .where(eq(restaurantKitchenTicketLine.orderItemId, addResult.itemId));
+      const initialLines = ticketLines.filter(
+        (line) => line.kitchenTicketId === initialSend.ticket.id
+      );
+      const correctionLines = ticketLines.filter(
+        (line) => line.kitchenTicketId === correctionSend.ticket.id
+      );
+      expect(initialLines).toEqual([
+        expect.objectContaining({ operation: "prepare", notes: "Sin cebolla" }),
+      ]);
+      expect(correctionLines).toEqual([
+        expect.objectContaining({ operation: "cancel", notes: "Sin cebolla" }),
+        expect.objectContaining({ operation: "prepare", notes: "Sin tomate" }),
+      ]);
+
+      const correctionBoard = await getKitchenBoardViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+      });
+      expect(correctionBoard.tickets[0]).toMatchObject({
+        kind: "correction",
+        orderNumber: kitchenBoard.tickets[0]?.orderNumber,
+        sequenceNumber: 2,
+      });
+      expect(correctionBoard.tickets[0]?.lines).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            operation: "cancel",
+            notes: "Sin cebolla",
+          }),
+          expect.objectContaining({
+            operation: "prepare",
+            notes: "Sin tomate",
+          }),
+        ])
+      );
+
+      await cleanup();
+    });
+  });
+
+  describe("VAL-REST-003B: quantity, cancellation, and replacement corrections", () => {
+    test("emits only the deltas for quantity changes and item replacement", async () => {
+      const { db, cleanup } = await createTestDb();
+      const { organizationId, userId } = await seedOrganizationWithMember(db, {
+        memberRole: "owner",
+      });
+      await setRestaurantModuleEnabled(db, organizationId, true);
+
+      const areaId = await seedRestaurantArea(db, {
+        organizationId,
+        name: "Terraza",
+      });
+      const [tableId, burgerId, saladId] = await Promise.all([
+        seedRestaurantTable(db, {
+          organizationId,
+          areaId,
+          name: "T2",
+        }),
+        seedProduct(db, {
+          organizationId,
+          name: "Hamburguesa",
+          price: 15_000,
+          stock: 10,
+          trackInventory: false,
+        }),
+        seedProduct(db, {
+          organizationId,
+          name: "Ensalada",
+          price: 12_000,
+          stock: 10,
+          trackInventory: false,
+        }),
+      ]);
+      const zeroDb = createZeroTestDb(db);
+      const ctx = createZeroContext(userId, organizationId);
+      const burger = await addRestaurantOrderItemViaZero({
+        db,
+        zeroDb,
+        ctx,
+        input: { tableId, productId: burgerId, quantity: 2 },
+      });
+      const initial = await sendRestaurantOrderToKitchenViaZero({
+        db,
+        zeroDb,
+        ctx,
+        input: { orderId: burger.orderId },
+      });
+      const [initialBurgerSnapshot] = await db
+        .select({ sentProductName: restaurantOrderItem.sentProductName })
+        .from(restaurantOrderItem)
+        .where(eq(restaurantOrderItem.id, burger.itemId));
+      expect(initialBurgerSnapshot?.sentProductName).toBe("Hamburguesa");
+
+      await updateRestaurantOrderItemViaZero({
+        zeroDb,
+        ctx,
+        input: { orderItemId: burger.itemId, quantity: 3 },
+      });
+      const increase = await sendRestaurantOrderToKitchenViaZero({
+        db,
+        zeroDb,
+        ctx,
+        input: { orderId: burger.orderId },
+      });
+
+      const [increaseLine] = await db
+        .select({
+          operation: restaurantKitchenTicketLine.operation,
+          quantity: restaurantKitchenTicketLine.quantity,
+        })
+        .from(restaurantKitchenTicketLine)
+        .where(
+          eq(restaurantKitchenTicketLine.kitchenTicketId, increase.ticket.id)
+        );
+      expect(increaseLine).toEqual({ operation: "prepare", quantity: 1 });
+      const [increasedBurgerSnapshot] = await db
+        .select({
+          sentProductName: restaurantOrderItem.sentProductName,
+          sentQuantity: restaurantOrderItem.sentQuantity,
+        })
+        .from(restaurantOrderItem)
+        .where(eq(restaurantOrderItem.id, burger.itemId));
+      expect(increasedBurgerSnapshot?.sentProductName).toBe("Hamburguesa");
+      expect(increasedBurgerSnapshot?.sentQuantity).toBe(3);
+
+      await db
+        .update(product)
+        .set({ name: "Hamburguesa renovada" })
+        .where(eq(product.id, burgerId));
+
+      await updateRestaurantOrderItemViaZero({
+        zeroDb,
+        ctx,
+        input: { orderItemId: burger.itemId, quantity: 1 },
+      });
+      const decrease = await sendRestaurantOrderToKitchenViaZero({
+        db,
+        zeroDb,
+        ctx,
+        input: { orderId: burger.orderId },
+      });
+      const [decreaseLine] = await db
+        .select({
+          operation: restaurantKitchenTicketLine.operation,
+          productName: restaurantKitchenTicketLine.productName,
+          quantity: restaurantKitchenTicketLine.quantity,
+        })
+        .from(restaurantKitchenTicketLine)
+        .where(
+          eq(restaurantKitchenTicketLine.kitchenTicketId, decrease.ticket.id)
+        );
+      expect(decreaseLine).toEqual({
+        operation: "cancel",
+        productName: "Hamburguesa",
+        quantity: 2,
+      });
+
+      await deleteRestaurantOrderItemViaZero({
+        zeroDb,
+        ctx,
+        input: { orderItemId: burger.itemId },
+      });
+      const salad = await addRestaurantOrderItemViaZero({
+        db,
+        zeroDb,
+        ctx,
+        input: { tableId, productId: saladId, quantity: 1 },
+      });
+      expect(salad.orderId).toBe(burger.orderId);
+
+      const replacement = await sendRestaurantOrderToKitchenViaZero({
+        db,
+        zeroDb,
+        ctx,
+        input: { orderId: burger.orderId },
+      });
+      const replacementLines = await db
+        .select({
+          operation: restaurantKitchenTicketLine.operation,
+          productName: restaurantKitchenTicketLine.productName,
+          quantity: restaurantKitchenTicketLine.quantity,
+        })
+        .from(restaurantKitchenTicketLine)
+        .where(
+          eq(restaurantKitchenTicketLine.kitchenTicketId, replacement.ticket.id)
+        );
+      expect(replacementLines).toEqual(
+        expect.arrayContaining([
+          { operation: "cancel", productName: "Hamburguesa", quantity: 1 },
+          { operation: "prepare", productName: "Ensalada", quantity: 1 },
+        ])
+      );
+
+      const [burgerRow] = await db
+        .select({
+          kitchenTicketId: restaurantOrderItem.kitchenTicketId,
+          status: restaurantOrderItem.status,
+        })
+        .from(restaurantOrderItem)
+        .where(eq(restaurantOrderItem.id, burger.itemId));
+      expect(burgerRow).toEqual({
+        kitchenTicketId: replacement.ticket.id,
+        status: "cancelled",
+      });
+
+      const [initialLine] = initial.ticket.lines;
+      if (!initialLine) {
+        throw new Error("La comanda inicial no creó una línea de cocina.");
+      }
+      await updateRestaurantOrderItemStatusViaZero({
+        zeroDb,
+        ctx,
+        input: { ticketLineId: initialLine.id, status: "ready" },
+      });
+      await updateRestaurantOrderItemStatusViaZero({
+        zeroDb,
+        ctx,
+        input: { ticketLineId: initialLine.id, status: "served" },
+      });
+      const [afterHistoricalStatusUpdate] = await db
+        .select({
+          kitchenTicketId: restaurantOrderItem.kitchenTicketId,
+          status: restaurantOrderItem.status,
+        })
+        .from(restaurantOrderItem)
+        .where(eq(restaurantOrderItem.id, burger.itemId));
+      expect(afterHistoricalStatusUpdate).toEqual({
+        kitchenTicketId: replacement.ticket.id,
+        status: "cancelled",
+      });
+      await expect(
+        updateRestaurantOrderItemViaZero({
+          zeroDb,
+          ctx,
+          input: { orderItemId: burger.itemId, quantity: 2 },
+        })
+      ).rejects.toThrow("Solo puedes editar ítems que siguen en preparación.");
+      await expect(
+        deleteRestaurantOrderItemViaZero({
+          zeroDb,
+          ctx,
+          input: { orderItemId: burger.itemId },
+        })
+      ).rejects.toThrow(
+        "Solo puedes eliminar ítems que siguen en preparación."
+      );
+
+      await cleanup();
+    });
+  });
+
+  describe("VAL-REST-003C: correction authorization and terminal states", () => {
+    test("keeps corrections isolated by organization and rejects edits after ready", async () => {
+      const { db, cleanup } = await createTestDb();
+      const [ownerA, ownerB] = await Promise.all([
+        seedOrganizationWithMember(db, { memberRole: "owner" }),
+        seedOrganizationWithMember(db, { memberRole: "owner" }),
+      ]);
+      await Promise.all([
+        setRestaurantModuleEnabled(db, ownerA.organizationId, true),
+        setRestaurantModuleEnabled(db, ownerB.organizationId, true),
+      ]);
+
+      const areaId = await seedRestaurantArea(db, {
+        organizationId: ownerA.organizationId,
+        name: "Terraza",
+      });
+      const [tableId, productId] = await Promise.all([
+        seedRestaurantTable(db, {
+          organizationId: ownerA.organizationId,
+          areaId,
+          name: "T3",
+        }),
+        seedProduct(db, {
+          organizationId: ownerA.organizationId,
+          name: "Sopa",
+          price: 8000,
+          stock: 10,
+          trackInventory: false,
+        }),
+      ]);
+      const zeroDb = createZeroTestDb(db);
+      const ctxA = createZeroContext(ownerA.userId, ownerA.organizationId);
+      const ctxB = createZeroContext(ownerB.userId, ownerB.organizationId);
+      const added = await addRestaurantOrderItemViaZero({
+        db,
+        zeroDb,
+        ctx: ctxA,
+        input: { tableId, productId, quantity: 1 },
+      });
+      const sent = await sendRestaurantOrderToKitchenViaZero({
+        db,
+        zeroDb,
+        ctx: ctxA,
+        input: { orderId: added.orderId },
+      });
 
       await expect(
-        updateRestaurantDraftItemViaZero({
+        sendRestaurantOrderToKitchenViaZero({
+          db,
           zeroDb,
-          ctx: zeroCtx,
-          input: {
-            orderItemId: addResult.itemId,
-            quantity: 1,
-            notes: "Sin tomate",
-          },
+          ctx: ctxB,
+          input: { orderId: added.orderId },
         })
-      ).rejects.toThrow("Solo puedes editar ítems que aún no fueron enviados.");
+      ).rejects.toThrow("La cuenta no existe o ya no está abierta.");
+
+      const [ticketLine] = sent.ticket.lines;
+      if (!ticketLine) {
+        throw new Error("La comanda inicial no creó una línea de cocina.");
+      }
+      await updateRestaurantOrderItemStatusViaZero({
+        zeroDb,
+        ctx: ctxA,
+        input: { ticketLineId: ticketLine.id, status: "ready" },
+      });
+      await expect(
+        updateRestaurantOrderItemViaZero({
+          zeroDb,
+          ctx: ctxA,
+          input: { orderItemId: added.itemId, quantity: 2 },
+        })
+      ).rejects.toThrow("Solo puedes editar ítems que siguen en preparación.");
+
+      await updateRestaurantOrderItemStatusViaZero({
+        zeroDb,
+        ctx: ctxA,
+        input: { ticketLineId: ticketLine.id, status: "served" },
+      });
+      await expect(
+        deleteRestaurantOrderItemViaZero({
+          zeroDb,
+          ctx: ctxA,
+          input: { orderItemId: added.itemId },
+        })
+      ).rejects.toThrow(
+        "Solo puedes eliminar ítems que siguen en preparación."
+      );
+
+      await cleanup();
+    });
+
+    test("does not let a delayed KDS action regress a served line", async () => {
+      const { db, cleanup } = await createTestDb();
+      const { organizationId, userId } = await seedOrganizationWithMember(db, {
+        memberRole: "owner",
+      });
+      await setRestaurantModuleEnabled(db, organizationId, true);
+
+      const areaId = await seedRestaurantArea(db, {
+        organizationId,
+        name: "Terraza",
+      });
+      const [tableId, firstProductId, secondProductId] = await Promise.all([
+        seedRestaurantTable(db, {
+          organizationId,
+          areaId,
+          name: "T3B",
+        }),
+        seedProduct(db, {
+          organizationId,
+          name: "Sopa",
+          price: 8000,
+          stock: 10,
+          trackInventory: false,
+        }),
+        seedProduct(db, {
+          organizationId,
+          name: "Ensalada",
+          price: 9000,
+          stock: 10,
+          trackInventory: false,
+        }),
+      ]);
+      const zeroDb = createZeroTestDb(db);
+      const ctx = createZeroContext(userId, organizationId);
+      const firstItem = await addRestaurantOrderItemViaZero({
+        db,
+        zeroDb,
+        ctx,
+        input: { tableId, productId: firstProductId, quantity: 1 },
+      });
+      await addRestaurantOrderItemViaZero({
+        db,
+        zeroDb,
+        ctx,
+        input: { tableId, productId: secondProductId, quantity: 1 },
+      });
+      const sent = await sendRestaurantOrderToKitchenViaZero({
+        db,
+        zeroDb,
+        ctx,
+        input: { orderId: firstItem.orderId },
+      });
+      const ticketLines = await db
+        .select({
+          id: restaurantKitchenTicketLine.id,
+          orderItemId: restaurantKitchenTicketLine.orderItemId,
+        })
+        .from(restaurantKitchenTicketLine)
+        .where(eq(restaurantKitchenTicketLine.kitchenTicketId, sent.ticket.id));
+      const firstLine = ticketLines.find(
+        (line) => line.orderItemId === firstItem.itemId
+      );
+      if (!firstLine) {
+        throw new Error(
+          "La comanda inicial no creó la primera línea de cocina."
+        );
+      }
+
+      await updateRestaurantOrderItemStatusViaZero({
+        zeroDb,
+        ctx,
+        input: { ticketLineId: firstLine.id, status: "served" },
+      });
+      await expect(
+        updateRestaurantOrderItemStatusViaZero({
+          zeroDb,
+          ctx,
+          input: { ticketLineId: firstLine.id, status: "ready" },
+        })
+      ).rejects.toThrow("La línea ya está finalizada.");
+
+      const [[lineRow], [itemRow]] = await Promise.all([
+        db
+          .select({ status: restaurantKitchenTicketLine.status })
+          .from(restaurantKitchenTicketLine)
+          .where(eq(restaurantKitchenTicketLine.id, firstLine.id)),
+        db
+          .select({ status: restaurantOrderItem.status })
+          .from(restaurantOrderItem)
+          .where(eq(restaurantOrderItem.id, firstItem.itemId)),
+      ]);
+      expect(lineRow?.status).toBe("served");
+      expect(itemRow?.status).toBe("served");
+
+      await cleanup();
+    });
+  });
+
+  describe("VAL-REST-003D: historical kitchen lines preserve the latest correction state", () => {
+    test("does not let an old line block an item whose correction remains sent", async () => {
+      const { db, cleanup } = await createTestDb();
+      const { organizationId, userId } = await seedOrganizationWithMember(db, {
+        memberRole: "owner",
+      });
+      await setRestaurantModuleEnabled(db, organizationId, true);
+
+      const areaId = await seedRestaurantArea(db, {
+        organizationId,
+        name: "Terraza",
+      });
+      const [tableId, productId] = await Promise.all([
+        seedRestaurantTable(db, {
+          organizationId,
+          areaId,
+          name: "T4",
+        }),
+        seedProduct(db, {
+          organizationId,
+          name: "Arepa",
+          price: 6000,
+          stock: 10,
+          trackInventory: false,
+        }),
+      ]);
+      const zeroDb = createZeroTestDb(db);
+      const ctx = createZeroContext(userId, organizationId);
+      const added = await addRestaurantOrderItemViaZero({
+        db,
+        zeroDb,
+        ctx,
+        input: {
+          tableId,
+          productId,
+          quantity: 1,
+          notes: "Con queso",
+        },
+      });
+      const initial = await sendRestaurantOrderToKitchenViaZero({
+        db,
+        zeroDb,
+        ctx,
+        input: { orderId: added.orderId },
+      });
+
+      await updateRestaurantOrderItemViaZero({
+        zeroDb,
+        ctx,
+        input: {
+          orderItemId: added.itemId,
+          quantity: 1,
+          notes: "Sin queso",
+        },
+      });
+      const correction = await sendRestaurantOrderToKitchenViaZero({
+        db,
+        zeroDb,
+        ctx,
+        input: { orderId: added.orderId },
+      });
+      const [initialLine] = initial.ticket.lines;
+      if (!initialLine) {
+        throw new Error("La comanda inicial no creó una línea de cocina.");
+      }
+
+      await updateRestaurantOrderItemStatusViaZero({
+        zeroDb,
+        ctx,
+        input: { ticketLineId: initialLine.id, status: "ready" },
+      });
+
+      const [afterReady] = await db
+        .select({
+          kitchenTicketId: restaurantOrderItem.kitchenTicketId,
+          status: restaurantOrderItem.status,
+        })
+        .from(restaurantOrderItem)
+        .where(eq(restaurantOrderItem.id, added.itemId));
+      expect(afterReady).toEqual({
+        kitchenTicketId: correction.ticket.id,
+        status: "sent",
+      });
+
+      await updateRestaurantOrderItemViaZero({
+        zeroDb,
+        ctx,
+        input: { orderItemId: added.itemId, quantity: 2, notes: "Sin queso" },
+      });
+
+      await updateRestaurantOrderItemStatusViaZero({
+        zeroDb,
+        ctx,
+        input: { ticketLineId: initialLine.id, status: "served" },
+      });
+      const [afterServed] = await db
+        .select({
+          kitchenTicketId: restaurantOrderItem.kitchenTicketId,
+          status: restaurantOrderItem.status,
+        })
+        .from(restaurantOrderItem)
+        .where(eq(restaurantOrderItem.id, added.itemId));
+      expect(afterServed).toEqual({
+        kitchenTicketId: correction.ticket.id,
+        status: "sent",
+      });
 
       await cleanup();
     });
@@ -435,7 +1009,7 @@ describe("restaurant module", () => {
           quantity: 1,
         },
       });
-      await sendRestaurantOrderToKitchenViaZero({
+      const sent = await sendRestaurantOrderToKitchenViaZero({
         db,
         zeroDb,
         ctx: zeroCtx,
@@ -475,6 +1049,23 @@ describe("restaurant module", () => {
         .where(eq(restaurantKitchenTicket.orderId, addResult.orderId));
       expect(ticketRows).toHaveLength(1);
       expect(ticketRows[0]?.status).toBe("cancelled");
+
+      const [ticketLine] = sent.ticket.lines;
+      if (!ticketLine) {
+        throw new Error("La comanda inicial no creó una línea de cocina.");
+      }
+      await expect(
+        updateRestaurantOrderItemStatusViaZero({
+          zeroDb,
+          ctx: zeroCtx,
+          input: { ticketLineId: ticketLine.id, status: "ready" },
+        })
+      ).rejects.toThrow("La comanda ya no está activa en cocina.");
+      const [unchangedTicketLine] = await db
+        .select({ status: restaurantKitchenTicketLine.status })
+        .from(restaurantKitchenTicketLine)
+        .where(eq(restaurantKitchenTicketLine.id, ticketLine.id));
+      expect(unchangedTicketLine?.status).toBe("sent");
 
       const [tableDetail, kitchenBoard, saleRows] = await Promise.all([
         getRestaurantTableDetailViaZero({
@@ -549,7 +1140,7 @@ describe("restaurant module", () => {
           quantity: 1,
         },
       });
-      await sendRestaurantOrderToKitchenViaZero({
+      const sent = await sendRestaurantOrderToKitchenViaZero({
         db,
         zeroDb,
         ctx: zeroCtx,
@@ -585,6 +1176,38 @@ describe("restaurant module", () => {
       expect(saleRows.length).toBe(1);
       expect(saleRows[0].totalAmount).toBe(25_000);
       expect(saleRows[0].status).toBe("completed");
+
+      const [ticketLine] = sent.ticket.lines;
+      if (!ticketLine) {
+        throw new Error("La comanda inicial no creó una línea de cocina.");
+      }
+      await expect(
+        updateRestaurantOrderItemStatusViaZero({
+          zeroDb,
+          ctx: zeroCtx,
+          input: { ticketLineId: ticketLine.id, status: "served" },
+        })
+      ).rejects.toThrow("La comanda ya no está activa en cocina.");
+      const [unchangedTicketLine] = await db
+        .select({ status: restaurantKitchenTicketLine.status })
+        .from(restaurantKitchenTicketLine)
+        .where(eq(restaurantKitchenTicketLine.id, ticketLine.id));
+      expect(unchangedTicketLine?.status).toBe("sent");
+
+      await expect(
+        updateRestaurantOrderItemViaZero({
+          zeroDb,
+          ctx: zeroCtx,
+          input: { orderItemId: addResult.itemId, quantity: 2 },
+        })
+      ).rejects.toThrow("La cuenta no existe o ya no está abierta.");
+      await expect(
+        deleteRestaurantOrderItemViaZero({
+          zeroDb,
+          ctx: zeroCtx,
+          input: { orderItemId: addResult.itemId },
+        })
+      ).rejects.toThrow("La cuenta no existe o ya no está abierta.");
 
       await cleanup();
     });
@@ -990,7 +1613,7 @@ describe("restaurant module", () => {
 
       const board = await getKitchenBoardViaZero({ zeroDb, ctx: zeroCtx });
       expect(board.tickets.length).toBeGreaterThanOrEqual(1);
-      expect(board.tickets[0].items.length).toBeGreaterThanOrEqual(1);
+      expect(board.tickets[0].lines.length).toBeGreaterThanOrEqual(1);
 
       await cleanup();
     });

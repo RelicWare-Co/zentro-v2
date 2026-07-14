@@ -35,13 +35,13 @@ export const UpdateRestaurantOrderMetaInputSchema = z
     }
   );
 
-export const UpdateRestaurantDraftItemInputSchema = z.object({
+export const UpdateRestaurantOrderItemInputSchema = z.object({
   orderItemId: z.string().trim().min(1),
   quantity: z.coerce.number().int().positive(),
   notes: NullableStringSchema,
 });
 
-export const DeleteRestaurantDraftItemInputSchema = z.object({
+export const DeleteRestaurantOrderItemInputSchema = z.object({
   orderItemId: z.string().trim().min(1),
 });
 
@@ -55,8 +55,8 @@ export const CancelRestaurantOrderInputSchema = z.object({
 });
 
 export const UpdateRestaurantOrderItemStatusInputSchema = z.object({
-  orderItemId: z.string().trim().min(1),
-  status: z.enum(["ready", "served"]),
+  ticketLineId: z.string().trim().min(1),
+  status: z.enum(["ready", "served", "cancelled"]),
 });
 
 export const CloseRestaurantOrderInputSchema = z.object({
@@ -214,6 +214,11 @@ const RestaurantOrderItemSchema = z.object({
   taxRate: z.number(),
   discountAmount: z.number(),
   notes: z.string().nullable().optional(),
+  pendingCancellation: z.boolean().optional(),
+  sentModifiersSnapshot: z.string().optional(),
+  sentNotes: z.string().nullable().optional(),
+  sentProductName: z.string().nullable().optional(),
+  sentQuantity: z.number().optional(),
   status: z.string(),
   modifiers: RestaurantOrderItemModifierSchema.array(),
   baseSubtotal: z.number(),
@@ -227,12 +232,24 @@ const RestaurantOrderItemSchema = z.object({
   cancelledAt: z.number().nullable().optional(),
 });
 
+const KitchenTicketLineSchema = z.object({
+  id: z.string(),
+  operation: z.enum(["prepare", "cancel"]),
+  productName: z.string(),
+  quantity: z.number(),
+  status: z.enum(["sent", "ready", "served", "cancelled"]),
+  notes: z.string().nullable().optional(),
+  modifiers: RestaurantOrderItemModifierSchema.array(),
+});
+
 const RestaurantKitchenTicketSchema = z.object({
   id: z.string(),
+  kind: z.enum(["initial", "correction"]),
   sequenceNumber: z.number(),
   status: z.string(),
   createdAt: z.number(),
   printedAt: z.number().nullable().optional(),
+  lines: KitchenTicketLineSchema.array(),
 });
 
 const RestaurantOrderTotalsSchema = z.object({
@@ -253,6 +270,7 @@ const RestaurantOpenOrderSchema = z.object({
   updatedAt: z.number(),
   items: RestaurantOrderItemSchema.array(),
   tickets: RestaurantKitchenTicketSchema.array(),
+  hasPendingKitchenChanges: z.boolean(),
   totals: RestaurantOrderTotalsSchema,
 });
 
@@ -291,6 +309,7 @@ const SendToKitchenTicketSchema = z.object({
   id: z.string(),
   orderId: z.string(),
   orderNumber: z.number(),
+  kind: z.enum(["initial", "correction"]),
   sequenceNumber: z.number(),
   createdAt: z.number(),
   table: z.object({
@@ -298,7 +317,16 @@ const SendToKitchenTicketSchema = z.object({
     name: z.string(),
     areaName: z.string(),
   }),
-  items: RestaurantOrderItemSchema.array(),
+  lines: z.array(
+    z.object({
+      orderItemId: z.string(),
+      operation: z.enum(["prepare", "cancel"]),
+      productName: z.string(),
+      quantity: z.number(),
+      notes: z.string().nullable(),
+      modifiers: RestaurantOrderItemModifierSchema.array(),
+    })
+  ),
 });
 
 export const SendToKitchenResultSchema = z.object({
@@ -309,19 +337,11 @@ export const SendToKitchenResultSchema = z.object({
   }),
 });
 
-const KitchenBoardItemSchema = z.object({
-  id: z.string(),
-  kitchenTicketId: z.string().nullable().optional(),
-  productName: z.string(),
-  quantity: z.number(),
-  status: z.string(),
-  notes: z.string().nullable().optional(),
-});
-
 const KitchenBoardTicketSchema = z.object({
   id: z.string(),
   orderId: z.string(),
   orderNumber: z.number(),
+  kind: z.enum(["initial", "correction"]),
   sequenceNumber: z.number(),
   status: z.string(),
   createdAt: z.number(),
@@ -330,7 +350,7 @@ const KitchenBoardTicketSchema = z.object({
     name: z.string(),
     areaName: z.string(),
   }),
-  items: KitchenBoardItemSchema.array(),
+  lines: KitchenTicketLineSchema.array(),
 });
 
 export const KitchenBoardSchema = z.object({

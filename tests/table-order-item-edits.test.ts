@@ -1,13 +1,13 @@
 import { describe, expect, test } from "bun:test";
 import {
-  buildDraftItemUpdateInput,
+  buildOrderItemUpdateInput,
   createItemMutationQueue,
 } from "@/features/pos/table-order-item-edits.shared";
 
 describe("table order item edits", () => {
   test("keeps a locally incremented quantity when saving a note before replication", () => {
     expect(
-      buildDraftItemUpdateInput({
+      buildOrderItemUpdateInput({
         itemId: "item_1",
         replicatedQuantity: 1,
         quantityOverrides: { item_1: 2 },

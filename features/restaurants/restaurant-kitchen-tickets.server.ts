@@ -3,13 +3,14 @@ import type { z } from "zod";
 import { organization } from "@/database/drizzle/schema/auth.schema";
 import {
   restaurantKitchenTicket,
+  restaurantKitchenTicketLine,
   restaurantOrder,
   restaurantOrderItem,
 } from "@/database/drizzle/schema/restaurant.schema";
 import {
   assertTableFromOrganization,
-  getOpenOrderById,
   getOrderItemsWithModifiers,
+  lockOpenRestaurantOrder,
   type RestaurantAuth,
   type RestaurantDbExecutor,
   refreshKitchenTicketStatus,
@@ -21,6 +22,186 @@ import type {
 } from "@/features/restaurants/restaurants.schema";
 import { getRestaurantModuleSettings } from "@/features/restaurants/restaurants-settings.shared";
 import { parseOrganizationSettingsMetadata } from "@/features/settings/settings.shared";
+
+interface KitchenModifierSnapshot {
+  id: string;
+  name: string;
+  quantity: number;
+  unitPrice: number;
+}
+
+interface KitchenItemSnapshot {
+  modifiers: KitchenModifierSnapshot[];
+  notes: string | null;
+  productName: string;
+  quantity: number;
+}
+
+interface KitchenTicketLineDraft extends KitchenItemSnapshot {
+  operation: "cancel" | "prepare";
+  orderItemId: string;
+}
+
+function normalizeModifiers(
+  modifiers: Array<{
+    modifierProductId: string;
+    name: string;
+    quantity: number;
+    unitPrice: number;
+  }>
+): KitchenModifierSnapshot[] {
+  return modifiers
+    .map((modifier) => ({
+      id: modifier.modifierProductId,
+      name: modifier.name,
+      quantity: modifier.quantity,
+      unitPrice: modifier.unitPrice,
+    }))
+    .toSorted((left, right) => left.id.localeCompare(right.id));
+}
+
+function serializeModifiers(modifiers: KitchenModifierSnapshot[]) {
+  return JSON.stringify(modifiers);
+}
+
+function parseModifiersSnapshot(value: string): KitchenModifierSnapshot[] {
+  try {
+    const parsed: unknown = JSON.parse(value);
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed.flatMap((modifier): KitchenModifierSnapshot[] => {
+      if (
+        !modifier ||
+        typeof modifier !== "object" ||
+        !("id" in modifier) ||
+        !("name" in modifier) ||
+        !("quantity" in modifier) ||
+        !("unitPrice" in modifier) ||
+        typeof modifier.id !== "string" ||
+        typeof modifier.name !== "string" ||
+        typeof modifier.quantity !== "number" ||
+        typeof modifier.unitPrice !== "number"
+      ) {
+        return [];
+      }
+
+      return [
+        {
+          id: modifier.id,
+          name: modifier.name,
+          quantity: modifier.quantity,
+          unitPrice: modifier.unitPrice,
+        },
+      ];
+    });
+  } catch {
+    return [];
+  }
+}
+
+function makeSnapshot(item: {
+  modifiers: Array<{
+    modifierProductId: string;
+    name: string;
+    quantity: number;
+    unitPrice: number;
+  }>;
+  notes: string | null;
+  productName: string;
+  quantity: number;
+}): KitchenItemSnapshot {
+  return {
+    productName: item.productName,
+    quantity: item.quantity,
+    notes: item.notes,
+    modifiers: normalizeModifiers(item.modifiers),
+  };
+}
+
+function makeSentSnapshot(item: {
+  modifiers: Array<{
+    modifierProductId: string;
+    name: string;
+    quantity: number;
+    unitPrice: number;
+  }>;
+  notes: string | null;
+  productName: string;
+  quantity: number;
+  sentModifiersSnapshot: string;
+  sentNotes: string | null;
+  sentProductName: string | null;
+  sentQuantity: number;
+}): KitchenItemSnapshot {
+  if (item.sentQuantity <= 0) {
+    return makeSnapshot(item);
+  }
+
+  return {
+    productName: item.sentProductName ?? item.productName,
+    quantity: item.sentQuantity,
+    notes: item.sentNotes,
+    modifiers: parseModifiersSnapshot(item.sentModifiersSnapshot),
+  };
+}
+
+function getCorrectionLines(item: {
+  id: string;
+  modifiers: Array<{
+    modifierProductId: string;
+    name: string;
+    quantity: number;
+    unitPrice: number;
+  }>;
+  notes: string | null;
+  pendingCancellation: boolean;
+  productName: string;
+  quantity: number;
+  sentModifiersSnapshot: string;
+  sentNotes: string | null;
+  sentProductName: string | null;
+  sentQuantity: number;
+  status: string;
+}): KitchenTicketLineDraft[] {
+  const current = makeSnapshot(item);
+  if (item.status === "draft") {
+    return [{ ...current, operation: "prepare", orderItemId: item.id }];
+  }
+
+  const sent = makeSentSnapshot(item);
+  if (item.pendingCancellation) {
+    return sent.quantity > 0
+      ? [{ ...sent, operation: "cancel", orderItemId: item.id }]
+      : [];
+  }
+
+  const currentModifiers = serializeModifiers(current.modifiers);
+  const sentModifiers = serializeModifiers(sent.modifiers);
+  if (current.notes !== sent.notes || currentModifiers !== sentModifiers) {
+    return [
+      { ...sent, operation: "cancel", orderItemId: item.id },
+      { ...current, operation: "prepare", orderItemId: item.id },
+    ];
+  }
+
+  const quantityDifference = current.quantity - sent.quantity;
+  if (quantityDifference === 0) {
+    return [];
+  }
+
+  const operation = quantityDifference > 0 ? "prepare" : "cancel";
+  const snapshot = operation === "prepare" ? current : sent;
+  return [
+    {
+      ...snapshot,
+      operation,
+      orderItemId: item.id,
+      quantity: Math.abs(quantityDifference),
+    },
+  ];
+}
 
 export async function runSendRestaurantOrderToKitchen(
   db: RestaurantDbExecutor,
@@ -45,13 +226,17 @@ export async function runSendRestaurantOrderToKitchen(
   );
 
   const database = db;
-  const order = await getOpenOrderById(database, organizationId, args.orderId);
+  const order = await lockOpenRestaurantOrder(
+    database,
+    organizationId,
+    args.orderId
+  );
   const [table, items] = await Promise.all([
     assertTableFromOrganization(database, organizationId, order.tableId),
     getOrderItemsWithModifiers(database, organizationId, order.id),
   ]);
-  const draftItems = items.filter((item) => item.status === "draft");
-  if (draftItems.length === 0) {
+  const lines = items.flatMap((item) => getCorrectionLines(item));
+  if (lines.length === 0) {
     throw new Error("No hay ítems pendientes por enviar a cocina.");
   }
 
@@ -69,12 +254,14 @@ export async function runSendRestaurantOrderToKitchen(
   const now = new Date();
   const ticketId = args.ticketId;
   const sequenceNumber = (lastTicket?.sequenceNumber ?? 0) + 1;
+  const kind = lastTicket ? "correction" : "initial";
 
   await database.insert(restaurantKitchenTicket).values({
     id: ticketId,
     organizationId,
     orderId: order.id,
     createdByUserId: auth.userId,
+    kind,
     sequenceNumber,
     status: "sent",
     createdAt: now,
@@ -82,27 +269,71 @@ export async function runSendRestaurantOrderToKitchen(
     printedAt: null,
   });
 
-  await Promise.all([
-    database
+  await database.insert(restaurantKitchenTicketLine).values(
+    lines.map((line) => ({
+      id: crypto.randomUUID(),
+      organizationId,
+      kitchenTicketId: ticketId,
+      orderItemId: line.orderItemId,
+      operation: line.operation,
+      productName: line.productName,
+      quantity: line.quantity,
+      notes: line.notes,
+      modifiersSnapshot: serializeModifiers(line.modifiers),
+      status: "sent",
+      createdAt: now,
+      updatedAt: now,
+    }))
+  );
+
+  for (const item of items) {
+    const itemLines = lines.filter((line) => line.orderItemId === item.id);
+    if (itemLines.length === 0) {
+      continue;
+    }
+
+    if (item.pendingCancellation) {
+      await database
+        .update(restaurantOrderItem)
+        .set({
+          kitchenTicketId: ticketId,
+          status: "cancelled",
+          pendingCancellation: false,
+          cancelledAt: now,
+          updatedAt: now,
+        })
+        .where(eq(restaurantOrderItem.id, item.id));
+      continue;
+    }
+
+    const replacesSentSnapshot =
+      item.status === "draft" ||
+      (itemLines.some((line) => line.operation === "cancel") &&
+        itemLines.some((line) => line.operation === "prepare"));
+
+    await database
       .update(restaurantOrderItem)
       .set({
         kitchenTicketId: ticketId,
         status: "sent",
         sentAt: now,
+        sentQuantity: item.quantity,
+        sentNotes: item.notes,
+        sentProductName: replacesSentSnapshot
+          ? item.productName
+          : item.sentProductName,
+        sentModifiersSnapshot: serializeModifiers(
+          normalizeModifiers(item.modifiers)
+        ),
         updatedAt: now,
       })
-      .where(
-        and(
-          eq(restaurantOrderItem.organizationId, organizationId),
-          eq(restaurantOrderItem.orderId, order.id),
-          eq(restaurantOrderItem.status, "draft")
-        )
-      ),
-    database
-      .update(restaurantOrder)
-      .set({ updatedAt: now })
-      .where(eq(restaurantOrder.id, order.id)),
-  ]);
+      .where(eq(restaurantOrderItem.id, item.id));
+  }
+
+  await database
+    .update(restaurantOrder)
+    .set({ updatedAt: now })
+    .where(eq(restaurantOrder.id, order.id));
 
   return {
     ticket: {
@@ -110,13 +341,14 @@ export async function runSendRestaurantOrderToKitchen(
       orderId: order.id,
       orderNumber: order.orderNumber,
       sequenceNumber,
+      kind,
       createdAt: now.getTime(),
       table: {
         id: table.id,
         name: table.name,
         areaName: table.areaName,
       },
-      items: draftItems,
+      lines,
     },
     printing: {
       enabled: settings.kitchen.printTicketsEnabled,
@@ -135,44 +367,89 @@ export async function runUpdateRestaurantOrderItemStatus(
     organizationId: auth.organizationId,
   });
   const organizationId = auth.organizationId;
-  const [itemRow] = await db
+  const [lineRow] = await db
     .select({
-      id: restaurantOrderItem.id,
-      status: restaurantOrderItem.status,
-      kitchenTicketId: restaurantOrderItem.kitchenTicketId,
+      id: restaurantKitchenTicketLine.id,
+      operation: restaurantKitchenTicketLine.operation,
+      orderItemId: restaurantKitchenTicketLine.orderItemId,
+      kitchenTicketId: restaurantKitchenTicketLine.kitchenTicketId,
+      lineStatus: restaurantKitchenTicketLine.status,
+      orderStatus: restaurantOrder.status,
+      ticketStatus: restaurantKitchenTicket.status,
     })
-    .from(restaurantOrderItem)
-    .where(
-      and(
-        eq(restaurantOrderItem.organizationId, organizationId),
-        eq(restaurantOrderItem.id, args.orderItemId)
+    .from(restaurantKitchenTicketLine)
+    .innerJoin(
+      restaurantKitchenTicket,
+      eq(
+        restaurantKitchenTicketLine.kitchenTicketId,
+        restaurantKitchenTicket.id
       )
     )
+    .innerJoin(
+      restaurantOrder,
+      eq(restaurantKitchenTicket.orderId, restaurantOrder.id)
+    )
+    .where(
+      and(
+        eq(restaurantKitchenTicketLine.organizationId, organizationId),
+        eq(restaurantKitchenTicketLine.id, args.ticketLineId)
+      )
+    )
+    .for("update")
     .limit(1);
 
-  if (!itemRow) {
-    throw new Error("El ítem no existe en la organización activa.");
+  if (!lineRow) {
+    throw new Error("La línea no existe en la organización activa.");
   }
-  if (itemRow.status === "draft" || itemRow.status === "cancelled") {
-    throw new Error("El ítem aún no puede cambiar a ese estado.");
+  if (
+    lineRow.orderStatus !== "open" ||
+    !(lineRow.ticketStatus === "sent" || lineRow.ticketStatus === "ready")
+  ) {
+    throw new Error("La comanda ya no está activa en cocina.");
+  }
+  if (lineRow.lineStatus === "served" || lineRow.lineStatus === "cancelled") {
+    throw new Error("La línea ya está finalizada.");
+  }
+  if (lineRow.operation === "cancel" && args.status !== "cancelled") {
+    throw new Error("Las anulaciones solo se pueden confirmar.");
+  }
+  if (lineRow.operation === "prepare" && args.status === "cancelled") {
+    throw new Error(
+      "Los ítems de preparación no se pueden cancelar desde cocina."
+    );
   }
 
   const now = new Date();
   await db
-    .update(restaurantOrderItem)
+    .update(restaurantKitchenTicketLine)
     .set({
       status: args.status,
-      readyAt: args.status === "ready" ? now : undefined,
-      servedAt: args.status === "served" ? now : undefined,
       updatedAt: now,
     })
-    .where(eq(restaurantOrderItem.id, itemRow.id));
+    .where(eq(restaurantKitchenTicketLine.id, lineRow.id));
 
-  if (itemRow.kitchenTicketId) {
+  if (lineRow.operation === "prepare") {
+    await db
+      .update(restaurantOrderItem)
+      .set({
+        status: args.status,
+        readyAt: args.status === "ready" ? now : undefined,
+        servedAt: args.status === "served" ? now : undefined,
+        updatedAt: now,
+      })
+      .where(
+        and(
+          eq(restaurantOrderItem.id, lineRow.orderItemId),
+          eq(restaurantOrderItem.kitchenTicketId, lineRow.kitchenTicketId)
+        )
+      );
+  }
+
+  if (lineRow.kitchenTicketId) {
     await refreshKitchenTicketStatus(
       db,
       organizationId,
-      itemRow.kitchenTicketId
+      lineRow.kitchenTicketId
     );
   }
 

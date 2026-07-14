@@ -15,6 +15,8 @@ export type PosTableOrderItemStatus = "draft" | "sent" | "ready" | "served";
 export interface PosTableSessionState {
   areaName: string;
   draftItemsCount: number;
+  hasPendingKitchenChanges: boolean;
+  hasSentKitchenTicket: boolean;
   isCancellingOrder: boolean;
   isClosingOrder: boolean;
   isLoading: boolean;
@@ -22,6 +24,8 @@ export interface PosTableSessionState {
   itemStatusById: Record<string, PosTableOrderItemStatus>;
   orderId: string | null;
   orderNumber: number | null;
+  pendingKitchenCancellationCount: number;
+  pendingKitchenPreparationCount: number;
   tableId: string;
   tableName: string;
 }

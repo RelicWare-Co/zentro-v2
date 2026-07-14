@@ -3,6 +3,7 @@ import type { z } from "zod";
 import type { Database } from "@/database/drizzle/db";
 import {
   restaurantKitchenTicket,
+  restaurantKitchenTicketLine,
   restaurantOrder,
   restaurantOrderItem,
 } from "@/database/drizzle/schema/restaurant.schema";
@@ -14,10 +15,12 @@ import type {
   CreateRestaurantAreaInputSchema,
   CreateRestaurantTableInputSchema,
   DeleteRestaurantAreaInputSchema,
+  DeleteRestaurantOrderItemInputSchema,
   DeleteRestaurantTableInputSchema,
   SendRestaurantOrderToKitchenInputSchema,
   UpdateRestaurantAreaInputSchema,
-  UpdateRestaurantDraftItemInputSchema,
+  UpdateRestaurantOrderItemInputSchema,
+  UpdateRestaurantOrderItemStatusInputSchema,
   UpdateRestaurantTableInputSchema,
 } from "@/features/restaurants/restaurants.schema";
 import {
@@ -149,8 +152,14 @@ export async function getKitchenBoardViaZero({
 }
 
 type AddOrderItemInput = z.infer<typeof AddRestaurantOrderItemInputSchema>;
-type UpdateDraftItemInput = z.infer<
-  typeof UpdateRestaurantDraftItemInputSchema
+type UpdateOrderItemInput = z.infer<
+  typeof UpdateRestaurantOrderItemInputSchema
+>;
+type DeleteOrderItemInput = z.infer<
+  typeof DeleteRestaurantOrderItemInputSchema
+>;
+type UpdateOrderItemStatusInput = z.infer<
+  typeof UpdateRestaurantOrderItemStatusInputSchema
 >;
 type CancelOrderInput = z.infer<typeof CancelRestaurantOrderInputSchema>;
 type SendToKitchenInput = z.infer<
@@ -224,17 +233,45 @@ export async function addRestaurantOrderItemViaZero({
   };
 }
 
-export async function updateRestaurantDraftItemViaZero({
+export async function updateRestaurantOrderItemViaZero({
   zeroDb,
   ctx,
   input,
 }: {
   zeroDb: ZeroTestDb;
   ctx: ZeroContext;
-  input: UpdateDraftItemInput;
+  input: UpdateOrderItemInput;
 }) {
   await zeroDb.transaction((tx) =>
-    serverMutators.restaurants.updateDraftItem.fn({ args: input, ctx, tx })
+    serverMutators.restaurants.updateOrderItem.fn({ args: input, ctx, tx })
+  );
+}
+
+export async function deleteRestaurantOrderItemViaZero({
+  zeroDb,
+  ctx,
+  input,
+}: {
+  zeroDb: ZeroTestDb;
+  ctx: ZeroContext;
+  input: DeleteOrderItemInput;
+}) {
+  await zeroDb.transaction((tx) =>
+    serverMutators.restaurants.deleteOrderItem.fn({ args: input, ctx, tx })
+  );
+}
+
+export async function updateRestaurantOrderItemStatusViaZero({
+  zeroDb,
+  ctx,
+  input,
+}: {
+  zeroDb: ZeroTestDb;
+  ctx: ZeroContext;
+  input: UpdateOrderItemStatusInput;
+}) {
+  await zeroDb.transaction((tx) =>
+    serverMutators.restaurants.updateItemStatus.fn({ args: input, ctx, tx })
   );
 }
 
@@ -262,6 +299,7 @@ export async function sendRestaurantOrderToKitchenViaZero({
   const [ticketRow] = await db
     .select({
       id: restaurantKitchenTicket.id,
+      kind: restaurantKitchenTicket.kind,
       orderId: restaurantKitchenTicket.orderId,
       sequenceNumber: restaurantKitchenTicket.sequenceNumber,
     })
@@ -275,16 +313,17 @@ export async function sendRestaurantOrderToKitchenViaZero({
     );
   }
 
-  const itemRows = await db
-    .select({ id: restaurantOrderItem.id })
-    .from(restaurantOrderItem)
-    .where(eq(restaurantOrderItem.kitchenTicketId, ticketId));
+  const lineRows = await db
+    .select({ id: restaurantKitchenTicketLine.id })
+    .from(restaurantKitchenTicketLine)
+    .where(eq(restaurantKitchenTicketLine.kitchenTicketId, ticketId));
 
   return {
     ticket: {
       id: ticketRow.id,
+      kind: ticketRow.kind,
       sequenceNumber: ticketRow.sequenceNumber,
-      items: itemRows,
+      lines: lineRows,
     },
   };
 }

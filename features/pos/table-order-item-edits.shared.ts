@@ -30,7 +30,7 @@ export function getEffectiveItemQuantity(
   return quantityOverrides[itemId] ?? replicatedQuantity;
 }
 
-export function buildDraftItemUpdateInput(params: {
+export function buildOrderItemUpdateInput(params: {
   itemId: string;
   notes: string | null | undefined;
   quantityOverrides: ItemQuantityOverrides;

@@ -130,6 +130,7 @@ export const restaurantKitchenTicket = pgTable(
     createdByUserId: text("created_by_user_id")
       .notNull()
       .references(() => user.id),
+    kind: text("kind").notNull().default("initial"),
     sequenceNumber: integer("sequence_number").notNull(),
     status: text("status").notNull().default("sent"),
     createdAt: timestamp("created_at", {
@@ -174,6 +175,15 @@ export const restaurantOrderItem = pgTable(
       .notNull()
       .default("revenue"),
     notes: text("notes"),
+    pendingCancellation: boolean("pending_cancellation")
+      .notNull()
+      .default(false),
+    sentModifiersSnapshot: text("sent_modifiers_snapshot")
+      .notNull()
+      .default("[]"),
+    sentNotes: text("sent_notes"),
+    sentProductName: text("sent_product_name"),
+    sentQuantity: integer("sent_quantity").notNull().default(0),
     status: text("status").notNull().default("draft"),
     createdAt: timestamp("created_at", {
       withTimezone: true,
@@ -199,6 +209,51 @@ export const restaurantOrderItem = pgTable(
     index("restaurantOrderItem_organizationId_idx").on(table.organizationId),
     index("restaurantOrderItem_orderId_idx").on(table.orderId),
     index("restaurantOrderItem_ticketId_idx").on(table.kitchenTicketId),
+  ]
+);
+
+export const restaurantKitchenTicketLine = pgTable(
+  "restaurant_kitchen_ticket_line",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id").notNull(),
+    kitchenTicketId: text("kitchen_ticket_id").notNull(),
+    orderItemId: text("order_item_id").notNull(),
+    operation: text("operation").notNull(),
+    productName: text("product_name").notNull(),
+    quantity: integer("quantity").notNull(),
+    notes: text("notes"),
+    modifiersSnapshot: text("modifiers_snapshot").notNull().default("[]"),
+    status: text("status").notNull().default("sent"),
+    createdAt: timestamp("created_at", {
+      withTimezone: true,
+      mode: "date",
+    }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" })
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "rktl_org_fk",
+      columns: [table.organizationId],
+      foreignColumns: [organization.id],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "rktl_ticket_fk",
+      columns: [table.kitchenTicketId],
+      foreignColumns: [restaurantKitchenTicket.id],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "rktl_order_item_fk",
+      columns: [table.orderItemId],
+      foreignColumns: [restaurantOrderItem.id],
+    }).onDelete("cascade"),
+    index("restaurantKitchenTicketLine_ticketId_idx").on(table.kitchenTicketId),
+    index("restaurantKitchenTicketLine_itemId_idx").on(table.orderItemId),
+    index("restaurantKitchenTicketLine_organizationId_idx").on(
+      table.organizationId
+    ),
   ]
 );
 
@@ -316,6 +371,7 @@ export const restaurantKitchenTicketRelations = relations(
       references: [user.id],
     }),
     items: many(restaurantOrderItem),
+    lines: many(restaurantKitchenTicketLine),
   })
 );
 
@@ -339,6 +395,25 @@ export const restaurantOrderItemRelations = relations(
       references: [product.id],
     }),
     modifiers: many(restaurantOrderItemModifier),
+    kitchenTicketLines: many(restaurantKitchenTicketLine),
+  })
+);
+
+export const restaurantKitchenTicketLineRelations = relations(
+  restaurantKitchenTicketLine,
+  ({ one }) => ({
+    kitchenTicket: one(restaurantKitchenTicket, {
+      fields: [restaurantKitchenTicketLine.kitchenTicketId],
+      references: [restaurantKitchenTicket.id],
+    }),
+    orderItem: one(restaurantOrderItem, {
+      fields: [restaurantKitchenTicketLine.orderItemId],
+      references: [restaurantOrderItem.id],
+    }),
+    organization: one(organization, {
+      fields: [restaurantKitchenTicketLine.organizationId],
+      references: [organization.id],
+    }),
   })
 );
 

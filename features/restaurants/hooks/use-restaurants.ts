@@ -9,10 +9,10 @@ import type {
   CreateRestaurantAreaInputSchema,
   CreateRestaurantTableInputSchema,
   DeleteRestaurantAreaInputSchema,
-  DeleteRestaurantDraftItemInputSchema,
+  DeleteRestaurantOrderItemInputSchema,
   DeleteRestaurantTableInputSchema,
   SendRestaurantOrderToKitchenInputSchema,
-  UpdateRestaurantDraftItemInputSchema,
+  UpdateRestaurantOrderItemInputSchema,
   UpdateRestaurantOrderItemStatusInputSchema,
   UpdateRestaurantOrderMetaInputSchema,
   UpdateRestaurantTableInputSchema,
@@ -348,14 +348,14 @@ export function useUpdateRestaurantOrderMetaMutation() {
   );
 }
 
-export function useUpdateRestaurantDraftItemMutation() {
+export function useUpdateRestaurantOrderItemMutation() {
   return useZeroMutation(
     async (
-      input: z.infer<typeof UpdateRestaurantDraftItemInputSchema>,
+      input: z.infer<typeof UpdateRestaurantOrderItemInputSchema>,
       zero
     ) => {
       await waitForZeroMutation(
-        zero.mutate(mutators.restaurants.updateDraftItem(input)),
+        zero.mutate(mutators.restaurants.updateOrderItem(input)),
         { awaitServer: true }
       );
       return { success: true as const };
@@ -363,14 +363,14 @@ export function useUpdateRestaurantDraftItemMutation() {
   );
 }
 
-export function useDeleteRestaurantDraftItemMutation() {
+export function useDeleteRestaurantOrderItemMutation() {
   return useZeroMutation(
     async (
-      input: z.infer<typeof DeleteRestaurantDraftItemInputSchema>,
+      input: z.infer<typeof DeleteRestaurantOrderItemInputSchema>,
       zero
     ) => {
       await waitForZeroMutation(
-        zero.mutate(mutators.restaurants.deleteDraftItem(input))
+        zero.mutate(mutators.restaurants.deleteOrderItem(input))
       );
       return { success: true as const };
     }
@@ -392,7 +392,8 @@ export function useSendRestaurantOrderToKitchenMutation() {
             orderId: input.orderId,
             ticketId,
           })
-        )
+        ),
+        { awaitServer: true }
       );
       return { ticketId };
     }
@@ -417,7 +418,8 @@ export function useUpdateRestaurantOrderItemStatusMutation() {
       zero
     ) => {
       await waitForZeroMutation(
-        zero.mutate(mutators.restaurants.updateItemStatus(input))
+        zero.mutate(mutators.restaurants.updateItemStatus(input)),
+        { awaitServer: true }
       );
       return { success: true as const };
     }

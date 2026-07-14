@@ -43,7 +43,11 @@ export const restaurantsQueries = {
             .orderBy("id", "asc")
         )
         .related("kitchenTickets", (query) =>
-          query.orderBy("sequenceNumber", "desc")
+          query
+            .related("lines", (lineQuery) =>
+              lineQuery.orderBy("createdAt", "asc").orderBy("id", "asc")
+            )
+            .orderBy("sequenceNumber", "desc")
         );
     }),
     tableById: defineZentroQuery(
@@ -73,7 +77,7 @@ export const restaurantsQueries = {
           or(cmp("status", "=", "sent"), cmp("status", "=", "ready"))
         )
         .whereExists("order", (query) => query.where("status", "open"))
-        .whereExists("items", (query) =>
+        .whereExists("lines", (query) =>
           query.where(({ cmp, or }) =>
             or(cmp("status", "=", "sent"), cmp("status", "=", "ready"))
           )
@@ -83,11 +87,8 @@ export const restaurantsQueries = {
             .where("status", "open")
             .related("table", (tableQuery) => tableQuery.related("area"))
         )
-        .related("items", (query) =>
-          query
-            .related("product")
-            .orderBy("createdAt", "desc")
-            .orderBy("id", "desc")
+        .related("lines", (query) =>
+          query.orderBy("createdAt", "desc").orderBy("id", "desc")
         )
         .orderBy("createdAt", "desc");
     }),

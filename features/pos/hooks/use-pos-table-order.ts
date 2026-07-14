@@ -3,7 +3,7 @@ import { useQuery as useZeroQuery } from "@rocicorp/zero/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { PosTableOrderItemStatus } from "@/features/pos/sale-modes/types";
 import {
-  buildDraftItemUpdateInput,
+  buildOrderItemUpdateInput,
   createItemMutationQueue,
   getEffectiveItemQuantity,
   type ItemQuantityOverrides,
@@ -14,12 +14,15 @@ import {
   useAddRestaurantOrderItemMutation,
   useCancelRestaurantOrderMutation,
   useCloseRestaurantOrderMutation,
-  useDeleteRestaurantDraftItemMutation,
+  useDeleteRestaurantOrderItemMutation,
   useRestaurantTableDetail,
   useSendRestaurantOrderToKitchenMutation,
-  useUpdateRestaurantDraftItemMutation,
+  useUpdateRestaurantOrderItemMutation,
 } from "@/features/restaurants/hooks/use-restaurants";
-import { printKitchenTicket } from "@/features/restaurants/printing/print-kitchen-ticket";
+import {
+  type KitchenTicketPrintItem,
+  printKitchenTicket,
+} from "@/features/restaurants/printing/print-kitchen-ticket";
 import type { RestaurantTableDetail } from "@/features/restaurants/restaurants.shared";
 import { parseOrganizationSettingsMetadata } from "@/features/settings/settings.shared";
 import { queries } from "@/zero/queries";
@@ -27,6 +30,12 @@ import { queries } from "@/zero/queries";
 type TableOpenOrder = NonNullable<RestaurantTableDetail["openOrder"]>;
 type TableOrderItem = TableOpenOrder["items"][number];
 type ItemNotesOverrides = Record<string, string | null>;
+
+interface PendingKitchenAutoPrint {
+  areaName: string;
+  tableName: string;
+  ticketId: string;
+}
 
 function getErrorDescription(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
@@ -78,6 +87,149 @@ function buildTableCartItem(
   };
 }
 
+function parseSentModifiers(value: string) {
+  try {
+    const parsed: unknown = JSON.parse(value);
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed.flatMap((modifier) => {
+      if (
+        !modifier ||
+        typeof modifier !== "object" ||
+        !("name" in modifier) ||
+        !("quantity" in modifier) ||
+        !("unitPrice" in modifier) ||
+        typeof modifier.name !== "string" ||
+        typeof modifier.quantity !== "number" ||
+        typeof modifier.unitPrice !== "number"
+      ) {
+        return [];
+      }
+
+      return [
+        {
+          name: modifier.name,
+          quantity: modifier.quantity,
+          unitPrice: modifier.unitPrice,
+        },
+      ];
+    });
+  } catch {
+    return [];
+  }
+}
+
+function serializeModifiers(item: TableOrderItem) {
+  return JSON.stringify(
+    item.modifiers
+      .map((modifier) => ({
+        id: modifier.modifierProductId,
+        name: modifier.name,
+        quantity: modifier.quantity,
+        unitPrice: modifier.unitPrice,
+      }))
+      .toSorted((left, right) => left.id.localeCompare(right.id))
+  );
+}
+
+function scaleItemTotal(item: TableOrderItem, quantity: number) {
+  return item.quantity > 0
+    ? Math.round((item.totalAmount / item.quantity) * quantity)
+    : item.totalAmount;
+}
+
+function buildCurrentKitchenPrintItem(
+  item: TableOrderItem,
+  quantity: number,
+  notes: string | null
+): KitchenTicketPrintItem {
+  return {
+    productName: item.productName,
+    quantity,
+    notes,
+    modifiers: item.modifiers.map((modifier) => ({
+      name: modifier.name,
+      quantity: modifier.quantity,
+      unitPrice: modifier.unitPrice,
+    })),
+    totalAmount: scaleItemTotal(item, quantity),
+  };
+}
+
+function buildSentKitchenPrintItem(
+  item: TableOrderItem,
+  current: KitchenTicketPrintItem
+): KitchenTicketPrintItem {
+  const savedSentQuantity = item.sentQuantity ?? 0;
+  const quantity = savedSentQuantity > 0 ? savedSentQuantity : item.quantity;
+  const notes =
+    savedSentQuantity > 0 ? (item.sentNotes ?? null) : (item.notes ?? null);
+  const modifiers =
+    savedSentQuantity > 0
+      ? parseSentModifiers(item.sentModifiersSnapshot ?? "[]")
+      : current.modifiers;
+
+  return {
+    productName: item.sentProductName ?? item.productName,
+    quantity,
+    notes,
+    modifiers,
+    totalAmount: scaleItemTotal(item, quantity),
+    operation: "cancel",
+  };
+}
+
+function getPendingKitchenLines(
+  item: TableOrderItem,
+  quantity: number,
+  notes: string | null
+): KitchenTicketPrintItem[] {
+  const current = buildCurrentKitchenPrintItem(item, quantity, notes);
+  if (item.status === "draft") {
+    return [current];
+  }
+
+  const sent = buildSentKitchenPrintItem(item, current);
+  if (item.pendingCancellation) {
+    return [sent];
+  }
+
+  const modifiersChanged =
+    serializeModifiers(item) !== (item.sentModifiersSnapshot ?? "[]");
+  if (notes !== sent.notes || modifiersChanged) {
+    return [sent, current];
+  }
+
+  const quantityDifference = quantity - sent.quantity;
+  if (quantityDifference === 0) {
+    return [];
+  }
+
+  const correctionQuantity = Math.abs(quantityDifference);
+  const operation = quantityDifference > 0 ? "prepare" : "cancel";
+  const correctionItem = operation === "prepare" ? current : sent;
+  return [
+    {
+      ...correctionItem,
+      quantity: correctionQuantity,
+      totalAmount: scaleItemTotal(item, correctionQuantity),
+      operation,
+    },
+  ];
+}
+
+function buildPendingKitchenPrintItems(
+  items: TableOrderItem[],
+  getQuantity: (item: TableOrderItem) => number,
+  getNotes: (item: TableOrderItem) => string | null
+): KitchenTicketPrintItem[] {
+  return items.flatMap((item) =>
+    getPendingKitchenLines(item, getQuantity(item), getNotes(item))
+  );
+}
+
 /**
  * Sesión de mesa dentro del POS: expone la cuenta abierta de una mesa como un
  * carrito POS (ítems + totales con impuestos, igual que `createCoreSale`) y
@@ -93,6 +245,8 @@ export function usePosTableOrder(
     useState<ItemNotesOverrides>({});
   const [itemQuantityOverrides, setItemQuantityOverrides] =
     useState<ItemQuantityOverrides>({});
+  const [pendingKitchenAutoPrint, setPendingKitchenAutoPrint] =
+    useState<PendingKitchenAutoPrint | null>(null);
   const itemNotesOverridesRef = useRef<ItemNotesOverrides>({});
   const itemQuantityOverridesRef = useRef<ItemQuantityOverrides>({});
   const itemMutationQueueRef = useRef(createItemMutationQueue());
@@ -105,14 +259,17 @@ export function usePosTableOrder(
   const organizationMetadata = organizationRows[0]?.metadata ?? null;
 
   const addItemMutation = useAddRestaurantOrderItemMutation();
-  const updateDraftItemMutation = useUpdateRestaurantDraftItemMutation();
-  const deleteDraftItemMutation = useDeleteRestaurantDraftItemMutation();
+  const updateOrderItemMutation = useUpdateRestaurantOrderItemMutation();
+  const deleteOrderItemMutation = useDeleteRestaurantOrderItemMutation();
   const sendToKitchenMutation = useSendRestaurantOrderToKitchenMutation();
   const cancelOrderMutation = useCancelRestaurantOrderMutation();
   const closeOrderMutation = useCloseRestaurantOrderMutation();
 
   const activeItems = useMemo(
-    () => openOrder?.items.filter((item) => item.status !== "cancelled") ?? [],
+    () =>
+      openOrder?.items.filter(
+        (item) => item.status !== "cancelled" && !item.pendingCancellation
+      ) ?? [],
     [openOrder?.items]
   );
 
@@ -182,6 +339,78 @@ export function usePosTableOrder(
     () => calculateCartTotals(cart, discountInput),
     [cart, discountInput]
   );
+  const pendingKitchenItems = useMemo(
+    () =>
+      openOrder
+        ? buildPendingKitchenPrintItems(
+            openOrder.items,
+            (item) =>
+              getEffectiveItemQuantity(
+                item.id,
+                item.quantity,
+                itemQuantityOverrides
+              ),
+            (item) => getEffectiveItemNotes(item, itemNotesOverrides)
+          )
+        : [],
+    [itemNotesOverrides, itemQuantityOverrides, openOrder]
+  );
+  const pendingKitchenSummary = useMemo(
+    () => ({
+      cancellations: pendingKitchenItems.filter(
+        (item) => item.operation === "cancel"
+      ).length,
+      preparations: pendingKitchenItems.filter(
+        (item) => item.operation !== "cancel"
+      ).length,
+    }),
+    [pendingKitchenItems]
+  );
+
+  useEffect(() => {
+    if (!(pendingKitchenAutoPrint && openOrder)) {
+      return;
+    }
+    const ticket = openOrder.tickets.find(
+      (candidate) => candidate.id === pendingKitchenAutoPrint.ticketId
+    );
+    if (!ticket || ticket.lines.length === 0) {
+      return;
+    }
+
+    setPendingKitchenAutoPrint(null);
+    printKitchenTicket(
+      {
+        id: ticket.id,
+        orderNumber: openOrder.orderNumber,
+        kind: ticket.kind,
+        sequenceNumber: ticket.sequenceNumber,
+        createdAt: ticket.createdAt,
+        table: {
+          name: pendingKitchenAutoPrint.tableName,
+          areaName: pendingKitchenAutoPrint.areaName,
+        },
+        items: ticket.lines.map((line) => ({
+          productName: line.productName,
+          quantity: line.quantity,
+          operation: line.operation,
+          notes: line.notes ?? null,
+          modifiers: line.modifiers.map((modifier) => ({
+            name: modifier.name,
+            quantity: modifier.quantity,
+            unitPrice: modifier.unitPrice,
+          })),
+        })),
+      },
+      activeOrganizationId
+    ).catch((error) => {
+      notifications.show({
+        title: "La comanda se envió, pero no se pudo imprimir",
+        message: getErrorDescription(error, "Revisa la impresora de cocina."),
+        color: "red",
+      });
+    });
+  }, [activeOrganizationId, openOrder, pendingKitchenAutoPrint]);
 
   const itemStatusById = useMemo(() => {
     const statuses: Record<string, PosTableOrderItemStatus> = {};
@@ -261,10 +490,10 @@ export function usePosTableOrder(
       if (!item) {
         return;
       }
-      if (item.status !== "draft") {
+      if (!(item.status === "draft" || item.status === "sent")) {
         notifications.show({
-          title: "Este ítem ya fue enviado a cocina",
-          message: "Solo puedes editar ítems pendientes de envío.",
+          title: "Este ítem ya está finalizado",
+          message: "Solo puedes editar ítems que siguen en preparación.",
           color: "red",
         });
         return;
@@ -278,7 +507,7 @@ export function usePosTableOrder(
       try {
         if (nextQuantity <= 0) {
           await enqueueItemMutation(orderItemId, async () => {
-            await deleteDraftItemMutation.mutateAsync({ orderItemId });
+            await deleteOrderItemMutation.mutateAsync({ orderItemId });
           });
           return;
         }
@@ -291,8 +520,8 @@ export function usePosTableOrder(
         setItemQuantityOverrides(nextOverrides);
 
         await enqueueItemMutation(orderItemId, async () => {
-          await updateDraftItemMutation.mutateAsync(
-            buildDraftItemUpdateInput({
+          await updateOrderItemMutation.mutateAsync(
+            buildOrderItemUpdateInput({
               itemId: orderItemId,
               replicatedQuantity: item.quantity,
               quantityOverrides: itemQuantityOverridesRef.current,
@@ -316,9 +545,9 @@ export function usePosTableOrder(
     },
     [
       activeItems,
-      deleteDraftItemMutation,
+      deleteOrderItemMutation,
       enqueueItemMutation,
-      updateDraftItemMutation,
+      updateOrderItemMutation,
     ]
   );
 
@@ -330,17 +559,17 @@ export function usePosTableOrder(
       if (!item) {
         return;
       }
-      if (item.status !== "draft") {
+      if (!(item.status === "draft" || item.status === "sent")) {
         notifications.show({
-          title: "Este ítem ya fue enviado a cocina",
-          message: "Solo puedes quitar ítems pendientes de envío.",
+          title: "Este ítem ya está finalizado",
+          message: "Solo puedes quitar ítems que siguen en preparación.",
           color: "red",
         });
         return;
       }
       try {
         await enqueueItemMutation(orderItemId, async () => {
-          await deleteDraftItemMutation.mutateAsync({ orderItemId });
+          await deleteOrderItemMutation.mutateAsync({ orderItemId });
         });
       } catch (error) {
         notifications.show({
@@ -350,7 +579,7 @@ export function usePosTableOrder(
         });
       }
     },
-    [activeItems, deleteDraftItemMutation, enqueueItemMutation]
+    [activeItems, deleteOrderItemMutation, enqueueItemMutation]
   );
 
   const updateItemNotes = useCallback(
@@ -361,14 +590,14 @@ export function usePosTableOrder(
       if (!item) {
         throw new Error("El ítem ya no está disponible en la orden.");
       }
-      if (item.status !== "draft") {
-        throw new Error("Solo puedes editar ítems pendientes de envío.");
+      if (!(item.status === "draft" || item.status === "sent")) {
+        throw new Error("Solo puedes editar ítems que siguen en preparación.");
       }
 
       const normalizedNotes = notes?.trim() || null;
       await enqueueItemMutation(orderItemId, async () => {
-        await updateDraftItemMutation.mutateAsync(
-          buildDraftItemUpdateInput({
+        await updateOrderItemMutation.mutateAsync(
+          buildOrderItemUpdateInput({
             itemId: orderItemId,
             replicatedQuantity: item.quantity,
             quantityOverrides: itemQuantityOverridesRef.current,
@@ -383,7 +612,7 @@ export function usePosTableOrder(
       itemNotesOverridesRef.current = nextOverrides;
       setItemNotesOverrides(nextOverrides);
     },
-    [activeItems, enqueueItemMutation, updateDraftItemMutation]
+    [activeItems, enqueueItemMutation, updateOrderItemMutation]
   );
 
   const sendToKitchen = useCallback(async () => {
@@ -391,24 +620,17 @@ export function usePosTableOrder(
       return;
     }
     await itemMutationQueueRef.current.waitForAll();
-    const draftItems = openOrder.items
-      .filter((item) => item.status === "draft")
-      .map((item) => ({
-        productName: item.productName,
-        quantity: getEffectiveItemQuantity(
+    const pendingItems = buildPendingKitchenPrintItems(
+      openOrder.items,
+      (item) =>
+        getEffectiveItemQuantity(
           item.id,
           item.quantity,
           itemQuantityOverridesRef.current
         ),
-        notes: getEffectiveItemNotes(item, itemNotesOverridesRef.current),
-        modifiers: item.modifiers.map((modifier) => ({
-          name: modifier.name,
-          quantity: modifier.quantity,
-          unitPrice: modifier.unitPrice,
-        })),
-        totalAmount: item.totalAmount,
-      }));
-    if (draftItems.length === 0) {
+      (item) => getEffectiveItemNotes(item, itemNotesOverridesRef.current)
+    );
+    if (pendingItems.length === 0) {
       return;
     }
 
@@ -428,7 +650,7 @@ export function usePosTableOrder(
     }
 
     notifications.show({
-      message: `Comanda de ${table.name} enviada a cocina`,
+      message: `${table.name} enviada a cocina`,
       color: "green",
     });
 
@@ -436,36 +658,16 @@ export function usePosTableOrder(
       parseOrganizationSettingsMetadata(organizationMetadata).restaurants
         .kitchen;
     if (
-      !(kitchenSettings.printTicketsEnabled && kitchenSettings.autoPrintOnSend)
+      kitchenSettings.printTicketsEnabled &&
+      kitchenSettings.autoPrintOnSend
     ) {
-      return;
-    }
-    try {
-      await printKitchenTicket(
-        {
-          id: ticketId,
-          orderNumber: openOrder.orderNumber,
-          sequenceNumber: openOrder.tickets.length + 1,
-          createdAt: Date.now(),
-          table: { name: table.name, areaName: table.areaName },
-          items: draftItems,
-        },
-        activeOrganizationId
-      );
-    } catch (error) {
-      notifications.show({
-        title: "La comanda se envió, pero no se pudo imprimir",
-        message: getErrorDescription(error, "Revisa la impresora de cocina."),
-        color: "red",
+      setPendingKitchenAutoPrint({
+        ticketId,
+        tableName: table.name,
+        areaName: table.areaName,
       });
     }
-  }, [
-    openOrder,
-    table,
-    sendToKitchenMutation,
-    organizationMetadata,
-    activeOrganizationId,
-  ]);
+  }, [openOrder, table, sendToKitchenMutation, organizationMetadata]);
 
   const closeTableOrder = useCallback(
     async (params: {
@@ -513,6 +715,10 @@ export function usePosTableOrder(
     totals,
     itemStatusById,
     draftItemsCount: openOrder?.totals.draftItemsCount ?? 0,
+    hasSentKitchenTicket: (openOrder?.tickets.length ?? 0) > 0,
+    hasPendingKitchenChanges: openOrder?.hasPendingKitchenChanges ?? false,
+    pendingKitchenCancellationCount: pendingKitchenSummary.cancellations,
+    pendingKitchenPreparationCount: pendingKitchenSummary.preparations,
     isLoading: tableDetailQuery.isLoading,
     detailError: tableDetailQuery.error,
     enterTable,

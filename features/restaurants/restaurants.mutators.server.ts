@@ -6,12 +6,12 @@ import {
   runCreateRestaurantArea,
   runCreateRestaurantTable,
   runDeleteRestaurantArea,
-  runDeleteRestaurantDraftItem,
+  runDeleteRestaurantOrderItem,
   runDeleteRestaurantTable,
   runEnsureDefaultRestaurantAreas,
   runSendRestaurantOrderToKitchen,
   runUpdateRestaurantArea,
-  runUpdateRestaurantDraftItem,
+  runUpdateRestaurantOrderItem,
   runUpdateRestaurantOrderItemStatus,
   runUpdateRestaurantOrderMeta,
   runUpdateRestaurantTable,
@@ -23,12 +23,12 @@ import {
   createRestaurantAreaArgsSchema,
   createRestaurantTableArgsSchema,
   deleteRestaurantAreaArgsSchema,
-  deleteRestaurantDraftItemArgsSchema,
+  deleteRestaurantOrderItemArgsSchema,
   deleteRestaurantTableArgsSchema,
   ensureDefaultRestaurantAreasArgsSchema,
   sendRestaurantOrderToKitchenArgsSchema,
   updateRestaurantAreaArgsSchema,
-  updateRestaurantDraftItemArgsSchema,
+  updateRestaurantOrderItemArgsSchema,
   updateRestaurantOrderItemStatusArgsSchema,
   updateRestaurantOrderMetaArgsSchema,
   updateRestaurantTableArgsSchema,
@@ -75,14 +75,14 @@ export const restaurantsServerMutators = {
     restaurantRunner(runUpdateRestaurantOrderMeta),
     { operationName: RESTAURANT_OP_NAME }
   ),
-  updateDraftItem: defineZentroServerMutator(
-    updateRestaurantDraftItemArgsSchema,
-    restaurantRunner(runUpdateRestaurantDraftItem),
+  updateOrderItem: defineZentroServerMutator(
+    updateRestaurantOrderItemArgsSchema,
+    restaurantRunner(runUpdateRestaurantOrderItem),
     { operationName: RESTAURANT_OP_NAME }
   ),
-  deleteDraftItem: defineZentroServerMutator(
-    deleteRestaurantDraftItemArgsSchema,
-    restaurantRunner(runDeleteRestaurantDraftItem),
+  deleteOrderItem: defineZentroServerMutator(
+    deleteRestaurantOrderItemArgsSchema,
+    restaurantRunner(runDeleteRestaurantOrderItem),
     { operationName: RESTAURANT_OP_NAME }
   ),
   sendToKitchen: defineZentroServerMutator(

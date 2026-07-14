@@ -10,6 +10,7 @@ import {
   getOpenOrderById,
   getOrCreateOpenOrderForTable,
   getProductSnapshot,
+  lockOpenRestaurantOrder,
   normalizeOptionalString,
   normalizeRequiredString,
   type RestaurantAuth,
@@ -20,8 +21,8 @@ import {
 } from "@/features/restaurants/restaurant-operations.server";
 import type {
   AddRestaurantOrderItemInputSchema,
-  DeleteRestaurantDraftItemInputSchema,
-  UpdateRestaurantDraftItemInputSchema,
+  DeleteRestaurantOrderItemInputSchema,
+  UpdateRestaurantOrderItemInputSchema,
   UpdateRestaurantOrderMetaInputSchema,
 } from "@/features/restaurants/restaurants.schema";
 
@@ -179,9 +180,9 @@ export async function runUpdateRestaurantOrderMeta(
   return { success: true };
 }
 
-export async function runUpdateRestaurantDraftItem(
+export async function runUpdateRestaurantOrderItem(
   db: RestaurantDbExecutor,
-  args: z.infer<typeof UpdateRestaurantDraftItemInputSchema>,
+  args: z.infer<typeof UpdateRestaurantOrderItemInputSchema>,
   auth: RestaurantAuth
 ) {
   await requireRestaurantModuleAccess({
@@ -193,11 +194,31 @@ export async function runUpdateRestaurantDraftItem(
   const notes =
     args.notes === undefined ? undefined : normalizeOptionalString(args.notes);
 
+  const [itemReference] = await db
+    .select({
+      id: restaurantOrderItem.id,
+      orderId: restaurantOrderItem.orderId,
+    })
+    .from(restaurantOrderItem)
+    .where(
+      and(
+        eq(restaurantOrderItem.organizationId, organizationId),
+        eq(restaurantOrderItem.id, args.orderItemId)
+      )
+    )
+    .limit(1);
+
+  if (!itemReference) {
+    throw new Error("El ítem no existe en la organización activa.");
+  }
+  await lockOpenRestaurantOrder(db, organizationId, itemReference.orderId);
+
   const [itemRow] = await db
     .select({
       id: restaurantOrderItem.id,
       status: restaurantOrderItem.status,
       orderId: restaurantOrderItem.orderId,
+      pendingCancellation: restaurantOrderItem.pendingCancellation,
     })
     .from(restaurantOrderItem)
     .where(
@@ -211,8 +232,11 @@ export async function runUpdateRestaurantDraftItem(
   if (!itemRow) {
     throw new Error("El ítem no existe en la organización activa.");
   }
-  if (itemRow.status !== "draft") {
-    throw new Error("Solo puedes editar ítems que aún no fueron enviados.");
+  if (!(itemRow.status === "draft" || itemRow.status === "sent")) {
+    throw new Error("Solo puedes editar ítems que siguen en preparación.");
+  }
+  if (itemRow.pendingCancellation) {
+    throw new Error("El ítem está pendiente de anulación en cocina.");
   }
 
   await db
@@ -227,9 +251,9 @@ export async function runUpdateRestaurantDraftItem(
   return { success: true, orderId: itemRow.orderId };
 }
 
-export async function runDeleteRestaurantDraftItem(
+export async function runDeleteRestaurantOrderItem(
   db: RestaurantDbExecutor,
-  args: z.infer<typeof DeleteRestaurantDraftItemInputSchema>,
+  args: z.infer<typeof DeleteRestaurantOrderItemInputSchema>,
   auth: RestaurantAuth
 ) {
   await requireRestaurantModuleAccess({
@@ -237,6 +261,25 @@ export async function runDeleteRestaurantDraftItem(
     organizationId: auth.organizationId,
   });
   const organizationId = auth.organizationId;
+  const [itemReference] = await db
+    .select({
+      id: restaurantOrderItem.id,
+      orderId: restaurantOrderItem.orderId,
+    })
+    .from(restaurantOrderItem)
+    .where(
+      and(
+        eq(restaurantOrderItem.organizationId, organizationId),
+        eq(restaurantOrderItem.id, args.orderItemId)
+      )
+    )
+    .limit(1);
+
+  if (!itemReference) {
+    throw new Error("El ítem no existe en la organización activa.");
+  }
+  await lockOpenRestaurantOrder(db, organizationId, itemReference.orderId);
+
   const [itemRow] = await db
     .select({
       id: restaurantOrderItem.id,
@@ -255,8 +298,19 @@ export async function runDeleteRestaurantDraftItem(
   if (!itemRow) {
     throw new Error("El ítem no existe en la organización activa.");
   }
+  if (itemRow.status === "sent") {
+    await db
+      .update(restaurantOrderItem)
+      .set({
+        pendingCancellation: true,
+        updatedAt: new Date(),
+      })
+      .where(eq(restaurantOrderItem.id, itemRow.id));
+
+    return { success: true, orderId: itemRow.orderId };
+  }
   if (itemRow.status !== "draft") {
-    throw new Error("Solo puedes eliminar ítems que aún no fueron enviados.");
+    throw new Error("Solo puedes eliminar ítems que siguen en preparación.");
   }
 
   const database = db;

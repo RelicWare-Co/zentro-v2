@@ -33,6 +33,7 @@ export type {
   ProductIngredient,
   RestaurantArea,
   RestaurantKitchenTicket,
+  RestaurantKitchenTicketLine,
   RestaurantOrder,
   RestaurantOrderItem,
   RestaurantOrderItemModifier,

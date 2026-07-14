@@ -6,7 +6,7 @@ import {
   restaurantOrderItem,
 } from "@/database/drizzle/schema/restaurant.schema";
 import {
-  getOpenOrderById,
+  lockOpenRestaurantOrder,
   type RestaurantAuth,
   type RestaurantDbExecutor,
   requireRestaurantModuleAccess,
@@ -24,7 +24,7 @@ export async function runCancelRestaurantOrder(
   });
 
   const organizationId = auth.organizationId;
-  const order = await getOpenOrderById(db, organizationId, args.orderId);
+  const order = await lockOpenRestaurantOrder(db, organizationId, args.orderId);
   const now = new Date();
 
   await Promise.all([

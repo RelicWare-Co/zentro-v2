@@ -3,15 +3,17 @@ import { buildKitchenTicketDocument } from "@/features/restaurants/printing/kitc
 export interface KitchenTicketPrintItem {
   modifiers: { name: string; quantity: number; unitPrice: number }[];
   notes: string | null;
+  operation?: "cancel" | "prepare";
   productName: string;
   quantity: number;
-  totalAmount: number;
+  totalAmount?: number;
 }
 
 export interface KitchenTicketPrintPayload {
   createdAt: number;
   id: string;
   items: KitchenTicketPrintItem[];
+  kind?: "correction" | "initial";
   orderNumber: number;
   sequenceNumber: number;
   table: { name: string; areaName: string };
@@ -24,6 +26,7 @@ export async function printKitchenTicket(
   const document = buildKitchenTicketDocument({
     ticketId: ticket.id,
     orderNumber: ticket.orderNumber,
+    kind: ticket.kind,
     sequenceNumber: ticket.sequenceNumber,
     createdAt: ticket.createdAt,
     tableName: ticket.table.name,
@@ -31,6 +34,7 @@ export async function printKitchenTicket(
     items: ticket.items.map((item) => ({
       productName: item.productName,
       quantity: item.quantity,
+      operation: item.operation,
       notes: item.notes,
       modifiers: item.modifiers.map((m) => ({
         name: m.name,

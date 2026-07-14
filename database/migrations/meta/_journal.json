@@ -113,6 +113,20 @@
       "when": 1783903959212,
       "tag": "0015_petite_beast",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1784019769111,
+      "tag": "0016_slimy_hardball",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1784046598458,
+      "tag": "0017_naive_boomerang",
+      "breakpoints": true
     }
   ]
 }

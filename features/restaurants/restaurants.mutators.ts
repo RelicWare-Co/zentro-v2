@@ -22,12 +22,12 @@ export const updateRestaurantOrderMetaArgsSchema = zod.object({
   guestCount: zod.number().int().min(0).optional(),
   notes: zod.string().trim().optional().nullable(),
 });
-export const updateRestaurantDraftItemArgsSchema = zod.object({
+export const updateRestaurantOrderItemArgsSchema = zod.object({
   orderItemId: zod.string().trim().min(1),
   quantity: zod.number().int().positive(),
   notes: zod.string().trim().optional().nullable(),
 });
-export const deleteRestaurantDraftItemArgsSchema = zod.object({
+export const deleteRestaurantOrderItemArgsSchema = zod.object({
   orderItemId: zod.string().trim().min(1),
 });
 export const sendRestaurantOrderToKitchenArgsSchema = zod.object({
@@ -39,8 +39,8 @@ export const cancelRestaurantOrderArgsSchema = zod.object({
   reason: zod.string().trim().min(1).max(500),
 });
 export const updateRestaurantOrderItemStatusArgsSchema = zod.object({
-  orderItemId: zod.string().trim().min(1),
-  status: zod.enum(["ready", "served"]),
+  ticketLineId: zod.string().trim().min(1),
+  status: zod.enum(["ready", "served", "cancelled"]),
 });
 export const closeRestaurantOrderArgsSchema = zod.object({
   orderId: zod.string().trim().min(1),
@@ -99,14 +99,14 @@ export const restaurantsMutators = {
         // Server-only restaurant writes; client completes without optimistic writes.
       }
     ),
-    updateDraftItem: defineZentroMutator(
-      updateRestaurantDraftItemArgsSchema,
+    updateOrderItem: defineZentroMutator(
+      updateRestaurantOrderItemArgsSchema,
       async () => {
         // Server-only restaurant writes; client completes without optimistic writes.
       }
     ),
-    deleteDraftItem: defineZentroMutator(
-      deleteRestaurantDraftItemArgsSchema,
+    deleteOrderItem: defineZentroMutator(
+      deleteRestaurantOrderItemArgsSchema,
       async () => {
         // Server-only restaurant writes; client completes without optimistic writes.
       }

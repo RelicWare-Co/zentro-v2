@@ -4,21 +4,87 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 // biome-ignore lint/performance/noNamespaceImport: drizzle requires all schemas as a namespace object
 import * as schema from "@/database/drizzle/schema";
+import { organization } from "@/database/drizzle/schema/auth.schema";
 import { creditAccount } from "@/database/drizzle/schema/credit.schema";
 import { product } from "@/database/drizzle/schema/inventory.schema";
+import {
+  restaurantKitchenTicket,
+  restaurantOrder,
+  restaurantOrderItem,
+} from "@/database/drizzle/schema/restaurant.schema";
 import { payment, sale } from "@/database/drizzle/schema/sales.schema";
+import { lockOpenRestaurantOrder } from "@/features/restaurants/restaurant-operations.server";
+import { runCancelRestaurantOrder } from "@/features/restaurants/restaurant-order-cancellation.server";
+import { runAddRestaurantOrderItem } from "@/features/restaurants/restaurant-order-items.server";
 import { createCoreSale } from "@/features/sales/create-sale.server";
+import {
+  parseOrganizationSettingsMetadata,
+  serializeOrganizationSettingsMetadata,
+} from "@/features/settings/settings.shared";
 import {
   seedCustomer,
   seedOrganizationWithMember,
   seedProduct,
+  seedRestaurantArea,
+  seedRestaurantTable,
   seedShift,
 } from "./helpers/seed";
 import type { TestDb } from "./helpers/test-db";
 import { createTestDb } from "./helpers/test-db";
 import { registerCreditPaymentViaZero } from "./helpers/zero-credit";
+import {
+  addRestaurantOrderItemViaZero,
+  sendRestaurantOrderToKitchenViaZero,
+  updateRestaurantOrderItemViaZero,
+} from "./helpers/zero-restaurants";
 import { cancelSaleViaZero } from "./helpers/zero-sales";
 import { createZeroContext, createZeroTestDb } from "./helpers/zero-shifts";
+
+async function enableRestaurantModule(db: TestDb, organizationId: string) {
+  const settings = parseOrganizationSettingsMetadata(null);
+  await db
+    .update(organization)
+    .set({
+      metadata: serializeOrganizationSettingsMetadata({
+        ...settings,
+        modules: {
+          ...settings.modules,
+          restaurants: {
+            ...settings.modules.restaurants,
+            enabled: true,
+          },
+        },
+      }),
+    })
+    .where(eq(organization.id, organizationId));
+}
+
+function createDeferred() {
+  let resolve!: () => void;
+  const promise = new Promise<void>((complete) => {
+    resolve = complete;
+  });
+
+  return { promise, resolve };
+}
+
+async function waitForPostgresLock(db: TestDb, processId: number) {
+  for (const _attempt of Array.from({ length: 100 })) {
+    const [activity] = await db.$client`
+      SELECT wait_event_type
+      FROM pg_stat_activity
+      WHERE pid = ${processId}
+    `;
+    if (activity?.wait_event_type === "Lock") {
+      return;
+    }
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, 10);
+    });
+  }
+
+  throw new Error("La segunda transacción no quedó esperando el bloqueo.");
+}
 
 describe("concurrency", () => {
   test("simultaneous sales on same product maintain stock invariant", async () => {
@@ -63,6 +129,274 @@ describe("concurrency", () => {
     expect(productRow?.stock).toBe(10 - fulfilled.length * 4);
 
     await cleanup();
+  });
+
+  test("simultaneous kitchen corrections keep a single stable sequence", async () => {
+    const { db, cleanup, databaseUrl } = await createTestDb();
+    const firstClient = postgres(databaseUrl, { max: 1 });
+    const secondClient = postgres(databaseUrl, { max: 1 });
+    const firstDb = drizzle(firstClient, { schema }) as TestDb;
+    const secondDb = drizzle(secondClient, { schema }) as TestDb;
+
+    try {
+      const { organizationId, userId } = await seedOrganizationWithMember(db);
+      await enableRestaurantModule(db, organizationId);
+      const areaId = await seedRestaurantArea(db, {
+        organizationId,
+        name: "Terraza",
+      });
+      const [tableId, productId] = await Promise.all([
+        seedRestaurantTable(db, {
+          organizationId,
+          areaId,
+          name: "T1",
+        }),
+        seedProduct(db, {
+          organizationId,
+          name: "Corrección concurrente",
+          price: 10_000,
+          stock: 10,
+          trackInventory: false,
+        }),
+      ]);
+      const firstZeroDb = createZeroTestDb(firstDb);
+      const secondZeroDb = createZeroTestDb(secondDb);
+      const ctx = createZeroContext(userId, organizationId);
+      const added = await addRestaurantOrderItemViaZero({
+        db,
+        zeroDb: firstZeroDb,
+        ctx,
+        input: { tableId, productId, quantity: 1 },
+      });
+      await sendRestaurantOrderToKitchenViaZero({
+        db,
+        zeroDb: firstZeroDb,
+        ctx,
+        input: { orderId: added.orderId },
+      });
+      await updateRestaurantOrderItemViaZero({
+        zeroDb: firstZeroDb,
+        ctx,
+        input: { orderItemId: added.itemId, quantity: 2 },
+      });
+
+      const concurrentResults = await Promise.allSettled([
+        sendRestaurantOrderToKitchenViaZero({
+          db: firstDb,
+          zeroDb: firstZeroDb,
+          ctx,
+          input: { orderId: added.orderId },
+        }),
+        sendRestaurantOrderToKitchenViaZero({
+          db: secondDb,
+          zeroDb: secondZeroDb,
+          ctx,
+          input: { orderId: added.orderId },
+        }),
+      ]);
+      expect(
+        concurrentResults.filter((result) => result.status === "fulfilled")
+      ).toHaveLength(1);
+      expect(
+        concurrentResults.filter((result) => result.status === "rejected")
+      ).toHaveLength(1);
+
+      const ticketRows = await db
+        .select({
+          kind: restaurantKitchenTicket.kind,
+          sequenceNumber: restaurantKitchenTicket.sequenceNumber,
+        })
+        .from(restaurantKitchenTicket)
+        .where(eq(restaurantKitchenTicket.orderId, added.orderId));
+      expect(
+        ticketRows.map((ticket) => ticket.sequenceNumber).toSorted()
+      ).toEqual([1, 2]);
+      expect(
+        ticketRows.find((ticket) => ticket.sequenceNumber === 2)?.kind
+      ).toBe("correction");
+    } finally {
+      await Promise.all([firstClient.end(), secondClient.end()]);
+      await cleanup();
+    }
+  });
+
+  test("adding while cancelling cannot leave a draft item on the cancelled order", async () => {
+    const { db, cleanup, databaseUrl } = await createTestDb();
+    const firstClient = postgres(databaseUrl, { max: 1 });
+    const secondClient = postgres(databaseUrl, { max: 1 });
+    const firstDb = drizzle(firstClient, { schema }) as TestDb;
+    const secondDb = drizzle(secondClient, { schema }) as TestDb;
+
+    try {
+      const { organizationId, userId } = await seedOrganizationWithMember(db);
+      await enableRestaurantModule(db, organizationId);
+      const areaId = await seedRestaurantArea(db, {
+        organizationId,
+        name: "Terraza",
+      });
+      const [tableId, productId] = await Promise.all([
+        seedRestaurantTable(db, {
+          organizationId,
+          areaId,
+          name: "T2",
+        }),
+        seedProduct(db, {
+          organizationId,
+          name: "Adición concurrente",
+          price: 10_000,
+          stock: 10,
+          trackInventory: false,
+        }),
+      ]);
+      const firstZeroDb = createZeroTestDb(firstDb);
+      const secondZeroDb = createZeroTestDb(secondDb);
+      const ctx = createZeroContext(userId, organizationId);
+      const initialItem = await addRestaurantOrderItemViaZero({
+        db,
+        zeroDb: firstZeroDb,
+        ctx,
+        input: { tableId, productId, quantity: 1 },
+      });
+      const [secondBackend] = await secondClient`
+        SELECT pg_backend_pid() AS pid
+      `;
+      if (!secondBackend) {
+        throw new Error("No se pudo identificar la segunda transacción.");
+      }
+
+      const lockHeld = createDeferred();
+      const continueCancellation = createDeferred();
+      const cancellation = firstDb.transaction(async (transaction) => {
+        await lockOpenRestaurantOrder(
+          transaction,
+          organizationId,
+          initialItem.orderId
+        );
+        lockHeld.resolve();
+        await continueCancellation.promise;
+        await runCancelRestaurantOrder(
+          transaction,
+          { orderId: initialItem.orderId, reason: "Cierre concurrente" },
+          { organizationId, userId }
+        );
+      });
+      await lockHeld.promise;
+
+      const addWhileCancelling = addRestaurantOrderItemViaZero({
+        db: secondDb,
+        zeroDb: secondZeroDb,
+        ctx,
+        input: { tableId, productId, quantity: 1 },
+      });
+      await waitForPostgresLock(db, secondBackend.pid);
+      continueCancellation.resolve();
+
+      const [cancellationResult, addResult] = await Promise.allSettled([
+        cancellation,
+        addWhileCancelling,
+      ]);
+      expect(cancellationResult.status).toBe("fulfilled");
+      expect(addResult.status).toBe("rejected");
+
+      const originalOrderItems = await db
+        .select({ status: restaurantOrderItem.status })
+        .from(restaurantOrderItem)
+        .where(eq(restaurantOrderItem.orderId, initialItem.orderId));
+      expect(originalOrderItems).toEqual([{ status: "cancelled" }]);
+    } finally {
+      await Promise.all([firstClient.end(), secondClient.end()]);
+      await cleanup();
+    }
+  });
+
+  test("simultaneous first orders use distinct organization order numbers", async () => {
+    const { db, cleanup, databaseUrl } = await createTestDb();
+    const firstClient = postgres(databaseUrl, { max: 1 });
+    const secondClient = postgres(databaseUrl, { max: 1 });
+    const firstDb = drizzle(firstClient, { schema }) as TestDb;
+    const secondDb = drizzle(secondClient, { schema }) as TestDb;
+    const releaseFirstOrder = createDeferred();
+
+    try {
+      const { organizationId, userId } = await seedOrganizationWithMember(db);
+      await enableRestaurantModule(db, organizationId);
+      const areaId = await seedRestaurantArea(db, {
+        organizationId,
+        name: "Terraza",
+      });
+      const [firstTableId, secondTableId, productId] = await Promise.all([
+        seedRestaurantTable(db, {
+          organizationId,
+          areaId,
+          name: "T3",
+        }),
+        seedRestaurantTable(db, {
+          organizationId,
+          areaId,
+          name: "T4",
+        }),
+        seedProduct(db, {
+          organizationId,
+          name: "Primera orden concurrente",
+          price: 10_000,
+          stock: 10,
+          trackInventory: false,
+        }),
+      ]);
+      const secondZeroDb = createZeroTestDb(secondDb);
+      const ctx = createZeroContext(userId, organizationId);
+      const [secondBackend] = await secondClient`
+        SELECT pg_backend_pid() AS pid
+      `;
+      if (!secondBackend) {
+        throw new Error("No se pudo identificar la segunda transacción.");
+      }
+
+      const firstOrderCreated = createDeferred();
+      const firstOrder = firstDb.transaction(async (transaction) => {
+        await runAddRestaurantOrderItem(
+          transaction,
+          {
+            itemId: crypto.randomUUID(),
+            tableId: firstTableId,
+            productId,
+            quantity: 1,
+          },
+          { organizationId, userId }
+        );
+        firstOrderCreated.resolve();
+        await releaseFirstOrder.promise;
+      });
+      await firstOrderCreated.promise;
+
+      const secondOrder = addRestaurantOrderItemViaZero({
+        db: secondDb,
+        zeroDb: secondZeroDb,
+        ctx,
+        input: { tableId: secondTableId, productId, quantity: 1 },
+      });
+      await waitForPostgresLock(db, secondBackend.pid);
+      releaseFirstOrder.resolve();
+
+      const [firstResult, secondResult] = await Promise.allSettled([
+        firstOrder,
+        secondOrder,
+      ]);
+      expect(firstResult.status).toBe("fulfilled");
+      expect(secondResult.status).toBe("fulfilled");
+
+      const orderRows = await db
+        .select({ orderNumber: restaurantOrder.orderNumber })
+        .from(restaurantOrder)
+        .where(eq(restaurantOrder.organizationId, organizationId));
+      expect(orderRows.map((order) => order.orderNumber).toSorted()).toEqual([
+        1, 2,
+      ]);
+    } finally {
+      releaseFirstOrder.resolve();
+      await Promise.all([firstClient.end(), secondClient.end()]);
+      await cleanup();
+    }
   });
 
   test("double cancellation attempt — only one succeeds", async () => {

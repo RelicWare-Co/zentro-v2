@@ -482,13 +482,17 @@ function CartFooter({
   onSendToKitchen?: () => void;
   tableSession?: PosTableSessionState | null;
 }) {
+  const kitchenButtonLabel = tableSession
+    ? getKitchenButtonLabel(tableSession)
+    : "Enviar a cocina";
+
   return (
     <div className="space-y-3">
       {tableSession ? (
         <Button
           className="border-zinc-700! text-zinc-300! hover:border-zinc-500 hover:text-white"
           disabled={
-            tableSession.draftItemsCount === 0 ||
+            !tableSession.hasPendingKitchenChanges ||
             tableSession.isSendingToKitchen
           }
           fullWidth
@@ -497,13 +501,7 @@ function CartFooter({
           type="button"
           variant="outline"
         >
-          {tableSession.isSendingToKitchen
-            ? "Enviando a cocina..."
-            : `Enviar a cocina${
-                tableSession.draftItemsCount > 0
-                  ? ` (${tableSession.draftItemsCount})`
-                  : ""
-              }`}
+          {kitchenButtonLabel}
         </Button>
       ) : null}
 
@@ -538,6 +536,16 @@ function CartFooter({
   );
 }
 
+function getKitchenButtonLabel(tableSession: PosTableSessionState) {
+  if (tableSession.isSendingToKitchen) {
+    return "Enviando a cocina...";
+  }
+  if (tableSession.hasSentKitchenTicket) {
+    return "Enviar corrección";
+  }
+  return "Enviar a cocina";
+}
+
 function CartItemList({
   items,
   readOnly,
@@ -566,7 +574,7 @@ function CartItemList({
       {items.map((item) => {
         const itemStatus = itemStatusById?.[item.id];
         const itemReadOnly =
-          readOnly || Boolean(itemStatus && itemStatus !== "draft");
+          readOnly || itemStatus === "ready" || itemStatus === "served";
         return (
           <CartItemCard
             item={item}
@@ -635,6 +643,7 @@ export function CartPanel({
   const [cancelError, setCancelError] = useState<string | null>(null);
   const [cancelReason, setCancelReason] = useState("");
   const [commentItemId, setCommentItemId] = useState<string | null>(null);
+  const [isKitchenConfirmOpen, setIsKitchenConfirmOpen] = useState(false);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const anim = useCartAnimation(
     tableSession,
@@ -657,6 +666,18 @@ export function CartPanel({
     setCancelError(null);
     setCancelReason("");
     setIsCancelModalOpen(false);
+  };
+
+  const closeKitchenConfirmModal = () => {
+    if (tableSession?.isSendingToKitchen) {
+      return;
+    }
+    setIsKitchenConfirmOpen(false);
+  };
+
+  const confirmKitchenSend = () => {
+    onSendToKitchen?.();
+    closeKitchenConfirmModal();
   };
 
   const submitCancellation = async () => {
@@ -732,7 +753,11 @@ export function CartPanel({
                     ? () => setIsCancelModalOpen(true)
                     : undefined
                 }
-                onSendToKitchen={onSendToKitchen}
+                onSendToKitchen={
+                  anim.baseTableSession?.hasPendingKitchenChanges
+                    ? () => setIsKitchenConfirmOpen(true)
+                    : undefined
+                }
                 tableSession={anim.baseTableSession}
               />
             </div>
@@ -836,6 +861,57 @@ export function CartPanel({
               type="button"
             >
               Cancelar orden
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+
+      <Modal
+        centered
+        onClose={closeKitchenConfirmModal}
+        opened={isKitchenConfirmOpen}
+        title={
+          tableSession?.hasSentKitchenTicket
+            ? "Enviar corrección a cocina"
+            : "Enviar comanda a cocina"
+        }
+      >
+        <Stack gap="md">
+          <Text c="dimmed" size="sm">
+            {tableSession?.hasSentKitchenTicket
+              ? "Cocina recibirá únicamente los cambios pendientes, identificados como corrección de esta comanda."
+              : "Cocina recibirá los ítems pendientes de esta comanda."}
+          </Text>
+          <div className="rounded-md bg-gray-0 p-3 dark:bg-dark-6">
+            <Text fw={600} size="sm">
+              Resumen para cocina
+            </Text>
+            <Text c="dimmed" size="sm">
+              Altas / preparar:{" "}
+              {tableSession?.pendingKitchenPreparationCount ?? 0}
+            </Text>
+            <Text c="dimmed" size="sm">
+              Anulaciones / no preparar:{" "}
+              {tableSession?.pendingKitchenCancellationCount ?? 0}
+            </Text>
+          </div>
+          <Group justify="flex-end">
+            <Button
+              disabled={tableSession?.isSendingToKitchen}
+              onClick={closeKitchenConfirmModal}
+              type="button"
+              variant="default"
+            >
+              Volver
+            </Button>
+            <Button
+              loading={tableSession?.isSendingToKitchen}
+              onClick={confirmKitchenSend}
+              type="button"
+            >
+              {tableSession?.hasSentKitchenTicket
+                ? "Enviar corrección"
+                : "Enviar a cocina"}
             </Button>
           </Group>
         </Stack>

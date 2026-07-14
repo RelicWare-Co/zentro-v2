@@ -36,11 +36,16 @@ export interface RestaurantOrderItemRow {
   modifiers?: RestaurantOrderItemModifierRow[] | null;
   notes?: string | null;
   orderId: string;
+  pendingCancellation?: boolean | null;
   product?: { name?: string | null } | null;
   productId: string;
   quantity: number;
   readyAt?: number | null;
   sentAt?: number | null;
+  sentModifiersSnapshot?: string | null;
+  sentNotes?: string | null;
+  sentProductName?: string | null;
+  sentQuantity?: number | null;
   servedAt?: number | null;
   status?: string | null;
   taxRate?: number | null;
@@ -48,10 +53,24 @@ export interface RestaurantOrderItemRow {
   updatedAt: number;
 }
 
+export interface RestaurantKitchenTicketLineRow {
+  createdAt: number;
+  id: string;
+  modifiersSnapshot?: string | null;
+  notes?: string | null;
+  operation: string;
+  orderItemId: string;
+  productName: string;
+  quantity: number;
+  status?: string | null;
+}
+
 export interface RestaurantKitchenTicketRow {
   createdAt: number;
   id: string;
   items?: RestaurantOrderItemRow[] | null;
+  kind?: string | null;
+  lines?: RestaurantKitchenTicketLineRow[] | null;
   order?: RestaurantOpenOrderRow | null;
   orderId: string;
   printedAt?: number | null;
@@ -130,6 +149,64 @@ function calculateModifierTotal(
     total += baseQuantity * modifier.quantity * modifier.unitPrice;
   }
   return total;
+}
+
+function parseKitchenModifiers(value: string | null | undefined) {
+  try {
+    const parsed: unknown = JSON.parse(value ?? "[]");
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed.flatMap((modifier) => {
+      if (
+        !modifier ||
+        typeof modifier !== "object" ||
+        !("id" in modifier) ||
+        !("name" in modifier) ||
+        !("quantity" in modifier) ||
+        !("unitPrice" in modifier) ||
+        typeof modifier.id !== "string" ||
+        typeof modifier.name !== "string" ||
+        typeof modifier.quantity !== "number" ||
+        typeof modifier.unitPrice !== "number"
+      ) {
+        return [];
+      }
+
+      return [
+        {
+          id: modifier.id,
+          modifierProductId: modifier.id,
+          name: modifier.name,
+          quantity: modifier.quantity,
+          unitPrice: modifier.unitPrice,
+        },
+      ];
+    });
+  } catch {
+    return [];
+  }
+}
+
+function serializeCurrentModifiers(
+  modifiers: Array<{
+    modifierProductId: string;
+    name: string;
+    quantity: number;
+    unitPrice: number;
+  }>
+) {
+  return JSON.stringify(
+    modifiers
+      .map((modifier) => ({
+        id: modifier.modifierProductId,
+        name: modifier.name,
+        quantity: modifier.quantity,
+        unitPrice: modifier.unitPrice,
+      }))
+      .toSorted((left, right) => left.id.localeCompare(right.id))
+  );
 }
 
 export function assertRestaurantModuleEnabled(settings: OrganizationSettings) {
@@ -221,6 +298,11 @@ export function mapRestaurantOrderItem(itemRow: RestaurantOrderItemRow) {
     taxRate: itemRow.taxRate ?? 0,
     discountAmount: itemRow.discountAmount ?? 0,
     notes: itemRow.notes ?? null,
+    pendingCancellation: itemRow.pendingCancellation ?? false,
+    sentModifiersSnapshot: itemRow.sentModifiersSnapshot ?? "[]",
+    sentNotes: itemRow.sentNotes ?? null,
+    sentProductName: itemRow.sentProductName ?? null,
+    sentQuantity: itemRow.sentQuantity ?? 0,
     status: itemRow.status ?? "draft",
     modifiers,
     baseSubtotal,
@@ -240,11 +322,73 @@ export function mapRestaurantKitchenTicket(
 ) {
   return {
     id: ticketRow.id,
+    kind:
+      ticketRow.kind === "correction"
+        ? ("correction" as const)
+        : ("initial" as const),
     sequenceNumber: ticketRow.sequenceNumber,
     status: ticketRow.status ?? "sent",
     createdAt: toTimestamp(ticketRow.createdAt) ?? Date.now(),
     printedAt: toTimestamp(ticketRow.printedAt),
+    lines: (ticketRow.lines ?? [])
+      .slice()
+      .sort(
+        (left, right) =>
+          (toTimestamp(left.createdAt) ?? 0) -
+            (toTimestamp(right.createdAt) ?? 0) ||
+          left.id.localeCompare(right.id)
+      )
+      .map((lineRow) => ({
+        id: lineRow.id,
+        operation:
+          lineRow.operation === "cancel"
+            ? ("cancel" as const)
+            : ("prepare" as const),
+        productName: lineRow.productName,
+        quantity: lineRow.quantity,
+        status: mapKitchenTicketLineStatus(lineRow.status),
+        notes: lineRow.notes ?? null,
+        modifiers: parseKitchenModifiers(lineRow.modifiersSnapshot),
+      })),
   };
+}
+
+function mapKitchenTicketLineStatus(status: string | null | undefined) {
+  if (status === "ready") {
+    return "ready" as const;
+  }
+  if (status === "served") {
+    return "served" as const;
+  }
+  if (status === "cancelled") {
+    return "cancelled" as const;
+  }
+  return "sent" as const;
+}
+
+function hasPendingKitchenChange(
+  item: ReturnType<typeof mapRestaurantOrderItem>
+) {
+  if (item.pendingCancellation || item.status === "draft") {
+    return true;
+  }
+  if (item.status !== "sent") {
+    return false;
+  }
+
+  const sentQuantity =
+    item.sentQuantity > 0 ? item.sentQuantity : item.quantity;
+  const sentNotes = item.sentQuantity > 0 ? item.sentNotes : item.notes;
+  const sentModifiers =
+    item.sentQuantity > 0
+      ? item.sentModifiersSnapshot
+      : serializeCurrentModifiers(item.modifiers);
+
+  return (
+    item.quantity !== sentQuantity ||
+    item.notes !== sentNotes ||
+    serializeCurrentModifiers(item.modifiers) !== sentModifiers
+  );
 }
 
 export function buildRestaurantOpenOrder(
@@ -272,6 +416,9 @@ export function buildRestaurantOpenOrder(
     updatedAt: toTimestamp(orderRow.updatedAt) ?? Date.now(),
     items,
     tickets,
+    hasPendingKitchenChanges: items.some((item) =>
+      hasPendingKitchenChange(item)
+    ),
     totals: buildOrderSummary(items),
   };
 }
@@ -485,10 +632,17 @@ export function buildKitchenBoard(params: {
 
   const tickets = params.tickets
     .slice()
-    .sort(
-      (left, right) =>
+    .sort((left, right) => {
+      const correctionDifference =
+        Number(right.kind === "correction") -
+        Number(left.kind === "correction");
+      if (correctionDifference !== 0) {
+        return correctionDifference;
+      }
+      return (
         (toTimestamp(right.createdAt) ?? 0) - (toTimestamp(left.createdAt) ?? 0)
-    )
+      );
+    })
     .flatMap((ticketRow) => {
       const orderRow = ticketRow.order;
       const tableRow = orderRow?.table;
@@ -496,20 +650,25 @@ export function buildKitchenBoard(params: {
         return [];
       }
 
-      const items = (ticketRow.items ?? [])
+      const lines = (ticketRow.lines ?? [])
         .filter(
-          (itemRow) => itemRow.status === "sent" || itemRow.status === "ready"
+          (lineRow) => lineRow.status === "sent" || lineRow.status === "ready"
         )
-        .map((itemRow) => ({
-          id: itemRow.id,
-          kitchenTicketId: itemRow.kitchenTicketId ?? null,
-          productName: itemRow.product?.name ?? "Producto",
-          quantity: itemRow.quantity,
-          status: itemRow.status ?? "sent",
-          notes: itemRow.notes ?? null,
+        .map((lineRow) => ({
+          id: lineRow.id,
+          operation:
+            lineRow.operation === "cancel"
+              ? ("cancel" as const)
+              : ("prepare" as const),
+          productName: lineRow.productName,
+          quantity: lineRow.quantity,
+          status:
+            lineRow.status === "ready" ? ("ready" as const) : ("sent" as const),
+          notes: lineRow.notes ?? null,
+          modifiers: parseKitchenModifiers(lineRow.modifiersSnapshot),
         }));
 
-      if (items.length === 0) {
+      if (lines.length === 0) {
         return [];
       }
 
@@ -518,6 +677,10 @@ export function buildKitchenBoard(params: {
           id: ticketRow.id,
           orderId: ticketRow.orderId,
           orderNumber: orderRow.orderNumber,
+          kind:
+            ticketRow.kind === "correction"
+              ? ("correction" as const)
+              : ("initial" as const),
           sequenceNumber: ticketRow.sequenceNumber,
           status: ticketRow.status ?? "sent",
           createdAt: toTimestamp(ticketRow.createdAt) ?? Date.now(),
@@ -526,7 +689,7 @@ export function buildKitchenBoard(params: {
             name: tableRow.name,
             areaName: tableRow.area?.name ?? "",
           },
-          items,
+          lines,
         },
       ];
     });

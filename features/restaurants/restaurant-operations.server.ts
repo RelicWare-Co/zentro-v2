@@ -5,6 +5,7 @@ import { product } from "@/database/drizzle/schema/inventory.schema";
 import {
   restaurantArea,
   restaurantKitchenTicket,
+  restaurantKitchenTicketLine,
   restaurantOrder,
   restaurantOrderItem,
   restaurantOrderItemModifier,
@@ -252,10 +253,55 @@ export async function getOpenOrderById(
   return row;
 }
 
+export async function lockOpenRestaurantOrder(
+  database: RestaurantDatabase | RestaurantTransaction,
+  organizationId: string,
+  orderId: string
+) {
+  const [row] = await database
+    .select({
+      id: restaurantOrder.id,
+      tableId: restaurantOrder.tableId,
+      orderNumber: restaurantOrder.orderNumber,
+      status: restaurantOrder.status,
+      guestCount: restaurantOrder.guestCount,
+      notes: restaurantOrder.notes,
+      createdAt: restaurantOrder.createdAt,
+      updatedAt: restaurantOrder.updatedAt,
+    })
+    .from(restaurantOrder)
+    .where(
+      and(
+        eq(restaurantOrder.organizationId, organizationId),
+        eq(restaurantOrder.id, orderId),
+        eq(restaurantOrder.status, "open")
+      )
+    )
+    .for("update")
+    .limit(1);
+
+  if (!row) {
+    throw new Error("La cuenta no existe o ya no está abierta.");
+  }
+
+  return row;
+}
+
 export async function getNextOrderNumber(
   database: RestaurantDatabase | RestaurantTransaction,
   organizationId: string
 ) {
+  const [organizationRow] = await database
+    .select({ id: organization.id })
+    .from(organization)
+    .where(eq(organization.id, organizationId))
+    .for("update")
+    .limit(1);
+
+  if (!organizationRow) {
+    throw new Error("La organización activa no existe.");
+  }
+
   const [row] = await database
     .select({ orderNumber: restaurantOrder.orderNumber })
     .from(restaurantOrder)
@@ -312,13 +358,40 @@ export async function getOrCreateOpenOrderForTable(input: {
   tableId: string;
   userId: string;
 }) {
+  const [tableRow] = await input.database
+    .select({
+      id: restaurantTable.id,
+      isActive: restaurantTable.isActive,
+    })
+    .from(restaurantTable)
+    .where(
+      and(
+        eq(restaurantTable.organizationId, input.organizationId),
+        eq(restaurantTable.id, input.tableId),
+        isNull(restaurantTable.deletedAt)
+      )
+    )
+    .for("update")
+    .limit(1);
+
+  if (!tableRow) {
+    throw new Error("La mesa no existe en la organización activa.");
+  }
+  if (!tableRow.isActive) {
+    throw new Error("No puedes registrar órdenes en una mesa inactiva.");
+  }
+
   const existingOrder = await getOpenOrderForTable(
     input.database,
     input.organizationId,
     input.tableId
   );
   if (existingOrder) {
-    return existingOrder;
+    return await lockOpenRestaurantOrder(
+      input.database,
+      input.organizationId,
+      existingOrder.id
+    );
   }
 
   const now = new Date();
@@ -412,6 +485,11 @@ export async function getOrderItemsWithModifiers(
       taxRate: restaurantOrderItem.taxRate,
       discountAmount: restaurantOrderItem.discountAmount,
       notes: restaurantOrderItem.notes,
+      pendingCancellation: restaurantOrderItem.pendingCancellation,
+      sentModifiersSnapshot: restaurantOrderItem.sentModifiersSnapshot,
+      sentNotes: restaurantOrderItem.sentNotes,
+      sentProductName: restaurantOrderItem.sentProductName,
+      sentQuantity: restaurantOrderItem.sentQuantity,
       status: restaurantOrderItem.status,
       createdAt: restaurantOrderItem.createdAt,
       updatedAt: restaurantOrderItem.updatedAt,
@@ -498,6 +576,11 @@ export async function getOrderItemsWithModifiers(
       taxRate: itemRow.taxRate,
       discountAmount: itemRow.discountAmount,
       notes: itemRow.notes,
+      pendingCancellation: itemRow.pendingCancellation,
+      sentModifiersSnapshot: itemRow.sentModifiersSnapshot,
+      sentNotes: itemRow.sentNotes,
+      sentProductName: itemRow.sentProductName,
+      sentQuantity: itemRow.sentQuantity,
       status: itemRow.status,
       modifiers,
       baseSubtotal,
@@ -518,28 +601,30 @@ export async function refreshKitchenTicketStatus(
   organizationId: string,
   ticketId: string
 ) {
-  const ticketItems = await database
-    .select({ status: restaurantOrderItem.status })
-    .from(restaurantOrderItem)
+  const ticketLines = await database
+    .select({ status: restaurantKitchenTicketLine.status })
+    .from(restaurantKitchenTicketLine)
     .where(
       and(
-        eq(restaurantOrderItem.organizationId, organizationId),
-        eq(restaurantOrderItem.kitchenTicketId, ticketId)
+        eq(restaurantKitchenTicketLine.organizationId, organizationId),
+        eq(restaurantKitchenTicketLine.kitchenTicketId, ticketId)
       )
     );
 
-  if (ticketItems.length === 0) {
+  if (ticketLines.length === 0) {
     return;
   }
 
-  const activeStatuses = ticketItems.reduce<string[]>((acc, item) => {
-    if (item.status !== "cancelled") {
-      acc.push(item.status);
+  const activeStatuses = ticketLines.reduce<string[]>((acc, line) => {
+    if (line.status !== "cancelled") {
+      acc.push(line.status);
     }
     return acc;
   }, []);
-  let nextStatus: "served" | "ready" | "sent";
-  if (activeStatuses.every((status) => status === "served")) {
+  let nextStatus: "cancelled" | "served" | "ready" | "sent";
+  if (activeStatuses.length === 0) {
+    nextStatus = "cancelled";
+  } else if (activeStatuses.every((status) => status === "served")) {
     nextStatus = "served";
   } else if (
     activeStatuses.every((status) => status === "ready" || status === "served")

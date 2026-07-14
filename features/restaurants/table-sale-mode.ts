@@ -217,6 +217,11 @@ export function useTableSaleAdapter(
       orderNumber: tableOrder.openOrder?.orderNumber ?? null,
       itemStatusById: tableOrder.itemStatusById,
       draftItemsCount: tableOrder.draftItemsCount,
+      hasSentKitchenTicket: tableOrder.hasSentKitchenTicket,
+      hasPendingKitchenChanges: tableOrder.hasPendingKitchenChanges,
+      pendingKitchenCancellationCount:
+        tableOrder.pendingKitchenCancellationCount,
+      pendingKitchenPreparationCount: tableOrder.pendingKitchenPreparationCount,
       isLoading: tableOrder.isLoading,
       isSendingToKitchen: tableOrder.isSendingToKitchen,
       isCancellingOrder: tableOrder.isCancellingOrder,

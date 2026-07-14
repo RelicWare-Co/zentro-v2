@@ -9,6 +9,7 @@ const ticketDateTimeFormatter = new Intl.DateTimeFormat("es-CO", {
 
 export function buildKitchenTicketDocument(input: {
   ticketId: string;
+  kind?: "correction" | "initial";
   orderNumber: number;
   sequenceNumber: number;
   createdAt: number | Date;
@@ -17,6 +18,7 @@ export function buildKitchenTicketDocument(input: {
   items: Array<{
     productName: string;
     quantity: number;
+    operation?: "cancel" | "prepare";
     notes?: string | null;
     modifiers?: Array<{
       name: string;
@@ -26,10 +28,14 @@ export function buildKitchenTicketDocument(input: {
     totalAmount?: number;
   }>;
 }): ThermalReceiptDocument {
+  const isCorrection = input.kind === "correction";
   const receipt = {
-    title: "Comanda de cocina",
-    documentLabel: `Orden #${input.orderNumber} • Ticket ${input.sequenceNumber}`,
+    title: isCorrection ? "CORRECCIÓN DE COMANDA" : "Comanda de cocina",
+    documentLabel: isCorrection
+      ? `Comanda #${input.orderNumber} • CORRECCIÓN #${input.sequenceNumber}`
+      : `Comanda #${input.orderNumber} • Ticket ${input.sequenceNumber}`,
     issuedAtLabel: ticketDateTimeFormatter.format(new Date(input.createdAt)),
+    statusLabel: isCorrection ? "REVISAR ANTES DE PREPARAR" : undefined,
     infoLines: [
       {
         label: "Mesa",
@@ -41,7 +47,10 @@ export function buildKitchenTicketDocument(input: {
       },
     ],
     items: input.items.map((item) => ({
-      label: item.productName,
+      label:
+        item.operation === "cancel"
+          ? `CANCELAR / NO PREPARAR: ${item.productName}`
+          : item.productName,
       quantity: item.quantity,
       totalLabel:
         typeof item.totalAmount === "number"
@@ -61,7 +70,11 @@ export function buildKitchenTicketDocument(input: {
         emphasis: true,
       },
     ],
-    footerLines: ["Preparar y pasar a servicio"],
+    footerLines: [
+      isCorrection
+        ? "Aplicar esta corrección a la comanda indicada"
+        : "Preparar y pasar a servicio",
+    ],
   };
 
   return {

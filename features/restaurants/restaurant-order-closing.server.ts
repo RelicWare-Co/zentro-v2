@@ -6,8 +6,8 @@ import {
   restaurantOrderItem,
 } from "@/database/drizzle/schema/restaurant.schema";
 import {
-  getOpenOrderById,
   getOrderItemsWithModifiers,
+  lockOpenRestaurantOrder,
   normalizeOptionalString,
   normalizeRequiredString,
   type RestaurantAuth,
@@ -28,8 +28,30 @@ export async function runCloseRestaurantOrder(
     organizationId: auth.organizationId,
   });
   const organizationId = auth.organizationId;
-  const order = await getOpenOrderById(db, organizationId, args.orderId);
+  const order = await lockOpenRestaurantOrder(db, organizationId, args.orderId);
   const items = await getOrderItemsWithModifiers(db, organizationId, order.id);
+  const hasKitchenHistory = items.some(
+    (item) => item.sentQuantity > 0 || item.kitchenTicketId !== null
+  );
+  const hasPendingKitchenChanges =
+    hasKitchenHistory &&
+    items.some((item) => {
+      if (item.status === "draft" || item.pendingCancellation) {
+        return true;
+      }
+      if (item.status !== "sent") {
+        return false;
+      }
+      const sentQuantity =
+        item.sentQuantity > 0 ? item.sentQuantity : item.quantity;
+      const sentNotes = item.sentQuantity > 0 ? item.sentNotes : item.notes;
+      return item.quantity !== sentQuantity || item.notes !== sentNotes;
+    });
+  if (hasPendingKitchenChanges) {
+    throw new Error(
+      "Envía o resuelve las correcciones pendientes antes de cerrar la orden."
+    );
+  }
   const activeItems = items.filter((item) => item.status !== "cancelled");
 
   if (activeItems.length === 0) {
