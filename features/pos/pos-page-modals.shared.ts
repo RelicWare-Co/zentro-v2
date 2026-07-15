@@ -3,7 +3,6 @@ export type PosActiveModal = string;
 export const POS_MODAL_IDS = {
   CASH_MOVEMENT: "cash-movement",
   CHECKOUT: "checkout",
-  CHECKOUT_DETAILS: "checkout-details",
   CLOSE_SHIFT: "close-shift",
   CREATE_CUSTOMER: "create-customer",
   MODIFIER: "modifier",
@@ -21,11 +20,4 @@ export function isPosModalOpen(
 
 export function isAnyPosModalOpen(activeModal: PosActiveModal | null) {
   return activeModal !== null;
-}
-
-export function isPosOverlayBlockingCatalog(
-  activeModal: PosActiveModal | null,
-  isMobileCartOpen: boolean
-) {
-  return isMobileCartOpen || isAnyPosModalOpen(activeModal);
 }

@@ -16,7 +16,6 @@ export interface PosModalContextValue {
   isQuickSaleMode: boolean;
   openActiveModal: (modal: string) => void;
   openCashMovementModal: () => void;
-  openCheckoutDetails: () => void;
   openCloseShiftModal: () => void;
   openCreateCustomerModal: () => void;
   openShiftFromRequired: () => void;
@@ -74,10 +73,6 @@ export function PosModalProvider({ children }: { children: ReactNode }) {
     setActiveModal(POS_MODAL_IDS.CREATE_CUSTOMER);
   }, []);
 
-  const openCheckoutDetails = useCallback(() => {
-    setActiveModal(POS_MODAL_IDS.CHECKOUT_DETAILS);
-  }, []);
-
   const showPostCloseConfirmation = useCallback((shiftId: string) => {
     setClosedShiftId(shiftId);
     setActiveModal(POS_MODAL_IDS.POST_CLOSE_CONFIRMATION);
@@ -97,7 +92,6 @@ export function PosModalProvider({ children }: { children: ReactNode }) {
     isQuickSaleMode,
     openActiveModal,
     openCashMovementModal,
-    openCheckoutDetails,
     openCloseShiftModal,
     openCreateCustomerModal,
     openShiftFromRequired,

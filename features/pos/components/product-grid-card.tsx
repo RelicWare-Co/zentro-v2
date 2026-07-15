@@ -1,20 +1,20 @@
 import { Heart, Package } from "lucide-react";
+import {
+  posAccentBg,
+  posAccentFocusRing,
+  posAccentHoverBorder,
+  posAccentSelectedBorder,
+  posAccentSoftShadow,
+  posAccentText,
+  posIconText,
+  posMutedText,
+  posOrderBorderSubtle,
+  posOrderCarbonBg,
+  posOrderSurfaceBg,
+} from "@/features/pos/components/pos-styles";
 import { usePosPage } from "@/features/pos/pos-page-context";
 import type { Product } from "@/features/pos/types";
 import { calculatePriceWithTax } from "@/features/pos/utils";
-import {
-  posV2AccentBg,
-  posV2AccentFocusRing,
-  posV2AccentHoverBorder,
-  posV2AccentSelectedBorder,
-  posV2AccentSoftShadow,
-  posV2AccentText,
-  posV2IconText,
-  posV2MutedText,
-  posV2OrderBorderSubtle,
-  posV2OrderCarbonBg,
-  posV2OrderSurfaceBg,
-} from "@/features/posv2/components/pos-v2-order-styles";
 import { formatCurrency } from "@/lib/format-currency.shared";
 import { cn } from "@/lib/utils";
 
@@ -49,12 +49,12 @@ export function ProductGridCard({
       <button
         className={cn(
           "flex h-full w-full flex-col items-center rounded-xl border p-3 text-left transition-all md:p-4",
-          posV2OrderBorderSubtle,
-          posV2OrderSurfaceBg,
-          posV2AccentHoverBorder,
-          posV2AccentSoftShadow,
-          posV2AccentFocusRing,
-          isInCart && posV2AccentSelectedBorder,
+          posOrderBorderSubtle,
+          posOrderSurfaceBg,
+          posAccentHoverBorder,
+          posAccentSoftShadow,
+          posAccentFocusRing,
+          isInCart && posAccentSelectedBorder,
           isOutOfStock && "opacity-45"
         )}
         onClick={onSelect}
@@ -64,7 +64,7 @@ export function ProductGridCard({
           <div
             className={cn(
               "absolute top-2 right-2 z-10 rounded-md px-2 py-0.5 font-bold text-[10px] text-black",
-              posV2AccentBg
+              posAccentBg
             )}
           >
             x{quantity}
@@ -74,11 +74,11 @@ export function ProductGridCard({
         <div
           className={cn(
             "mb-3 flex size-11 items-center justify-center rounded-lg border md:h-12 md:w-12",
-            posV2OrderBorderSubtle,
-            posV2OrderCarbonBg
+            posOrderBorderSubtle,
+            posOrderCarbonBg
           )}
         >
-          <Package className={cn("size-4 md:h-5 md:w-5", posV2IconText)} />
+          <Package className={cn("size-4 md:h-5 md:w-5", posIconText)} />
         </div>
 
         <h3 className="mb-0.5 line-clamp-2 text-center font-medium text-white text-xs leading-snug md:text-sm">
@@ -88,7 +88,7 @@ export function ProductGridCard({
         <p
           className={cn(
             "mt-1 text-center font-medium text-[10px] md:text-[11px]",
-            posV2MutedText
+            posMutedText
           )}
         >
           {product.categoryName}
@@ -101,14 +101,14 @@ export function ProductGridCard({
         <div
           className={cn(
             "mt-2 flex w-full items-center justify-between border-t pt-2",
-            posV2OrderBorderSubtle
+            posOrderBorderSubtle
           )}
         >
           {stockLabel ? (
             <span
               className={cn(
                 "font-medium text-[10px] leading-[1.2] md:text-[11px]",
-                product.stock > 0 ? posV2AccentText : "text-red-500"
+                product.stock > 0 ? posAccentText : "text-red-500"
               )}
             >
               {stockLabel}
@@ -126,7 +126,7 @@ export function ProductGridCard({
         aria-pressed={product.isFavorite}
         className={cn(
           "absolute right-2 bottom-2 z-10 rounded p-0.5 disabled:opacity-50",
-          posV2AccentFocusRing
+          posAccentFocusRing
         )}
         disabled={meta.isTogglingFavorite}
         onClick={(event) => {
@@ -140,7 +140,7 @@ export function ProductGridCard({
             "size-3.5 transition-colors",
             product.isFavorite
               ? "fill-red-500 text-red-500"
-              : `${posV2IconText} hover:text-red-400`
+              : `${posIconText} hover:text-red-400`
           )}
         />
       </button>

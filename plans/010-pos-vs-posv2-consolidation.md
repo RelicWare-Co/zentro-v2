@@ -1,5 +1,9 @@
 # Plan 010: Decide the fate of `features/pos` vs `features/posv2`
 
+> **Historical note (2026-07-14):** The decision and implementation are
+> complete. The current-state evidence below is the pre-decision snapshot;
+> POSv2 has since been retired and `/pos` is the sole POS route.
+
 > **Executor instructions**: This is a **decision plan**, not an
 > implementation plan. Do NOT change any code. Read the "Current state"
 > evidence, run the drift check, then present the three options to the
@@ -210,16 +214,17 @@ Then update `plans/README.md` status row for plan 010.
 
 ## Decision record
 
-> **Status**: AWAITING DECISION — no option selected yet.
+> **Status**: COMPLETE.
 >
-> **Chosen option**: _(to be filled by maintainer: A / B / C)_
+> **Chosen option**: A — deprecate POSv2 and consolidate on `features/pos`.
 >
-> **Date**: _(to be filled)_
+> **Date**: 2026-07-14.
 >
-> **Rationale**: _(one line)_
+> **Rationale**: POSv2 will no longer be used; `/pos` remains the single
+> point-of-sale surface.
 >
-> **Follow-up implementation plan**: _(to be written after decision;
-> reference its number here once created)_
+> **Follow-up implementation**: completed with this decision; the v2 route,
+> UI tree, and variant-only branches were removed.
 
 ## Test plan
 

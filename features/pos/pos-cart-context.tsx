@@ -1,4 +1,3 @@
-import type { KeyboardBarcodeScannerEvent } from "@point-of-sale/keyboard-barcode-scanner";
 import {
   createContext,
   type ReactNode,
@@ -19,7 +18,6 @@ import type {
   CartTotals,
   Product,
 } from "@/features/pos/types";
-import { buildPosV2BarcodeScanPayload } from "@/features/posv2/posv2-barcode.shared";
 
 export interface PosCartContextValue {
   cancelTableOrder: (reason: string) => Promise<void>;
@@ -30,8 +28,7 @@ export interface PosCartContextValue {
   enterTableMode: (tableId: string) => void;
   exitTableMode: () => void;
   getProductQuantity: (productId: string) => number;
-  handleBarcodeScanV1: (value: string) => boolean;
-  handleBarcodeScanV2: (event: KeyboardBarcodeScannerEvent) => boolean;
+  handleBarcodeScan: (value: string) => boolean;
   handleProductSelect: (product: Product) => void;
   modifierQuantities: Record<string, number>;
   quickAddWithoutModifiers: () => void;
@@ -61,8 +58,7 @@ export function usePosCartContext() {
 export function PosCartProvider({ children }: { children: ReactNode }) {
   const { activeMode, saleModeAdapters } = usePosSaleMode();
   const { requireActiveShift } = usePosShiftContext();
-  const { modifierProducts, products, resolveBarcodeProduct, setSearchQuery } =
-    usePosCatalog();
+  const { modifierProducts, products } = usePosCatalog();
   const { closeActiveModal, openActiveModal } = usePosModal();
 
   const addItemToOrder = useCallback(
@@ -103,7 +99,7 @@ export function PosCartProvider({ children }: { children: ReactNode }) {
     [requireActiveShift, handleProductSelection]
   );
 
-  const handleBarcodeScanV1 = useCallback(
+  const handleBarcodeScan = useCallback(
     (value: string): boolean => {
       if (!requireActiveShift()) {
         return false;
@@ -120,35 +116,6 @@ export function PosCartProvider({ children }: { children: ReactNode }) {
       return false;
     },
     [requireActiveShift, products, handleProductSelection]
-  );
-
-  const handleBarcodeScanV2 = useCallback(
-    (event: KeyboardBarcodeScannerEvent): boolean => {
-      const payload = buildPosV2BarcodeScanPayload(event);
-      if (payload.lookupValues.length === 0) {
-        return false;
-      }
-
-      if (!requireActiveShift()) {
-        return false;
-      }
-
-      const matchedProduct = resolveBarcodeProduct(payload.lookupValues);
-      if (matchedProduct) {
-        setSearchQuery("");
-        handleProductSelection(matchedProduct);
-        return true;
-      }
-
-      setSearchQuery(payload.value);
-      return false;
-    },
-    [
-      requireActiveShift,
-      resolveBarcodeProduct,
-      handleProductSelection,
-      setSearchQuery,
-    ]
   );
 
   const updateQuantityAction = useCallback(
@@ -242,8 +209,7 @@ export function PosCartProvider({ children }: { children: ReactNode }) {
     enterTableMode,
     exitTableMode,
     getProductQuantity: getProductQuantityAction,
-    handleBarcodeScanV1,
-    handleBarcodeScanV2,
+    handleBarcodeScan,
     handleProductSelect,
     modifierQuantities,
     quickAddWithoutModifiers: handleQuickAddWithoutModifiers,

@@ -1,5 +1,8 @@
 # ADR 0009: POS Extension Slots
 
+> **Status update (2026-07-14):** POSv2 was retired. The extension-slot
+> design remains in use for the canonical `features/pos` layout only.
+
 ## Status
 
 Implemented

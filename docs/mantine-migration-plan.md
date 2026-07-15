@@ -18,7 +18,7 @@
   Se mantiene `sonner` por ahora.
 - **Fase 3 — ✅ completa.** Todas las features del plan migradas a Mantine (Modalidad A):
   `customers`, `credit`, `restaurants`, `auth` (no-op: 100% Tailwind), `settings`, `products`,
-  `organization`, `dashboard` (charts siguen en recharts), `pos`/`posv2` (flujo crítico).
+  `organization`, `dashboard` (charts siguen en recharts), `pos` (flujo crítico).
   Además `kitchen` (página suelta fuera de la tabla del plan). tsc + ultracite + build OK en cada commit.
 - **Combobox** (Popover+Command shadcn): migrado a `Select searchable` (filtros) y al primitivo
   `Combobox` de Mantine (customer-picker con trigger e ítems custom de dos líneas).
@@ -160,7 +160,7 @@ Recomendado: **2a para los primitivos de alto uso** (button, input, badge, selec
 | 6 | `products` | 17 | 192 | 17 componentes distintos; algo de virtualización |
 | 7 | `organization` | 26 | 285 | Mayor superficie |
 | 8 | `dashboard` | — | — | **Charts** → `@mantine/charts` |
-| 9 | `pos` / `posv2` | — | — | **Último**: virtualización + flujo crítico en producción |
+| 9 | `pos` | — | — | **Último**: virtualización + flujo crítico en producción |
 
 Por cada feature: migrar componentes → reescribir classNames según modalidad elegida → verificación visual → `bunx tsc --noEmit` + `bun run check` → smoke e2e (`bun run e2e:playwright:smoke`).
 

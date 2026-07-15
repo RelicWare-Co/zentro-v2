@@ -24,7 +24,7 @@ fork — was intentionally excluded as a deliberate fork).
 | 007 | Implement POS extension slots | P2 | M | — | DONE |
 | 008 | Fix tsc/test DB type mismatch (typecheck gate) | P1 | M | — | DONE |
 | 009 | Slim the shifts list query — drop deep sales graph from list rows | P2 | M | 008 | DONE |
-| 010 | Decide the fate of `features/pos` vs `features/posv2` | P3 | M | — | TODO (decision plan — awaiting maintainer decision) |
+| 010 | Decide the fate of `features/pos` vs `features/posv2` | P3 | M | — | DONE (decision: retire POSv2; `/pos` is the sole POS) |
 | 011 | Consolidate the duplicated COP currency formatter | P2 | S | 008 | DONE |
 | 012 | Split the largest modules by concern | P3 | L | 008 | DONE (Phases 1-3: restaurants, dashboard, shifts split; Phase 4 deferred: printer-manager + create-sale are cohesive single-responsibility modules) |
 | 013 | Slim the sales list query — drop payments and items from list rows | P2 | M | 008 | BLOCKED (list UI renders itemCount/balanceDue/paymentMethods from payments+items; needs server-side summary or product decision to drop those fields) |
@@ -52,9 +52,8 @@ Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJE
   015, and 016 all depend on a green typecheck gate to verify their changes.
 - 009 and 013 are both query-slimming plans (shifts list and sales list).
   They are independent of each other but both want 008 first.
-- 010 is a decision plan — no code changes, just a maintainer decision on
-  `pos` vs `posv2`. Once decided, a follow-up implementation plan can be
-  written.
+- 010 is complete: the maintainer chose to retire POSv2 and the implementation
+  consolidated the product surface under `/pos`.
 - 014 is independent of everything (including 008) — it's a one-line
   `console.error` → `toast.warning` replacement in a `.client.tsx` file.
 - 017 is independent but benefits from 009 (shift query stability) if run
@@ -68,8 +67,6 @@ Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJE
   (persisted `shiftClosure` totals) remains a future deferred optimization
   noted in plan 009's maintenance section.
 - **Currency formatter duplicated 6×** — NOW PLANNED as plan 011.
-- **`pos` vs `posv2` duplication** — NOW PLANNED as plan 010 (decision plan,
-  awaiting maintainer decision before implementation can proceed).
 - **VAL-CRED-004 asserts only the error message** (`tests/credit.test.ts`
   ~line 505): add post-rejection state assertions (balance unchanged, no new
   transaction row). S effort; good first-issue.

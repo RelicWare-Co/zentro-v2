@@ -1,12 +1,11 @@
 import type { ReactNode } from "react";
 import { useEffect } from "react";
 import { ALL_FILTER_VALUE } from "@/features/listing/listing.constants.shared";
-import { useKeyboardBarcodeScanner } from "@/features/posv2/hooks/use-keyboard-barcode-scanner.client";
 import {
-  buildPosV2BarcodeScanPayload,
-  isPosV2ScannerBlocked,
-} from "@/features/posv2/posv2-barcode.shared";
-import { findCatalogProductByBarcodeScan } from "@/features/products/barcode.shared";
+  buildBarcodeScanPayload,
+  findCatalogProductByBarcodeScan,
+  isBarcodeScannerBlocked,
+} from "@/features/products/barcode.shared";
 import { CategoriesTab } from "@/features/products/components/categories-tab";
 import { CategoryDialog } from "@/features/products/components/category-dialog";
 import { InventoryDialog } from "@/features/products/components/inventory-dialog";
@@ -25,6 +24,7 @@ import {
   ProductsPageTabs,
 } from "@/features/products/components/products-page-tabs";
 import { ProductsTab } from "@/features/products/components/products-tab";
+import { useKeyboardBarcodeScanner } from "@/features/products/hooks/use-keyboard-barcode-scanner.client";
 import {
   ProductsPageProvider,
   useProductsPage,
@@ -48,12 +48,12 @@ function ProductsPageLayout() {
   );
 
   const handleBarcodeScan = (
-    event: Parameters<typeof buildPosV2BarcodeScanPayload>[0]
+    event: Parameters<typeof buildBarcodeScanPayload>[0]
   ) => {
-    if (isPosV2ScannerBlocked()) {
+    if (isBarcodeScannerBlocked()) {
       return;
     }
-    const payload = buildPosV2BarcodeScanPayload(event);
+    const payload = buildBarcodeScanPayload(event);
     const match = findCatalogProductByBarcodeScan(
       state.barcodeCatalogProducts,
       payload.lookupValues

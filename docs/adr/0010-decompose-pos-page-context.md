@@ -1,5 +1,9 @@
 # ADR 0010: Decompose POS Page Context
 
+> **Status update (2026-07-14):** POSv2 was retired, so the variant provider
+> and its v2-specific branches were removed. The remaining context
+> decomposition continues to apply to the canonical POS.
+
 ## Status
 
 Proposed

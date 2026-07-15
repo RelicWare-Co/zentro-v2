@@ -10,10 +10,9 @@ import { PostCloseConfirmationModal } from "@/features/pos/components/modals/pos
 import { ShiftRequiredDialog } from "@/features/pos/components/modals/shift-required-dialog";
 import type { PosExtensionRenderProps } from "@/features/pos/pos-extension.shared";
 import { usePosPage } from "@/features/pos/pos-page-context";
-import { CheckoutDetailsModal } from "@/features/posv2/components/checkout-details-modal";
 
 export function PosModals() {
-  const { state, actions, meta } = usePosPage();
+  const { state, actions } = usePosPage();
   const moduleCapabilities = useModuleCapabilities();
   const extensions = usePosExtensions(moduleCapabilities.data?.modules);
 
@@ -41,8 +40,7 @@ export function PosModals() {
       <CreateCustomerModal />
       <ModifierModal />
       <ShiftRequiredDialog />
-      {meta.variant === "v1" ? <CheckoutModal /> : null}
-      {meta.variant === "v2" ? <CheckoutDetailsModal /> : null}
+      <CheckoutModal />
       {modalExtensions.map(({ Component, id }) => (
         <Component key={id} {...extensionRenderProps} />
       ))}

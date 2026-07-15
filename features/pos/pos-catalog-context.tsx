@@ -15,7 +15,6 @@ import {
 } from "@/features/pos/hooks/use-pos-catalog";
 import type { PosPaymentMethodOption } from "@/features/pos/sale-modes/types";
 import type { Category, Product } from "@/features/pos/types";
-import { findProductByBarcodeScan } from "@/features/posv2/posv2-barcode.shared";
 import { useActiveOrganization } from "@/lib/auth-client";
 
 export interface PosCatalogContextValue {
@@ -35,7 +34,6 @@ export interface PosCatalogContextValue {
   paymentMethodOptions: PosPaymentMethodOption[];
   paymentMethodsForReceipt: PosPaymentMethodOption[];
   products: Product[];
-  resolveBarcodeProduct: (lookupValues: string[]) => Product | undefined;
   searchQuery: string;
   setActiveCategoryId: (id: string) => void;
   setSearchQuery: (query: string) => void;
@@ -96,12 +94,6 @@ export function PosCatalogProvider({ children }: { children: ReactNode }) {
 
   const products = productsData?.pages.flatMap((page) => page.data) ?? [];
 
-  const resolveBarcodeProduct = useCallback(
-    (lookupValues: string[]) =>
-      findProductByBarcodeScan(products, lookupValues),
-    [products]
-  );
-
   const toggleProductFavorite = useCallback(
     (productId: string) => {
       toggleFavoriteMutation.mutate({ productId });
@@ -126,7 +118,6 @@ export function PosCatalogProvider({ children }: { children: ReactNode }) {
     paymentMethodOptions,
     paymentMethodsForReceipt,
     products,
-    resolveBarcodeProduct,
     searchQuery,
     setActiveCategoryId,
     setSearchQuery,

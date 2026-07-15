@@ -185,7 +185,6 @@ bun run zero:schema:gen
 | `/organization` | Selección y administración de organización |
 | `/dashboard` | Panel principal |
 | `/pos` | Punto de venta |
-| `/posv2` | POS alternativo (v2) |
 | `/shifts` | Turnos de caja |
 | `/sales` | Historial y reportes de ventas |
 | `/customers` | Gestión de clientes |

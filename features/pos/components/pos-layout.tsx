@@ -11,7 +11,7 @@ import { isAnyPosModalOpen } from "@/features/pos/pos-page-modals.shared";
 import { openPosCashDrawer } from "@/features/pos/printing/print-sale-receipt.client";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-export function PosV1Layout() {
+export function PosLayout() {
   const { state, actions, meta } = usePosPage();
   const isMobile = useIsMobile();
   const moduleCapabilities = useModuleCapabilities();

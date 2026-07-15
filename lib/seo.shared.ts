@@ -73,12 +73,6 @@ const ROUTE_SEO: Record<string, RouteSeoConfig> = {
     indexable: false,
     title: "POS | Zentro",
   },
-  "/posv2": {
-    description:
-      "Punto de venta de Zentro optimizado para catálogo, carrito, pagos y cobro rápido.",
-    indexable: false,
-    title: "POS | Zentro",
-  },
   "/kitchen": {
     description:
       "Vista de cocina de Zentro para preparar, seguir y completar comandas.",
@@ -145,7 +139,6 @@ const PRIVATE_PATH_PREFIXES = [
   "/kitchen",
   "/organization",
   "/pos",
-  "/posv2",
   "/products",
   "/sales",
   "/settings",

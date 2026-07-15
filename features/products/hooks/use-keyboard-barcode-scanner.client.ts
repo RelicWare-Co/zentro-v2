@@ -2,9 +2,9 @@ import type { KeyboardBarcodeScannerEvent } from "@point-of-sale/keyboard-barcod
 import KeyboardBarcodeScanner from "@point-of-sale/keyboard-barcode-scanner";
 import { useEffect, useRef, useState } from "react";
 import {
-  isPosV2ScannerBlocked,
-  POSV2_BARCODE_SCANNER_OPTIONS,
-} from "@/features/posv2/posv2-barcode.shared";
+  isBarcodeScannerBlocked,
+  KEYBOARD_BARCODE_SCANNER_OPTIONS,
+} from "@/features/products/barcode.shared";
 
 interface UseKeyboardBarcodeScannerOptions {
   enabled?: boolean;
@@ -24,15 +24,17 @@ export function useKeyboardBarcodeScanner({
   }, [onScan]);
 
   useEffect(() => {
-    if (!enabled || isPosV2ScannerBlocked()) {
+    if (!enabled || isBarcodeScannerBlocked()) {
       return;
     }
 
-    const scanner = new KeyboardBarcodeScanner(POSV2_BARCODE_SCANNER_OPTIONS);
+    const scanner = new KeyboardBarcodeScanner(
+      KEYBOARD_BARCODE_SCANNER_OPTIONS
+    );
     scannerRef.current = scanner;
 
     const handleBarcode = (event: KeyboardBarcodeScannerEvent) => {
-      if (isPosV2ScannerBlocked()) {
+      if (isBarcodeScannerBlocked()) {
         return;
       }
       onScanRef.current(event);

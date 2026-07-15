@@ -9,7 +9,6 @@ Disallow: /customers
 Disallow: /dashboard
 Disallow: /kitchen
 Disallow: /pos
-Disallow: /posv2
 Disallow: /products
 Disallow: /restaurants
 Disallow: /sales

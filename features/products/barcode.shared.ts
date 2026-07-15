@@ -1,7 +1,98 @@
-import { buildBarcodeLookupValues } from "@/features/posv2/posv2-barcode.shared";
+import type { KeyboardBarcodeScannerEvent } from "@point-of-sale/keyboard-barcode-scanner";
+import { hasOpenOverlay } from "@/lib/overlay-detection.shared";
 
 const EAN13_LENGTH = 13;
 const EAN13_PATTERN = /^\d{13}$/;
+const NUMERIC_BARCODE_PATTERN = /^\d+$/;
+const RETAIL_SYMBOLOGIES = [
+  "ean13",
+  "ean8",
+  "upca",
+  "upce",
+  "code39",
+  "code93",
+  "code128",
+  "codabar",
+  "interleaved-2-of-5",
+  "gs1-databar-omni",
+  "gs1-databar-expanded",
+  "qr-code",
+  "data-matrix",
+  "aztec-code",
+  "pdf417",
+] as const;
+
+export interface BarcodeScanPayload {
+  gtin: string | null;
+  lookupValues: string[];
+  symbology: string | null;
+  value: string;
+}
+
+export const KEYBOARD_BARCODE_SCANNER_OPTIONS = {
+  allowedSymbologies: [...RETAIL_SYMBOLOGIES],
+  guessSymbology: true,
+};
+
+function addBarcodeCandidate(candidates: Set<string>, rawValue: string) {
+  const trimmed = rawValue.trim();
+  if (!trimmed) {
+    return;
+  }
+
+  candidates.add(trimmed);
+
+  if (NUMERIC_BARCODE_PATTERN.test(trimmed)) {
+    if (trimmed.length === 14 && trimmed.startsWith("0")) {
+      candidates.add(trimmed.slice(1));
+    }
+
+    if (trimmed.length === 13) {
+      candidates.add(`0${trimmed}`);
+    }
+
+    if (trimmed.length === 12) {
+      candidates.add(`0${trimmed}`);
+      candidates.add(`00${trimmed}`);
+    }
+
+    if (trimmed.length === 8 && trimmed.startsWith("0")) {
+      candidates.add(trimmed.slice(1));
+    }
+  }
+}
+
+export function buildBarcodeLookupValues(
+  value: string,
+  gtin?: string | null
+): string[] {
+  const candidates = new Set<string>();
+  addBarcodeCandidate(candidates, value);
+
+  if (gtin) {
+    addBarcodeCandidate(candidates, gtin);
+  }
+
+  return [...candidates];
+}
+
+export function buildBarcodeScanPayload(
+  event: KeyboardBarcodeScannerEvent
+): BarcodeScanPayload {
+  const gtin = event.data?.gtin?.trim() || null;
+  const value = event.value.trim();
+
+  return {
+    value,
+    gtin,
+    symbology: event.symbology ?? null,
+    lookupValues: buildBarcodeLookupValues(value, gtin),
+  };
+}
+
+export function isBarcodeScannerBlocked(): boolean {
+  return hasOpenOverlay();
+}
 
 function calculateEan13CheckDigit(digits12: string) {
   let sum = 0;

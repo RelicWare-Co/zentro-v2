@@ -2,10 +2,10 @@ import { TextInput } from "@mantine/core";
 import { LayoutGrid, List, Search, X } from "lucide-react";
 import { useEffect, useId, useRef } from "react";
 import { CategoryTabs } from "@/features/pos/components/category-tabs";
+import { ProductGridCard } from "@/features/pos/components/product-grid-card";
+import { ProductListItem } from "@/features/pos/components/product-list-item";
 import { usePosBarcodeScanner } from "@/features/pos/hooks/use-pos-barcode-scanner";
 import { usePosPage } from "@/features/pos/pos-page-context";
-import { ProductGridCard } from "@/features/posv2/components/product-grid-card";
-import { ProductListItem } from "@/features/posv2/components/product-list-item";
 import { cn } from "@/lib/utils";
 
 export function ProductGrid({
@@ -30,7 +30,7 @@ export function ProductGrid({
     usePosBarcodeScanner({
       isActiveShift: state.isActiveShift,
       isLoading,
-      onBarcodeScan: actions.handleBarcodeScanV1,
+      onBarcodeScan: actions.handleBarcodeScan,
       onClearSearch: () => actions.setSearchQuery(""),
       onProductSelect: actions.handleProductSelect,
       onSearchChange: actions.setSearchQuery,

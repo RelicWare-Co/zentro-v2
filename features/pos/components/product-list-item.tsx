@@ -1,19 +1,19 @@
 import { Heart, Package } from "lucide-react";
+import {
+  posAccentFocusRing,
+  posAccentHoverBorder,
+  posAccentSoftShadow,
+  posAccentText,
+  posIconText,
+  posMutedText,
+  posOrderBorderSubtle,
+  posOrderCarbonBg,
+  posOrderHoverSurface,
+  posOrderSurfaceBg,
+} from "@/features/pos/components/pos-styles";
 import { usePosPage } from "@/features/pos/pos-page-context";
 import type { Product } from "@/features/pos/types";
 import { calculatePriceWithTax } from "@/features/pos/utils";
-import {
-  posV2AccentFocusRing,
-  posV2AccentHoverBorder,
-  posV2AccentSoftShadow,
-  posV2AccentText,
-  posV2IconText,
-  posV2MutedText,
-  posV2OrderBorderSubtle,
-  posV2OrderCarbonBg,
-  posV2OrderHoverSurface,
-  posV2OrderSurfaceBg,
-} from "@/features/posv2/components/pos-v2-order-styles";
 import { formatCurrency } from "@/lib/format-currency.shared";
 import { cn } from "@/lib/utils";
 
@@ -46,11 +46,11 @@ export function ProductListItem({
       <button
         className={cn(
           "flex w-full items-center gap-3 rounded-xl border p-3 pr-12 text-left transition-all md:gap-4 md:p-4",
-          posV2OrderBorderSubtle,
-          posV2OrderSurfaceBg,
-          posV2AccentHoverBorder,
-          posV2AccentSoftShadow,
-          posV2AccentFocusRing,
+          posOrderBorderSubtle,
+          posOrderSurfaceBg,
+          posAccentHoverBorder,
+          posAccentSoftShadow,
+          posAccentFocusRing,
           isOutOfStock && "opacity-45"
         )}
         onClick={onSelect}
@@ -60,11 +60,11 @@ export function ProductListItem({
           <div
             className={cn(
               "flex size-10 items-center justify-center rounded-lg border md:h-11 md:w-11",
-              posV2OrderBorderSubtle,
-              posV2OrderCarbonBg
+              posOrderBorderSubtle,
+              posOrderCarbonBg
             )}
           >
-            <Package className={cn("size-4 md:h-5 md:w-5", posV2IconText)} />
+            <Package className={cn("size-4 md:h-5 md:w-5", posIconText)} />
           </div>
         </div>
 
@@ -75,7 +75,7 @@ export function ProductListItem({
           <p
             className={cn(
               "mt-0.5 font-medium text-[10px] md:text-[11px]",
-              posV2MutedText
+              posMutedText
             )}
           >
             {product.categoryName}
@@ -85,7 +85,7 @@ export function ProductListItem({
               <span
                 className={cn(
                   "font-medium text-[10px] md:text-[11px]",
-                  product.stock > 0 ? posV2AccentText : "text-red-500"
+                  product.stock > 0 ? posAccentText : "text-red-500"
                 )}
               >
                 {stockLabel}
@@ -108,8 +108,8 @@ export function ProductListItem({
         aria-pressed={product.isFavorite}
         className={cn(
           "absolute top-1/2 right-3 z-10 -translate-y-1/2 rounded-md p-1.5 disabled:opacity-50",
-          posV2OrderHoverSurface,
-          posV2AccentFocusRing
+          posOrderHoverSurface,
+          posAccentFocusRing
         )}
         disabled={meta.isTogglingFavorite}
         onClick={(event) => {
@@ -123,7 +123,7 @@ export function ProductListItem({
             "size-4 transition-colors md:h-5 md:w-5",
             product.isFavorite
               ? "fill-red-500 text-red-500"
-              : `${posV2IconText} hover:text-red-400`
+              : `${posIconText} hover:text-red-400`
           )}
         />
       </button>

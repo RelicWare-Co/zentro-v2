@@ -37,7 +37,7 @@ copy. Important current domains include:
 - `products` / inventory / Kardex
 - `customers`
 - `sales`
-- `pos` and `posv2`
+- `pos`
 - `shifts`
 - `restaurants`
 - `credit`

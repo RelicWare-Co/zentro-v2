@@ -1,4 +1,3 @@
-import type { KeyboardBarcodeScannerEvent } from "@point-of-sale/keyboard-barcode-scanner";
 import { createContext, type ReactNode, use, useMemo } from "react";
 import type { useCreateCustomerModal } from "@/features/pos/hooks/use-create-customer-modal";
 import type { usePosShift } from "@/features/pos/hooks/use-pos-shift";
@@ -9,10 +8,6 @@ import { usePosCustomer } from "@/features/pos/pos-customer-context";
 import { usePosModal } from "@/features/pos/pos-modal-context";
 import { usePosSaleMode } from "@/features/pos/pos-sale-mode-context";
 import { usePosShiftContext } from "@/features/pos/pos-shift-context";
-import {
-  type PosPageVariant,
-  usePosVariant,
-} from "@/features/pos/pos-variant-context";
 import type {
   PosPaymentMethodOption,
   PosTableSessionState,
@@ -28,7 +23,6 @@ import type {
   Product,
 } from "@/features/pos/types";
 
-export type { PosPageVariant } from "@/features/pos/pos-variant-context";
 export type { PosTableSessionState } from "@/features/pos/sale-modes/types";
 
 export type PaymentMethodOption = PosPaymentMethodOption;
@@ -93,14 +87,12 @@ export interface PosPageActions {
   fetchNextProductsPage: () => void;
   finalizeSale: () => void;
   getProductQuantity: (productId: string) => number;
-  handleBarcodeScanV1: (value: string) => boolean;
-  handleBarcodeScanV2: (event: KeyboardBarcodeScannerEvent) => boolean;
+  handleBarcodeScan: (value: string) => boolean;
   handleProductSelect: (product: Product) => void;
   handleQuickSale: () => void;
   openActiveModal: (modal: string) => void;
   openCashMovementModal: () => void;
   openCheckout: () => void;
-  openCheckoutDetails: () => void;
   openCloseShiftModal: () => void;
   openCreateCustomerModal: () => void;
   openShiftFromRequired: () => void;
@@ -136,9 +128,7 @@ export interface PosPageMeta {
   defaultTerminalName: string;
   isTogglingFavorite: boolean;
   paymentMethodOptions: PaymentMethodOption[];
-  resolveBarcodeProduct: (lookupValues: string[]) => Product | undefined;
   shift: ReturnType<typeof usePosShift>;
-  variant: PosPageVariant;
 }
 
 export interface PosPageContextValue {
@@ -158,8 +148,6 @@ export function usePosPage() {
 }
 
 export function PosPageCompatProvider({ children }: { children: ReactNode }) {
-  const variant = usePosVariant();
-
   const {
     activeModal,
     closeActiveModal,
@@ -167,7 +155,6 @@ export function PosPageCompatProvider({ children }: { children: ReactNode }) {
     isQuickSaleMode,
     openActiveModal,
     openCashMovementModal,
-    openCheckoutDetails,
     openCloseShiftModal,
     openCreateCustomerModal,
     openShiftFromRequired,
@@ -190,7 +177,6 @@ export function PosPageCompatProvider({ children }: { children: ReactNode }) {
     modifierProducts,
     paymentMethodOptions,
     products,
-    resolveBarcodeProduct,
     searchQuery,
     setActiveCategoryId,
     setSearchQuery,
@@ -221,8 +207,7 @@ export function PosPageCompatProvider({ children }: { children: ReactNode }) {
     enterTableMode,
     exitTableMode,
     getProductQuantity,
-    handleBarcodeScanV1,
-    handleBarcodeScanV2,
+    handleBarcodeScan,
     handleProductSelect,
     modifierQuantities,
     quickAddWithoutModifiers,
@@ -324,14 +309,12 @@ export function PosPageCompatProvider({ children }: { children: ReactNode }) {
         fetchNextProductsPage,
         finalizeSale,
         getProductQuantity,
-        handleBarcodeScanV1,
-        handleBarcodeScanV2,
+        handleBarcodeScan,
         handleProductSelect,
         handleQuickSale,
         openActiveModal,
         openCashMovementModal,
         openCheckout,
-        openCheckoutDetails,
         openCloseShiftModal,
         openCreateCustomerModal,
         openShiftFromRequired,
@@ -362,9 +345,7 @@ export function PosPageCompatProvider({ children }: { children: ReactNode }) {
         defaultTerminalName,
         isTogglingFavorite,
         paymentMethodOptions,
-        resolveBarcodeProduct,
         shift,
-        variant,
       },
     }),
     [
@@ -413,15 +394,13 @@ export function PosPageCompatProvider({ children }: { children: ReactNode }) {
       fetchNextProductsPage,
       finalizeSale,
       getProductQuantity,
-      handleBarcodeScanV1,
-      handleBarcodeScanV2,
+      handleBarcodeScan,
       handleProductSelect,
       handleQuickSale,
       isQuickSaleMode,
       openActiveModal,
       openCashMovementModal,
       openCheckout,
-      openCheckoutDetails,
       openCloseShiftModal,
       openCreateCustomerModal,
       openShiftFromRequired,
@@ -439,7 +418,6 @@ export function PosPageCompatProvider({ children }: { children: ReactNode }) {
       defaultTerminalName,
       isTogglingFavorite,
       paymentMethodOptions,
-      resolveBarcodeProduct,
       setActiveCategoryId,
       setIsMobileCartOpen,
       setSearchQuery,
@@ -457,7 +435,6 @@ export function PosPageCompatProvider({ children }: { children: ReactNode }) {
       shouldCreateCreditBalance,
       totalPaid,
       updatePayment,
-      variant,
     ]
   );
 

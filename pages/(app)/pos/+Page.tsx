@@ -1,5 +1,5 @@
 import { PosPage } from "@/features/pos/pos-page";
 
 export default function Page() {
-  return <PosPage variant="v1" />;
+  return <PosPage />;
 }

@@ -36,7 +36,7 @@ const moduleIconMap = {
   "utensils-crossed": UtensilsCrossed,
 } as const;
 
-const FULL_HEIGHT_ROUTES = new Set(["/pos", "/posv2"]);
+const FULL_HEIGHT_ROUTES = new Set(["/pos"]);
 
 function isFullHeightRoute(pathname: string) {
   return FULL_HEIGHT_ROUTES.has(pathname);
