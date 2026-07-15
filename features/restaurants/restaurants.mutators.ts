@@ -40,7 +40,7 @@ export const cancelRestaurantOrderArgsSchema = zod.object({
 });
 export const updateRestaurantOrderItemStatusArgsSchema = zod.object({
   ticketLineId: zod.string().trim().min(1),
-  status: zod.enum(["ready", "served", "cancelled"]),
+  status: zod.enum(["ready", "served", "cancelled", "acknowledged"]),
 });
 export const closeRestaurantOrderArgsSchema = zod.object({
   orderId: zod.string().trim().min(1),

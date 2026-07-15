@@ -616,14 +616,16 @@ export async function refreshKitchenTicketStatus(
   }
 
   const activeStatuses = ticketLines.reduce<string[]>((acc, line) => {
-    if (line.status !== "cancelled") {
+    if (!(line.status === "cancelled" || line.status === "acknowledged")) {
       acc.push(line.status);
     }
     return acc;
   }, []);
-  let nextStatus: "cancelled" | "served" | "ready" | "sent";
+  let nextStatus: "acknowledged" | "cancelled" | "served" | "ready" | "sent";
   if (activeStatuses.length === 0) {
-    nextStatus = "cancelled";
+    nextStatus = ticketLines.some((line) => line.status === "acknowledged")
+      ? "acknowledged"
+      : "cancelled";
   } else if (activeStatuses.every((status) => status === "served")) {
     nextStatus = "served";
   } else if (

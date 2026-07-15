@@ -221,6 +221,8 @@ export function useTableSaleAdapter(
       hasPendingKitchenChanges: tableOrder.hasPendingKitchenChanges,
       pendingKitchenCancellationCount:
         tableOrder.pendingKitchenCancellationCount,
+      pendingKitchenModificationCount:
+        tableOrder.pendingKitchenModificationCount,
       pendingKitchenPreparationCount: tableOrder.pendingKitchenPreparationCount,
       isLoading: tableOrder.isLoading,
       isSendingToKitchen: tableOrder.isSendingToKitchen,

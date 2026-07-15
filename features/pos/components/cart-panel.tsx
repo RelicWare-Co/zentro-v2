@@ -891,6 +891,10 @@ export function CartPanel({
               {tableSession?.pendingKitchenPreparationCount ?? 0}
             </Text>
             <Text c="dimmed" size="sm">
+              Modificaciones:{" "}
+              {tableSession?.pendingKitchenModificationCount ?? 0}
+            </Text>
+            <Text c="dimmed" size="sm">
               Anulaciones / no preparar:{" "}
               {tableSession?.pendingKitchenCancellationCount ?? 0}
             </Text>

@@ -1,11 +1,42 @@
 import { ThermalReceipt } from "@/features/pos/components/thermal-receipt";
 import type { ThermalReceiptDocument } from "@/features/pos/printing/thermal-receipt-document";
+import { getKitchenModificationDetails } from "@/features/restaurants/kitchen-corrections.shared";
 import { formatCurrency } from "@/lib/format-currency.shared";
 
 const ticketDateTimeFormatter = new Intl.DateTimeFormat("es-CO", {
   dateStyle: "short",
   timeStyle: "short",
 });
+
+interface KitchenTicketDocumentItem {
+  modifiers?: Array<{
+    name: string;
+    quantity: number;
+    unitPrice: number;
+  }>;
+  notes?: string | null;
+  operation?: "cancel" | "modify" | "prepare";
+  previousModifiers?: Array<{
+    name: string;
+    quantity: number;
+    unitPrice: number;
+  }>;
+  previousNotes?: string | null;
+  previousQuantity?: number | null;
+  productName: string;
+  quantity: number;
+  totalAmount?: number;
+}
+
+function getKitchenTicketItemLabel(item: KitchenTicketDocumentItem) {
+  if (item.operation === "cancel") {
+    return `CANCELAR / NO PREPARAR: ${item.productName}`;
+  }
+  if (item.operation === "modify") {
+    return `MODIFICACIÓN: ${item.productName}`;
+  }
+  return item.productName;
+}
 
 export function buildKitchenTicketDocument(input: {
   ticketId: string;
@@ -15,18 +46,7 @@ export function buildKitchenTicketDocument(input: {
   createdAt: number | Date;
   tableName: string;
   areaName: string | null;
-  items: Array<{
-    productName: string;
-    quantity: number;
-    operation?: "cancel" | "prepare";
-    notes?: string | null;
-    modifiers?: Array<{
-      name: string;
-      quantity: number;
-      unitPrice: number;
-    }>;
-    totalAmount?: number;
-  }>;
+  items: KitchenTicketDocumentItem[];
 }): ThermalReceiptDocument {
   const isCorrection = input.kind === "correction";
   const receipt = {
@@ -47,20 +67,28 @@ export function buildKitchenTicketDocument(input: {
       },
     ],
     items: input.items.map((item) => ({
-      label:
-        item.operation === "cancel"
-          ? `CANCELAR / NO PREPARAR: ${item.productName}`
-          : item.productName,
+      label: getKitchenTicketItemLabel(item),
       quantity: item.quantity,
       totalLabel:
         typeof item.totalAmount === "number"
           ? formatCurrency(item.totalAmount)
           : "",
       secondaryLines: [
-        ...(item.notes ? [`Nota: ${item.notes}`] : []),
-        ...(item.modifiers ?? []).map(
-          (modifier) => `+ ${modifier.quantity} x ${modifier.name}`
-        ),
+        ...(item.operation === "modify"
+          ? getKitchenModificationDetails({
+              modifiers: item.modifiers ?? [],
+              notes: item.notes,
+              previousModifiers: item.previousModifiers ?? [],
+              previousNotes: item.previousNotes,
+              previousQuantity: item.previousQuantity,
+              quantity: item.quantity,
+            })
+          : [
+              ...(item.notes ? [`Nota: ${item.notes}`] : []),
+              ...(item.modifiers ?? []).map(
+                (modifier) => `+ ${modifier.quantity} × ${modifier.name}`
+              ),
+            ]),
       ],
     })),
     totals: [

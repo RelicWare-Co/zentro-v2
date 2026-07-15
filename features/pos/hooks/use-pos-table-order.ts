@@ -181,6 +181,20 @@ function buildSentKitchenPrintItem(
   };
 }
 
+function buildModifiedKitchenPrintItem(
+  current: KitchenTicketPrintItem,
+  sent: KitchenTicketPrintItem
+): KitchenTicketPrintItem {
+  return {
+    ...current,
+    productName: sent.productName,
+    operation: "modify",
+    previousModifiers: sent.modifiers,
+    previousNotes: sent.notes,
+    previousQuantity: sent.quantity,
+  };
+}
+
 function getPendingKitchenLines(
   item: TableOrderItem,
   quantity: number,
@@ -198,26 +212,12 @@ function getPendingKitchenLines(
 
   const modifiersChanged =
     serializeModifiers(item) !== (item.sentModifiersSnapshot ?? "[]");
-  if (notes !== sent.notes || modifiersChanged) {
-    return [sent, current];
-  }
-
   const quantityDifference = quantity - sent.quantity;
-  if (quantityDifference === 0) {
+  if (notes === sent.notes && !modifiersChanged && quantityDifference === 0) {
     return [];
   }
 
-  const correctionQuantity = Math.abs(quantityDifference);
-  const operation = quantityDifference > 0 ? "prepare" : "cancel";
-  const correctionItem = operation === "prepare" ? current : sent;
-  return [
-    {
-      ...correctionItem,
-      quantity: correctionQuantity,
-      totalAmount: scaleItemTotal(item, correctionQuantity),
-      operation,
-    },
-  ];
+  return [buildModifiedKitchenPrintItem(current, sent)];
 }
 
 function buildPendingKitchenPrintItems(
@@ -360,8 +360,11 @@ export function usePosTableOrder(
       cancellations: pendingKitchenItems.filter(
         (item) => item.operation === "cancel"
       ).length,
+      modifications: pendingKitchenItems.filter(
+        (item) => item.operation === "modify"
+      ).length,
       preparations: pendingKitchenItems.filter(
-        (item) => item.operation !== "cancel"
+        (item) => item.operation === "prepare" || item.operation === undefined
       ).length,
     }),
     [pendingKitchenItems]
@@ -395,7 +398,14 @@ export function usePosTableOrder(
           quantity: line.quantity,
           operation: line.operation,
           notes: line.notes ?? null,
+          previousNotes: line.previousNotes ?? null,
+          previousQuantity: line.previousQuantity ?? null,
           modifiers: line.modifiers.map((modifier) => ({
+            name: modifier.name,
+            quantity: modifier.quantity,
+            unitPrice: modifier.unitPrice,
+          })),
+          previousModifiers: line.previousModifiers.map((modifier) => ({
             name: modifier.name,
             quantity: modifier.quantity,
             unitPrice: modifier.unitPrice,
@@ -718,6 +728,7 @@ export function usePosTableOrder(
     hasSentKitchenTicket: (openOrder?.tickets.length ?? 0) > 0,
     hasPendingKitchenChanges: openOrder?.hasPendingKitchenChanges ?? false,
     pendingKitchenCancellationCount: pendingKitchenSummary.cancellations,
+    pendingKitchenModificationCount: pendingKitchenSummary.modifications,
     pendingKitchenPreparationCount: pendingKitchenSummary.preparations,
     isLoading: tableDetailQuery.isLoading,
     detailError: tableDetailQuery.error,

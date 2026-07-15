@@ -56,7 +56,7 @@ export const CancelRestaurantOrderInputSchema = z.object({
 
 export const UpdateRestaurantOrderItemStatusInputSchema = z.object({
   ticketLineId: z.string().trim().min(1),
-  status: z.enum(["ready", "served", "cancelled"]),
+  status: z.enum(["ready", "served", "cancelled", "acknowledged"]),
 });
 
 export const CloseRestaurantOrderInputSchema = z.object({
@@ -234,12 +234,15 @@ const RestaurantOrderItemSchema = z.object({
 
 const KitchenTicketLineSchema = z.object({
   id: z.string(),
-  operation: z.enum(["prepare", "cancel"]),
+  operation: z.enum(["prepare", "cancel", "modify"]),
   productName: z.string(),
   quantity: z.number(),
-  status: z.enum(["sent", "ready", "served", "cancelled"]),
+  previousQuantity: z.number().nullable().optional(),
+  status: z.enum(["sent", "ready", "served", "cancelled", "acknowledged"]),
   notes: z.string().nullable().optional(),
+  previousNotes: z.string().nullable().optional(),
   modifiers: RestaurantOrderItemModifierSchema.array(),
+  previousModifiers: RestaurantOrderItemModifierSchema.array(),
 });
 
 const RestaurantKitchenTicketSchema = z.object({
@@ -320,11 +323,14 @@ const SendToKitchenTicketSchema = z.object({
   lines: z.array(
     z.object({
       orderItemId: z.string(),
-      operation: z.enum(["prepare", "cancel"]),
+      operation: z.enum(["prepare", "cancel", "modify"]),
       productName: z.string(),
       quantity: z.number(),
+      previousQuantity: z.number().nullable(),
       notes: z.string().nullable(),
+      previousNotes: z.string().nullable(),
       modifiers: RestaurantOrderItemModifierSchema.array(),
+      previousModifiers: RestaurantOrderItemModifierSchema.array(),
     })
   ),
 });

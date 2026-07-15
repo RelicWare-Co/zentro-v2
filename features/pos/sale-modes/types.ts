@@ -25,6 +25,7 @@ export interface PosTableSessionState {
   orderId: string | null;
   orderNumber: number | null;
   pendingKitchenCancellationCount: number;
+  pendingKitchenModificationCount: number;
   pendingKitchenPreparationCount: number;
   tableId: string;
   tableName: string;

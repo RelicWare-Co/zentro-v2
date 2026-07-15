@@ -38,8 +38,11 @@ interface KitchenItemSnapshot {
 }
 
 interface KitchenTicketLineDraft extends KitchenItemSnapshot {
-  operation: "cancel" | "prepare";
+  operation: "cancel" | "modify" | "prepare";
   orderItemId: string;
+  previousModifiers: KitchenModifierSnapshot[] | null;
+  previousNotes: string | null;
+  previousQuantity: number | null;
 }
 
 function normalizeModifiers(
@@ -167,38 +170,54 @@ function getCorrectionLines(item: {
 }): KitchenTicketLineDraft[] {
   const current = makeSnapshot(item);
   if (item.status === "draft") {
-    return [{ ...current, operation: "prepare", orderItemId: item.id }];
+    return [
+      {
+        ...current,
+        operation: "prepare",
+        orderItemId: item.id,
+        previousModifiers: null,
+        previousNotes: null,
+        previousQuantity: null,
+      },
+    ];
   }
 
   const sent = makeSentSnapshot(item);
   if (item.pendingCancellation) {
     return sent.quantity > 0
-      ? [{ ...sent, operation: "cancel", orderItemId: item.id }]
+      ? [
+          {
+            ...sent,
+            operation: "cancel",
+            orderItemId: item.id,
+            previousModifiers: null,
+            previousNotes: null,
+            previousQuantity: null,
+          },
+        ]
       : [];
   }
 
   const currentModifiers = serializeModifiers(current.modifiers);
   const sentModifiers = serializeModifiers(sent.modifiers);
-  if (current.notes !== sent.notes || currentModifiers !== sentModifiers) {
-    return [
-      { ...sent, operation: "cancel", orderItemId: item.id },
-      { ...current, operation: "prepare", orderItemId: item.id },
-    ];
-  }
-
   const quantityDifference = current.quantity - sent.quantity;
-  if (quantityDifference === 0) {
+  if (
+    current.notes === sent.notes &&
+    currentModifiers === sentModifiers &&
+    quantityDifference === 0
+  ) {
     return [];
   }
 
-  const operation = quantityDifference > 0 ? "prepare" : "cancel";
-  const snapshot = operation === "prepare" ? current : sent;
   return [
     {
-      ...snapshot,
-      operation,
+      ...current,
+      productName: sent.productName,
+      operation: "modify",
       orderItemId: item.id,
-      quantity: Math.abs(quantityDifference),
+      previousModifiers: sent.modifiers,
+      previousNotes: sent.notes,
+      previousQuantity: sent.quantity,
     },
   ];
 }
@@ -279,6 +298,12 @@ export async function runSendRestaurantOrderToKitchen(
       productName: line.productName,
       quantity: line.quantity,
       notes: line.notes,
+      previousQuantity: line.previousQuantity,
+      previousNotes: line.previousNotes,
+      previousModifiersSnapshot:
+        line.previousModifiers === null
+          ? null
+          : serializeModifiers(line.previousModifiers),
       modifiersSnapshot: serializeModifiers(line.modifiers),
       status: "sent",
       createdAt: now,
@@ -306,11 +331,6 @@ export async function runSendRestaurantOrderToKitchen(
       continue;
     }
 
-    const replacesSentSnapshot =
-      item.status === "draft" ||
-      (itemLines.some((line) => line.operation === "cancel") &&
-        itemLines.some((line) => line.operation === "prepare"));
-
     await database
       .update(restaurantOrderItem)
       .set({
@@ -319,9 +339,10 @@ export async function runSendRestaurantOrderToKitchen(
         sentAt: now,
         sentQuantity: item.quantity,
         sentNotes: item.notes,
-        sentProductName: replacesSentSnapshot
-          ? item.productName
-          : item.sentProductName,
+        sentProductName:
+          item.status === "draft"
+            ? item.productName
+            : (item.sentProductName ?? item.productName),
         sentModifiersSnapshot: serializeModifiers(
           normalizeModifiers(item.modifiers)
         ),
@@ -407,15 +428,25 @@ export async function runUpdateRestaurantOrderItemStatus(
   ) {
     throw new Error("La comanda ya no está activa en cocina.");
   }
-  if (lineRow.lineStatus === "served" || lineRow.lineStatus === "cancelled") {
+  if (
+    lineRow.lineStatus === "served" ||
+    lineRow.lineStatus === "cancelled" ||
+    lineRow.lineStatus === "acknowledged"
+  ) {
     throw new Error("La línea ya está finalizada.");
   }
   if (lineRow.operation === "cancel" && args.status !== "cancelled") {
     throw new Error("Las anulaciones solo se pueden confirmar.");
   }
-  if (lineRow.operation === "prepare" && args.status === "cancelled") {
+  if (lineRow.operation === "modify" && args.status !== "acknowledged") {
+    throw new Error("Las modificaciones solo se pueden confirmar.");
+  }
+  if (
+    lineRow.operation === "prepare" &&
+    !(args.status === "ready" || args.status === "served")
+  ) {
     throw new Error(
-      "Los ítems de preparación no se pueden cancelar desde cocina."
+      "Los ítems de preparación solo se pueden marcar listos o despachar."
     );
   }
 

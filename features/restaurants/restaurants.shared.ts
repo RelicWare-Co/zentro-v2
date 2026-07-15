@@ -60,6 +60,9 @@ export interface RestaurantKitchenTicketLineRow {
   notes?: string | null;
   operation: string;
   orderItemId: string;
+  previousModifiersSnapshot?: string | null;
+  previousNotes?: string | null;
+  previousQuantity?: number | null;
   productName: string;
   quantity: number;
   status?: string | null;
@@ -340,20 +343,25 @@ export function mapRestaurantKitchenTicket(
       )
       .map((lineRow) => ({
         id: lineRow.id,
-        operation:
-          lineRow.operation === "cancel"
-            ? ("cancel" as const)
-            : ("prepare" as const),
+        operation: mapKitchenTicketLineOperation(lineRow.operation),
         productName: lineRow.productName,
         quantity: lineRow.quantity,
+        previousQuantity: lineRow.previousQuantity ?? null,
         status: mapKitchenTicketLineStatus(lineRow.status),
         notes: lineRow.notes ?? null,
+        previousNotes: lineRow.previousNotes ?? null,
         modifiers: parseKitchenModifiers(lineRow.modifiersSnapshot),
+        previousModifiers: parseKitchenModifiers(
+          lineRow.previousModifiersSnapshot
+        ),
       })),
   };
 }
 
 function mapKitchenTicketLineStatus(status: string | null | undefined) {
+  if (status === "acknowledged") {
+    return "acknowledged" as const;
+  }
   if (status === "ready") {
     return "ready" as const;
   }
@@ -364,6 +372,16 @@ function mapKitchenTicketLineStatus(status: string | null | undefined) {
     return "cancelled" as const;
   }
   return "sent" as const;
+}
+
+function mapKitchenTicketLineOperation(operation: string) {
+  if (operation === "cancel") {
+    return "cancel" as const;
+  }
+  if (operation === "modify") {
+    return "modify" as const;
+  }
+  return "prepare" as const;
 }
 
 function hasPendingKitchenChange(
@@ -656,16 +674,18 @@ export function buildKitchenBoard(params: {
         )
         .map((lineRow) => ({
           id: lineRow.id,
-          operation:
-            lineRow.operation === "cancel"
-              ? ("cancel" as const)
-              : ("prepare" as const),
+          operation: mapKitchenTicketLineOperation(lineRow.operation),
           productName: lineRow.productName,
           quantity: lineRow.quantity,
+          previousQuantity: lineRow.previousQuantity ?? null,
           status:
             lineRow.status === "ready" ? ("ready" as const) : ("sent" as const),
           notes: lineRow.notes ?? null,
+          previousNotes: lineRow.previousNotes ?? null,
           modifiers: parseKitchenModifiers(lineRow.modifiersSnapshot),
+          previousModifiers: parseKitchenModifiers(
+            lineRow.previousModifiersSnapshot
+          ),
         }));
 
       if (lines.length === 0) {

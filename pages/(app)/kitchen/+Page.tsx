@@ -4,16 +4,20 @@ import {
   useKitchenBoard,
   useUpdateRestaurantOrderItemStatusMutation,
 } from "@/features/restaurants/hooks/use-restaurants";
+import { getKitchenModificationDetails } from "@/features/restaurants/kitchen-corrections.shared";
 import type { KitchenBoard } from "@/features/restaurants/restaurants.shared";
 
 export type KitchenTicket = KitchenBoard["tickets"][number];
 type KitchenTicketLine = KitchenTicket["lines"][number];
 interface KitchenLineStatusUpdate {
-  status: "cancelled" | "ready" | "served";
+  status: "acknowledged" | "cancelled" | "ready" | "served";
   ticketLineId: string;
 }
 
 function getKitchenLineStatusLabel(line: KitchenTicketLine) {
+  if (line.operation === "modify") {
+    return "Modificación";
+  }
   if (line.operation === "cancel") {
     return "Anulación";
   }
@@ -33,39 +37,60 @@ function KitchenTicketLineCard({
   onUpdateStatus: (input: KitchenLineStatusUpdate) => void;
 }) {
   const isCancellation = line.operation === "cancel";
-  const secondaryTextClass = isCancellation
+  const isModification = line.operation === "modify";
+  const isCorrection = isCancellation || isModification;
+  const secondaryTextClass = isCorrection
     ? "mt-1 text-sm text-zinc-700"
     : "mt-1 text-sm text-zinc-400";
-  const statusTextClass = isCancellation
+  const statusTextClass = isCorrection
     ? "text-xs text-zinc-700"
     : "text-xs text-zinc-400";
+  const modificationDetails = isModification
+    ? getKitchenModificationDetails({
+        modifiers: line.modifiers,
+        notes: line.notes,
+        previousModifiers: line.previousModifiers,
+        previousNotes: line.previousNotes,
+        previousQuantity: line.previousQuantity,
+        quantity: line.quantity,
+      })
+    : [];
 
   return (
     <div
       className={
-        isCancellation
+        isCorrection
           ? "rounded-lg border-2 border-black bg-white p-3 text-black"
           : "rounded-lg border border-zinc-800 bg-black/10 p-3"
       }
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          {isCancellation ? (
+          {isCorrection ? (
             <div className="mb-1 font-black text-xs tracking-[0.12em]">
-              CANCELAR / NO PREPARAR
+              {isModification ? "MODIFICACIÓN" : "CANCELAR / NO PREPARAR"}
             </div>
           ) : null}
           <div className="truncate font-medium">
             {line.quantity} × {line.productName}
           </div>
-          {line.notes ? (
+          {isModification
+            ? modificationDetails.map((detail) => (
+                <div className={secondaryTextClass} key={detail}>
+                  {detail}
+                </div>
+              ))
+            : null}
+          {!isModification && line.notes ? (
             <div className={secondaryTextClass}>{line.notes}</div>
           ) : null}
-          {line.modifiers.map((modifier) => (
-            <div className={secondaryTextClass} key={modifier.id}>
-              + {modifier.quantity} × {modifier.name}
-            </div>
-          ))}
+          {isModification
+            ? null
+            : line.modifiers.map((modifier) => (
+                <div className={secondaryTextClass} key={modifier.id}>
+                  + {modifier.quantity} × {modifier.name}
+                </div>
+              ))}
         </div>
         <div className={statusTextClass}>{getKitchenLineStatusLabel(line)}</div>
       </div>
@@ -83,7 +108,20 @@ function KitchenTicketLineCard({
             Confirmar anulación
           </Button>
         ) : null}
-        {line.status === "sent" ? (
+        {isModification ? (
+          <Button
+            color="dark"
+            disabled={isUpdating}
+            onClick={() =>
+              onUpdateStatus({ ticketLineId: line.id, status: "acknowledged" })
+            }
+            size="sm"
+            type="button"
+          >
+            Confirmar modificación
+          </Button>
+        ) : null}
+        {!isCorrection && line.status === "sent" ? (
           <Button
             color="gray"
             disabled={isUpdating}
@@ -97,7 +135,7 @@ function KitchenTicketLineCard({
             Marcar Listo
           </Button>
         ) : null}
-        {isCancellation ? null : (
+        {isCorrection ? null : (
           <Button
             color="gray"
             disabled={isUpdating}

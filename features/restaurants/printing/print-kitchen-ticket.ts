@@ -3,7 +3,10 @@ import { buildKitchenTicketDocument } from "@/features/restaurants/printing/kitc
 export interface KitchenTicketPrintItem {
   modifiers: { name: string; quantity: number; unitPrice: number }[];
   notes: string | null;
-  operation?: "cancel" | "prepare";
+  operation?: "cancel" | "modify" | "prepare";
+  previousModifiers?: { name: string; quantity: number; unitPrice: number }[];
+  previousNotes?: string | null;
+  previousQuantity?: number | null;
   productName: string;
   quantity: number;
   totalAmount?: number;
@@ -36,10 +39,17 @@ export async function printKitchenTicket(
       quantity: item.quantity,
       operation: item.operation,
       notes: item.notes,
+      previousNotes: item.previousNotes,
+      previousQuantity: item.previousQuantity,
       modifiers: item.modifiers.map((m) => ({
         name: m.name,
         quantity: m.quantity,
         unitPrice: m.unitPrice,
+      })),
+      previousModifiers: item.previousModifiers?.map((modifier) => ({
+        name: modifier.name,
+        quantity: modifier.quantity,
+        unitPrice: modifier.unitPrice,
       })),
       totalAmount: item.totalAmount,
     })),

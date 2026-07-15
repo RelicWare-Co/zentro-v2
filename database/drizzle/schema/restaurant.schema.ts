@@ -223,6 +223,9 @@ export const restaurantKitchenTicketLine = pgTable(
     productName: text("product_name").notNull(),
     quantity: integer("quantity").notNull(),
     notes: text("notes"),
+    previousQuantity: integer("previous_quantity"),
+    previousNotes: text("previous_notes"),
+    previousModifiersSnapshot: text("previous_modifiers_snapshot"),
     modifiersSnapshot: text("modifiers_snapshot").notNull().default("[]"),
     status: text("status").notNull().default("sent"),
     createdAt: timestamp("created_at", {

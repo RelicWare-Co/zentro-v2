@@ -417,6 +417,9 @@ describe("restaurant module", () => {
           kitchenTicketId: restaurantKitchenTicketLine.kitchenTicketId,
           notes: restaurantKitchenTicketLine.notes,
           operation: restaurantKitchenTicketLine.operation,
+          previousNotes: restaurantKitchenTicketLine.previousNotes,
+          previousQuantity: restaurantKitchenTicketLine.previousQuantity,
+          quantity: restaurantKitchenTicketLine.quantity,
         })
         .from(restaurantKitchenTicketLine)
         .where(eq(restaurantKitchenTicketLine.orderItemId, addResult.itemId));
@@ -430,8 +433,13 @@ describe("restaurant module", () => {
         expect.objectContaining({ operation: "prepare", notes: "Sin cebolla" }),
       ]);
       expect(correctionLines).toEqual([
-        expect.objectContaining({ operation: "cancel", notes: "Sin cebolla" }),
-        expect.objectContaining({ operation: "prepare", notes: "Sin tomate" }),
+        expect.objectContaining({
+          operation: "modify",
+          notes: "Sin tomate",
+          previousNotes: "Sin cebolla",
+          previousQuantity: 1,
+          quantity: 1,
+        }),
       ]);
 
       const correctionBoard = await getKitchenBoardViaZero({
@@ -446,15 +454,46 @@ describe("restaurant module", () => {
       expect(correctionBoard.tickets[0]?.lines).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
-            operation: "cancel",
-            notes: "Sin cebolla",
-          }),
-          expect.objectContaining({
-            operation: "prepare",
+            operation: "modify",
             notes: "Sin tomate",
+            previousNotes: "Sin cebolla",
+            previousQuantity: 1,
+            quantity: 1,
           }),
         ])
       );
+
+      const [correctionLine] = correctionSend.ticket.lines;
+      if (!correctionLine) {
+        throw new Error("La corrección no creó una línea de cocina.");
+      }
+      await updateRestaurantOrderItemStatusViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: { ticketLineId: correctionLine.id, status: "acknowledged" },
+      });
+      const [[acknowledgedLine], [unchangedItem]] = await Promise.all([
+        db
+          .select({ status: restaurantKitchenTicketLine.status })
+          .from(restaurantKitchenTicketLine)
+          .where(eq(restaurantKitchenTicketLine.id, correctionLine.id)),
+        db
+          .select({ status: restaurantOrderItem.status })
+          .from(restaurantOrderItem)
+          .where(eq(restaurantOrderItem.id, addResult.itemId)),
+      ]);
+      expect(acknowledgedLine?.status).toBe("acknowledged");
+      expect(unchangedItem?.status).toBe("sent");
+
+      const boardAfterAcknowledgement = await getKitchenBoardViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+      });
+      expect(
+        boardAfterAcknowledgement.tickets.some(
+          (ticket) => ticket.id === correctionSend.ticket.id
+        )
+      ).toBe(false);
 
       await cleanup();
     });
@@ -528,13 +567,18 @@ describe("restaurant module", () => {
       const [increaseLine] = await db
         .select({
           operation: restaurantKitchenTicketLine.operation,
+          previousQuantity: restaurantKitchenTicketLine.previousQuantity,
           quantity: restaurantKitchenTicketLine.quantity,
         })
         .from(restaurantKitchenTicketLine)
         .where(
           eq(restaurantKitchenTicketLine.kitchenTicketId, increase.ticket.id)
         );
-      expect(increaseLine).toEqual({ operation: "prepare", quantity: 1 });
+      expect(increaseLine).toEqual({
+        operation: "modify",
+        previousQuantity: 2,
+        quantity: 3,
+      });
       const [increasedBurgerSnapshot] = await db
         .select({
           sentProductName: restaurantOrderItem.sentProductName,
@@ -565,6 +609,7 @@ describe("restaurant module", () => {
         .select({
           operation: restaurantKitchenTicketLine.operation,
           productName: restaurantKitchenTicketLine.productName,
+          previousQuantity: restaurantKitchenTicketLine.previousQuantity,
           quantity: restaurantKitchenTicketLine.quantity,
         })
         .from(restaurantKitchenTicketLine)
@@ -572,9 +617,10 @@ describe("restaurant module", () => {
           eq(restaurantKitchenTicketLine.kitchenTicketId, decrease.ticket.id)
         );
       expect(decreaseLine).toEqual({
-        operation: "cancel",
+        operation: "modify",
         productName: "Hamburguesa",
-        quantity: 2,
+        previousQuantity: 3,
+        quantity: 1,
       });
 
       await deleteRestaurantOrderItemViaZero({
