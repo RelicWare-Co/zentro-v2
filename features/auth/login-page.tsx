@@ -1,3 +1,4 @@
+import { MessageCircle } from "lucide-react";
 import { JoinContextCard } from "@/features/auth/components/join-context-card";
 import { LoginForm } from "@/features/auth/components/login-form";
 import { LoginModeTabs } from "@/features/auth/components/login-mode-tabs";
@@ -11,6 +12,7 @@ import {
   LoginPageProvider,
   useLoginPage,
 } from "@/features/auth/login-page-context";
+import { ZENTRO_WHATSAPP_SUPPORT_URL } from "@/lib/support.shared";
 
 function LoginPageHeader() {
   const { state } = useLoginPage();
@@ -65,6 +67,20 @@ function LoginAuthSection() {
   );
 }
 
+function LoginSupportButton() {
+  return (
+    <a
+      className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-zinc-700 font-semibold text-[15px] text-zinc-200 transition-colors hover:border-[#dfff06]/60 hover:text-white"
+      href={ZENTRO_WHATSAPP_SUPPORT_URL}
+      rel="noreferrer"
+      target="_blank"
+    >
+      <MessageCircle className="size-4 text-[#dfff06]" />
+      Soporte por WhatsApp
+    </a>
+  );
+}
+
 function LoginPageLayout() {
   return (
     <LoginPageShell>
@@ -72,6 +88,7 @@ function LoginPageLayout() {
         <LoginPageHeader />
         <LoginJoinSection />
         <LoginAuthSection />
+        <LoginSupportButton />
       </LoginPageContent>
     </LoginPageShell>
   );

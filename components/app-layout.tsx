@@ -8,6 +8,7 @@ import {
   Loader2,
   LogOut,
   Menu,
+  MessageCircle,
   Package,
   Receipt,
   Settings,
@@ -28,6 +29,7 @@ import { useModuleCapabilities } from "@/features/modules/hooks/use-module-capab
 import { useOrganizationTransition } from "@/features/organization/organization-transition-context";
 import { authClient } from "@/lib/auth-client";
 import { queryClient } from "@/lib/query-client";
+import { ZENTRO_WHATSAPP_SUPPORT_URL } from "@/lib/support.shared";
 import { usePageZeroContext } from "@/lib/use-page-zero-context";
 import { cn } from "@/lib/utils";
 
@@ -141,6 +143,33 @@ function ImpersonationBanner() {
         {isStopping ? "Volviendo…" : "Volver a mi cuenta"}
       </button>
     </div>
+  );
+}
+
+function SidebarSupportLink({ isCollapsed }: { isCollapsed: boolean }) {
+  return (
+    <a
+      className={cn(
+        "mb-2 flex w-full items-center whitespace-nowrap rounded-xl px-3 py-2.5 font-medium text-zinc-400 transition-colors hover:bg-white/5 hover:text-white",
+        isCollapsed && "lg:justify-center lg:px-0"
+      )}
+      href={ZENTRO_WHATSAPP_SUPPORT_URL}
+      rel="noreferrer"
+      target="_blank"
+      title={isCollapsed ? "Soporte por WhatsApp" : undefined}
+    >
+      <MessageCircle className="size-5 shrink-0" />
+      <span
+        className={cn(
+          "overflow-hidden text-left transition-all duration-300",
+          isCollapsed
+            ? "ml-3 w-[140px] opacity-100 lg:ml-0 lg:w-0 lg:opacity-0"
+            : "ml-3 w-[140px] opacity-100"
+        )}
+      >
+        Soporte por WhatsApp
+      </span>
+    </a>
   );
 }
 
@@ -352,6 +381,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             isCollapsed && "lg:px-2"
           )}
         >
+          <SidebarSupportLink isCollapsed={isCollapsed} />
           <button
             className={cn(
               "flex w-full items-center whitespace-nowrap rounded-xl px-3 py-2.5 font-medium text-zinc-400 transition-colors hover:bg-white/5 hover:text-white",
