@@ -4,6 +4,10 @@ import { cashMovement } from "@/database/drizzle/schema/pos.schema";
 import { buildBusinessReport } from "@/features/reports/build-report.server";
 import { buildReportWorkbook } from "@/features/reports/build-report-workbook.server";
 import {
+  formatReportMovementType,
+  formatReportSaleStatus,
+} from "@/features/reports/report-labels.shared";
+import {
   type ReportData,
   ReportFiltersSchema,
 } from "@/features/reports/reports.schema";
@@ -131,6 +135,17 @@ describe("report filters", () => {
   });
 });
 
+describe("report labels", () => {
+  test("translates sale statuses and movement types for users", () => {
+    expect(formatReportSaleStatus("completed")).toBe("Pagada");
+    expect(formatReportSaleStatus("credit")).toBe("Crédito pendiente");
+    expect(formatReportSaleStatus("cancelled")).toBe("Cancelada");
+    expect(formatReportMovementType("expense")).toBe("Gasto operativo");
+    expect(formatReportMovementType("payout")).toBe("Pago a proveedor");
+    expect(formatReportMovementType("inflow")).toBe("Ingreso manual");
+  });
+});
+
 describe("business report accounting", () => {
   test("separates accounting sales, passthrough value, cash change, and expenses", async () => {
     const { db, cleanup } = await createTestDb();
@@ -247,19 +262,33 @@ describe("report workbook", () => {
     expect(
       workbook.getWorksheet("Movimientos")?.getTable("MovementsData")
     ).toBeTruthy();
-    expect(workbook.getWorksheet("Ventas")?.getCell("G5").value).toBe(10_000);
-    expect(workbook.getWorksheet("Ventas")?.getCell("B5").value).toBeInstanceOf(
+    expect(workbook.getWorksheet("Resumen")?.getCell("D3").value).toBe(
+      "Ventas válidas"
+    );
+    expect(workbook.getWorksheet("Ventas")?.getCell("A4").value).toBe("Fecha");
+    expect(workbook.getWorksheet("Ventas")?.getCell("B5").value).toBe("Pagada");
+    expect(workbook.getWorksheet("Ventas")?.getCell("F5").value).toBe(10_000);
+    expect(workbook.getWorksheet("Ventas")?.getCell("A5").value).toBeInstanceOf(
       Date
     );
     expect(
       (
-        workbook.getWorksheet("Ventas")?.getCell("B5").value as Date
+        workbook.getWorksheet("Ventas")?.getCell("A5").value as Date
       ).toISOString()
     ).toBe("2026-07-17T10:00:00.000Z");
-    expect(workbook.getWorksheet("Movimientos")?.getCell("F5").value).toBe(
+    expect(workbook.getWorksheet("Productos")?.getCell("A4").value).toBe(
+      "Producto"
+    );
+    expect(workbook.getWorksheet("Movimientos")?.getCell("A4").value).toBe(
+      "Fecha"
+    );
+    expect(workbook.getWorksheet("Movimientos")?.getCell("B5").value).toBe(
+      "Gasto operativo"
+    );
+    expect(workbook.getWorksheet("Movimientos")?.getCell("E5").value).toBe(
       '=HYPERLINK("https://example.com")'
     );
-    expect(workbook.getWorksheet("Movimientos")?.getCell("F5").type).toBe(
+    expect(workbook.getWorksheet("Movimientos")?.getCell("E5").type).toBe(
       ExcelJS.ValueType.String
     );
   });

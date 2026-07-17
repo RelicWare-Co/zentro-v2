@@ -29,6 +29,10 @@ import {
   downloadBusinessReport,
   useBusinessReport,
 } from "@/features/reports/hooks/use-business-report";
+import {
+  formatReportMovementType,
+  formatReportSaleStatus,
+} from "@/features/reports/report-labels.shared";
 import type { ReportFilters } from "@/features/reports/reports.schema";
 import { formatCurrency } from "@/lib/format-currency.shared";
 
@@ -372,12 +376,11 @@ function SalesTable({
       description="Últimas 100 ventas; acota el rango si Excel supera 50.000"
       title="Detalle de ventas"
     >
-      <Table.ScrollContainer minWidth={900}>
+      <Table.ScrollContainer minWidth={800}>
         <Table highlightOnHover verticalSpacing="sm">
           <Table.Thead>
             <Table.Tr>
               <Table.Th>Fecha</Table.Th>
-              <Table.Th>Venta</Table.Th>
               <Table.Th>Cajero</Table.Th>
               <Table.Th>Cliente</Table.Th>
               <Table.Th>Estado</Table.Th>
@@ -387,17 +390,16 @@ function SalesTable({
           </Table.Thead>
           <Table.Tbody>
             {sales.length === 0 ? (
-              <EmptyRows colSpan={7} />
+              <EmptyRows colSpan={6} />
             ) : (
               sales.map((row) => (
                 <Table.Tr key={row.id}>
                   <Table.Td className="whitespace-nowrap">
                     {DATE_FORMATTER.format(row.createdAt)}
                   </Table.Td>
-                  <Table.Td className="font-mono text-xs">{row.id}</Table.Td>
                   <Table.Td>{row.cashierName}</Table.Td>
                   <Table.Td>{row.customerName ?? "Mostrador"}</Table.Td>
-                  <Table.Td>{row.status}</Table.Td>
+                  <Table.Td>{formatReportSaleStatus(row.status)}</Table.Td>
                   <Table.Td className="tabular-nums" ta="right">
                     {formatCurrency(row.totalAmount)}
                   </Table.Td>
@@ -421,11 +423,6 @@ function MovementsTable({
     ReturnType<typeof useBusinessReport>["data"]
   >["movements"];
 }) {
-  const movementLabels: Record<string, string> = {
-    expense: "Gasto operativo",
-    payout: "Pago a proveedor",
-    inflow: "Ingreso manual",
-  };
   return (
     <ReportPanel
       description="Gastos, pagos a proveedores e ingresos manuales del periodo"
@@ -452,7 +449,7 @@ function MovementsTable({
                   <Table.Td className="whitespace-nowrap">
                     {DATE_FORMATTER.format(row.createdAt)}
                   </Table.Td>
-                  <Table.Td>{movementLabels[row.type] ?? row.type}</Table.Td>
+                  <Table.Td>{formatReportMovementType(row.type)}</Table.Td>
                   <Table.Td className="max-w-80 whitespace-normal">
                     {row.description}
                   </Table.Td>

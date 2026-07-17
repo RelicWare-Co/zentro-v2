@@ -1,4 +1,9 @@
 import ExcelJS from "@protobi/exceljs";
+import {
+  formatReportMovementType,
+  formatReportSaleFilterStatus,
+  formatReportSaleStatus,
+} from "@/features/reports/report-labels.shared";
 import type { ReportData } from "@/features/reports/reports.schema";
 
 const COLORS = {
@@ -136,7 +141,9 @@ function addSummarySheet(workbook: ExcelJS.Workbook, report: ReportData) {
   sheet.getCell("A3").value = "Cajero";
   sheet.getCell("B3").value = report.filters.cashierName ?? "Todos";
   sheet.getCell("C3").value = "Estado";
-  sheet.getCell("D3").value = report.filters.status;
+  sheet.getCell("D3").value = formatReportSaleFilterStatus(
+    report.filters.status
+  );
   sheet.getCell("A4").value = "Generado";
   sheet.getCell("B4").value = toExcelWallClockDate(
     report.generatedAt,
@@ -217,7 +224,6 @@ function addSalesSheet(workbook: ExcelJS.Workbook, report: ReportData) {
     views: [{ state: "frozen", ySplit: 4, activeCell: "A5" }],
   });
   sheet.columns = [
-    { width: 24 },
     { width: 18 },
     { width: 14 },
     { width: 24 },
@@ -234,10 +240,9 @@ function addSalesSheet(workbook: ExcelJS.Workbook, report: ReportData) {
     sheet,
     "Detalle de ventas",
     `${report.period.startDate} a ${report.period.endDate}`,
-    12
+    11
   );
   const headers = [
-    "ID",
     "Fecha",
     "Estado",
     "Cajero",
@@ -255,9 +260,8 @@ function addSalesSheet(workbook: ExcelJS.Workbook, report: ReportData) {
     "SalesData",
     headers,
     report.sales.map((row) => [
-      row.id,
       toExcelWallClockDate(row.createdAt, report.timeZone),
-      row.status,
+      formatReportSaleStatus(row.status),
       row.cashierName,
       row.terminalName,
       row.customerName,
@@ -270,12 +274,12 @@ function addSalesSheet(workbook: ExcelJS.Workbook, report: ReportData) {
     ])
   );
   for (let rowIndex = 5; rowIndex <= sheet.rowCount; rowIndex += 1) {
-    sheet.getCell(rowIndex, 2).numFmt = DATE_TIME_FORMAT;
-    for (let column = 7; column <= 12; column += 1) {
+    sheet.getCell(rowIndex, 1).numFmt = DATE_TIME_FORMAT;
+    for (let column = 6; column <= 11; column += 1) {
       sheet.getCell(rowIndex, column).numFmt = MONEY_FORMAT;
     }
   }
-  setPrintLayout(sheet, 12, sheet.rowCount);
+  setPrintLayout(sheet, 11, sheet.rowCount);
 }
 
 function addProductsSheet(workbook: ExcelJS.Workbook, report: ReportData) {
@@ -283,7 +287,6 @@ function addProductsSheet(workbook: ExcelJS.Workbook, report: ReportData) {
     views: [{ state: "frozen", ySplit: 4, activeCell: "A5" }],
   });
   sheet.columns = [
-    { width: 24 },
     { width: 34 },
     { width: 24 },
     { width: 14 },
@@ -296,13 +299,12 @@ function addProductsSheet(workbook: ExcelJS.Workbook, report: ReportData) {
     sheet,
     "Rendimiento de productos",
     "Excluye productos de paso y ventas fuera del filtro",
-    8
+    7
   );
   addTableOrHeaders(
     sheet,
     "ProductsData",
     [
-      "ID",
       "Producto",
       "Categoría",
       "Cantidad",
@@ -312,7 +314,6 @@ function addProductsSheet(workbook: ExcelJS.Workbook, report: ReportData) {
       "Descuento",
     ],
     report.products.map((row) => [
-      row.productId,
       row.name,
       row.categoryName,
       row.quantitySold,
@@ -323,12 +324,12 @@ function addProductsSheet(workbook: ExcelJS.Workbook, report: ReportData) {
     ])
   );
   for (let rowIndex = 5; rowIndex <= sheet.rowCount; rowIndex += 1) {
-    sheet.getCell(rowIndex, 4).numFmt = INTEGER_FORMAT;
-    for (let column = 5; column <= 8; column += 1) {
+    sheet.getCell(rowIndex, 3).numFmt = INTEGER_FORMAT;
+    for (let column = 4; column <= 7; column += 1) {
       sheet.getCell(rowIndex, column).numFmt = MONEY_FORMAT;
     }
   }
-  setPrintLayout(sheet, 8, sheet.rowCount);
+  setPrintLayout(sheet, 7, sheet.rowCount);
 }
 
 function addPaymentsSheet(workbook: ExcelJS.Workbook, report: ReportData) {
@@ -376,7 +377,6 @@ function addMovementsSheet(workbook: ExcelJS.Workbook, report: ReportData) {
     views: [{ state: "frozen", ySplit: 4, activeCell: "A5" }],
   });
   sheet.columns = [
-    { width: 24 },
     { width: 18 },
     { width: 20 },
     { width: 22 },
@@ -390,13 +390,12 @@ function addMovementsSheet(workbook: ExcelJS.Workbook, report: ReportData) {
     sheet,
     "Movimientos de caja",
     "Gastos, pagos a proveedores e ingresos manuales",
-    9
+    8
   );
   addTableOrHeaders(
     sheet,
     "MovementsData",
     [
-      "ID",
       "Fecha",
       "Tipo",
       "Medio",
@@ -407,9 +406,8 @@ function addMovementsSheet(workbook: ExcelJS.Workbook, report: ReportData) {
       "Origen",
     ],
     report.movements.map((row) => [
-      row.id,
       toExcelWallClockDate(row.createdAt, report.timeZone),
-      row.type,
+      formatReportMovementType(row.type),
       row.paymentMethodLabel,
       row.amount,
       row.description,
@@ -419,11 +417,11 @@ function addMovementsSheet(workbook: ExcelJS.Workbook, report: ReportData) {
     ])
   );
   for (let rowIndex = 5; rowIndex <= sheet.rowCount; rowIndex += 1) {
-    sheet.getCell(rowIndex, 2).numFmt = DATE_TIME_FORMAT;
-    sheet.getCell(rowIndex, 5).numFmt = MONEY_FORMAT;
-    sheet.getCell(rowIndex, 6).alignment = { vertical: "top", wrapText: true };
+    sheet.getCell(rowIndex, 1).numFmt = DATE_TIME_FORMAT;
+    sheet.getCell(rowIndex, 4).numFmt = MONEY_FORMAT;
+    sheet.getCell(rowIndex, 5).alignment = { vertical: "top", wrapText: true };
   }
-  setPrintLayout(sheet, 9, sheet.rowCount);
+  setPrintLayout(sheet, 8, sheet.rowCount);
 }
 
 export async function buildReportWorkbook(
