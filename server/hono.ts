@@ -10,6 +10,7 @@ import { dbMiddleware } from "./db-middleware";
 import { createOrganizationApp } from "./organization/handler.server";
 import { createPublicApp } from "./public/handler.server";
 import { createQzApp } from "./qz/handler.server";
+import { createReportsApp } from "./reports/handler.server";
 import { createRuntimeConfigApp } from "./runtime-config.server";
 import { createZeroApp } from "./zero/handler.server";
 
@@ -44,6 +45,7 @@ function getApp() {
   app.route("/api/public", createPublicApp());
   app.route("/api/runtime-config", createRuntimeConfigApp());
   app.route("/api/qz", createQzApp());
+  app.route("/api/reports", createReportsApp());
 
   vike(app, [
     // Make database available in Context as `context.db`

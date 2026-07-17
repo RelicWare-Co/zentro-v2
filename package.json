@@ -12,6 +12,7 @@
     "@point-of-sale/receipt-printer-status": "^2.0.0",
     "@point-of-sale/webbluetooth-receipt-printer": "^2.0.0",
     "@point-of-sale/webserial-receipt-printer": "^2.0.0",
+    "@protobi/exceljs": "^4.4.0-protobi.10",
     "@rocicorp/zero": "^1.7.0",
     "@tanstack/react-query": "^5.101.2",
     "@tanstack/react-table": "^8.21.3",

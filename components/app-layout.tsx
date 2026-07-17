@@ -1,5 +1,6 @@
 import {
   Building2,
+  ChartNoAxesCombined,
   ChefHat,
   ChevronLeft,
   ChevronRight,
@@ -98,6 +99,12 @@ const baseNavItems = [
   { name: "POS", path: "/pos", icon: Store, order: 30 },
   { name: "Turnos", path: "/shifts", icon: Clock3, order: 40 },
   { name: "Ventas", path: "/sales", icon: Receipt, order: 50 },
+  {
+    name: "Reportes",
+    path: "/reports",
+    icon: ChartNoAxesCombined,
+    order: 52,
+  },
   { name: "Clientes", path: "/customers", icon: Users, order: 55 },
   { name: "Crédito", path: "/credit", icon: Wallet, order: 56 },
   { name: "Pedidos", path: "/pedidos", icon: ShoppingBag, order: 57 },
