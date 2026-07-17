@@ -1,0 +1,4 @@
+interface:
+  display_name: "ExcelJS Workbooks"
+  short_description: "Create polished Excel workbooks with ExcelJS"
+  default_prompt: "Use $exceljs to create and verify a polished Excel workbook from my requirements."
