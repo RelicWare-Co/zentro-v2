@@ -160,9 +160,11 @@ function SalesAdvancedFiltersFields({
               : "rounded-2xl border border-[var(--color-voltage)]/20 border-dashed bg-[var(--color-voltage)]/5 px-4 py-3 text-sm text-zinc-300 md:col-span-2"
           }
         >
-          <p className="font-medium text-white">Fecha fija en hoy</p>
+          <p className="font-medium text-white">
+            Ventana: {meta.salesWindowLabel}
+          </p>
           <p className="mt-0.5 text-xs text-zinc-400">
-            Mostrando solo ventas del {meta.todayLabel}.
+            Mostrando solo las ventas asociadas a este turno.
           </p>
         </div>
       ) : (

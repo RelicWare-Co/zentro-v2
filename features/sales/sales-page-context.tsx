@@ -26,14 +26,14 @@ import type {
   SaleListItem,
 } from "@/features/sales/sales.shared";
 import {
-  getCurrentSalesDateFilterValue,
-  salesDayFormatter,
-} from "@/features/sales/sales-formatters.shared";
-import {
   DEFAULT_SALES_VIEW,
   type SalesView,
 } from "@/features/sales/sales-page.constants.shared";
-import { useActiveShift } from "@/features/shifts/hooks/use-shifts";
+import {
+  useActiveShift,
+  useSalesWindow,
+} from "@/features/shifts/hooks/use-shifts";
+import type { SalesWindowKind } from "@/features/shifts/shift-types.shared";
 
 interface SalesPageFilters {
   amountMax: string;
@@ -52,6 +52,16 @@ interface SalesPageFilterOptions {
   cashiers: Array<{ id: string; name: string | null }>;
   paymentMethods: Array<{ id: string; label: string }>;
   terminals: string[];
+}
+
+function getSalesWindowLabel(kind: SalesWindowKind) {
+  if (kind === "closed") {
+    return "ultimo turno";
+  }
+  if (kind === "open") {
+    return "turno actual";
+  }
+  return "turno";
 }
 
 interface SalesPageViewSummary {
@@ -135,8 +145,8 @@ export interface SalesPageMeta {
   isTodayView: boolean;
   paymentMethodLabels: Record<string, string>;
   saleDetailQuery: ReturnType<typeof useSaleDetail>;
-  todayDate: string;
-  todayLabel: string;
+  salesWindowKind: SalesWindowKind;
+  salesWindowLabel: string;
 }
 
 export interface SalesPageContextValue {
@@ -170,7 +180,6 @@ export function SalesPageProvider({ children }: { children: ReactNode }) {
   const [activeView, setActiveViewState] =
     useState<SalesView>(DEFAULT_SALES_VIEW);
   const isTodayView = activeView === "today";
-  const todayDate = getCurrentSalesDateFilterValue();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [status, setStatus] = useState("");
@@ -184,6 +193,9 @@ export function SalesPageProvider({ children }: { children: ReactNode }) {
   const [endDate, setEndDate] = useState("");
   const [pageSize, setPageSizeState] = useState(DEFAULT_LIST_LIMIT);
   const deferredSearchQuery = useDeferredValue(searchQuery);
+  const salesWindowQuery = useSalesWindow();
+  const salesWindow = salesWindowQuery.data;
+  const currentSalesShiftIds = isTodayView ? salesWindow.shiftIds : null;
 
   const salesFilterKey = useMemo(
     () =>
@@ -200,7 +212,7 @@ export function SalesPageProvider({ children }: { children: ReactNode }) {
         startDate,
         status,
         terminalName,
-        todayDate,
+        shiftIds: currentSalesShiftIds,
       }),
     [
       activeView,
@@ -215,7 +227,7 @@ export function SalesPageProvider({ children }: { children: ReactNode }) {
       startDate,
       status,
       terminalName,
-      todayDate,
+      currentSalesShiftIds,
     ]
   );
 
@@ -238,10 +250,10 @@ export function SalesPageProvider({ children }: { children: ReactNode }) {
     endDate,
     pageSize,
     paymentMethod,
+    shiftIds: currentSalesShiftIds ?? [],
     startDate,
     status,
     terminalName,
-    todayDate,
   });
 
   const [isViewPending, startViewTransition] = useTransition();
@@ -320,13 +332,11 @@ export function SalesPageProvider({ children }: { children: ReactNode }) {
     ...(isTodayView ? [] : [startDate, endDate]),
   ].filter(Boolean).length;
 
-  const isRefreshing = isViewPending || salesQuery.isFetching;
-  const todayLabel = salesDayFormatter.format(
-    new Date(`${todayDate}T00:00:00`)
-  );
+  const isRefreshing =
+    isViewPending || salesWindowQuery.isLoading || salesQuery.isFetching;
   const viewSummary = useSalesViewSummary(
     isTodayView,
-    todayLabel,
+    salesWindow.kind,
     activeFilterCount
   );
 
@@ -471,8 +481,8 @@ export function SalesPageProvider({ children }: { children: ReactNode }) {
       },
       meta: {
         isTodayView,
-        todayDate,
-        todayLabel,
+        salesWindowKind: salesWindow.kind,
+        salesWindowLabel: getSalesWindowLabel(salesWindow.kind),
         paymentMethodLabels,
         fieldIds: {
           search: searchId,
@@ -532,8 +542,7 @@ export function SalesPageProvider({ children }: { children: ReactNode }) {
       goToPreviousPage,
       goToNextPage,
       isTodayView,
-      todayDate,
-      todayLabel,
+      salesWindow.kind,
       paymentMethodLabels,
       searchId,
       statusId,

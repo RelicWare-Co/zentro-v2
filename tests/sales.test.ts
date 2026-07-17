@@ -23,10 +23,55 @@ import {
   seedShift,
 } from "./helpers/seed";
 import { createTestDb } from "./helpers/test-db";
-import { cancelSaleViaZero } from "./helpers/zero-sales";
+import { cancelSaleViaZero, listSalesViaZero } from "./helpers/zero-sales";
 import { createZeroContext, createZeroTestDb } from "./helpers/zero-shifts";
 
 describe("sale creation transactions", () => {
+  test("sales list can scope results to the active shift window", async () => {
+    const { db, cleanup } = await createTestDb();
+    const { organizationId, userId } = await seedOrganizationWithMember(db);
+    const [productId, shiftId] = await Promise.all([
+      seedProduct(db, {
+        organizationId,
+        name: "Night Shift Item",
+        price: 10_000,
+        stock: 10,
+        trackInventory: true,
+      }),
+      seedShift(db, { organizationId, userId, status: "open" }),
+    ]);
+    const zeroDb = createZeroTestDb(db);
+    const zeroCtx = createZeroContext(userId, organizationId);
+
+    await createCoreSale(
+      {
+        shiftId,
+        createdAt: Date.now() - 24 * 60 * 60 * 1000,
+        items: [{ productId, quantity: 1, unitPrice: 10_000 }],
+        payments: [{ method: "cash", amount: 10_000 }],
+      },
+      { db, organizationId, userId }
+    );
+
+    const [windowSales, emptyWindowSales] = await Promise.all([
+      listSalesViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: { shiftIds: [shiftId] },
+      }),
+      listSalesViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: { shiftIds: [] },
+      }),
+    ]);
+
+    expect(windowSales.data).toHaveLength(1);
+    expect(emptyWindowSales.data).toHaveLength(0);
+
+    await cleanup();
+  });
+
   describe("VAL-SALE-001: createCoreSale decrements stock for tracked products", () => {
     test("stock is reduced by sold quantity after sale", async () => {
       const { db, cleanup } = await createTestDb();

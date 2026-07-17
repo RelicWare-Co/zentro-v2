@@ -17,6 +17,21 @@ function normalizeSalesPageLimit(limit?: number) {
   return Math.min(Math.max(limit ?? 50, 1), 100);
 }
 
+function applyShiftIdsFilter<T extends ReturnType<typeof zql.sale.where>>(
+  query: T,
+  shiftIds: string[] | null
+) {
+  if (shiftIds === null) {
+    return query;
+  }
+  if (shiftIds.length === 0) {
+    return query.where(({ cmpLit }) => cmpLit(false, "=", true));
+  }
+  return query.where(({ cmp, or }) =>
+    or(...shiftIds.map((shiftId) => cmp("shiftId", "=", shiftId)))
+  );
+}
+
 function buildSalesListQuery(
   organizationId: string,
   args: z.infer<typeof SalesListQueryArgsSchema>
@@ -29,14 +44,17 @@ function buildSalesListQuery(
     endDateMs === null ? null : endDateMs + 24 * 60 * 60 * 1000;
   const amountRange = resolveAmountRange(args.amountMin, args.amountMax);
   const normalizedSearch = args.searchQuery?.trim() ?? "";
+  const normalizedShiftIds = args.shiftIds?.filter(Boolean) ?? null;
   const searchPattern = normalizedSearch ? `%${normalizedSearch}%` : "";
   const normalizedStatus = args.status?.trim() ?? "";
   const normalizedCashierId = args.cashierId?.trim() ?? "";
   const normalizedTerminalName = args.terminalName?.trim() ?? "";
   const normalizedPaymentMethod = args.paymentMethod?.trim() ?? "";
 
-  let query = zql.sale
-    .where("organizationId", organizationId)
+  let query = applyShiftIdsFilter(
+    zql.sale.where("organizationId", organizationId),
+    normalizedShiftIds
+  )
     .related("user")
     .related("customer")
     .related("shift")

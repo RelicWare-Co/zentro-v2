@@ -6,6 +6,7 @@ import type {
   OpenShiftInputSchema,
   RegisterCashMovementInputSchema,
 } from "@/features/pos/pos.schema";
+import type { SalesWindow } from "@/features/shifts/shift-types.shared";
 import type {
   ShiftCloseSummary,
   ShiftListItem,
@@ -82,6 +83,62 @@ export function useActiveShift() {
     refetch: () => {
       if (status.type === "error") {
         status.retry();
+      }
+      return Promise.resolve();
+    },
+  };
+}
+
+export function useSalesWindow() {
+  const [openRows, openStatus] = useZeroQuery(
+    queries.shifts.salesWindow.open()
+  );
+  const [closedRows, closedStatus] = useZeroQuery(
+    queries.shifts.salesWindow.lastClosed()
+  );
+  const lastClosedShift = closedRows[0] ?? null;
+  const salesWindow: SalesWindow = useMemo(() => {
+    if (openRows.length > 0) {
+      return {
+        kind: "open",
+        shiftIds: openRows.map((row) => row.id),
+        openedAt: openRows[0]?.openedAt ?? null,
+        closedAt: null,
+      };
+    }
+
+    if (lastClosedShift) {
+      return {
+        kind: "closed",
+        shiftIds: [lastClosedShift.id],
+        openedAt: lastClosedShift.openedAt,
+        closedAt: lastClosedShift.closedAt ?? null,
+      };
+    }
+
+    return {
+      kind: "none",
+      shiftIds: [],
+      openedAt: null,
+      closedAt: null,
+    };
+  }, [lastClosedShift, openRows]);
+  const error =
+    getZeroQueryError(openStatus) ?? getZeroQueryError(closedStatus);
+
+  return {
+    data: salesWindow,
+    error,
+    isError: Boolean(error),
+    isLoading:
+      (openStatus.type === "unknown" && openRows.length === 0) ||
+      (closedStatus.type === "unknown" && closedRows.length === 0),
+    refetch: () => {
+      if (openStatus.type === "error") {
+        openStatus.retry();
+      }
+      if (closedStatus.type === "error") {
+        closedStatus.retry();
       }
       return Promise.resolve();
     },

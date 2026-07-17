@@ -16,6 +16,7 @@ export type SaleListCursor = z.infer<typeof SaleListCursorSchema>;
 export const SalesListQueryArgsSchema = z.object({
   limit: z.number().int().min(1).max(100).optional(),
   cursor: SaleListCursorSchema.optional().nullable(),
+  shiftIds: z.array(z.string().trim().min(1)).max(100).optional().nullable(),
   status: SaleStatusSchema.optional().nullable(),
   searchQuery: z.string().optional().nullable(),
   paymentMethod: z.string().optional().nullable(),
@@ -31,6 +32,7 @@ export const SalesListQueryArgsSchema = z.object({
 export const ListSalesInputSchema = z.object({
   limit: z.number().int().min(1).max(100).optional(),
   cursor: SaleListCursorSchema.optional().nullable(),
+  shiftIds: z.array(z.string().trim().min(1)).max(100).optional().nullable(),
   status: SaleStatusSchema.optional().nullable(),
   searchQuery: z.string().optional().nullable(),
   paymentMethod: z.string().optional().nullable(),

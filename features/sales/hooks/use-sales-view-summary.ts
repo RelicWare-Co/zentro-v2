@@ -1,27 +1,53 @@
 import { useMemo } from "react";
+import type { SalesWindowKind } from "@/features/shifts/shift-types.shared";
+
+function getSalesWindowCopy(kind: SalesWindowKind) {
+  switch (kind) {
+    case "closed":
+      return {
+        kicker: "Ultimo turno",
+        windowLabel: "ultimo turno",
+        windowTitle: "el ultimo turno",
+      };
+    case "open":
+      return {
+        kicker: "Turno actual",
+        windowLabel: "turno actual",
+        windowTitle: "el turno actual",
+      };
+    default:
+      return {
+        kicker: "Sin turno",
+        windowLabel: "turno",
+        windowTitle: "un turno",
+      };
+  }
+}
 
 export function useSalesViewSummary(
   isTodayView: boolean,
-  todayLabel: string,
+  salesWindowKind: SalesWindowKind,
   activeFilterCount: number
 ) {
   return useMemo(() => {
     if (isTodayView) {
+      const { kicker, windowLabel, windowTitle } =
+        getSalesWindowCopy(salesWindowKind);
+
       return {
-        kicker: `Solo ${todayLabel}`,
-        title: "Ventas de hoy",
-        description:
-          "Consulta lo que pasó hoy sin mezclar operaciones anteriores.",
-        resultsTitle: "Ventas del dia",
-        resultsDescription: "Registros creados durante el dia actual",
-        revenueTitle: "Ingreso del dia",
-        revenueDescription: "Total facturado hoy",
-        pendingTitle: "Saldo pendiente hoy",
-        pendingDescription: "Pendientes abiertos del dia actual",
-        listTitle: "Ventas de hoy",
+        kicker,
+        title: `Ventas de ${windowLabel}`,
+        description: `Consulta las operaciones de ${windowTitle} sin limitarte al dia calendario.`,
+        resultsTitle: `Ventas del ${windowLabel}`,
+        resultsDescription: `Registros asociados a ${windowTitle}`,
+        revenueTitle: `Ingreso del ${windowLabel}`,
+        revenueDescription: `Total facturado en ${windowTitle}`,
+        pendingTitle: `Saldo pendiente del ${windowLabel}`,
+        pendingDescription: `Pendientes abiertos de ${windowTitle}`,
+        listTitle: `Ventas de ${windowLabel}`,
         listDescription:
-          "Vista operativa del día con acceso rápido al detalle de cada venta.",
-        emptyTitle: "No hay ventas registradas hoy.",
+          "Vista operativa del turno con acceso rápido al detalle de cada venta.",
+        emptyTitle: `No hay ventas registradas en ${windowTitle}.`,
       };
     }
     return {
@@ -43,5 +69,5 @@ export function useSalesViewSummary(
         "Usa esta vista para revisar ventas anteriores, pagos y saldos.",
       emptyTitle: "No se han registrado ventas todavia.",
     };
-  }, [isTodayView, todayLabel, activeFilterCount]);
+  }, [isTodayView, salesWindowKind, activeFilterCount]);
 }

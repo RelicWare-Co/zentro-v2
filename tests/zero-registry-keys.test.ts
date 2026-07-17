@@ -39,6 +39,8 @@ const EXPECTED_QUERY_PATHS = [
   "shifts.active",
   "shifts.byId",
   "shifts.list",
+  "shifts.salesWindow.lastClosed",
+  "shifts.salesWindow.open",
 ] as const;
 
 const EXPECTED_MUTATOR_PATHS = [

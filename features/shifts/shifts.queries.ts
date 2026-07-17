@@ -161,6 +161,31 @@ export const shiftsQueries = {
         .orderBy("id", "desc")
         .limit(1);
     }),
+    salesWindow: {
+      open: defineZentroQuery(({ ctx }) => {
+        if (!hasOrgContext(ctx)) {
+          return denyQuery(zql.shift);
+        }
+
+        return zql.shift
+          .where("organizationId", ctx.orgID)
+          .where("status", "open")
+          .orderBy("openedAt", "asc")
+          .orderBy("id", "asc");
+      }),
+      lastClosed: defineZentroQuery(({ ctx }) => {
+        if (!hasOrgContext(ctx)) {
+          return denyQuery(zql.shift);
+        }
+
+        return zql.shift
+          .where("organizationId", ctx.orgID)
+          .where("status", "closed")
+          .orderBy("closedAt", "desc")
+          .orderBy("id", "desc")
+          .limit(1);
+      }),
+    },
     list: defineZentroQuery(ShiftsListQueryArgsSchema, ({ args, ctx }) => {
       if (!hasOrgContext(ctx)) {
         return denyQuery(zql.shift);

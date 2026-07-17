@@ -13,18 +13,6 @@ export const salesDateTimeFormatter = new Intl.DateTimeFormat("es-CO", {
   minute: "2-digit",
 });
 
-export const salesDayFormatter = new Intl.DateTimeFormat("es-CO", {
-  day: "numeric",
-  month: "long",
-});
-
-export function getCurrentSalesDateFilterValue() {
-  const now = new Date();
-  const month = `${now.getMonth() + 1}`.padStart(2, "0");
-  const day = `${now.getDate()}`.padStart(2, "0");
-  return `${now.getFullYear()}-${month}-${day}`;
-}
-
 export function formatSalesCurrency(amount: number): string {
   return formatCurrency(amount);
 }
@@ -76,12 +64,11 @@ export function formatItemCountLabel(itemCount: number) {
 
 export function resolveSalesDateFilters(
   activeView: SalesView,
-  todayDate: string,
   startDate: string,
   endDate: string
 ) {
   if (activeView === "today") {
-    return { startDate: todayDate, endDate: todayDate };
+    return { startDate: null, endDate: null };
   }
   return { startDate: startDate || null, endDate: endDate || null };
 }

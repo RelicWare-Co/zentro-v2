@@ -347,6 +347,10 @@ function matchesSaleBalanceStatus(
   }
 }
 
+function matchesSaleShift(row: SaleWithRelations, input: SalesListParams) {
+  return !input.shiftIds || input.shiftIds.includes(row.shiftId ?? "");
+}
+
 export function matchesSaleFilters(
   row: SaleWithRelations,
   input: SalesListParams
@@ -360,6 +364,9 @@ export function matchesSaleFilters(
   const totalAmount = normalizeNumber(row.totalAmount);
 
   if (input.status && row.status !== input.status) {
+    return false;
+  }
+  if (!matchesSaleShift(row, input)) {
     return false;
   }
   if (input.cashierId && row.userId !== input.cashierId) {

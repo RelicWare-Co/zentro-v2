@@ -34,6 +34,7 @@ function buildSalesListQueryArgs(params: SalesListParams) {
   return {
     limit: normalizeSalesListLimit(params.limit),
     cursor: params.cursor ?? null,
+    shiftIds: params.shiftIds ?? null,
     status: params.status ?? null,
     searchQuery: params.searchQuery ?? null,
     paymentMethod: params.paymentMethod ?? null,

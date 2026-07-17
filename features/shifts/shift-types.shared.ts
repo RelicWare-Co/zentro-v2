@@ -15,6 +15,15 @@ export type ShiftsListParams = z.infer<typeof ListShiftsInputSchema>;
 export type ShiftListCursor = z.infer<typeof ShiftListCursorSchema>;
 export type CloseShiftInput = z.infer<typeof CloseShiftInputSchema>;
 
+export type SalesWindowKind = "open" | "closed" | "none";
+
+export interface SalesWindow {
+  closedAt: number | null;
+  kind: SalesWindowKind;
+  openedAt: number | null;
+  shiftIds: string[];
+}
+
 export interface ShiftWithRelations {
   cashMovements?: Array<{
     id: string;

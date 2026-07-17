@@ -58,14 +58,15 @@ function SalesPageHeader() {
 }
 
 function SalesPageViewTabs({ children }: { children: ReactNode }) {
-  const { state, actions } = useSalesPage();
+  const { state, actions, meta } = useSalesPage();
+  const currentWindowTabLabel = `Ventas del ${meta.salesWindowLabel}`;
 
   return (
     <div className="w-full">
       <div className="mb-6 flex w-full justify-center">
         <SegmentedControl
           data={[
-            { label: "Ventas de hoy", value: "today" },
+            { label: currentWindowTabLabel, value: "today" },
             { label: "Historial de ventas", value: "history" },
           ]}
           onChange={(value) => {

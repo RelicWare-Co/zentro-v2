@@ -19,10 +19,10 @@ export function useSalesListParams({
   endDate,
   pageSize,
   paymentMethod,
+  shiftIds,
   startDate,
   status,
   terminalName,
-  todayDate,
 }: {
   activeView: SalesView;
   amountMax: string;
@@ -34,15 +34,14 @@ export function useSalesListParams({
   endDate: string;
   pageSize: number;
   paymentMethod: string;
+  shiftIds: string[];
   startDate: string;
   status: string;
   terminalName: string;
-  todayDate: string;
 }) {
   return useMemo(() => {
     const resolvedDateFilters = resolveSalesDateFilters(
       activeView,
-      todayDate,
       startDate,
       endDate
     );
@@ -55,6 +54,7 @@ export function useSalesListParams({
       limit: pageSize,
       cursor,
       searchQuery: deferredSearchQuery.trim() || null,
+      shiftIds: activeView === "today" ? shiftIds : null,
       status: resolveSaleStatus(status),
       paymentMethod: paymentMethod || null,
       cashierId: cashierId || null,
@@ -76,9 +76,9 @@ export function useSalesListParams({
     endDate,
     pageSize,
     paymentMethod,
+    shiftIds,
     startDate,
     status,
     terminalName,
-    todayDate,
   ]);
 }

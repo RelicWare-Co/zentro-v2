@@ -1,7 +1,14 @@
 import { describe, expect, test } from "bun:test";
+import { eq } from "drizzle-orm";
 import { member } from "@/database/drizzle/schema/auth.schema";
+import { shift } from "@/database/drizzle/schema/pos.schema";
 import { serverMutators } from "@/zero/mutators.server";
-import { seedOrganizationWithMember, seedUser } from "./helpers/seed";
+import { queries } from "@/zero/queries";
+import {
+  seedOrganizationWithMember,
+  seedShift,
+  seedUser,
+} from "./helpers/seed";
 import { createTestDb } from "./helpers/test-db";
 import {
   closeShiftViaZero,
@@ -18,6 +25,61 @@ const INVALID_CASH_MOVEMENT_TYPE_PATTERN =
   /Invalid option|Tipo de movimiento de caja inválido/;
 
 describe("Zero shifts", () => {
+  test("sales window prefers open shifts and falls back to the latest closed shift", async () => {
+    const { db, cleanup } = await createTestDb();
+    const { organizationId, userId } = await seedOrganizationWithMember(db);
+    const zeroDb = createZeroTestDb(db);
+    const ctx = createZeroContext(userId, organizationId);
+    const olderClosedShift = await seedShift(db, {
+      organizationId,
+      userId,
+      status: "closed",
+      openedAt: new Date("2026-01-01T18:00:00Z"),
+      closedAt: new Date("2026-01-02T02:00:00Z"),
+    });
+    const latestClosedShift = await seedShift(db, {
+      organizationId,
+      userId,
+      status: "closed",
+      openedAt: new Date("2026-01-02T18:00:00Z"),
+      closedAt: new Date("2026-01-03T02:00:00Z"),
+    });
+    const openShift = await seedShift(db, {
+      organizationId,
+      userId,
+      status: "open",
+      openedAt: new Date("2026-01-03T18:00:00Z"),
+    });
+
+    const openRows = await zeroDb.run(
+      queries.shifts.salesWindow.open.fn({ args: undefined, ctx })
+    );
+    const closedRows = await zeroDb.run(
+      queries.shifts.salesWindow.lastClosed.fn({ args: undefined, ctx })
+    );
+
+    expect(openRows.map((row) => row.id)).toEqual([openShift]);
+    expect(closedRows[0]?.id).toBe(latestClosedShift);
+    expect(closedRows[0]?.id).not.toBe(olderClosedShift);
+
+    await db
+      .update(shift)
+      .set({ status: "closed", closedAt: new Date("2026-01-04T02:00:00Z") })
+      .where(eq(shift.id, openShift));
+
+    const fallbackOpenRows = await zeroDb.run(
+      queries.shifts.salesWindow.open.fn({ args: undefined, ctx })
+    );
+    const fallbackClosedRows = await zeroDb.run(
+      queries.shifts.salesWindow.lastClosed.fn({ args: undefined, ctx })
+    );
+
+    expect(fallbackOpenRows).toHaveLength(0);
+    expect(fallbackClosedRows[0]?.id).toBe(openShift);
+
+    await cleanup();
+  });
+
   test("open, close summary, and close run through Zero without oRPC", async () => {
     const { db, cleanup } = await createTestDb();
     const { organizationId, userId } = await seedOrganizationWithMember(db);
