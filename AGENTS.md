@@ -9,6 +9,7 @@ Read the section for the task at hand before editing. `AGENTS.md` defines reposi
 | Feature or server behavior | [Architecture](#architecture), then [Feature modules](#feature-modules) and [Server app shell](#server-app-shell) |
 | React UI, forms, styling, or responsiveness | [UI](#ui) and `$mantine-zentro` |
 | Zero schema, query, or mutator | [Zero Rocicorp](#zero-rocicorp) and `MIGRATION_PLAN.md` when porting from `../zentro-reborn` |
+| Product import format or adapter | [Feature modules](#feature-modules) and `docs/product-imports.md` |
 | Browser E2E tests | `$playwright-testing` and `tests/e2e/README.md` |
 | Desktop Electron | [Desktop](#desktop-electron) and `desktop/README.md` |
 | Docker, Coolify, or Zero operations | [Docker deployment](#docker-deployment) and `docs/deployment/docker.md` |
@@ -102,6 +103,7 @@ features/credit/
 - **Cross-feature schemas:** a schema lives with its owning domain. Non-owning consumers may import browser-safe `*.schema.ts` files across features. Examples: `customers` (customers + POS), `pos` (POS + shifts), and `modules` (Zero registry + admin).
 - `lib/` and `components/ui/` are for genuinely cross-cutting code only.
 - **Normalization helpers:** `lib/domain-values.shared.ts` is the canonical source for `normalizeOptionalString`, `normalizeRequiredString`, `normalizeNumber`, `toNonNegativeInteger`, `toInteger`, `toPositiveInteger`, `resolveDate`, and `resolveTimestamp`. Import from `@/lib/domain-values.shared` or `@/zero/sdk` (which re-exports them). Do not duplicate these in feature modules.
+- **Product imports:** `features/product-imports/` owns the canonical import document, source adapters, preview/commit orchestration, audit history, and admin UI. Every adapter implements `ProductImporter` and returns the same canonical contract; register it in the server-only importer registry. See `docs/product-imports.md`.
 
 ### Server app shell
 

@@ -12,6 +12,8 @@ import {
 
 type DrizzleTx = Pick<Database, "select" | "insert" | "update">;
 
+const INVENTORY_INSERT_CHUNK_SIZE = 250;
+
 export interface InventoryMovementSource {
   notes: string;
   type: "sale" | "adjustment" | "restock" | "waste";
@@ -103,6 +105,46 @@ export async function applyInventoryDeltas(
   }
 
   return updateResults;
+}
+
+export async function recordInitialInventoryMovements(
+  tx: Pick<Database, "insert">,
+  input: {
+    batchId: string;
+    createdAt: Date;
+    organizationId: string;
+    products: Array<{
+      id: string;
+      initialStock: number;
+      trackInventory: boolean;
+    }>;
+    userId: string;
+  }
+): Promise<void> {
+  const rows: (typeof inventoryMovement.$inferInsert)[] = input.products
+    .filter(
+      (productRow) => productRow.trackInventory && productRow.initialStock > 0
+    )
+    .map((productRow) => ({
+      id: crypto.randomUUID(),
+      organizationId: input.organizationId,
+      productId: productRow.id,
+      userId: input.userId,
+      type: "restock",
+      quantity: productRow.initialStock,
+      notes: `Importación de productos ${input.batchId}`,
+      createdAt: input.createdAt,
+    }));
+
+  for (
+    let index = 0;
+    index < rows.length;
+    index += INVENTORY_INSERT_CHUNK_SIZE
+  ) {
+    await tx
+      .insert(inventoryMovement)
+      .values(rows.slice(index, index + INVENTORY_INSERT_CHUNK_SIZE));
+  }
 }
 
 export async function restoreSaleInventory(

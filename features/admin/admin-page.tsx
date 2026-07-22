@@ -1,5 +1,10 @@
 import { SegmentedControl } from "@mantine/core";
-import { Building2, LayoutDashboard, Users } from "lucide-react";
+import {
+  Building2,
+  FileSpreadsheet,
+  LayoutDashboard,
+  Users,
+} from "lucide-react";
 import type { ReactNode } from "react";
 import { useState } from "react";
 import {
@@ -21,6 +26,7 @@ import { AdminRoleDialog } from "@/features/admin/components/admin-role-dialog";
 import { AdminSessionsSheet } from "@/features/admin/components/admin-sessions-sheet";
 import { AdminUserFormSheet } from "@/features/admin/components/admin-user-form-sheet";
 import { AdminUsersTab } from "@/features/admin/components/admin-users-tab";
+import { AdminProductImportsTab } from "@/features/product-imports/components/admin-product-imports-tab";
 
 function AdminPageRoot({ children }: { children: ReactNode }) {
   return (
@@ -33,7 +39,7 @@ function AdminPageRoot({ children }: { children: ReactNode }) {
 function AdminPageLayout() {
   const { state, meta } = useAdminPage();
   const [adminTab, setAdminTab] = useState<
-    "overview" | "organizations" | "users"
+    "overview" | "organizations" | "users" | "imports"
   >("overview");
 
   if (state.isPending) {
@@ -49,36 +55,49 @@ function AdminPageLayout() {
       <AdminPageRoot>
         <AdminPageHeader />
         <div className="space-y-6">
-          <SegmentedControl<"overview" | "organizations" | "users">
-            data={[
-              {
-                label: (
-                  <span className="inline-flex items-center gap-1.5">
-                    <LayoutDashboard className="size-4" /> Resumen
-                  </span>
-                ),
-                value: "overview",
-              },
-              {
-                label: (
-                  <span className="inline-flex items-center gap-1.5">
-                    <Building2 className="size-4" /> Organizaciones
-                  </span>
-                ),
-                value: "organizations",
-              },
-              {
-                label: (
-                  <span className="inline-flex items-center gap-1.5">
-                    <Users className="size-4" /> Usuarios
-                  </span>
-                ),
-                value: "users",
-              },
-            ]}
-            onChange={setAdminTab}
-            value={adminTab}
-          />
+          <div className="overflow-x-auto pb-1">
+            <SegmentedControl<
+              "overview" | "organizations" | "users" | "imports"
+            >
+              className="min-w-max"
+              data={[
+                {
+                  label: (
+                    <span className="inline-flex items-center gap-1.5">
+                      <LayoutDashboard className="size-4" /> Resumen
+                    </span>
+                  ),
+                  value: "overview",
+                },
+                {
+                  label: (
+                    <span className="inline-flex items-center gap-1.5">
+                      <Building2 className="size-4" /> Organizaciones
+                    </span>
+                  ),
+                  value: "organizations",
+                },
+                {
+                  label: (
+                    <span className="inline-flex items-center gap-1.5">
+                      <Users className="size-4" /> Usuarios
+                    </span>
+                  ),
+                  value: "users",
+                },
+                {
+                  label: (
+                    <span className="inline-flex items-center gap-1.5">
+                      <FileSpreadsheet className="size-4" /> Importaciones
+                    </span>
+                  ),
+                  value: "imports",
+                },
+              ]}
+              onChange={setAdminTab}
+              value={adminTab}
+            />
+          </div>
           <div hidden={adminTab !== "overview"}>
             <AdminOverviewTab />
           </div>
@@ -87,6 +106,9 @@ function AdminPageLayout() {
           </div>
           <div hidden={adminTab !== "users"}>
             <AdminUsersTab />
+          </div>
+          <div hidden={adminTab !== "imports"}>
+            <AdminProductImportsTab />
           </div>
         </div>
       </AdminPageRoot>

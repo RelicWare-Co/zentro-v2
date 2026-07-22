@@ -1,3 +1,4 @@
+import { Button } from "@mantine/core";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { getErrorMessage } from "@/lib/utils";
 
@@ -20,10 +21,12 @@ export function AdminTabLoading() {
 export function AdminTabError({
   error,
   fallbackMessage,
+  onRetry,
   title,
 }: {
   error: unknown;
   fallbackMessage: string;
+  onRetry?: () => void;
   title: string;
 }) {
   return (
@@ -36,6 +39,11 @@ export function AdminTabError({
         <p className="text-sm text-zinc-400">
           {getErrorMessage(error, fallbackMessage)}
         </p>
+        {onRetry ? (
+          <Button onClick={onRetry} size="compact-sm" variant="subtle">
+            Reintentar
+          </Button>
+        ) : null}
       </div>
     </div>
   );

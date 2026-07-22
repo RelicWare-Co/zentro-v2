@@ -49,6 +49,12 @@ import {
   shiftRelations,
 } from "./database/drizzle/schema/pos.schema";
 import {
+  productImportBatch,
+  productImportBatchRelations,
+  productImportRow,
+  productImportRowRelations,
+} from "./database/drizzle/schema/product-import.schema";
+import {
   restaurantArea,
   restaurantAreaRelations,
   restaurantKitchenTicket,
@@ -108,6 +114,10 @@ const drizzleSchema = {
   productIngredient,
   productIngredientRelations,
   productRelations,
+  productImportBatch,
+  productImportBatchRelations,
+  productImportRow,
+  productImportRowRelations,
   restaurantArea,
   restaurantAreaRelations,
   restaurantKitchenTicket,
@@ -144,6 +154,8 @@ export default drizzleZeroConfig(drizzleSchema, {
     account: false,
     session: false,
     verification: false,
+    productImportBatch: false,
+    productImportRow: false,
 
     user: {
       id: true,

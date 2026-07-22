@@ -1,5 +1,6 @@
 import type { z } from "zod";
 import { ToggleProductFavoriteInputSchema } from "@/features/pos/pos.schema";
+import { normalizeCreateProductValues } from "@/features/products/product-create-values.shared";
 import {
   CreateCategorySchema,
   CreateProductIngredientSchema,
@@ -236,40 +237,14 @@ function buildCreateProductInsertPayload(
   categoryId: string | null,
   normalizedName: string
 ) {
-  const isIngredient = args.isIngredient ?? false;
-  const effectiveTreatment = isIngredient
-    ? "revenue"
-    : (args.accountingTreatment ?? "revenue");
-  const isPassthrough = effectiveTreatment === "passthrough";
+  const values = normalizeCreateProductValues(args);
 
   return {
     id: args.id,
     organizationId,
     categoryId,
+    ...values,
     name: normalizedName,
-    sku: normalizeOptionalString(args.sku),
-    barcode: normalizeOptionalString(args.barcode),
-    price: isIngredient ? 0 : toNonNegativeInteger(args.price, "price"),
-    cost: toNonNegativeInteger(args.cost ?? 0, "cost"),
-    taxRate: toNonNegativeInteger(args.taxRate ?? 0, "taxRate"),
-    stock: toNonNegativeInteger(args.stock ?? 0, "stock"),
-    minStock:
-      args.minStock === undefined || args.minStock === null
-        ? null
-        : toNonNegativeInteger(args.minStock, "minStock"),
-    reorderQuantity:
-      args.reorderQuantity === undefined || args.reorderQuantity === null
-        ? null
-        : toNonNegativeInteger(args.reorderQuantity, "reorderQuantity"),
-    accountingTreatment: effectiveTreatment,
-    trackInventory: isPassthrough ? false : (args.trackInventory ?? true),
-    isModifier:
-      isPassthrough || isIngredient ? false : (args.isModifier ?? false),
-    isIngredient,
-    isFavorite: false,
-    autoPayoutEnabled:
-      isPassthrough || isIngredient ? false : (args.autoPayoutEnabled ?? false),
-    autoPayoutPaymentMethod: args.autoPayoutPaymentMethod ?? "cash",
     deletedAt: null,
     createdAt: Date.now(),
   };

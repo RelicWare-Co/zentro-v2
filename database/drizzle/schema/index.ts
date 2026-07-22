@@ -5,5 +5,6 @@ export * from "./feature.schema";
 export * from "./inventory.schema";
 export * from "./orders.schema";
 export * from "./pos.schema";
+export * from "./product-import.schema";
 export * from "./restaurant.schema";
 export * from "./sales.schema";

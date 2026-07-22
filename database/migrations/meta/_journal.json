@@ -134,6 +134,20 @@
       "when": 1784078254330,
       "tag": "0018_concerned_thor",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1784668580021,
+      "tag": "0019_eminent_pyro",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1784668876409,
+      "tag": "0020_heavy_magneto",
+      "breakpoints": true
     }
   ]
 }

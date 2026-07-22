@@ -50,6 +50,12 @@ import {
   shiftRelations,
 } from "./schema/pos.schema";
 import {
+  productImportBatch,
+  productImportBatchRelations,
+  productImportRow,
+  productImportRowRelations,
+} from "./schema/product-import.schema";
+import {
   restaurantArea,
   restaurantAreaRelations,
   restaurantKitchenTicket,
@@ -110,6 +116,10 @@ const schema = {
   productIngredient,
   productIngredientRelations,
   productRelations,
+  productImportBatch,
+  productImportBatchRelations,
+  productImportRow,
+  productImportRowRelations,
   restaurantArea,
   restaurantAreaRelations,
   restaurantKitchenTicket,

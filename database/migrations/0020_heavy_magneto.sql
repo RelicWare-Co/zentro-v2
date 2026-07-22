@@ -1,0 +1,1 @@
+ALTER TABLE "product_import_batch" ADD COLUMN "new_categories" integer DEFAULT 0 NOT NULL;
