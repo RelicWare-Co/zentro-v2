@@ -202,6 +202,7 @@ Zero is the primary API for app data. Migration history lives in `MIGRATION_PLAN
 
 - `resolveZeroAuth` gives authenticated users without an active organization partial context (`orgID: null`, `email` set) so organization-selection and join-link flows work.
 - Org-scoped queries/mutators gate on `ctx?.orgID`; auth-only flows use `ctx.id` / `ctx.email`. Logged-out callers have `userID: null` and undefined context; deny by default.
+- Organization membership is unique by `(organizationId, userId)`. Enrollment flows must use conflict-safe inserts and reconcile overlapping invitations/join links in the same server transaction.
 - `zero-cache` must forward browser cookies to `/api/zero/*` with `ZERO_QUERY_FORWARD_COOKIES=true` and `ZERO_MUTATE_FORWARD_COOKIES=true` locally and in production.
 - `/login` and `/join` mount `ZeroProviderGate` with `allowAnonymous`. Public join-link preview uses the sanitized REST endpoint `GET /api/organization/join-link-preview?token=...`, not Zero, because ZQL returns full rows.
 - Inventory movement history uses `queries.products.movements.list` with cursor `{ createdAt, id }`, `limit + 1` fetch, and `features/products/inventory-movements.shared.ts`. Stock-alert UI uses `getStockStatus` from `features/inventory/stock-status.shared.ts` with `minStock ?? organization.settings.inventory.lowStockThreshold`.

@@ -1,4 +1,4 @@
-import { and, eq, gt, like, or } from "drizzle-orm";
+import { and, eq, gt, like, or, sql } from "drizzle-orm";
 import type { z } from "zod";
 import type { Database } from "@/database/drizzle/db";
 import {
@@ -45,6 +45,10 @@ export interface OrganizationOrgAuth {
 
 export interface OrganizationUserAuth {
   userId: string;
+}
+
+export interface JoinLinkRedeemAuth extends OrganizationUserAuth {
+  email: string;
 }
 
 function parseRoleList(role: string | null | undefined) {
@@ -546,7 +550,7 @@ export async function runDeleteOrganization(
 export async function runJoinLinkRedeem(
   db: OrganizationDbExecutor,
   args: z.infer<typeof JoinTokenSchema>,
-  auth: OrganizationUserAuth
+  auth: JoinLinkRedeemAuth
 ): Promise<void> {
   await db.transaction(async (tx) => {
     const [row] = await tx
@@ -576,6 +580,25 @@ export async function runJoinLinkRedeem(
       throw new Error(getJoinLinkErrorMessage(status));
     }
 
+    const now = new Date();
+    const normalizedEmail = auth.email.trim().toLowerCase();
+    const [pendingInvitation] = await tx
+      .select({
+        id: invitation.id,
+        role: invitation.role,
+      })
+      .from(invitation)
+      .where(
+        and(
+          eq(invitation.organizationId, row.organizationId),
+          sql`lower(${invitation.email}) = ${normalizedEmail}`,
+          eq(invitation.status, "pending"),
+          gt(invitation.expiresAt, now)
+        )
+      )
+      .orderBy(invitation.createdAt)
+      .limit(1);
+
     const [existingMembership] = await tx
       .select({ id: member.id })
       .from(member)
@@ -588,23 +611,42 @@ export async function runJoinLinkRedeem(
       .limit(1);
 
     if (!existingMembership) {
-      const now = new Date();
-      await tx.insert(member).values({
-        id: crypto.randomUUID(),
-        organizationId: row.organizationId,
-        userId: auth.userId,
-        role: row.role,
-        createdAt: now,
-      });
-
-      await tx
-        .update(organizationJoinLink)
-        .set({
-          useCount: row.useCount + 1,
-          lastUsedAt: now,
-          lastUsedByUserId: auth.userId,
+      const insertedMemberships = await tx
+        .insert(member)
+        .values({
+          id: crypto.randomUUID(),
+          organizationId: row.organizationId,
+          userId: auth.userId,
+          role: pendingInvitation?.role ?? row.role,
+          createdAt: now,
         })
-        .where(eq(organizationJoinLink.id, row.id));
+        .onConflictDoNothing({
+          target: [member.organizationId, member.userId],
+        })
+        .returning({ id: member.id });
+
+      if (insertedMemberships.length > 0) {
+        await tx
+          .update(organizationJoinLink)
+          .set({
+            useCount: row.useCount + 1,
+            lastUsedAt: now,
+            lastUsedByUserId: auth.userId,
+          })
+          .where(eq(organizationJoinLink.id, row.id));
+      }
+    }
+
+    if (pendingInvitation) {
+      await tx
+        .update(invitation)
+        .set({ status: "accepted" })
+        .where(
+          and(
+            eq(invitation.id, pendingInvitation.id),
+            eq(invitation.status, "pending")
+          )
+        );
     }
   });
 }

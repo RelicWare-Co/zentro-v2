@@ -1,4 +1,5 @@
 import type { z } from "zod";
+import { buildUniqueCashierFilterOptions } from "@/features/listing/member-filter-options.shared";
 import type {
   ListSalesInputSchema,
   SaleDetailSchema,
@@ -471,12 +472,7 @@ export function buildSaleFilterOptions({
   ];
 
   return {
-    cashiers: members
-      .map((memberRow) => ({
-        id: memberRow.userId,
-        name: memberRow.user?.name ?? "Cajero",
-      }))
-      .toSorted((left, right) => left.name.localeCompare(right.name, "es-CO")),
+    cashiers: buildUniqueCashierFilterOptions(members),
     terminals: normalizedTerminalNames.toSorted((left, right) =>
       left.localeCompare(right, "es-CO")
     ),

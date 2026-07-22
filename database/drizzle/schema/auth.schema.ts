@@ -149,6 +149,10 @@ export const member = pgTable(
   (table) => [
     index("member_organizationId_idx").on(table.organizationId),
     index("member_userId_idx").on(table.userId),
+    uniqueIndex("member_organization_user_uidx").on(
+      table.organizationId,
+      table.userId
+    ),
   ]
 );
 

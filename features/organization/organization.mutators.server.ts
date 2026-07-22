@@ -221,7 +221,7 @@ export const organizationServerMutators = {
       await runJoinLinkRedeem(
         drizzleTx as unknown as OrganizationDbExecutor,
         args,
-        { userId: ctx.id }
+        { email: ctx.email, userId: ctx.id }
       );
     }
   ),

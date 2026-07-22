@@ -166,6 +166,84 @@ describe("organization access control", () => {
 
       await cleanup();
     });
+
+    test("redeeming consumes a matching pending invitation without duplicating membership", async () => {
+      const { db, cleanup } = await createTestDb();
+      const { organizationId, userId: creatorId } =
+        await seedOrganizationWithMember(db, {
+          memberRole: "owner",
+        });
+      const token = "invited-redeemer-token";
+      const email = "invited-redeemer@example.com";
+      await seedJoinLink(db, {
+        organizationId,
+        token,
+        createdByUserId: creatorId,
+        maxUses: 1,
+      });
+      const invitationId = await seedInvitation(db, {
+        organizationId,
+        inviterId: creatorId,
+        email,
+        role: "member",
+      });
+      const redeemer = await seedUser(db, {
+        name: "Invited Redeemer",
+        email,
+      });
+      const zeroDb = createZeroTestDb(db);
+      const ctx = createZeroContext(redeemer.id, organizationId, { email });
+
+      await joinLinkRedeemViaZero({ zeroDb, ctx, input: { token } });
+
+      const [memberships, invitationRows] = await Promise.all([
+        db
+          .select()
+          .from(member)
+          .where(
+            and(
+              eq(member.organizationId, organizationId),
+              eq(member.userId, redeemer.id)
+            )
+          ),
+        db
+          .select({ status: invitation.status })
+          .from(invitation)
+          .where(eq(invitation.id, invitationId)),
+      ]);
+
+      expect(memberships).toHaveLength(1);
+      expect(invitationRows[0]?.status).toBe("accepted");
+
+      await cleanup();
+    });
+
+    test("database rejects duplicate memberships for one organization and user", async () => {
+      const { db, cleanup } = await createTestDb();
+      try {
+        const { organizationId, userId } = await seedOrganizationWithMember(
+          db,
+          {
+            memberRole: "member",
+          }
+        );
+
+        await expect(
+          db
+            .insert(member)
+            .values({
+              id: crypto.randomUUID(),
+              organizationId,
+              userId,
+              role: "member",
+              createdAt: new Date(),
+            })
+            .execute()
+        ).rejects.toThrow();
+      } finally {
+        await cleanup();
+      }
+    });
   });
 
   describe("VAL-ORG-003: join link preview returns correct status", () => {
