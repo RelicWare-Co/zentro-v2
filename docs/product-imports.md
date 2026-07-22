@@ -42,6 +42,30 @@ without regard to case or surrounding whitespace. Formulas are rejected; the
 workbook must contain literal values. Files are limited to 5 MiB and 5,000
 non-empty product rows.
 
+## Programa 1
+
+The `programa-1` adapter accepts the product export as `.csv` or `.xlsx`. CSV is
+preferred because it preserves long `SKU/Código` values as text. Some XLSX
+exports convert long identifiers to imprecise numbers; those rows are rejected
+with `unsafe_identifier_precision` and should be retried using the CSV export.
+
+Source values are mapped as follows:
+
+| Programa 1 | Zentro canonical field | Rule |
+| --- | --- | --- |
+| `Producto` | `name` | Required. |
+| `Categoría` | `categoryName` | Optional. |
+| `SKU/Código` | `sku` | Preserved as one source identifier; `barcode` stays empty. |
+| `Precio venta` | `price` | Parses the exported COP value. |
+| `Precio compra` | `cost` | Parses the exported COP value. |
+| `Inventario actual` | `initialStock` | Parses the numeric quantity before `Unidad`. |
+| `Impuesto` | `taxRate` | Empty, `NO RESPONSABLE`, and `Exento` map to `0`; percentages are parsed. |
+| `Tipo de producto` | — | V1 accepts only `Sencillo`. |
+
+Program 1 products default to revenue treatment, inventory tracking enabled,
+not modifier, not ingredient, and no automatic payout. Export footer rows are
+ignored. XLSX formulas are rejected.
+
 ## Processing model
 
 1. `preview` parses the selected importer into `ProductImportDocumentV1`, runs

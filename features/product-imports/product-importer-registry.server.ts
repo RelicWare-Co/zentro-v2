@@ -1,7 +1,8 @@
 import type { ProductImporter } from "./product-importer.server";
+import { programOneImporter } from "./program-one.server";
 import { zentroStandardXlsxImporter } from "./zentro-standard-xlsx.server";
 
-const importers = [zentroStandardXlsxImporter] as const;
+const importers = [zentroStandardXlsxImporter, programOneImporter] as const;
 const importerByKey = new Map<string, ProductImporter>(
   importers.map((importer) => [importer.key, importer])
 );

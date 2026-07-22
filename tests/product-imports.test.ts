@@ -15,6 +15,7 @@ import {
   runCommitProductImport,
   runPreviewProductImport,
 } from "@/features/product-imports/product-imports.server";
+import { PROGRAM_ONE_IMPORTER_KEY } from "@/features/product-imports/program-one.server";
 import {
   XLSX_MIME_TYPE,
   ZENTRO_STANDARD_IMPORTER_KEY,
@@ -80,6 +81,51 @@ async function buildImportFile(rows: ProductFixture[]) {
   return new Uint8Array(await workbook.xlsx.writeBuffer());
 }
 
+function buildProgramOneCsv() {
+  const headers = [
+    "",
+    "",
+    "Acciones",
+    "Producto",
+    "Sucursal",
+    "Precio compra",
+    "Precio venta",
+    "Inventario actual",
+    "Tipo de producto",
+    "Categoría",
+    "Marca",
+    "Impuesto",
+    "SKU/Código",
+    "Campo_1",
+    "Campo_2",
+    "Campo_3",
+    "Campo_4",
+  ];
+  const productRow = [
+    "",
+    "",
+    "Acciones",
+    "Producto desde Programa 1",
+    "Sucursal centro",
+    "$ 1,200.00",
+    "$ 2,500.00",
+    "14 Unidad",
+    "Sencillo",
+    "Importados",
+    "",
+    "NO RESPONSABLE",
+    "PROG 1-0001",
+    "",
+    "",
+    "",
+    "",
+  ];
+  const csvCell = (value: string) => `"${value.replaceAll('"', '""')}"`;
+  return new TextEncoder().encode(
+    [headers, productRow].map((row) => row.map(csvCell).join(",")).join("\r\n")
+  );
+}
+
 function preview(
   db: TestDb,
   input: {
@@ -98,6 +144,65 @@ function preview(
 }
 
 describe("product imports", () => {
+  test("previews and commits a Programa 1 CSV through the shared pipeline", async () => {
+    const { db, cleanup } = await createTestDb();
+    try {
+      const { organizationId, userId } = await seedOrganizationWithMember(db);
+      const detail = await runPreviewProductImport(db, {
+        organizationId,
+        importerKey: PROGRAM_ONE_IMPORTER_KEY,
+        fileName: "productos-programa-1.csv",
+        fileType: "text/csv",
+        bytes: buildProgramOneCsv(),
+        userId,
+        userEmail: "admin@zentro.test",
+      });
+      if (!detail) {
+        throw new Error("Programa 1 preview was not persisted");
+      }
+
+      expect(detail.batch).toMatchObject({
+        importerKey: PROGRAM_ONE_IMPORTER_KEY,
+        status: "ready",
+        totalRows: 1,
+        validRows: 1,
+        invalidRows: 0,
+        newCategories: 1,
+      });
+      expect(detail.rows[0]?.normalizedData).toMatchObject({
+        name: "Producto desde Programa 1",
+        sku: "PROG 1-0001",
+        barcode: null,
+        price: 2500,
+        cost: 1200,
+        initialStock: 14,
+      });
+
+      const committed = await runCommitProductImport(db, {
+        batchId: detail.batch.id,
+        userId,
+      });
+      expect(committed.batch).toMatchObject({
+        status: "completed",
+        createdProducts: 1,
+        createdCategories: 1,
+      });
+      const [createdProduct] = await db
+        .select()
+        .from(product)
+        .where(eq(product.organizationId, organizationId));
+      expect(createdProduct).toMatchObject({
+        name: "Producto desde Programa 1",
+        sku: "PROG 1-0001",
+        price: 2500,
+        cost: 1200,
+        stock: 14,
+      });
+    } finally {
+      await cleanup();
+    }
+  });
+
   test("previews without catalog writes and commits products atomically with stock history", async () => {
     const { db, cleanup } = await createTestDb();
     try {
