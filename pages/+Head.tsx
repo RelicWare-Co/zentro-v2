@@ -53,7 +53,7 @@ export function Head() {
       <link href="https://umami.relicware.co" rel="dns-prefetch" />
       <link href="https://umami.relicware.co" rel="preconnect" />
       <script
-        data-website-id="80d4a2ff-81ad-4a76-89ba-a7b683cf2ebf"
+        data-website-id="3691bded-4b19-4c5e-8870-052e624423dc"
         defer
         src="https://umami.relicware.co/script.js"
       />
