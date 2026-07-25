@@ -27,7 +27,7 @@ function SalesPageHeader() {
           Ventas
         </h1>
         <span className="text-sm text-zinc-400">
-          {state.sales.length} registros •{" "}
+          {state.totalSales} registros •{" "}
           {formatSalesCurrency(state.totalRevenue)} facturado
         </span>
       </div>
@@ -96,7 +96,7 @@ function SalesPageMetrics() {
       <SalesCompactMetricCard
         icon={Receipt}
         title={state.viewSummary.resultsTitle}
-        value={`${state.sales.length}`}
+        value={`${state.totalSales}`}
       />
       <SalesCompactMetricCard
         icon={Wallet}

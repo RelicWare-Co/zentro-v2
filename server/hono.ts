@@ -12,6 +12,7 @@ import { createPublicApp } from "./public/handler.server";
 import { createQzApp } from "./qz/handler.server";
 import { createReportsApp } from "./reports/handler.server";
 import { createRuntimeConfigApp } from "./runtime-config.server";
+import { createSalesApp } from "./sales/handler.server";
 import { createZeroApp } from "./zero/handler.server";
 
 function getApp() {
@@ -46,6 +47,7 @@ function getApp() {
   app.route("/api/runtime-config", createRuntimeConfigApp());
   app.route("/api/qz", createQzApp());
   app.route("/api/reports", createReportsApp());
+  app.route("/api/sales", createSalesApp());
 
   vike(app, [
     // Make database available in Context as `context.db`

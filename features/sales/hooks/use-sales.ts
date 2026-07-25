@@ -1,4 +1,5 @@
 import { useQuery as useZeroQuery } from "@rocicorp/zero/react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useDeferredValue, useMemo, useRef } from "react";
 import type { z } from "zod";
 import type {
@@ -207,16 +208,21 @@ export function useSaleDetail(saleId: string | null) {
 }
 
 export function useCancelSaleMutation() {
+  const queryClient = useQueryClient();
+
   return useZeroMutation(
     async (input: { saleId: string; cancelledAt?: number }, zero) => {
       await waitForZeroMutation(zero.mutate(mutators.sales.cancel(input)), {
         awaitServer: true,
       });
+      await queryClient.invalidateQueries({ queryKey: ["sales", "summary"] });
     }
   );
 }
 
 export function useCreateSaleMutation() {
+  const queryClient = useQueryClient();
+
   return useZeroMutation(async (input: CreateSaleInput, zero) => {
     const saleId = crypto.randomUUID();
 
@@ -229,6 +235,7 @@ export function useCreateSaleMutation() {
       ),
       { awaitServer: true }
     );
+    await queryClient.invalidateQueries({ queryKey: ["sales", "summary"] });
 
     const receiptTotals = input.receiptTotals;
     const tenderedAmount = (input.payments ?? []).reduce(

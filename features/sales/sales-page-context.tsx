@@ -20,6 +20,7 @@ import {
   useSalesList,
 } from "@/features/sales/hooks/use-sales";
 import { useSalesListParams } from "@/features/sales/hooks/use-sales-list-params";
+import { useSalesSummary } from "@/features/sales/hooks/use-sales-summary";
 import { useSalesViewSummary } from "@/features/sales/hooks/use-sales-view-summary";
 import type {
   SaleListCursor,
@@ -101,6 +102,7 @@ export interface SalesPageState {
   totalPending: number;
   totalResults: number | null | undefined;
   totalRevenue: number;
+  totalSales: number;
   viewSummary: SalesPageViewSummary;
 }
 
@@ -263,6 +265,7 @@ export function SalesPageProvider({ children }: { children: ReactNode }) {
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
 
   const salesQuery = useSalesList(listParams);
+  const salesSummaryQuery = useSalesSummary(listParams);
   const sales = salesQuery.data?.data ?? [];
   const filterOptions = salesQuery.data?.filterOptions ?? {
     cashiers: [],
@@ -291,16 +294,9 @@ export function SalesPageProvider({ children }: { children: ReactNode }) {
     [sales, selectedSaleId]
   );
 
-  const totalRevenue = sales.reduce(
-    (total, sale) =>
-      sale.status === "cancelled" ? total : total + sale.totalAmount,
-    0
-  );
-  const totalPending = sales.reduce(
-    (total, sale) =>
-      sale.status === "cancelled" ? total : total + sale.balanceDue,
-    0
-  );
+  const totalRevenue = salesSummaryQuery.data?.totalRevenue ?? 0;
+  const totalPending = salesSummaryQuery.data?.totalPending ?? 0;
+  const totalSales = salesSummaryQuery.data?.salesCount ?? 0;
 
   const rangeLabel = buildListRangeLabel({
     hasMoreResults,
@@ -333,7 +329,10 @@ export function SalesPageProvider({ children }: { children: ReactNode }) {
   ].filter(Boolean).length;
 
   const isRefreshing =
-    isViewPending || salesWindowQuery.isLoading || salesQuery.isFetching;
+    isViewPending ||
+    salesWindowQuery.isLoading ||
+    salesQuery.isFetching ||
+    salesSummaryQuery.isFetching;
   const viewSummary = useSalesViewSummary(
     isTodayView,
     salesWindow.kind,
@@ -445,6 +444,7 @@ export function SalesPageProvider({ children }: { children: ReactNode }) {
         rangeLabel,
         totalRevenue,
         totalPending,
+        totalSales,
         activeFilterCount,
         activeAdvancedFilterCount,
         isDetailOpen,
@@ -522,6 +522,7 @@ export function SalesPageProvider({ children }: { children: ReactNode }) {
       rangeLabel,
       totalRevenue,
       totalPending,
+      totalSales,
       activeFilterCount,
       activeAdvancedFilterCount,
       isDetailOpen,

@@ -29,6 +29,17 @@ export const SalesListQueryArgsSchema = z.object({
   endDate: z.string().optional().nullable(),
 });
 
+export const SalesSummaryQueryArgsSchema = SalesListQueryArgsSchema.omit({
+  cursor: true,
+  limit: true,
+});
+
+export const SalesSummaryResultSchema = z.object({
+  salesCount: z.number().int().nonnegative(),
+  totalRevenue: z.number().int().nonnegative(),
+  totalPending: z.number().int().nonnegative(),
+});
+
 export const ListSalesInputSchema = z.object({
   limit: z.number().int().min(1).max(100).optional(),
   cursor: SaleListCursorSchema.optional().nullable(),
