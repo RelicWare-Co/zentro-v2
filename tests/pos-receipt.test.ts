@@ -34,6 +34,36 @@ describe("POS sale receipt", () => {
     expect(document.receipt.businessName).toBe("Tienda Central");
   });
 
+  test("includes the general table-order note in the sale receipt", () => {
+    const document = buildSaleReceiptDocument({
+      documentId: "sale_123456789",
+      issuedAt: new Date("2026-01-02T15:04:00-05:00"),
+      status: "completed",
+      customerName: "Cliente general",
+      notes: "Entregar en Calle 10 #20-30, casa azul",
+      items: [
+        {
+          name: "Cafe",
+          quantity: 1,
+          unitPrice: 5000,
+          totalAmount: 5000,
+        },
+      ],
+      payments: [{ method: "cash", amount: 5000 }],
+      subtotal: 5000,
+      taxAmount: 0,
+      discountAmount: 0,
+      totalAmount: 5000,
+      paidAmount: 5000,
+      balanceDue: 0,
+    });
+
+    expect(document.receipt.infoLines).toContainEqual({
+      label: "Nota de la orden",
+      value: "Entregar en Calle 10 #20-30, casa azul",
+    });
+  });
+
   test("maps 58mm receipt settings to narrow paper and larger text", () => {
     expect(
       getThermalReceiptEncoderColumns({

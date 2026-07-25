@@ -20,6 +20,7 @@ export function buildSaleReceiptDocument(input: {
   customerMeta?: string | null;
   cashierName?: string | null;
   terminalName?: string | null;
+  notes?: string | null;
   items: Array<{
     name: string;
     quantity: number;
@@ -88,6 +89,10 @@ export function buildSaleReceiptDocument(input: {
       {
         label: "Terminal",
         value: input.terminalName,
+      },
+      {
+        label: "Nota de la orden",
+        value: input.notes,
       },
     ],
     items,

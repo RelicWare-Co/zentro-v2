@@ -91,6 +91,7 @@ export function useTableSaleAdapter(
           ...item,
           modifiers: item.modifiers.map((modifier) => ({ ...modifier })),
         })),
+        notes: tableOrder.openOrder?.notes ?? null,
         payments: clonePayments(payments),
         totals: { ...tableOrder.totals },
       };

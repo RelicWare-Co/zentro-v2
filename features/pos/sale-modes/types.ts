@@ -51,6 +51,7 @@ export interface SaleReceiptResult {
 
 export interface SaleReceiptSnapshot {
   cart: CartItem[];
+  notes: string | null;
   payments: SalePayment[];
   totals: CartTotals;
 }

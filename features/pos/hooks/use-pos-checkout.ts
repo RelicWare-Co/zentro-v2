@@ -1,5 +1,6 @@
 import { notifications } from "@mantine/notifications";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { SaleReceiptPayload } from "@/features/pos/sale-modes/types";
 import { useCreateSaleMutation } from "@/features/sales/hooks/use-sales";
 import { parseMoneyInput } from "@/lib/utils";
 import type { CartItem, CartTotals, PaymentMethod } from "../types";
@@ -91,27 +92,7 @@ export function usePosCheckout(
   }>,
   allowCreditSales: boolean,
   closeCheckoutModal: () => void,
-  onSaleCreated?: (payload: {
-    result: {
-      saleId: string;
-      status: string;
-      subtotal: number;
-      taxAmount: number;
-      discountAmount: number;
-      totalAmount: number;
-      paidAmount: number;
-      balanceDue: number;
-    };
-    snapshot: {
-      cart: CartItem[];
-      payments: Array<{
-        method: string;
-        amount: number;
-        reference: string | null;
-      }>;
-      totals: CartTotals;
-    };
-  }) => void | Promise<void>
+  onSaleCreated?: (payload: SaleReceiptPayload) => void | Promise<void>
 ) {
   const [payments, setPayments] = useState<PaymentMethod[]>(() => [
     {
@@ -280,6 +261,7 @@ export function usePosCheckout(
         ...item,
         modifiers: item.modifiers.map((modifier) => ({ ...modifier })),
       })),
+      notes: null,
       payments: quickSalePayments,
       totals: { ...cartTotals },
     };
@@ -329,6 +311,7 @@ export function usePosCheckout(
         ...item,
         modifiers: item.modifiers.map((modifier) => ({ ...modifier })),
       })),
+      notes: null,
       payments: salePayments.map((payment) => ({ ...payment })),
       totals: { ...cartTotals },
     };

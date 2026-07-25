@@ -1,5 +1,6 @@
 import { buildSaleReceiptDocument } from "@/features/pos/printing/receipt-documents";
-import type { CartItem, PosCustomer } from "@/features/pos/types";
+import type { SaleReceiptPayload } from "@/features/pos/sale-modes/types";
+import type { PosCustomer } from "@/features/pos/types";
 import {
   calculateItemTotal,
   createPaymentMethodLabelMap,
@@ -11,24 +12,8 @@ interface PrintSaleReceiptParams {
   customer: PosCustomer | undefined;
   defaultTerminalName: string;
   paymentMethods: Array<{ id: string; label: string }>;
-  result: {
-    saleId: string;
-    status: string;
-    subtotal: number;
-    taxAmount: number;
-    discountAmount: number;
-    totalAmount: number;
-    paidAmount: number;
-    balanceDue: number;
-  };
-  snapshot: {
-    cart: CartItem[];
-    payments: Array<{
-      method: string;
-      amount: number;
-      reference: string | null;
-    }>;
-  };
+  result: SaleReceiptPayload["result"];
+  snapshot: SaleReceiptPayload["snapshot"];
 }
 
 export async function printSaleReceipt({
@@ -49,6 +34,7 @@ export async function printSaleReceipt({
     customerMeta: customer?.phone ?? null,
     cashierName: null,
     terminalName: defaultTerminalName,
+    notes: snapshot.notes,
     items: snapshot.cart.map((item) => ({
       name: item.product.name,
       quantity: item.quantity,
