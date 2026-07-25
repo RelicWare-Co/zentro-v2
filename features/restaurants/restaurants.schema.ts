@@ -26,7 +26,7 @@ export const UpdateRestaurantOrderMetaInputSchema = z
   .object({
     orderId: z.string().trim().min(1),
     guestCount: z.coerce.number().int().min(0).optional(),
-    notes: NullableStringSchema,
+    notes: z.string().trim().max(500).optional().nullable(),
   })
   .refine(
     (input) => input.guestCount !== undefined || input.notes !== undefined,

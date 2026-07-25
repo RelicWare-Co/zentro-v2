@@ -18,6 +18,7 @@ import {
   useRestaurantTableDetail,
   useSendRestaurantOrderToKitchenMutation,
   useUpdateRestaurantOrderItemMutation,
+  useUpdateRestaurantOrderMetaMutation,
 } from "@/features/restaurants/hooks/use-restaurants";
 import {
   type KitchenTicketPrintItem,
@@ -260,6 +261,7 @@ export function usePosTableOrder(
 
   const addItemMutation = useAddRestaurantOrderItemMutation();
   const updateOrderItemMutation = useUpdateRestaurantOrderItemMutation();
+  const updateOrderMetaMutation = useUpdateRestaurantOrderMetaMutation();
   const deleteOrderItemMutation = useDeleteRestaurantOrderItemMutation();
   const sendToKitchenMutation = useSendRestaurantOrderToKitchenMutation();
   const cancelOrderMutation = useCancelRestaurantOrderMutation();
@@ -717,6 +719,19 @@ export function usePosTableOrder(
     [openOrder, cancelOrderMutation]
   );
 
+  const updateOrderNotes = useCallback(
+    async (notes: string | null) => {
+      if (!openOrder) {
+        throw new Error("La mesa no tiene una cuenta abierta.");
+      }
+      await updateOrderMetaMutation.mutateAsync({
+        orderId: openOrder.id,
+        notes,
+      });
+    },
+    [openOrder, updateOrderMetaMutation]
+  );
+
   return {
     activeTableId,
     table,
@@ -738,6 +753,7 @@ export function usePosTableOrder(
     updateItemQuantity,
     removeItem,
     updateItemNotes,
+    updateOrderNotes,
     sendToKitchen,
     closeTableOrder,
     cancelTableOrder,

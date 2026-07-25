@@ -1,9 +1,20 @@
-import { Button, Group, Modal, Stack, Text, Textarea } from "@mantine/core";
+import {
+  ActionIcon,
+  Button,
+  Group,
+  Indicator,
+  Modal,
+  Stack,
+  Text,
+  Textarea,
+  Tooltip,
+} from "@mantine/core";
 import {
   Ban,
   LogOut,
   Search,
   Send,
+  StickyNote,
   Trash2,
   UtensilsCrossed,
   Zap,
@@ -16,12 +27,29 @@ import type { PosTableOrderItemStatus } from "../sale-modes/types";
 import type { CartItem, CartTotals } from "../types";
 import { CartItemCard } from "./cart-item-card";
 import { CartItemCommentDialog } from "./cart-item-comment-dialog";
+import { CartOrderNoteDialog } from "./cart-order-note-dialog";
 import { SaleSuccessNotice } from "./sale-success-notice";
 import { buildTableItemStatusBadge } from "./table-item-status.shared";
 
 const noop = () => {
   /* intentionally no-op for read-only overlays */
 };
+
+function useOrderNoteDialog(orderId: string | null | undefined) {
+  const [openOrderId, setOpenOrderId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (openOrderId && openOrderId !== orderId) {
+      setOpenOrderId(null);
+    }
+  }, [openOrderId, orderId]);
+
+  return {
+    close: () => setOpenOrderId(null),
+    open: () => setOpenOrderId(orderId ?? null),
+    opened: Boolean(orderId && openOrderId === orderId),
+  };
+}
 
 type AnimationClass =
   | "cart-slide-in"
@@ -326,6 +354,7 @@ interface CartPanelProps {
     cartItemId: string,
     notes: string | null
   ) => Promise<void>;
+  onUpdateOrderNotes: (notes: string | null) => Promise<void>;
   onUpdateQuantity: (cartItemId: string, delta: number) => void;
   saleSuccessToken: number | null;
   tableSession?: PosTableSessionState | null;
@@ -336,12 +365,14 @@ interface CartPanelProps {
 function CartPanelHeader({
   hasItems,
   onClearCart,
+  onEditOrderNotes,
   onExitTable,
   tableSession,
   totalItems,
 }: {
   hasItems: boolean;
   onClearCart: () => void;
+  onEditOrderNotes?: () => void;
   onExitTable?: () => void;
   tableSession?: PosTableSessionState | null;
   totalItems: number;
@@ -367,16 +398,53 @@ function CartPanelHeader({
             {` · ${totalItems} artículos`}
           </p>
         </div>
-        <Button
-          aria-label="Salir de la mesa"
-          className="shrink-0 text-zinc-400! hover:bg-white/5 hover:text-white!"
-          leftSection={<LogOut className="size-4" />}
-          onClick={onExitTable}
-          size="compact-sm"
-          variant="subtle"
-        >
-          Salir
-        </Button>
+        <div className="flex shrink-0 items-center gap-1">
+          {onEditOrderNotes ? (
+            <Tooltip
+              label={
+                tableSession.notes
+                  ? "Editar nota de la orden"
+                  : "Agregar nota a la orden"
+              }
+            >
+              <Indicator
+                color="voltage"
+                disabled={!tableSession.notes}
+                offset={4}
+                size={7}
+                withBorder
+              >
+                <ActionIcon
+                  aria-label={
+                    tableSession.notes
+                      ? "Editar nota de la orden"
+                      : "Agregar nota a la orden"
+                  }
+                  className={
+                    tableSession.notes
+                      ? "text-[var(--color-voltage)]! hover:bg-[var(--color-voltage)]/10!"
+                      : "text-zinc-400! hover:bg-white/5! hover:text-white!"
+                  }
+                  onClick={onEditOrderNotes}
+                  size="lg"
+                  variant="subtle"
+                >
+                  <StickyNote aria-hidden="true" className="size-4" />
+                </ActionIcon>
+              </Indicator>
+            </Tooltip>
+          ) : null}
+          <Button
+            aria-label="Salir de la mesa"
+            className="shrink-0 text-zinc-400! hover:bg-white/5 hover:text-white!"
+            leftSection={<LogOut className="size-4" />}
+            onClick={onExitTable}
+            size="compact-sm"
+            variant="subtle"
+          >
+            Salir
+          </Button>
+        </div>
       </div>
     );
   }
@@ -628,6 +696,7 @@ export function CartPanel({
   onUpdateQuantity,
   onRemoveItem,
   onUpdateItemNotes,
+  onUpdateOrderNotes,
   onUpdateItemDiscount,
   onClearCart,
   onCheckout,
@@ -645,6 +714,7 @@ export function CartPanel({
   const [commentItemId, setCommentItemId] = useState<string | null>(null);
   const [isKitchenConfirmOpen, setIsKitchenConfirmOpen] = useState(false);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const orderNoteDialog = useOrderNoteDialog(tableSession?.orderId);
   const anim = useCartAnimation(
     tableSession,
     isTableSelectorOpen,
@@ -713,6 +783,7 @@ export function CartPanel({
           <CartPanelHeader
             hasItems={anim.baseCart.length > 0}
             onClearCart={onClearCart}
+            onEditOrderNotes={orderNoteDialog.open}
             onExitTable={onExitTable}
             tableSession={anim.baseTableSession}
             totalItems={anim.baseTotalItems}
@@ -925,6 +996,14 @@ export function CartPanel({
         item={commentItem}
         onClose={() => setCommentItemId(null)}
         onSave={onUpdateItemNotes}
+      />
+
+      <CartOrderNoteDialog
+        notes={tableSession?.notes ?? null}
+        onClose={orderNoteDialog.close}
+        onSave={onUpdateOrderNotes}
+        opened={orderNoteDialog.opened}
+        orderId={tableSession?.orderId ?? null}
       />
 
       <SaleSuccessNotice token={saleSuccessToken} />

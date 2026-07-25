@@ -215,6 +215,7 @@ export function useTableSaleAdapter(
       areaName: tableOrder.table?.areaName ?? "",
       orderId: tableOrder.openOrder?.id ?? null,
       orderNumber: tableOrder.openOrder?.orderNumber ?? null,
+      notes: tableOrder.openOrder?.notes ?? null,
       itemStatusById: tableOrder.itemStatusById,
       draftItemsCount: tableOrder.draftItemsCount,
       hasSentKitchenTicket: tableOrder.hasSentKitchenTicket,
@@ -259,6 +260,13 @@ export function useTableSaleAdapter(
     [tableOrder.updateItemNotes]
   );
 
+  const updateOrderNotes = useCallback(
+    async (notes: string | null) => {
+      await tableOrder.updateOrderNotes(notes);
+    },
+    [tableOrder.updateOrderNotes]
+  );
+
   const sendToKitchen = useCallback(async () => {
     await tableOrder.sendToKitchen();
   }, [tableOrder.sendToKitchen]);
@@ -296,6 +304,7 @@ export function useTableSaleAdapter(
     clearCart: noOp,
     updateItemDiscount: noOp,
     updateItemNotes,
+    updateOrderNotes,
     setDiscountInput,
     getProductQuantity,
     finalizeSale,

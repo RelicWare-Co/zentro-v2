@@ -37,6 +37,7 @@ import {
   updateRestaurantAreaViaZero,
   updateRestaurantOrderItemStatusViaZero,
   updateRestaurantOrderItemViaZero,
+  updateRestaurantOrderMetaViaZero,
   updateRestaurantTableViaZero,
 } from "./helpers/zero-restaurants";
 import { createZeroContext, createZeroTestDb } from "./helpers/zero-shifts";
@@ -494,6 +495,75 @@ describe("restaurant module", () => {
           (ticket) => ticket.id === correctionSend.ticket.id
         )
       ).toBe(false);
+
+      await cleanup();
+    });
+  });
+
+  describe("VAL-REST-003E: general order notes persist", () => {
+    test("stores, exposes, and clears the delivery note for an open order", async () => {
+      const { db, cleanup } = await createTestDb();
+      const { organizationId, userId } = await seedOrganizationWithMember(db, {
+        memberRole: "owner",
+      });
+      await setRestaurantModuleEnabled(db, organizationId, true);
+
+      const areaId = await seedRestaurantArea(db, {
+        organizationId,
+        name: "Domicilios",
+      });
+      const [tableId, productId] = await Promise.all([
+        seedRestaurantTable(db, {
+          organizationId,
+          areaId,
+          name: "Pedido 1",
+        }),
+        seedProduct(db, {
+          organizationId,
+          name: "Almuerzo",
+          price: 20_000,
+          stock: 10,
+          trackInventory: false,
+        }),
+      ]);
+      const zeroDb = createZeroTestDb(db);
+      const ctx = createZeroContext(userId, organizationId);
+      const added = await addRestaurantOrderItemViaZero({
+        db,
+        zeroDb,
+        ctx,
+        input: { tableId, productId, quantity: 1 },
+      });
+
+      await updateRestaurantOrderMetaViaZero({
+        zeroDb,
+        ctx,
+        input: {
+          orderId: added.orderId,
+          notes: "Calle 10 #20-30, casa azul",
+        },
+      });
+
+      const [storedOrder, tableDetail] = await Promise.all([
+        db
+          .select({ notes: restaurantOrder.notes })
+          .from(restaurantOrder)
+          .where(eq(restaurantOrder.id, added.orderId)),
+        getRestaurantTableDetailViaZero({ zeroDb, ctx, tableId }),
+      ]);
+      expect(storedOrder[0]?.notes).toBe("Calle 10 #20-30, casa azul");
+      expect(tableDetail.openOrder?.notes).toBe("Calle 10 #20-30, casa azul");
+
+      await updateRestaurantOrderMetaViaZero({
+        zeroDb,
+        ctx,
+        input: { orderId: added.orderId, notes: null },
+      });
+      const [clearedOrder] = await db
+        .select({ notes: restaurantOrder.notes })
+        .from(restaurantOrder)
+        .where(eq(restaurantOrder.id, added.orderId));
+      expect(clearedOrder?.notes).toBeNull();
 
       await cleanup();
     });

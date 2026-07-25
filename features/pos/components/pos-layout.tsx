@@ -103,6 +103,7 @@ export function PosLayout() {
             onSendToKitchen={actions.sendTableOrderToKitchen}
             onUpdateItemDiscount={actions.updateItemDiscount}
             onUpdateItemNotes={actions.updateItemNotes}
+            onUpdateOrderNotes={actions.updateOrderNotes}
             onUpdateQuantity={actions.updateQuantity}
             saleSuccessToken={state.saleSuccessToken}
             tableSession={state.tableSession}
@@ -149,6 +150,7 @@ export function PosLayout() {
                 onSendToKitchen={actions.sendTableOrderToKitchen}
                 onUpdateItemDiscount={actions.updateItemDiscount}
                 onUpdateItemNotes={actions.updateItemNotes}
+                onUpdateOrderNotes={actions.updateOrderNotes}
                 onUpdateQuantity={actions.updateQuantity}
                 saleSuccessToken={state.saleSuccessToken}
                 tableSession={state.tableSession}

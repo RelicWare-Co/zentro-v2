@@ -42,6 +42,7 @@ export interface PosCartContextValue {
   updateItemDiscount: (cartItemId: string, value: string) => void;
   updateItemNotes: (cartItemId: string, notes: string | null) => Promise<void>;
   updateModifierQuantity: (modifierId: string, delta: number) => void;
+  updateOrderNotes: (notes: string | null) => Promise<void>;
   updateQuantity: (cartItemId: string, delta: number) => void;
 }
 
@@ -150,6 +151,16 @@ export function PosCartProvider({ children }: { children: ReactNode }) {
     [activeMode]
   );
 
+  const updateOrderNotes = useCallback(
+    async (notes: string | null) => {
+      if (!activeMode.updateOrderNotes) {
+        throw new Error("No hay una orden de mesa activa para actualizar.");
+      }
+      await activeMode.updateOrderNotes(notes);
+    },
+    [activeMode]
+  );
+
   const setDiscountInputAction = useCallback(
     (value: string) => {
       activeMode.setDiscountInput(value);
@@ -222,6 +233,7 @@ export function PosCartProvider({ children }: { children: ReactNode }) {
     totals: activeMode.totals,
     updateItemDiscount: updateItemDiscountAction,
     updateItemNotes: updateItemNotesAction,
+    updateOrderNotes,
     updateModifierQuantity,
     updateQuantity: updateQuantityAction,
   };

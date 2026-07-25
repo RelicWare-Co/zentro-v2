@@ -113,6 +113,7 @@ export interface PosPageActions {
   updateItemDiscount: (cartItemId: string, value: string) => void;
   updateItemNotes: (cartItemId: string, notes: string | null) => Promise<void>;
   updateModifierQuantity: (modifierId: string, delta: number) => void;
+  updateOrderNotes: (notes: string | null) => Promise<void>;
   updatePayment: (
     index: number,
     field: "method" | "amount" | "reference",
@@ -220,6 +221,7 @@ export function PosPageCompatProvider({ children }: { children: ReactNode }) {
     totals,
     updateItemDiscount,
     updateItemNotes,
+    updateOrderNotes,
     updateModifierQuantity,
     updateQuantity,
   } = usePosCartContext();
@@ -334,6 +336,7 @@ export function PosPageCompatProvider({ children }: { children: ReactNode }) {
         toggleQuickSaleMode,
         updateItemDiscount,
         updateItemNotes,
+        updateOrderNotes,
         updateModifierQuantity,
         updatePayment,
         updateQuantity,
@@ -412,6 +415,7 @@ export function PosPageCompatProvider({ children }: { children: ReactNode }) {
       toggleQuickSaleMode,
       updateItemDiscount,
       updateItemNotes,
+      updateOrderNotes,
       updateModifierQuantity,
       updateQuantity,
       activeOrganizationId,

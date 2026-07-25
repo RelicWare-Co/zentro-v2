@@ -21,6 +21,7 @@ import type {
   UpdateRestaurantAreaInputSchema,
   UpdateRestaurantOrderItemInputSchema,
   UpdateRestaurantOrderItemStatusInputSchema,
+  UpdateRestaurantOrderMetaInputSchema,
   UpdateRestaurantTableInputSchema,
 } from "@/features/restaurants/restaurants.schema";
 import {
@@ -155,6 +156,9 @@ type AddOrderItemInput = z.infer<typeof AddRestaurantOrderItemInputSchema>;
 type UpdateOrderItemInput = z.infer<
   typeof UpdateRestaurantOrderItemInputSchema
 >;
+type UpdateOrderMetaInput = z.infer<
+  typeof UpdateRestaurantOrderMetaInputSchema
+>;
 type DeleteOrderItemInput = z.infer<
   typeof DeleteRestaurantOrderItemInputSchema
 >;
@@ -244,6 +248,20 @@ export async function updateRestaurantOrderItemViaZero({
 }) {
   await zeroDb.transaction((tx) =>
     serverMutators.restaurants.updateOrderItem.fn({ args: input, ctx, tx })
+  );
+}
+
+export async function updateRestaurantOrderMetaViaZero({
+  zeroDb,
+  ctx,
+  input,
+}: {
+  zeroDb: ZeroTestDb;
+  ctx: ZeroContext;
+  input: UpdateOrderMetaInput;
+}) {
+  await zeroDb.transaction((tx) =>
+    serverMutators.restaurants.updateOrderMeta.fn({ args: input, ctx, tx })
   );
 }
 

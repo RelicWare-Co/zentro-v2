@@ -20,7 +20,7 @@ export const addRestaurantOrderItemArgsSchema = zod.object({
 export const updateRestaurantOrderMetaArgsSchema = zod.object({
   orderId: zod.string().trim().min(1),
   guestCount: zod.number().int().min(0).optional(),
-  notes: zod.string().trim().optional().nullable(),
+  notes: zod.string().trim().max(500).optional().nullable(),
 });
 export const updateRestaurantOrderItemArgsSchema = zod.object({
   orderItemId: zod.string().trim().min(1),

@@ -22,6 +22,7 @@ export interface PosTableSessionState {
   isLoading: boolean;
   isSendingToKitchen: boolean;
   itemStatusById: Record<string, PosTableOrderItemStatus>;
+  notes: string | null;
   orderId: string | null;
   orderNumber: number | null;
   pendingKitchenCancellationCount: number;
@@ -125,6 +126,7 @@ export interface SaleModeAdapter {
   readonly totals: CartTotals;
   updateItemDiscount(cartItemId: string, value: string): void;
   updateItemNotes(cartItemId: string, notes: string | null): Promise<void>;
+  updateOrderNotes?: (notes: string | null) => Promise<void>;
   updateQuantity(cartItemId: string, delta: number): void;
 }
 

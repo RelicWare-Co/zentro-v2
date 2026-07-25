@@ -341,7 +341,8 @@ export function useUpdateRestaurantOrderMetaMutation() {
       zero
     ) => {
       await waitForZeroMutation(
-        zero.mutate(mutators.restaurants.updateOrderMeta(input))
+        zero.mutate(mutators.restaurants.updateOrderMeta(input)),
+        { awaitServer: true }
       );
       return { success: true as const };
     }
