@@ -84,6 +84,19 @@ export interface SaleWithRelations {
   userId: string;
 }
 
+export interface SaleRestaurantOrderWithRelations {
+  items?: Array<{
+    cancelledAt?: number | null;
+    id: string;
+    notes?: string | null;
+    product?: { name?: string | null } | null;
+    productId: string;
+    quantity: number;
+    status?: string | null;
+  }>;
+  notes?: string | null;
+}
+
 import { normalizeNumber } from "@/lib/domain-values.shared";
 
 export function toTimestamp(value: Date | number | string | null | undefined) {
@@ -196,7 +209,10 @@ function resolvePaymentKind(
   return linkedCreditTransaction ? "debt_payment" : "sale_payment";
 }
 
-export function buildSaleDetail(row: SaleWithRelations): SaleDetail {
+export function buildSaleDetail(
+  row: SaleWithRelations,
+  restaurantOrder?: SaleRestaurantOrderWithRelations | null
+): SaleDetail {
   const payments = (row.payments ?? [])
     .map((paymentRow) => {
       const tenderedAmount = normalizeNumber(paymentRow.amount);
@@ -233,6 +249,21 @@ export function buildSaleDetail(row: SaleWithRelations): SaleDetail {
   const totalAmount = normalizeNumber(row.totalAmount);
   const effectivePaidAmount =
     row.status === "cancelled" ? 0 : Math.min(totalAmount, paidAmount);
+  const orderNotes = restaurantOrder?.notes?.trim() || null;
+  const itemComments = (restaurantOrder?.items ?? [])
+    .filter(
+      (itemRow) =>
+        itemRow.status !== "cancelled" &&
+        itemRow.cancelledAt == null &&
+        Boolean(itemRow.notes?.trim())
+    )
+    .map((itemRow) => ({
+      id: itemRow.id,
+      productId: itemRow.productId,
+      name: itemRow.product?.name ?? "Producto",
+      quantity: normalizeNumber(itemRow.quantity),
+      notes: itemRow.notes?.trim() ?? "",
+    }));
 
   return {
     id: row.id,
@@ -272,6 +303,8 @@ export function buildSaleDetail(row: SaleWithRelations): SaleDetail {
           terminalName: row.shift?.terminalName ?? null,
         }
       : null,
+    orderNotes,
+    itemComments,
     payments,
     items: (row.items ?? [])
       .map((itemRow) => ({

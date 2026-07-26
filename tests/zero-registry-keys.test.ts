@@ -35,6 +35,7 @@ const EXPECTED_QUERY_PATHS = [
   "sales.byId",
   "sales.filterOptions",
   "sales.list",
+  "sales.restaurantOrderBySaleId",
   "sales.terminalOptions",
   "shifts.active",
   "shifts.byId",

@@ -9,6 +9,7 @@ import type {
 import type {
   SaleDetail,
   SaleListItem,
+  SaleRestaurantOrderWithRelations,
   SalesListParams,
   SaleWithRelations,
 } from "@/features/sales/sales.shared";
@@ -183,24 +184,39 @@ export function useSaleDetail(saleId: string | null) {
   const [rows, status] = useZeroQuery(
     queries.sales.byId({ saleId: saleId ?? null })
   );
-  const error = getZeroQueryError(status);
+  const [restaurantOrderRows, restaurantOrderStatus] = useZeroQuery(
+    queries.sales.restaurantOrderBySaleId({ saleId: saleId ?? null })
+  );
+  const error =
+    getZeroQueryError(status) ?? getZeroQueryError(restaurantOrderStatus);
   const saleRow = rows[0];
+  const restaurantOrderRow = restaurantOrderRows[0];
   const data = useMemo((): SaleDetail | null => {
     if (!saleRow) {
       return null;
     }
-    return buildSaleDetail(asSaleWithRelations(saleRow));
-  }, [saleRow]);
+    return buildSaleDetail(
+      asSaleWithRelations(saleRow),
+      (restaurantOrderRow as SaleRestaurantOrderWithRelations | undefined) ??
+        null
+    );
+  }, [restaurantOrderRow, saleRow]);
 
   return {
     data,
     error,
     isError: Boolean(error),
     isLoading:
-      Boolean(saleId) && status.type === "unknown" && rows.length === 0,
+      Boolean(saleId) &&
+      ((status.type === "unknown" && rows.length === 0) ||
+        (restaurantOrderStatus.type === "unknown" &&
+          restaurantOrderRows.length === 0)),
     refetch: () => {
       if (status.type === "error") {
         status.retry();
+      }
+      if (restaurantOrderStatus.type === "error") {
+        restaurantOrderStatus.retry();
       }
       return Promise.resolve();
     },

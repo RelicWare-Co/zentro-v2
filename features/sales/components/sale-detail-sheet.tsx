@@ -46,7 +46,7 @@ export function SalesDetailSheet() {
       <div className="flex h-full flex-col">
         <div className="shrink-0 border-zinc-800 border-b px-6 py-4">
           <p className="text-base text-zinc-400">
-            Revisa cliente, pagos e items registrados para esta venta.
+            Revisa cliente, notas, pagos e items registrados para esta venta.
           </p>
         </div>
         <div className="flex-1 overflow-y-auto p-6">

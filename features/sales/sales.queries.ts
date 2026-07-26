@@ -145,6 +145,19 @@ function buildSaleDetailQuery(saleId: string, organizationId: string) {
     .limit(1);
 }
 
+function buildRestaurantOrderBySaleIdQuery(
+  saleId: string,
+  organizationId: string
+) {
+  return zql.restaurantOrder
+    .where("saleId", saleId)
+    .where("organizationId", organizationId)
+    .related("items", (query) =>
+      query.related("product").orderBy("createdAt", "asc").orderBy("id", "asc")
+    )
+    .limit(1);
+}
+
 export const salesQueries = {
   sales: {
     list: defineZentroQuery(SalesListQueryArgsSchema, ({ args, ctx }) => {
@@ -184,5 +197,16 @@ export const salesQueries = {
 
       return buildSaleDetailQuery(normalizedSaleId, ctx.orgID);
     }),
+    restaurantOrderBySaleId: defineZentroQuery(
+      saleByIdArgsSchema,
+      ({ args, ctx }) => {
+        const normalizedSaleId = args.saleId?.trim() ?? "";
+        if (!(hasOrgContext(ctx) && normalizedSaleId)) {
+          return denyQuery(zql.restaurantOrder);
+        }
+
+        return buildRestaurantOrderBySaleIdQuery(normalizedSaleId, ctx.orgID);
+      }
+    ),
   },
 };

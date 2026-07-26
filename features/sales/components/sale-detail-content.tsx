@@ -1,4 +1,5 @@
-import { Badge, Button } from "@mantine/core";
+import { Badge, Button, Paper } from "@mantine/core";
+import { MessageSquareText, StickyNote } from "lucide-react";
 import type { useSaleDetail } from "@/features/sales/hooks/use-sales";
 import {
   formatSaleStatus,
@@ -69,6 +70,62 @@ export function SaleDetailContent({
           </p>
         </div>
       </div>
+
+      {sale.orderNotes || sale.itemComments.length > 0 ? (
+        <section aria-labelledby="sale-order-notes" className="space-y-2">
+          <h4
+            className="font-medium text-sm text-zinc-200"
+            id="sale-order-notes"
+          >
+            Notas de la orden
+          </h4>
+          {sale.orderNotes ? (
+            <Paper
+              className="border-zinc-800! bg-black/10! p-3"
+              radius="md"
+              withBorder
+            >
+              <div className="flex items-start gap-2.5">
+                <StickyNote
+                  aria-hidden="true"
+                  className="mt-0.5 size-4 shrink-0 text-[var(--color-voltage)]"
+                />
+                <div className="min-w-0">
+                  <p className="font-medium text-xs text-zinc-400">
+                    Comentario general
+                  </p>
+                  <p className="mt-1 whitespace-pre-wrap break-words text-sm text-white">
+                    {sale.orderNotes}
+                  </p>
+                </div>
+              </div>
+            </Paper>
+          ) : null}
+          {sale.itemComments.map((comment) => (
+            <Paper
+              className="border-zinc-800! bg-black/10! p-3"
+              key={comment.id}
+              radius="md"
+              withBorder
+            >
+              <div className="flex items-start gap-2.5">
+                <MessageSquareText
+                  aria-hidden="true"
+                  className="mt-0.5 size-4 shrink-0 text-amber-300"
+                />
+                <div className="min-w-0">
+                  <p className="font-medium text-xs text-zinc-400">
+                    {comment.quantity} x {comment.name}
+                  </p>
+                  <p className="mt-1 whitespace-pre-wrap break-words text-sm text-white">
+                    {comment.notes}
+                  </p>
+                </div>
+              </div>
+            </Paper>
+          ))}
+        </section>
+      ) : null}
 
       <div className="space-y-2">
         <h4 className="font-medium text-sm text-zinc-200">Items</h4>

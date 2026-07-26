@@ -135,6 +135,14 @@ const SaleDetailItemSchema = z.object({
   modifiers: SaleDetailItemModifierSchema.array(),
 });
 
+const SaleDetailItemCommentSchema = z.object({
+  id: z.string(),
+  productId: z.string(),
+  name: z.string(),
+  quantity: z.number(),
+  notes: z.string(),
+});
+
 const SaleDetailCustomerSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -170,6 +178,8 @@ export const SaleDetailSchema = z.object({
   customer: SaleDetailCustomerSchema.nullable(),
   cashier: SaleDetailCashierSchema.nullable(),
   shift: SaleDetailShiftSchema.nullable(),
+  orderNotes: z.string().nullable(),
+  itemComments: SaleDetailItemCommentSchema.array(),
   payments: SaleDetailPaymentSchema.array(),
   items: SaleDetailItemSchema.array(),
 });

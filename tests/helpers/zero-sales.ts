@@ -12,6 +12,7 @@ import {
   buildSalesListPage,
   filterSalesByBalanceStatus,
   normalizeSalesListLimit,
+  type SaleRestaurantOrderWithRelations,
   type SalesListParams,
   type SaleWithRelations,
 } from "@/features/sales/sales.shared";
@@ -156,17 +157,29 @@ export async function getSaleDetailViaZero({
   ctx: ZeroContext;
   saleId: string;
 }) {
-  const saleRows = await zeroDb.run(
-    queries.sales.byId.fn({
-      args: { saleId },
-      ctx,
-    })
-  );
+  const [saleRows, restaurantOrderRows] = await Promise.all([
+    zeroDb.run(
+      queries.sales.byId.fn({
+        args: { saleId },
+        ctx,
+      })
+    ),
+    zeroDb.run(
+      queries.sales.restaurantOrderBySaleId.fn({
+        args: { saleId },
+        ctx,
+      })
+    ),
+  ]);
   const saleRow = saleRows[0] as SaleWithRelations | undefined;
   if (!saleRow) {
     return null;
   }
-  return buildSaleDetail(saleRow);
+  return buildSaleDetail(
+    saleRow,
+    (restaurantOrderRows[0] as SaleRestaurantOrderWithRelations | undefined) ??
+      null
+  );
 }
 
 export async function cancelSaleViaZero({

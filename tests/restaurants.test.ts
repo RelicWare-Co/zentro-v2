@@ -40,6 +40,7 @@ import {
   updateRestaurantOrderMetaViaZero,
   updateRestaurantTableViaZero,
 } from "./helpers/zero-restaurants";
+import { getSaleDetailViaZero } from "./helpers/zero-sales";
 import { createZeroContext, createZeroTestDb } from "./helpers/zero-shifts";
 
 async function setRestaurantModuleEnabled(
@@ -1254,6 +1255,15 @@ describe("restaurant module", () => {
           tableId,
           productId,
           quantity: 1,
+          notes: "Sin salsa y término medio",
+        },
+      });
+      await updateRestaurantOrderMetaViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        input: {
+          orderId: addResult.orderId,
+          notes: "Entregar en Calle 10 #20-30",
         },
       });
       const sent = await sendRestaurantOrderToKitchenViaZero({
@@ -1292,6 +1302,22 @@ describe("restaurant module", () => {
       expect(saleRows.length).toBe(1);
       expect(saleRows[0].totalAmount).toBe(25_000);
       expect(saleRows[0].status).toBe("completed");
+
+      const saleDetail = await getSaleDetailViaZero({
+        zeroDb,
+        ctx: zeroCtx,
+        saleId: closeResult.saleId,
+      });
+      expect(saleDetail?.orderNotes).toBe("Entregar en Calle 10 #20-30");
+      expect(saleDetail?.itemComments).toEqual([
+        {
+          id: addResult.itemId,
+          productId,
+          name: "Steak",
+          quantity: 1,
+          notes: "Sin salsa y término medio",
+        },
+      ]);
 
       const [ticketLine] = sent.ticket.lines;
       if (!ticketLine) {
