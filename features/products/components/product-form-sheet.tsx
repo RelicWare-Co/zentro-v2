@@ -52,6 +52,7 @@ function ProductFormSheetContent({
   const { ingredients } = useIngredients();
   const [form, setForm] = useState(() => getProductFormInitialValue(product));
   const [categorySearch, setCategorySearch] = useState("");
+  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
   const [hasExplicitCategorySelection, setHasExplicitCategorySelection] =
     useState(false);
   const effectiveCategoryId =
@@ -62,7 +63,7 @@ function ProductFormSheetContent({
     error: categoryOptionsError,
     isLoading: isCategoryOptionsLoading,
   } = useProductCategoryOptions({
-    searchQuery: categorySearch,
+    searchQuery: isCategoryDropdownOpen ? categorySearch : "",
     selectedCategoryId: effectiveCategoryId || null,
   });
 
@@ -236,7 +237,7 @@ function ProductFormSheetContent({
               value={form.name}
             />
           </ProductsField>
-          <ProductsField label="Categoría">
+          <ProductsField htmlFor="product-form-category" label="Categoría">
             <Select
               data={[
                 { value: "none", label: "Sin categoría" },
@@ -254,6 +255,7 @@ function ProductFormSheetContent({
                     )
                   : undefined
               }
+              id="product-form-category"
               limit={60}
               loading={isCategoryOptionsLoading}
               nothingFoundMessage="No se encontraron categorías"
@@ -267,6 +269,11 @@ function ProductFormSheetContent({
                   categoryId: value === "none" ? "" : (value ?? ""),
                 }));
                 setHasExplicitCategorySelection(true);
+              }}
+              onDropdownClose={() => setIsCategoryDropdownOpen(false)}
+              onDropdownOpen={() => {
+                setIsCategoryDropdownOpen(true);
+                setCategorySearch("");
               }}
               onSearchChange={setCategorySearch}
               placeholder="Sin categoría"

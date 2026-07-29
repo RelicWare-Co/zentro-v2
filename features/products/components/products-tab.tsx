@@ -22,9 +22,10 @@ const STOCK_FILTER_LABELS: Record<ProductStockFilterValue, string> = {
 export function ProductsTab() {
   const { state, actions } = useProductsPage();
   const [categorySearch, setCategorySearch] = useState("");
+  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
   const { categories: categoryOptions, isLoading: isCategoryOptionsLoading } =
     useProductCategoryOptions({
-      searchQuery: categorySearch,
+      searchQuery: isCategoryDropdownOpen ? categorySearch : "",
       selectedCategoryId:
         state.filters.categoryFilter === ALL_FILTER_VALUE ||
         state.filters.categoryFilter === UNCATEGORIZED_FILTER_VALUE
@@ -65,6 +66,11 @@ export function ProductsTab() {
               setCategorySearch("");
               actions.setCategoryFilter(value);
             }
+          }}
+          onDropdownClose={() => setIsCategoryDropdownOpen(false)}
+          onDropdownOpen={() => {
+            setIsCategoryDropdownOpen(true);
+            setCategorySearch("");
           }}
           onSearchChange={setCategorySearch}
           placeholder="Todas las categorías"

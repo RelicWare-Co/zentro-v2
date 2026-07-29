@@ -18,10 +18,10 @@ export function DataTablePagination<TData>({
 
   return (
     <div className="flex w-full min-w-0 flex-col items-center justify-between gap-4 p-1 sm:flex-row sm:gap-8">
-      <div className="whitespace-nowrap text-sm text-zinc-400">
+      <div className="shrink-0 whitespace-nowrap text-sm text-zinc-400">
         {table.getRowCount().toLocaleString()} producto(s) en total
       </div>
-      <div className="flex w-full min-w-0 flex-col items-center gap-4 sm:w-auto sm:flex-row sm:gap-6">
+      <div className="flex w-full min-w-0 flex-col items-center gap-4 sm:w-auto sm:flex-1 sm:flex-row sm:justify-end sm:gap-6">
         <div className="flex items-center gap-2">
           <p className="whitespace-nowrap font-medium text-sm text-zinc-300">
             Filas por página
@@ -43,7 +43,7 @@ export function DataTablePagination<TData>({
         </div>
         {pageCount > 1 ? (
           <Pagination
-            className="w-full min-w-0 sm:w-auto"
+            className="w-full min-w-0 sm:flex-1"
             formatLabel={({ page, totalPages }) =>
               `Página ${page.toLocaleString()} de ${totalPages.toLocaleString()}`
             }
