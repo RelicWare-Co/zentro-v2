@@ -47,7 +47,8 @@ export function PosSaleModeProvider({ children }: { children: ReactNode }) {
   } = usePosCatalog();
   const { activeShift } = usePosShiftContext();
   const { closeActiveModal } = usePosModal();
-  const { customers, selectedCustomerId } = usePosCustomer();
+  const { customers, selectedCustomerId, setSelectedCustomerId } =
+    usePosCustomer();
 
   const [saleSuccessToken, setSaleSuccessToken] = useState<number | null>(null);
 
@@ -77,9 +78,11 @@ export function PosSaleModeProvider({ children }: { children: ReactNode }) {
   const handleSaleCompleted = useCallback(
     (payload: SaleReceiptPayload) => {
       setSaleSuccessToken(Date.now());
-      return printReceiptForSale(payload);
+      const printPromise = printReceiptForSale(payload);
+      setSelectedCustomerId("");
+      return printPromise;
     },
-    [printReceiptForSale]
+    [printReceiptForSale, setSelectedCustomerId]
   );
 
   const moduleCapabilities = useModuleCapabilities();

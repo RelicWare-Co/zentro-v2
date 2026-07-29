@@ -106,6 +106,16 @@ export function usePosCheckout(
   const isQuickSaleSubmittingRef = useRef(false);
 
   const createSaleMutation = useCreateSaleMutation();
+  const previousCartRef = useRef(cart);
+
+  useEffect(() => {
+    if (previousCartRef.current === cart) {
+      return;
+    }
+
+    previousCartRef.current = cart;
+    createSaleMutation.reset();
+  }, [cart, createSaleMutation.reset]);
 
   useEffect(() => {
     const defaultMethodId = getDefaultPaymentMethodId(paymentMethodOptions);
