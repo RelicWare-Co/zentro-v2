@@ -23,6 +23,8 @@ const EXPECTED_QUERY_PATHS = [
   "productIngredients.byProduct",
   "products.byId",
   "products.categories",
+  "products.categoryById",
+  "products.categoryOptions",
   "products.ingredients",
   "products.modifiers",
   "products.movements.list",

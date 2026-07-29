@@ -94,6 +94,7 @@ function normalizeCategory(category: ZeroCategory): Category {
 export type ProductStockFilter = "all" | StockStatus;
 
 const KARDEX_PRODUCT_PICKER_LIMIT = 100;
+const CATEGORY_PICKER_LIMIT = 50;
 
 export function useProductById(productId: string | null | undefined) {
   const normalizedProductId = productId?.trim() ?? "";
@@ -156,6 +157,44 @@ export function useIngredients() {
     ingredients,
     isLoading: status.type === "unknown" && ingredients.length === 0,
     error: getZeroQueryError(status),
+  };
+}
+
+export function useProductCategoryOptions(options: {
+  searchQuery: string;
+  selectedCategoryId: string | null;
+}) {
+  const deferredSearchQuery = useDeferredValue(options.searchQuery);
+  const normalizedSearchQuery = deferredSearchQuery.trim() || null;
+  const normalizedSelectedCategoryId = options.selectedCategoryId?.trim() ?? "";
+  const [categoryRows, categoryStatus] = useZeroQuery(
+    queries.products.categoryOptions({
+      limit: CATEGORY_PICKER_LIMIT,
+      searchQuery: normalizedSearchQuery,
+    })
+  );
+  const [selectedCategoryRows, selectedCategoryStatus] = useZeroQuery(
+    queries.products.categoryById({
+      categoryId: normalizedSelectedCategoryId || null,
+    })
+  );
+
+  const categories = useMemo(() => {
+    const categoriesById = new Map<string, Category>();
+    for (const row of [...categoryRows, ...selectedCategoryRows]) {
+      categoriesById.set(row.id, normalizeCategory(row));
+    }
+    return [...categoriesById.values()].sort((left, right) =>
+      left.name.localeCompare(right.name)
+    );
+  }, [categoryRows, selectedCategoryRows]);
+
+  return {
+    categories,
+    error:
+      getZeroQueryError(categoryStatus) ??
+      getZeroQueryError(selectedCategoryStatus),
+    isLoading: categoryStatus.type === "unknown" && categoryRows.length === 0,
   };
 }
 

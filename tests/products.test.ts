@@ -55,6 +55,40 @@ describe("Zero products", () => {
     await cleanup();
   });
 
+  test("category options query filters and looks up selected categories", async () => {
+    const { db, cleanup } = await createTestDb();
+    const { organizationId, userId } = await seedOrganizationWithMember(db);
+    const matchingCategoryId = await seedCategory(db, {
+      organizationId,
+      name: "Bebidas",
+    });
+    await seedCategory(db, {
+      organizationId,
+      name: "Panadería",
+    });
+    const zeroDb = createZeroTestDb(db);
+    const ctx = createZeroContext(userId, organizationId);
+
+    const optionRows = await zeroDb.run(
+      queries.products.categoryOptions.fn({
+        args: { limit: 50, searchQuery: "beb" },
+        ctx,
+      })
+    );
+    expect(optionRows.map((row) => row.name)).toEqual(["Bebidas"]);
+
+    const selectedRows = await zeroDb.run(
+      queries.products.categoryById.fn({
+        args: { categoryId: matchingCategoryId },
+        ctx,
+      })
+    );
+    expect(selectedRows).toHaveLength(1);
+    expect(selectedRows[0].name).toBe("Bebidas");
+
+    await cleanup();
+  });
+
   test("product CRUD and search run through Zero without oRPC", async () => {
     const { db, cleanup } = await createTestDb();
     const { organizationId, userId } = await seedOrganizationWithMember(db);

@@ -8,7 +8,10 @@ import {
   ProductsField,
   ProductsToggleLine,
 } from "@/features/products/components/products-ui-primitives";
-import { useIngredients } from "@/features/products/hooks/use-products";
+import {
+  useIngredients,
+  useProductCategoryOptions,
+} from "@/features/products/hooks/use-products";
 import {
   getProductFormInitialValue,
   type ProductFormIngredientEntry,
@@ -28,7 +31,6 @@ import {
 
 function ProductFormSheetContent({
   product,
-  categories,
   enabledPaymentMethods,
   isPending,
   error,
@@ -38,7 +40,6 @@ function ProductFormSheetContent({
   lastCreatedCategoryId,
 }: {
   product: ReturnType<typeof useProductsPage>["state"]["editingProduct"];
-  categories: ReturnType<typeof useProductsPage>["state"]["categories"];
   enabledPaymentMethods: Array<{ id: string; label: string }>;
   isPending: boolean;
   error: unknown;
@@ -50,11 +51,20 @@ function ProductFormSheetContent({
   const { state, actions } = useProductsPage();
   const { ingredients } = useIngredients();
   const [form, setForm] = useState(() => getProductFormInitialValue(product));
+  const [categorySearch, setCategorySearch] = useState("");
   const [hasExplicitCategorySelection, setHasExplicitCategorySelection] =
     useState(false);
   const effectiveCategoryId =
     form.categoryId ||
     (hasExplicitCategorySelection ? "" : (lastCreatedCategoryId ?? ""));
+  const {
+    categories: categoryOptions,
+    error: categoryOptionsError,
+    isLoading: isCategoryOptionsLoading,
+  } = useProductCategoryOptions({
+    searchQuery: categorySearch,
+    selectedCategoryId: effectiveCategoryId || null,
+  });
 
   const editingProductIngredients = state.editingProductIngredients;
   useEffect(() => {
@@ -74,6 +84,12 @@ function ProductFormSheetContent({
       };
     });
   }, [editingProductIngredients, product]);
+
+  useEffect(() => {
+    if (lastCreatedCategoryId) {
+      setCategorySearch("");
+    }
+  }, [lastCreatedCategoryId]);
 
   const ingredientOptions = useMemo(
     () =>
@@ -224,12 +240,23 @@ function ProductFormSheetContent({
             <Select
               data={[
                 { value: "none", label: "Sin categoría" },
-                ...categories.map((category) => ({
+                { value: "add", label: "Agregar categoría" },
+                ...categoryOptions.map((category) => ({
                   value: category.id,
                   label: category.name,
                 })),
-                { value: "add", label: "Agregar categoría" },
               ]}
+              error={
+                categoryOptionsError
+                  ? getErrorMessage(
+                      categoryOptionsError,
+                      "No se pudieron cargar las categorías."
+                    )
+                  : undefined
+              }
+              limit={60}
+              loading={isCategoryOptionsLoading}
+              nothingFoundMessage="No se encontraron categorías"
               onChange={(value) => {
                 if (value === "add") {
                   onOpenCategoryDialog();
@@ -241,7 +268,10 @@ function ProductFormSheetContent({
                 }));
                 setHasExplicitCategorySelection(true);
               }}
+              onSearchChange={setCategorySearch}
               placeholder="Sin categoría"
+              searchable
+              searchValue={categorySearch}
               value={effectiveCategoryId || "none"}
             />
           </ProductsField>
@@ -597,7 +627,6 @@ export function ProductFormSheet() {
       title={state.editingProduct ? "Editar producto" : "Crear producto"}
     >
       <ProductFormSheetContent
-        categories={state.categories}
         enabledPaymentMethods={state.enabledPaymentMethods}
         error={meta.productFormError}
         isPending={isPending}
