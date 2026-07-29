@@ -261,8 +261,6 @@ export function ProductsPageProvider({ children }: { children: ReactNode }) {
     isError,
     error,
   } = useProductsQueries({
-    page: pagination.pageIndex,
-    pageSize: pagination.pageSize,
     query,
     categoryId: resolvedCategoryId,
     stockFilter:
@@ -271,8 +269,6 @@ export function ProductsPageProvider({ children }: { children: ReactNode }) {
   });
 
   const { catalogProducts: barcodeCatalogProducts } = useProductsQueries({
-    page: 0,
-    pageSize: DEFAULT_PRODUCTS_PAGE_SIZE,
     query: "",
     categoryId: null,
     lowStockThreshold,

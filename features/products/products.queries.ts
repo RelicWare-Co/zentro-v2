@@ -29,8 +29,8 @@ const categoryByIdArgsSchema = z.object({
 
 const posCatalogArgsSchema = productsSearchArgsSchema;
 
-function normalizeProductLimit(limit?: number) {
-  return Math.min(Math.max(limit ?? 1000, 1), 1000);
+function normalizeProductLimit(limit: number) {
+  return Math.min(Math.max(limit, 1), 1000);
 }
 
 function normalizeCategoryOptionsLimit(limit?: number) {
@@ -67,10 +67,11 @@ function buildPosCatalogQuery(
     );
   }
 
-  return query
-    .orderBy("name", "asc")
-    .orderBy("id", "asc")
-    .limit(normalizeProductLimit(args.limit));
+  const orderedQuery = query.orderBy("name", "asc").orderBy("id", "asc");
+
+  return args.limit === undefined
+    ? orderedQuery
+    : orderedQuery.limit(normalizeProductLimit(args.limit));
 }
 
 function normalizeInventoryMovementsPageLimit(limit?: number) {
@@ -216,10 +217,11 @@ export const productsQueries = {
         );
       }
 
-      return query
-        .orderBy("name", "asc")
-        .orderBy("id", "asc")
-        .limit(normalizeProductLimit(args.limit));
+      const orderedQuery = query.orderBy("name", "asc").orderBy("id", "asc");
+
+      return args.limit === undefined
+        ? orderedQuery
+        : orderedQuery.limit(normalizeProductLimit(args.limit));
     }),
     byId: defineZentroQuery(productByIdArgsSchema, ({ args, ctx }) => {
       const normalizedProductId = args.productId?.trim() ?? "";

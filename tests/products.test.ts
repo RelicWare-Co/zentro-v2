@@ -190,6 +190,43 @@ describe("Zero products", () => {
     await cleanup();
   });
 
+  test("product search returns catalogs larger than 1000 rows when no limit is requested", async () => {
+    const { db, cleanup } = await createTestDb();
+
+    try {
+      const { organizationId, userId } = await seedOrganizationWithMember(db);
+      const zeroDb = createZeroTestDb(db);
+      const ctx = createZeroContext(userId, organizationId);
+      const now = new Date();
+      const catalogSize = 2005;
+
+      await db.insert(product).values(
+        Array.from({ length: catalogSize }, (_, index) => ({
+          id: crypto.randomUUID(),
+          organizationId,
+          name: `Producto ${index.toString().padStart(4, "0")}`,
+          sku: `SKU-${index.toString().padStart(4, "0")}`,
+          price: 10_000,
+          createdAt: now,
+        }))
+      );
+
+      const rows = await zeroDb.run(
+        queries.products.search.fn({
+          args: {
+            categoryId: null,
+            searchQuery: null,
+          },
+          ctx,
+        })
+      );
+
+      expect(rows).toHaveLength(catalogSize);
+    } finally {
+      await cleanup();
+    }
+  });
+
   test("product creation rejects external-org category", async () => {
     const { db, cleanup } = await createTestDb();
     const { organizationId, userId } = await seedOrganizationWithMember(db);

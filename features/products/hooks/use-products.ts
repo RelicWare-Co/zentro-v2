@@ -236,8 +236,6 @@ export function useKardexProductPickerOptions(options: {
 }
 
 export function useProductsQueries(options: {
-  page: number;
-  pageSize: number;
   query: string;
   categoryId: string | null;
   stockFilter?: ProductStockFilter;
@@ -247,7 +245,6 @@ export function useProductsQueries(options: {
   const [productRows, productsStatus] = useZeroQuery(
     queries.products.search({
       categoryId: options.categoryId,
-      limit: 1000,
       searchQuery: deferredSearchQuery.trim() || null,
     })
   );
@@ -289,11 +286,6 @@ export function useProductsQueries(options: {
     () => categoryRows.map(normalizeCategory),
     [categoryRows]
   );
-  const pagedProducts = useMemo(() => {
-    const start = options.page * options.pageSize;
-    return products.slice(start, start + options.pageSize);
-  }, [options.page, options.pageSize, products]);
-
   const hasLoadedRef = useRef(false);
   const staleDataRef = useRef({
     categories: [] as Category[],
@@ -306,7 +298,7 @@ export function useProductsQueries(options: {
 
   const currentData = {
     categories,
-    products: pagedProducts,
+    products,
     total: products.length,
   };
 

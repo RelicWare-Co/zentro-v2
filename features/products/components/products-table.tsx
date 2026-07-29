@@ -5,6 +5,7 @@ import {
   createColumnHelper,
   flexRender,
   getCoreRowModel,
+  getPaginationRowModel,
   type PaginationState,
   type Updater,
   useReactTable,
@@ -133,6 +134,7 @@ export function ProductsTable() {
   );
 
   const coreRowModel = useMemo(() => getCoreRowModel(), []);
+  const paginationRowModel = useMemo(() => getPaginationRowModel(), []);
 
   const tableState = useMemo(
     () => ({ pagination: state.pagination }),
@@ -147,8 +149,7 @@ export function ProductsTable() {
     data: state.products,
     columns,
     getCoreRowModel: coreRowModel,
-    manualPagination: true,
-    rowCount: state.total,
+    getPaginationRowModel: paginationRowModel,
     onPaginationChange: handlePaginationChange,
     state: tableState,
   });
