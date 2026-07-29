@@ -60,22 +60,31 @@ describe("Zero products", () => {
     const { organizationId, userId } = await seedOrganizationWithMember(db);
     const matchingCategoryId = await seedCategory(db, {
       organizationId,
-      name: "Bebidas",
+      name: "Zzz Bebidas",
     });
     await seedCategory(db, {
       organizationId,
       name: "Panadería",
     });
+    const now = new Date();
+    await db.insert(category).values(
+      Array.from({ length: 550 }, (_, index) => ({
+        id: crypto.randomUUID(),
+        organizationId,
+        name: `Categoría ${index.toString().padStart(3, "0")}`,
+        createdAt: now,
+      }))
+    );
     const zeroDb = createZeroTestDb(db);
     const ctx = createZeroContext(userId, organizationId);
 
     const optionRows = await zeroDb.run(
       queries.products.categoryOptions.fn({
-        args: { limit: 50, searchQuery: "beb" },
+        args: { limit: 50, searchQuery: "zzz bebidas" },
         ctx,
       })
     );
-    expect(optionRows.map((row) => row.name)).toEqual(["Bebidas"]);
+    expect(optionRows.map((row) => row.name)).toEqual(["Zzz Bebidas"]);
 
     const selectedRows = await zeroDb.run(
       queries.products.categoryById.fn({
@@ -84,7 +93,7 @@ describe("Zero products", () => {
       })
     );
     expect(selectedRows).toHaveLength(1);
-    expect(selectedRows[0].name).toBe("Bebidas");
+    expect(selectedRows[0].name).toBe("Zzz Bebidas");
 
     await cleanup();
   });

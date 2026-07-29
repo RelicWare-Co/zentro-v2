@@ -1,7 +1,9 @@
 import { Select, TextInput } from "@mantine/core";
 import { Barcode, Search } from "lucide-react";
+import { useState } from "react";
 import { ALL_FILTER_VALUE } from "@/features/listing/listing.constants.shared";
 import { ProductsTable } from "@/features/products/components/products-table";
+import { useProductCategoryOptions } from "@/features/products/hooks/use-products";
 import type { ProductStockFilterValue } from "@/features/products/products-page.constants.shared";
 import {
   PRODUCT_STOCK_FILTER_VALUES,
@@ -19,6 +21,16 @@ const STOCK_FILTER_LABELS: Record<ProductStockFilterValue, string> = {
 
 export function ProductsTab() {
   const { state, actions } = useProductsPage();
+  const [categorySearch, setCategorySearch] = useState("");
+  const { categories: categoryOptions, isLoading: isCategoryOptionsLoading } =
+    useProductCategoryOptions({
+      searchQuery: categorySearch,
+      selectedCategoryId:
+        state.filters.categoryFilter === ALL_FILTER_VALUE ||
+        state.filters.categoryFilter === UNCATEGORIZED_FILTER_VALUE
+          ? null
+          : state.filters.categoryFilter,
+    });
 
   return (
     <>
@@ -40,17 +52,24 @@ export function ProductsTab() {
           data={[
             { value: ALL_FILTER_VALUE, label: "Todas las categorías" },
             { value: UNCATEGORIZED_FILTER_VALUE, label: "Sin categoría" },
-            ...state.categories.map((category) => ({
+            ...categoryOptions.map((category) => ({
               value: category.id,
               label: category.name,
             })),
           ]}
+          limit={60}
+          loading={isCategoryOptionsLoading}
+          nothingFoundMessage="No se encontraron categorías"
           onChange={(value) => {
             if (value) {
+              setCategorySearch("");
               actions.setCategoryFilter(value);
             }
           }}
+          onSearchChange={setCategorySearch}
           placeholder="Todas las categorías"
+          searchable
+          searchValue={categorySearch}
           value={state.filters.categoryFilter}
         />
         <Select
