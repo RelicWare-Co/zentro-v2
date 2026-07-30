@@ -209,7 +209,14 @@ export function ProductsTable() {
           </Table>
         </div>
         <div className="border-zinc-800 border-t p-2">
-          <DataTablePagination table={table} />
+          <DataTablePagination
+            onPageChange={table.setPageIndex}
+            onPageSizeChange={table.setPageSize}
+            pageCount={table.getPageCount()}
+            pageIndex={state.pagination.pageIndex}
+            pageSize={state.pagination.pageSize}
+            rowCount={state.products.length}
+          />
         </div>
       </div>
     </div>

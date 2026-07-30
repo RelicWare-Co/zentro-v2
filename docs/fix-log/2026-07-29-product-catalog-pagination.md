@@ -25,8 +25,9 @@ the result set changed.
 - Load the complete filtered inventory catalog and use TanStack Table's
   client-side pagination row model.
 - Replace the custom arrow-only footer with Mantine's controlled, responsive
-  `Pagination`, including direct page selection, edge controls, Spanish
-  accessible names, and a valid `Página 0 de 0` empty state.
+  `Pagination`, including direct page selection, edge controls, and Spanish
+  accessible names. Empty-result handling was corrected separately in
+  `2026-07-29-product-pagination-controlled-state.md`.
 
 ## Verification
 

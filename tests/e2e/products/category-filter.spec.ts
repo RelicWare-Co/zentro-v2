@@ -40,7 +40,7 @@ async function expectPaginationToFit(page: Page, totalProducts: Locator) {
 }
 
 test.describe("products", () => {
-  test("category pickers open unfiltered and pagination stays on one row @products", {
+  test("product pagination handles empty results and navigates between pages @products", {
     tag: ["@products"],
   }, async ({ page }) => {
     test.setTimeout(60_000);
@@ -63,15 +63,23 @@ test.describe("products", () => {
       name: categoryName,
       createdAt,
     });
-    await db.insert(product).values(
-      Array.from({ length: 21 }, (_, index) => ({
+    const lastPageProductName = "ZZZ producto última página";
+    await db.insert(product).values([
+      ...Array.from({ length: 20 }, (_, index) => ({
         id: crypto.randomUUID(),
         organizationId: testOrganization.id,
         name: `Producto paginado ${index + 1}`,
         price: 1000 + index,
         createdAt,
-      }))
-    );
+      })),
+      {
+        id: crypto.randomUUID(),
+        organizationId: testOrganization.id,
+        name: lastPageProductName,
+        price: 2000,
+        createdAt,
+      },
+    ]);
 
     try {
       await page.setViewportSize({ height: 720, width: 1165 });
@@ -95,9 +103,38 @@ test.describe("products", () => {
       await expect(
         page.getByRole("option", { name: categoryName, exact: true })
       ).toBeVisible({ timeout: 15_000 });
-      await page.keyboard.press("Escape");
+      await page
+        .getByRole("option", { name: categoryName, exact: true })
+        .click();
+      await expect(
+        page.getByText("No hay productos que coincidan con los filtros.")
+      ).toBeVisible();
+      await expect(
+        page.getByText("0 producto(s) en total", { exact: true })
+      ).toBeVisible();
+      await expect(
+        page.getByText("Página 0 de 0", { exact: true })
+      ).toHaveCount(0);
+
+      await categoryFilter.click();
+      await page
+        .getByRole("option", { name: "Todas las categorías", exact: true })
+        .click();
+      await expect(totalProducts).toBeVisible();
 
       await expectPaginationToFit(page, totalProducts);
+      const lastPageProductRow = page
+        .getByRole("row")
+        .filter({ hasText: lastPageProductName });
+      await expect(lastPageProductRow).not.toBeVisible();
+      await page.getByRole("button", { name: "Página siguiente" }).click();
+      await expect(lastPageProductRow).toBeVisible();
+      await page.getByRole("button", { name: "Página anterior" }).click();
+      await expect(
+        page.getByRole("row").filter({
+          has: page.getByText("Producto paginado 1", { exact: true }),
+        })
+      ).toBeVisible();
 
       await openCreateProductSheet(page);
       const formCategory = page.getByLabel("Categoría", { exact: true });
