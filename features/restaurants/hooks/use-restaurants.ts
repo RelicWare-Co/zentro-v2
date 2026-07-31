@@ -1,5 +1,5 @@
 import { useQuery as useZeroQuery } from "@rocicorp/zero/react";
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
 import { usePageContext } from "vike-react/usePageContext";
 import type { z } from "zod";
 import type {
@@ -179,27 +179,37 @@ export function useRestaurantTableDetail(tableId: string | null) {
 
   const statuses = [tableStatus, openOrderStatus, organizationStatus];
   const errors = statuses.map((status) => getZeroQueryError(status));
+  const queryError = errors.find(Boolean) ?? null;
   const isQueryLoading =
     enabled &&
     statuses.some((status) => status.type === "unknown") &&
     tableRows.length === 0 &&
-    !errors.some(Boolean);
+    !queryError;
 
-  let buildError: Error | null = errors.find(Boolean) ?? null;
-  let data: RestaurantTableDetail | null = null;
-
-  if (!buildError) {
-    const result = buildTableDetailData({
+  const tableDetailResult = useMemo(
+    () =>
+      queryError
+        ? { data: null, error: null }
+        : buildTableDetailData({
+            enabled,
+            normalizedTableId,
+            openOrderRows: openOrderRows as RestaurantOpenOrderRow[],
+            organizationMetadata: organizationRows[0]?.metadata,
+            tableRows: tableRows as RestaurantTableRow[],
+            tableStatusType: tableStatus.type,
+          }),
+    [
       enabled,
       normalizedTableId,
-      openOrderRows: openOrderRows as RestaurantOpenOrderRow[],
-      organizationMetadata: organizationRows[0]?.metadata,
-      tableRows: tableRows as RestaurantTableRow[],
-      tableStatusType: tableStatus.type,
-    });
-    buildError = result.error;
-    data = result.data;
-  }
+      openOrderRows,
+      organizationRows,
+      queryError,
+      tableRows,
+      tableStatus.type,
+    ]
+  );
+  const buildError = queryError ?? tableDetailResult.error;
+  const data = tableDetailResult.data;
 
   const hasLoadedRef = useRef(false);
   const staleDataRef = useRef<RestaurantTableDetail | null>(null);

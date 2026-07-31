@@ -77,6 +77,34 @@ export function buildSalePaymentsFromInputs(payments: PaymentMethod[]) {
   }, []);
 }
 
+export function buildCartSignature(cart: CartItem[]) {
+  return JSON.stringify(
+    cart
+      .map((item) => ({
+        id: item.id,
+        productId: item.product.id,
+        quantity: item.quantity,
+        unitPrice: item.product.price,
+        taxRate: item.product.taxRate,
+        discountAmount: item.discountAmount,
+        notes: item.notes ?? null,
+        modifiers: item.modifiers
+          .map((modifier) => ({
+            id: modifier.id,
+            price: modifier.price,
+            quantity: modifier.quantity,
+          }))
+          .toSorted(
+            (left, right) =>
+              left.id.localeCompare(right.id) ||
+              left.price - right.price ||
+              left.quantity - right.quantity
+          ),
+      }))
+      .toSorted((left, right) => left.id.localeCompare(right.id))
+  );
+}
+
 export function usePosCheckout(
   activeShiftId: string | undefined,
   cart: CartItem[],
@@ -106,16 +134,17 @@ export function usePosCheckout(
   const isQuickSaleSubmittingRef = useRef(false);
 
   const createSaleMutation = useCreateSaleMutation();
-  const previousCartRef = useRef(cart);
+  const cartSignature = useMemo(() => buildCartSignature(cart), [cart]);
+  const previousCartSignatureRef = useRef(cartSignature);
 
   useEffect(() => {
-    if (previousCartRef.current === cart) {
+    if (previousCartSignatureRef.current === cartSignature) {
       return;
     }
 
-    previousCartRef.current = cart;
+    previousCartSignatureRef.current = cartSignature;
     createSaleMutation.reset();
-  }, [cart, createSaleMutation.reset]);
+  }, [cartSignature, createSaleMutation.reset]);
 
   useEffect(() => {
     const defaultMethodId = getDefaultPaymentMethodId(paymentMethodOptions);
@@ -135,14 +164,20 @@ export function usePosCheckout(
         ];
       }
 
-      return currentValue.map((payment) =>
-        enabledMethodIds.has(payment.method)
-          ? payment
-          : {
-              ...payment,
-              method: defaultMethodId,
-            }
-      );
+      let changed = false;
+      const nextPayments = currentValue.map((payment) => {
+        if (enabledMethodIds.has(payment.method)) {
+          return payment;
+        }
+
+        changed = true;
+        return {
+          ...payment,
+          method: defaultMethodId,
+        };
+      });
+
+      return changed ? nextPayments : currentValue;
     });
   }, [paymentMethodOptions]);
 
