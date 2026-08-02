@@ -15,6 +15,7 @@ import {
   useCancelRestaurantOrderMutation,
   useCloseRestaurantOrderMutation,
   useDeleteRestaurantOrderItemMutation,
+  useDiscardPendingKitchenChangesMutation,
   useRestaurantTableDetail,
   useSendRestaurantOrderToKitchenMutation,
   useUpdateRestaurantOrderItemMutation,
@@ -248,9 +249,11 @@ export function usePosTableOrder(
     useState<ItemQuantityOverrides>({});
   const [pendingKitchenAutoPrint, setPendingKitchenAutoPrint] =
     useState<PendingKitchenAutoPrint | null>(null);
+  const [isDiscardingChanges, setIsDiscardingChanges] = useState(false);
   const itemNotesOverridesRef = useRef<ItemNotesOverrides>({});
   const itemQuantityOverridesRef = useRef<ItemQuantityOverrides>({});
   const itemMutationQueueRef = useRef(createItemMutationQueue());
+  const isDiscardingChangesRef = useRef(false);
   const tableDetailQuery = useRestaurantTableDetail(
     enabled ? activeTableId : null
   );
@@ -263,6 +266,8 @@ export function usePosTableOrder(
   const updateOrderItemMutation = useUpdateRestaurantOrderItemMutation();
   const updateOrderMetaMutation = useUpdateRestaurantOrderMetaMutation();
   const deleteOrderItemMutation = useDeleteRestaurantOrderItemMutation();
+  const discardPendingKitchenChangesMutation =
+    useDiscardPendingKitchenChangesMutation();
   const sendToKitchenMutation = useSendRestaurantOrderToKitchenMutation();
   const cancelOrderMutation = useCancelRestaurantOrderMutation();
   const closeOrderMutation = useCloseRestaurantOrderMutation();
@@ -437,9 +442,19 @@ export function usePosTableOrder(
     return statuses;
   }, [activeItems]);
 
+  const clearTableSession = useCallback(() => {
+    itemNotesOverridesRef.current = {};
+    itemQuantityOverridesRef.current = {};
+    itemMutationQueueRef.current.clear();
+    setItemNotesOverrides({});
+    setItemQuantityOverrides({});
+    setPendingKitchenAutoPrint(null);
+    setActiveTableId(null);
+  }, []);
+
   const enterTable = useCallback(
     (tableId: string) => {
-      if (!enabled) {
+      if (!enabled || isDiscardingChangesRef.current) {
         return;
       }
       itemNotesOverridesRef.current = {};
@@ -447,23 +462,51 @@ export function usePosTableOrder(
       itemMutationQueueRef.current.clear();
       setItemNotesOverrides({});
       setItemQuantityOverrides({});
+      setPendingKitchenAutoPrint(null);
       setActiveTableId(tableId);
     },
     [enabled]
   );
 
-  const exitTable = useCallback(() => {
-    itemNotesOverridesRef.current = {};
-    itemQuantityOverridesRef.current = {};
-    itemMutationQueueRef.current.clear();
-    setItemNotesOverrides({});
-    setItemQuantityOverrides({});
-    setActiveTableId(null);
-  }, []);
+  const exitTable = useCallback(async (): Promise<boolean> => {
+    if (isDiscardingChangesRef.current) {
+      return false;
+    }
+
+    const orderId = openOrder?.id ?? null;
+    if (!(orderId && pendingKitchenItems.length > 0)) {
+      clearTableSession();
+      return true;
+    }
+
+    isDiscardingChangesRef.current = true;
+    setIsDiscardingChanges(true);
+    try {
+      await itemMutationQueueRef.current.drain();
+      await discardPendingKitchenChangesMutation.mutateAsync({ orderId });
+      clearTableSession();
+      return true;
+    } catch (error) {
+      notifications.show({
+        title: "No se pudieron descartar los cambios",
+        message: getErrorDescription(error, "Inténtalo de nuevo."),
+        color: "red",
+      });
+      return false;
+    } finally {
+      isDiscardingChangesRef.current = false;
+      setIsDiscardingChanges(false);
+    }
+  }, [
+    clearTableSession,
+    discardPendingKitchenChangesMutation,
+    openOrder?.id,
+    pendingKitchenItems.length,
+  ]);
 
   const addProduct = useCallback(
     async (product: Product, modifiers: CartItemModifier[]) => {
-      if (!(enabled && activeTableId)) {
+      if (!(enabled && activeTableId) || isDiscardingChangesRef.current) {
         return;
       }
       try {
@@ -496,6 +539,9 @@ export function usePosTableOrder(
 
   const updateItemQuantity = useCallback(
     async (orderItemId: string, delta: number) => {
+      if (isDiscardingChangesRef.current) {
+        return;
+      }
       const item = activeItems.find(
         (orderItem) => orderItem.id === orderItemId
       );
@@ -565,6 +611,9 @@ export function usePosTableOrder(
 
   const removeItem = useCallback(
     async (orderItemId: string) => {
+      if (isDiscardingChangesRef.current) {
+        return;
+      }
       const item = activeItems.find(
         (orderItem) => orderItem.id === orderItemId
       );
@@ -596,6 +645,9 @@ export function usePosTableOrder(
 
   const updateItemNotes = useCallback(
     async (orderItemId: string, notes: string | null) => {
+      if (isDiscardingChangesRef.current) {
+        throw new Error("La mesa está saliendo; espera un momento.");
+      }
       const item = activeItems.find(
         (orderItem) => orderItem.id === orderItemId
       );
@@ -628,7 +680,7 @@ export function usePosTableOrder(
   );
 
   const sendToKitchen = useCallback(async () => {
-    if (!(openOrder && table)) {
+    if (isDiscardingChangesRef.current || !(openOrder && table)) {
       return;
     }
     await itemMutationQueueRef.current.waitForAll();
@@ -692,9 +744,13 @@ export function usePosTableOrder(
         reference: string | null;
       }>;
     }) => {
+      if (isDiscardingChangesRef.current) {
+        throw new Error("La mesa está saliendo; espera un momento.");
+      }
       if (!openOrder) {
         throw new Error("La mesa no tiene una cuenta abierta.");
       }
+      await itemMutationQueueRef.current.waitForAll();
       return await closeOrderMutation.mutateAsync({
         orderId: openOrder.id,
         shiftId: params.shiftId,
@@ -708,9 +764,13 @@ export function usePosTableOrder(
 
   const cancelTableOrder = useCallback(
     async (reason: string) => {
+      if (isDiscardingChangesRef.current) {
+        throw new Error("La mesa está saliendo; espera un momento.");
+      }
       if (!openOrder) {
         throw new Error("La mesa no tiene una cuenta abierta.");
       }
+      await itemMutationQueueRef.current.waitForAll();
       await cancelOrderMutation.mutateAsync({
         orderId: openOrder.id,
         reason,
@@ -721,6 +781,9 @@ export function usePosTableOrder(
 
   const updateOrderNotes = useCallback(
     async (notes: string | null) => {
+      if (isDiscardingChangesRef.current) {
+        throw new Error("La mesa está saliendo; espera un momento.");
+      }
       if (!openOrder) {
         throw new Error("La mesa no tiene una cuenta abierta.");
       }
@@ -741,7 +804,7 @@ export function usePosTableOrder(
     itemStatusById,
     draftItemsCount: openOrder?.totals.draftItemsCount ?? 0,
     hasSentKitchenTicket: (openOrder?.tickets.length ?? 0) > 0,
-    hasPendingKitchenChanges: openOrder?.hasPendingKitchenChanges ?? false,
+    hasPendingKitchenChanges: pendingKitchenItems.length > 0,
     pendingKitchenCancellationCount: pendingKitchenSummary.cancellations,
     pendingKitchenModificationCount: pendingKitchenSummary.modifications,
     pendingKitchenPreparationCount: pendingKitchenSummary.preparations,
@@ -749,6 +812,7 @@ export function usePosTableOrder(
     detailError: tableDetailQuery.error,
     enterTable,
     exitTable,
+    clearTableSession,
     addProduct,
     updateItemQuantity,
     removeItem,
@@ -761,6 +825,7 @@ export function usePosTableOrder(
     isSendingToKitchen: sendToKitchenMutation.isPending,
     isCancellingOrder: cancelOrderMutation.isPending,
     isClosingOrder: closeOrderMutation.isPending,
+    isDiscardingChanges,
     closeOrderError: closeOrderMutation.error,
   };
 }

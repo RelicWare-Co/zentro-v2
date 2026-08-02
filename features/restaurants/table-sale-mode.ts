@@ -66,7 +66,7 @@ export function useTableSaleAdapter(
         !tableOrder.activeTableId));
 
   if (shouldReset) {
-    tableOrder.exitTable();
+    tableOrder.clearTableSession();
     checkout.resetPayments();
     resetDiscount();
   }
@@ -117,7 +117,7 @@ export function useTableSaleAdapter(
         options.closeModal();
         checkout.resetPayments();
         resetDiscount();
-        tableOrder.exitTable();
+        tableOrder.clearTableSession();
 
         Promise.resolve(
           options.printReceipt({
@@ -184,10 +184,14 @@ export function useTableSaleAdapter(
     ]
   );
 
-  const exit = useCallback(() => {
+  const exit = useCallback(async () => {
+    const didExit = await tableOrder.exitTable();
+    if (!didExit) {
+      return false;
+    }
     checkout.resetPayments();
     resetDiscount();
-    tableOrder.exitTable();
+    return true;
   }, [checkout.resetPayments, resetDiscount, tableOrder.exitTable]);
 
   const totalItems = useMemo(
@@ -230,6 +234,7 @@ export function useTableSaleAdapter(
       isSendingToKitchen: tableOrder.isSendingToKitchen,
       isCancellingOrder: tableOrder.isCancellingOrder,
       isClosingOrder: tableOrder.isClosingOrder,
+      isDiscardingChanges: tableOrder.isDiscardingChanges,
     };
   }, [isActive, tableOrder]);
 
@@ -278,7 +283,7 @@ export function useTableSaleAdapter(
       await tableOrder.cancelTableOrder(reason);
       checkout.resetPayments();
       resetDiscount();
-      tableOrder.exitTable();
+      tableOrder.clearTableSession();
       notifications.show({
         message: `${tableName} cancelada y liberada`,
         color: "green",

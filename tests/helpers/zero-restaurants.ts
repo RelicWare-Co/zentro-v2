@@ -17,6 +17,7 @@ import type {
   DeleteRestaurantAreaInputSchema,
   DeleteRestaurantOrderItemInputSchema,
   DeleteRestaurantTableInputSchema,
+  DiscardPendingKitchenChangesInputSchema,
   SendRestaurantOrderToKitchenInputSchema,
   UpdateRestaurantAreaInputSchema,
   UpdateRestaurantOrderItemInputSchema,
@@ -276,6 +277,24 @@ export async function deleteRestaurantOrderItemViaZero({
 }) {
   await zeroDb.transaction((tx) =>
     serverMutators.restaurants.deleteOrderItem.fn({ args: input, ctx, tx })
+  );
+}
+
+export async function discardPendingKitchenChangesViaZero({
+  zeroDb,
+  ctx,
+  input,
+}: {
+  zeroDb: ZeroTestDb;
+  ctx: ZeroContext;
+  input: z.infer<typeof DiscardPendingKitchenChangesInputSchema>;
+}) {
+  await zeroDb.transaction((tx) =>
+    serverMutators.restaurants.discardPendingKitchenChanges.fn({
+      args: input,
+      ctx,
+      tx,
+    })
   );
 }
 

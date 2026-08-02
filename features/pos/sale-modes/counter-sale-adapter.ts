@@ -51,6 +51,11 @@ export function useCounterSaleAdapter(
     checkout.resetPayments();
   }, [checkout.resetPayments]);
 
+  const exit = useCallback(() => {
+    resetModePayments();
+    return Promise.resolve(true);
+  }, [resetModePayments]);
+
   return {
     modeId: "counter",
     isActive: true,
@@ -74,6 +79,6 @@ export function useCounterSaleAdapter(
     finalizeSale,
     quickSale,
     enter: resetModePayments,
-    exit: resetModePayments,
+    exit,
   };
 }

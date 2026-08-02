@@ -20,6 +20,38 @@ describe("table order item edits", () => {
     });
   });
 
+  test("drains queued mutations before clearing the queue", async () => {
+    const queue = createItemMutationQueue();
+    const started: string[] = [];
+    let releaseFirst: (() => void) | undefined;
+
+    const first = queue.enqueue("item_1", async () => {
+      started.push("first");
+      await new Promise<void>((resolve) => {
+        releaseFirst = resolve;
+      });
+    });
+    const second = queue.enqueue("item_1", () => {
+      started.push("second");
+      return Promise.resolve();
+    });
+    const drain = queue.drain();
+
+    await Promise.resolve();
+    expect(started).toEqual(["first"]);
+
+    releaseFirst?.();
+    await drain;
+    expect(started).toEqual(["first", "second"]);
+
+    await Promise.all([first, second]);
+    await queue.enqueue("item_1", () => {
+      started.push("third");
+      return Promise.resolve();
+    });
+    expect(started).toEqual(["first", "second", "third"]);
+  });
+
   test("serializes quantity and note mutations for the same item", async () => {
     const queue = createItemMutationQueue();
     const started: string[] = [];

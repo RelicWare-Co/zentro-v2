@@ -8,6 +8,7 @@ import {
   runDeleteRestaurantArea,
   runDeleteRestaurantOrderItem,
   runDeleteRestaurantTable,
+  runDiscardPendingKitchenChanges,
   runEnsureDefaultRestaurantAreas,
   runSendRestaurantOrderToKitchen,
   runUpdateRestaurantArea,
@@ -25,6 +26,7 @@ import {
   deleteRestaurantAreaArgsSchema,
   deleteRestaurantOrderItemArgsSchema,
   deleteRestaurantTableArgsSchema,
+  discardPendingKitchenChangesArgsSchema,
   ensureDefaultRestaurantAreasArgsSchema,
   sendRestaurantOrderToKitchenArgsSchema,
   updateRestaurantAreaArgsSchema,
@@ -83,6 +85,11 @@ export const restaurantsServerMutators = {
   deleteOrderItem: defineZentroServerMutator(
     deleteRestaurantOrderItemArgsSchema,
     restaurantRunner(runDeleteRestaurantOrderItem),
+    { operationName: RESTAURANT_OP_NAME }
+  ),
+  discardPendingKitchenChanges: defineZentroServerMutator(
+    discardPendingKitchenChangesArgsSchema,
+    restaurantRunner(runDiscardPendingKitchenChanges),
     { operationName: RESTAURANT_OP_NAME }
   ),
   sendToKitchen: defineZentroServerMutator(

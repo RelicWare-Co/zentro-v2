@@ -19,6 +19,10 @@ export function createItemMutationQueue() {
     async waitForAll() {
       await Promise.all(tails.values());
     },
+    async drain() {
+      await Promise.all(tails.values());
+      tails.clear();
+    },
   };
 }
 

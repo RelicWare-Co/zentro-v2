@@ -30,6 +30,9 @@ export const updateRestaurantOrderItemArgsSchema = zod.object({
 export const deleteRestaurantOrderItemArgsSchema = zod.object({
   orderItemId: zod.string().trim().min(1),
 });
+export const discardPendingKitchenChangesArgsSchema = zod.object({
+  orderId: zod.string().trim().min(1),
+});
 export const sendRestaurantOrderToKitchenArgsSchema = zod.object({
   orderId: zod.string().trim().min(1),
   ticketId: zod.string().trim().min(1),
@@ -107,6 +110,12 @@ export const restaurantsMutators = {
     ),
     deleteOrderItem: defineZentroMutator(
       deleteRestaurantOrderItemArgsSchema,
+      async () => {
+        // Server-only restaurant writes; client completes without optimistic writes.
+      }
+    ),
+    discardPendingKitchenChanges: defineZentroMutator(
+      discardPendingKitchenChangesArgsSchema,
       async () => {
         // Server-only restaurant writes; client completes without optimistic writes.
       }

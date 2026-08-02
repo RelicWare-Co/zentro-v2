@@ -45,6 +45,10 @@ export const DeleteRestaurantOrderItemInputSchema = z.object({
   orderItemId: z.string().trim().min(1),
 });
 
+export const DiscardPendingKitchenChangesInputSchema = z.object({
+  orderId: z.string().trim().min(1),
+});
+
 export const SendRestaurantOrderToKitchenInputSchema = z.object({
   orderId: z.string().trim().min(1),
 });

@@ -22,6 +22,7 @@ import {
 import type {
   AddRestaurantOrderItemInputSchema,
   DeleteRestaurantOrderItemInputSchema,
+  DiscardPendingKitchenChangesInputSchema,
   UpdateRestaurantOrderItemInputSchema,
   UpdateRestaurantOrderMetaInputSchema,
 } from "@/features/restaurants/restaurants.schema";
@@ -336,4 +337,152 @@ export async function runDeleteRestaurantOrderItem(
   }
 
   return { success: true, orderId: itemRow.orderId };
+}
+
+async function restoreSentOrderItem(
+  db: RestaurantDbExecutor,
+  item: {
+    id: string;
+    status: string;
+    quantity: number;
+    notes: string | null;
+    pendingCancellation: boolean;
+    sentQuantity: number;
+    sentNotes: string | null;
+  },
+  now: Date
+) {
+  if (item.status !== "sent") {
+    return false;
+  }
+
+  const sentQuantity =
+    item.sentQuantity > 0 ? item.sentQuantity : item.quantity;
+  const sentNotes = item.sentQuantity > 0 ? item.sentNotes : item.notes;
+  const needsRestore =
+    item.pendingCancellation ||
+    item.quantity !== sentQuantity ||
+    item.notes !== sentNotes;
+
+  if (!needsRestore) {
+    return false;
+  }
+
+  await db
+    .update(restaurantOrderItem)
+    .set({
+      quantity: sentQuantity,
+      notes: sentNotes,
+      pendingCancellation: false,
+      updatedAt: now,
+    })
+    .where(eq(restaurantOrderItem.id, item.id));
+  return true;
+}
+
+export async function runDiscardPendingKitchenChanges(
+  db: RestaurantDbExecutor,
+  args: z.infer<typeof DiscardPendingKitchenChangesInputSchema>,
+  auth: RestaurantAuth
+) {
+  await requireRestaurantModuleAccess({
+    db,
+    organizationId: auth.organizationId,
+  });
+  const organizationId = auth.organizationId;
+  const [orderReference] = await db
+    .select({
+      id: restaurantOrder.id,
+      status: restaurantOrder.status,
+    })
+    .from(restaurantOrder)
+    .where(
+      and(
+        eq(restaurantOrder.organizationId, organizationId),
+        eq(restaurantOrder.id, args.orderId)
+      )
+    )
+    .limit(1);
+
+  if (!orderReference) {
+    return {
+      deletedDraftItems: 0,
+      orderId: args.orderId,
+      restoredItems: 0,
+    };
+  }
+  if (orderReference.status !== "open") {
+    throw new Error("La cuenta no existe o ya no está abierta.");
+  }
+
+  const order = await lockOpenRestaurantOrder(db, organizationId, args.orderId);
+  const items = await db
+    .select({
+      id: restaurantOrderItem.id,
+      status: restaurantOrderItem.status,
+      quantity: restaurantOrderItem.quantity,
+      notes: restaurantOrderItem.notes,
+      pendingCancellation: restaurantOrderItem.pendingCancellation,
+      sentQuantity: restaurantOrderItem.sentQuantity,
+      sentNotes: restaurantOrderItem.sentNotes,
+    })
+    .from(restaurantOrderItem)
+    .where(
+      and(
+        eq(restaurantOrderItem.organizationId, organizationId),
+        eq(restaurantOrderItem.orderId, order.id)
+      )
+    );
+
+  const now = new Date();
+  let deletedDraftItems = 0;
+  let restoredItems = 0;
+
+  for (const item of items) {
+    if (item.status === "draft") {
+      await db
+        .delete(restaurantOrderItem)
+        .where(eq(restaurantOrderItem.id, item.id));
+      deletedDraftItems += 1;
+      continue;
+    }
+
+    if (await restoreSentOrderItem(db, item, now)) {
+      restoredItems += 1;
+    }
+  }
+
+  const changed = deletedDraftItems > 0 || restoredItems > 0;
+  if (deletedDraftItems > 0) {
+    const [remainingItem] = await db
+      .select({ id: restaurantOrderItem.id })
+      .from(restaurantOrderItem)
+      .where(eq(restaurantOrderItem.orderId, order.id))
+      .limit(1);
+
+    if (!remainingItem) {
+      await db.delete(restaurantOrder).where(eq(restaurantOrder.id, order.id));
+    }
+  }
+
+  if (changed) {
+    const [remainingOrder] = await db
+      .select({ id: restaurantOrder.id })
+      .from(restaurantOrder)
+      .where(eq(restaurantOrder.id, order.id))
+      .limit(1);
+
+    if (remainingOrder) {
+      await db
+        .update(restaurantOrder)
+        .set({ updatedAt: now })
+        .where(eq(restaurantOrder.id, order.id));
+    }
+  }
+
+  return {
+    deletedDraftItems,
+    orderId: order.id,
+    restoredItems,
+  };
 }

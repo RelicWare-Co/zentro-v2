@@ -11,6 +11,7 @@ import type {
   DeleteRestaurantAreaInputSchema,
   DeleteRestaurantOrderItemInputSchema,
   DeleteRestaurantTableInputSchema,
+  DiscardPendingKitchenChangesInputSchema,
   SendRestaurantOrderToKitchenInputSchema,
   UpdateRestaurantOrderItemInputSchema,
   UpdateRestaurantOrderItemStatusInputSchema,
@@ -382,6 +383,21 @@ export function useDeleteRestaurantOrderItemMutation() {
     ) => {
       await waitForZeroMutation(
         zero.mutate(mutators.restaurants.deleteOrderItem(input))
+      );
+      return { success: true as const };
+    }
+  );
+}
+
+export function useDiscardPendingKitchenChangesMutation() {
+  return useZeroMutation(
+    async (
+      input: z.infer<typeof DiscardPendingKitchenChangesInputSchema>,
+      zero
+    ) => {
+      await waitForZeroMutation(
+        zero.mutate(mutators.restaurants.discardPendingKitchenChanges(input)),
+        { awaitServer: true }
       );
       return { success: true as const };
     }

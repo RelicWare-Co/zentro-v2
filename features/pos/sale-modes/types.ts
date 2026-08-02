@@ -19,6 +19,7 @@ export interface PosTableSessionState {
   hasSentKitchenTicket: boolean;
   isCancellingOrder: boolean;
   isClosingOrder: boolean;
+  isDiscardingChanges: boolean;
   isLoading: boolean;
   isSendingToKitchen: boolean;
   itemStatusById: Record<string, PosTableOrderItemStatus>;
@@ -109,7 +110,7 @@ export interface SaleModeAdapter {
   readonly discountInput: string;
   enter(payload?: unknown): void;
   readonly error: Error | null;
-  exit(): void;
+  exit(): Promise<boolean>;
   finalizeSale(
     payments: SalePayment[],
     options: SaleFinalizeOptions

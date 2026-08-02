@@ -29,6 +29,7 @@ import {
   deleteRestaurantAreaViaZero,
   deleteRestaurantOrderItemViaZero,
   deleteRestaurantTableViaZero,
+  discardPendingKitchenChangesViaZero,
   ensureDefaultRestaurantAreasViaZero,
   getKitchenBoardViaZero,
   getRestaurantBootstrapViaZero,
@@ -496,6 +497,213 @@ describe("restaurant module", () => {
           (ticket) => ticket.id === correctionSend.ticket.id
         )
       ).toBe(false);
+
+      await cleanup();
+    });
+  });
+
+  describe("VAL-REST-003F: discard pending kitchen changes", () => {
+    test("restores the last sent state and does not alter historical tickets", async () => {
+      const { db, cleanup } = await createTestDb();
+      const { organizationId, userId } = await seedOrganizationWithMember(db, {
+        memberRole: "owner",
+      });
+      await setRestaurantModuleEnabled(db, organizationId, true);
+
+      const areaId = await seedRestaurantArea(db, {
+        organizationId,
+        name: "Terraza",
+      });
+      const [tableId, burgerId, saladId, dessertId] = await Promise.all([
+        seedRestaurantTable(db, {
+          organizationId,
+          areaId,
+          name: "T3",
+        }),
+        seedProduct(db, {
+          organizationId,
+          name: "Hamburguesa",
+          price: 15_000,
+          stock: 10,
+          trackInventory: false,
+        }),
+        seedProduct(db, {
+          organizationId,
+          name: "Ensalada",
+          price: 12_000,
+          stock: 10,
+          trackInventory: false,
+        }),
+        seedProduct(db, {
+          organizationId,
+          name: "Postre",
+          price: 8000,
+          stock: 10,
+          trackInventory: false,
+        }),
+      ]);
+      const zeroDb = createZeroTestDb(db);
+      const ctx = createZeroContext(userId, organizationId);
+      const burger = await addRestaurantOrderItemViaZero({
+        db,
+        zeroDb,
+        ctx,
+        input: {
+          tableId,
+          productId: burgerId,
+          quantity: 2,
+          notes: "Original",
+        },
+      });
+      await addRestaurantOrderItemViaZero({
+        db,
+        zeroDb,
+        ctx,
+        input: { tableId, productId: saladId, quantity: 1 },
+      });
+      const initialSend = await sendRestaurantOrderToKitchenViaZero({
+        db,
+        zeroDb,
+        ctx,
+        input: { orderId: burger.orderId },
+      });
+      const initialTicketLines = await db
+        .select({
+          operation: restaurantKitchenTicketLine.operation,
+          notes: restaurantKitchenTicketLine.notes,
+          quantity: restaurantKitchenTicketLine.quantity,
+          kitchenTicketId: restaurantKitchenTicketLine.kitchenTicketId,
+        })
+        .from(restaurantKitchenTicketLine)
+        .where(
+          eq(restaurantKitchenTicketLine.kitchenTicketId, initialSend.ticket.id)
+        );
+
+      await updateRestaurantOrderItemViaZero({
+        zeroDb,
+        ctx,
+        input: {
+          orderItemId: burger.itemId,
+          quantity: 3,
+          notes: "Cambio",
+        },
+      });
+      const [, salad] = await db
+        .select({ id: restaurantOrderItem.id })
+        .from(restaurantOrderItem)
+        .where(eq(restaurantOrderItem.orderId, burger.orderId))
+        .orderBy(restaurantOrderItem.createdAt);
+      if (!salad) {
+        throw new Error("No se creó el ítem enviado para cancelar.");
+      }
+      await deleteRestaurantOrderItemViaZero({
+        zeroDb,
+        ctx,
+        input: { orderItemId: salad.id },
+      });
+      await addRestaurantOrderItemViaZero({
+        db,
+        zeroDb,
+        ctx,
+        input: { tableId, productId: dessertId, quantity: 1 },
+      });
+
+      const pendingDetail = await getRestaurantTableDetailViaZero({
+        zeroDb,
+        ctx,
+        tableId,
+      });
+      expect(pendingDetail.openOrder?.hasPendingKitchenChanges).toBe(true);
+
+      await discardPendingKitchenChangesViaZero({
+        zeroDb,
+        ctx,
+        input: { orderId: burger.orderId },
+      });
+      await discardPendingKitchenChangesViaZero({
+        zeroDb,
+        ctx,
+        input: { orderId: burger.orderId },
+      });
+
+      const [detail, itemRows, ticketLines] = await Promise.all([
+        getRestaurantTableDetailViaZero({ zeroDb, ctx, tableId }),
+        db
+          .select({
+            id: restaurantOrderItem.id,
+            notes: restaurantOrderItem.notes,
+            pendingCancellation: restaurantOrderItem.pendingCancellation,
+            quantity: restaurantOrderItem.quantity,
+            status: restaurantOrderItem.status,
+          })
+          .from(restaurantOrderItem)
+          .where(eq(restaurantOrderItem.orderId, burger.orderId))
+          .orderBy(restaurantOrderItem.createdAt),
+        db
+          .select({
+            operation: restaurantKitchenTicketLine.operation,
+            notes: restaurantKitchenTicketLine.notes,
+            quantity: restaurantKitchenTicketLine.quantity,
+            kitchenTicketId: restaurantKitchenTicketLine.kitchenTicketId,
+          })
+          .from(restaurantKitchenTicketLine)
+          .where(
+            eq(
+              restaurantKitchenTicketLine.kitchenTicketId,
+              initialSend.ticket.id
+            )
+          ),
+      ]);
+      expect(detail.openOrder?.hasPendingKitchenChanges).toBe(false);
+      expect(detail.openOrder?.items).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            id: burger.itemId,
+            notes: "Original",
+            pendingCancellation: false,
+            quantity: 2,
+            status: "sent",
+          }),
+          expect.objectContaining({
+            notes: null,
+            pendingCancellation: false,
+            quantity: 1,
+            status: "sent",
+          }),
+        ])
+      );
+      expect(detail.openOrder?.items).toHaveLength(2);
+      expect(itemRows).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            id: burger.itemId,
+            notes: "Original",
+            pendingCancellation: false,
+            quantity: 2,
+            status: "sent",
+          }),
+        ])
+      );
+      expect(ticketLines).toEqual(initialTicketLines);
+
+      const shiftId = await seedShift(db, {
+        organizationId,
+        userId,
+        status: "open",
+      });
+      const closeResult = await closeRestaurantOrderViaZero({
+        db,
+        zeroDb,
+        ctx,
+        input: {
+          orderId: burger.orderId,
+          shiftId,
+          customerId: null,
+          payments: [{ method: "cash", amount: 42_000, reference: null }],
+        },
+      });
+      expect(closeResult.status).toBe("completed");
+      expect(closeResult.totalAmount).toBe(42_000);
 
       await cleanup();
     });

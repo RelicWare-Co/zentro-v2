@@ -82,8 +82,8 @@ export interface PosPageActions {
   confirmCreateCustomer: () => void;
   confirmModifiers: () => void;
   confirmOpenShift: () => void;
-  enterTableMode: (tableId: string) => void;
-  exitTableMode: () => void;
+  enterTableMode: (tableId: string) => Promise<boolean>;
+  exitTableMode: () => Promise<boolean>;
   fetchNextProductsPage: () => void;
   finalizeSale: () => void;
   getProductQuantity: (productId: string) => number;

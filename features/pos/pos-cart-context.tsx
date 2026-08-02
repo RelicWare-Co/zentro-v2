@@ -25,8 +25,8 @@ export interface PosCartContextValue {
   clearCart: () => void;
   confirmModifiers: () => void;
   discountInput: string;
-  enterTableMode: (tableId: string) => void;
-  exitTableMode: () => void;
+  enterTableMode: (tableId: string) => Promise<boolean>;
+  exitTableMode: () => Promise<boolean>;
   getProductQuantity: (productId: string) => number;
   handleBarcodeScan: (value: string) => boolean;
   handleProductSelect: (product: Product) => void;
@@ -193,20 +193,25 @@ export function PosCartProvider({ children }: { children: ReactNode }) {
   );
 
   const enterTableMode = useCallback(
-    (tableId: string) => {
+    async (tableId: string) => {
       if (!tableMode) {
-        return;
+        return false;
       }
-      activeMode.exit();
+      const didExit = await activeMode.exit();
+      if (!didExit) {
+        return false;
+      }
       tableMode.enter(tableId);
+      return true;
     },
     [activeMode, tableMode]
   );
 
   const exitTableMode = useCallback(() => {
     if (activeMode.modeId === "table") {
-      activeMode.exit();
+      return activeMode.exit();
     }
+    return Promise.resolve(true);
   }, [activeMode]);
 
   const tableSession = activeMode.sessionState;

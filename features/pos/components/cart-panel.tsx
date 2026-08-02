@@ -275,7 +275,7 @@ function CartOverlay({
   isQuickSaleMode: boolean;
   onCheckout: () => void;
   onClearCart: () => void;
-  onExitTable?: () => void;
+  onExitTable?: () => Promise<boolean>;
   onSendToKitchen?: () => void;
   totals: CartTotals;
   totalItems: number;
@@ -338,6 +338,92 @@ function CartOverlay({
   );
 }
 
+function CartPanelOverlays({
+  anim,
+  cart,
+  isQuickSaleMode,
+  onCheckout,
+  onClearCart,
+  onExitTable,
+  onSendToKitchen,
+  tableSession,
+  totalItems,
+  totals,
+}: {
+  anim: ReturnType<typeof useCartAnimation>;
+  cart: CartItem[];
+  isQuickSaleMode: boolean;
+  onCheckout: () => void;
+  onClearCart: () => void;
+  onExitTable?: () => Promise<boolean>;
+  onSendToKitchen?: () => void;
+  tableSession?: PosTableSessionState | null;
+  totalItems: number;
+  totals: CartTotals;
+}) {
+  return (
+    <>
+      {anim.enterSnapshot && (
+        <CartOverlay
+          animClass="animate-[cart-slide-in_300ms_ease-out_both]"
+          cart={cart}
+          isQuickSaleMode={isQuickSaleMode}
+          onCheckout={onCheckout}
+          onClearCart={onClearCart}
+          onExitTable={onExitTable}
+          onSendToKitchen={onSendToKitchen}
+          tableSession={tableSession}
+          totalItems={totalItems}
+          totals={totals}
+        />
+      )}
+
+      {anim.exitSnapshot && (
+        <CartOverlay
+          animClass="animate-[cart-slide-out_300ms_ease-out_forwards]"
+          cart={anim.exitSnapshot.cart}
+          isQuickSaleMode={isQuickSaleMode}
+          onCheckout={onCheckout}
+          onClearCart={onClearCart}
+          onExitTable={onExitTable}
+          onSendToKitchen={onSendToKitchen}
+          tableSession={anim.exitSnapshot.tableSession}
+          totalItems={anim.exitSnapshot.totalItems}
+          totals={anim.exitSnapshot.totals}
+        />
+      )}
+
+      {anim.mesasSnapshot && anim.animClass === "mesas-slide-out" && (
+        <CartOverlay
+          animClass="animate-[cart-slide-out_350ms_ease-out_forwards]"
+          cart={anim.mesasSnapshot.cart}
+          isQuickSaleMode={isQuickSaleMode}
+          onCheckout={onCheckout}
+          onClearCart={onClearCart}
+          onExitTable={onExitTable}
+          onSendToKitchen={onSendToKitchen}
+          totalItems={anim.mesasSnapshot.totalItems}
+          totals={anim.mesasSnapshot.totals}
+        />
+      )}
+
+      {anim.mesasSnapshot && anim.animClass === "mesas-slide-in" && (
+        <CartOverlay
+          animClass="animate-[cart-slide-in_350ms_ease-out_both]"
+          cart={anim.mesasSnapshot.cart}
+          isQuickSaleMode={isQuickSaleMode}
+          onCheckout={onCheckout}
+          onClearCart={onClearCart}
+          onExitTable={onExitTable}
+          onSendToKitchen={onSendToKitchen}
+          totalItems={anim.mesasSnapshot.totalItems}
+          totals={anim.mesasSnapshot.totals}
+        />
+      )}
+    </>
+  );
+}
+
 interface CartPanelProps {
   cart: CartItem[];
   className?: string;
@@ -346,7 +432,7 @@ interface CartPanelProps {
   onCancelTableOrder?: (reason: string) => Promise<void>;
   onCheckout: () => void;
   onClearCart: () => void;
-  onExitTable?: () => void;
+  onExitTable?: () => Promise<boolean>;
   onRemoveItem: (cartItemId: string) => void;
   onSendToKitchen?: () => void;
   onUpdateItemDiscount: (cartItemId: string, value: string) => void;
@@ -373,7 +459,7 @@ function CartPanelHeader({
   hasItems: boolean;
   onClearCart: () => void;
   onEditOrderNotes?: () => void;
-  onExitTable?: () => void;
+  onExitTable?: () => Promise<boolean>;
   tableSession?: PosTableSessionState | null;
   totalItems: number;
 }) {
@@ -437,12 +523,13 @@ function CartPanelHeader({
           <Button
             aria-label="Salir de la mesa"
             className="shrink-0 text-zinc-400! hover:bg-white/5 hover:text-white!"
+            disabled={tableSession.isDiscardingChanges}
             leftSection={<LogOut className="size-4" />}
             onClick={onExitTable}
             size="compact-sm"
             variant="subtle"
           >
-            Salir
+            {tableSession.isDiscardingChanges ? "Descartando…" : "Salir"}
           </Button>
         </div>
       </div>
@@ -561,7 +648,8 @@ function CartFooter({
           className="border-zinc-700! text-zinc-300! hover:border-zinc-500 hover:text-white"
           disabled={
             !tableSession.hasPendingKitchenChanges ||
-            tableSession.isSendingToKitchen
+            tableSession.isSendingToKitchen ||
+            tableSession.isDiscardingChanges
           }
           fullWidth
           leftSection={<Send aria-hidden="true" className="size-4" />}
@@ -577,7 +665,9 @@ function CartFooter({
         <Button
           color="red"
           disabled={
-            tableSession.isCancellingOrder || tableSession.isClosingOrder
+            tableSession.isCancellingOrder ||
+            tableSession.isClosingOrder ||
+            tableSession.isDiscardingChanges
           }
           fullWidth
           leftSection={<Ban aria-hidden="true" className="size-4" />}
@@ -593,7 +683,7 @@ function CartFooter({
 
       <Button
         className="mt-2 h-12 rounded-xl bg-[var(--color-voltage)]! font-bold text-base text-black! hover:bg-[#c9e605]"
-        disabled={cart.length === 0}
+        disabled={cart.length === 0 || tableSession?.isDiscardingChanges}
         fullWidth
         leftSection={isQuickSaleMode ? <Zap className="size-4" /> : undefined}
         onClick={onCheckout}
@@ -714,6 +804,8 @@ export function CartPanel({
   const [commentItemId, setCommentItemId] = useState<string | null>(null);
   const [isKitchenConfirmOpen, setIsKitchenConfirmOpen] = useState(false);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false);
+  const [discardError, setDiscardError] = useState<string | null>(null);
   const orderNoteDialog = useOrderNoteDialog(tableSession?.orderId);
   const anim = useCartAnimation(
     tableSession,
@@ -743,6 +835,49 @@ export function CartPanel({
       return;
     }
     setIsKitchenConfirmOpen(false);
+  };
+
+  const closeDiscardConfirmModal = () => {
+    if (tableSession?.isDiscardingChanges) {
+      return;
+    }
+    setDiscardError(null);
+    setIsDiscardConfirmOpen(false);
+  };
+
+  const requestExit = () => {
+    if (!onExitTable || tableSession?.isDiscardingChanges) {
+      return Promise.resolve(false);
+    }
+    if (tableSession?.hasPendingKitchenChanges) {
+      setDiscardError(null);
+      setIsDiscardConfirmOpen(true);
+      return Promise.resolve(false);
+    }
+    return onExitTable();
+  };
+
+  const confirmDiscard = async () => {
+    if (!onExitTable || tableSession?.isDiscardingChanges) {
+      return;
+    }
+    setDiscardError(null);
+    try {
+      const didExit = await onExitTable();
+      if (didExit) {
+        setIsDiscardConfirmOpen(false);
+      } else {
+        setDiscardError(
+          "No se pudieron descartar los cambios. Inténtalo de nuevo."
+        );
+      }
+    } catch (error) {
+      setDiscardError(
+        error instanceof Error
+          ? error.message
+          : "No se pudieron descartar los cambios. Inténtalo de nuevo."
+      );
+    }
   };
 
   const confirmKitchenSend = () => {
@@ -784,7 +919,7 @@ export function CartPanel({
             hasItems={anim.baseCart.length > 0}
             onClearCart={onClearCart}
             onEditOrderNotes={orderNoteDialog.open}
-            onExitTable={onExitTable}
+            onExitTable={requestExit}
             tableSession={anim.baseTableSession}
             totalItems={anim.baseTotalItems}
           />
@@ -806,7 +941,7 @@ export function CartPanel({
             onRemoveItem={onRemoveItem}
             onUpdateItemDiscount={onUpdateItemDiscount}
             onUpdateQuantity={onUpdateQuantity}
-            readOnly={false}
+            readOnly={Boolean(anim.baseTableSession?.isDiscardingChanges)}
             showDiscount={!anim.baseTableSession}
           />
         </div>
@@ -836,63 +971,18 @@ export function CartPanel({
         )}
       </div>
 
-      {anim.enterSnapshot && (
-        <CartOverlay
-          animClass="animate-[cart-slide-in_300ms_ease-out_both]"
-          cart={cart}
-          isQuickSaleMode={Boolean(isQuickSaleMode)}
-          onCheckout={onCheckout}
-          onClearCart={onClearCart}
-          onExitTable={onExitTable}
-          onSendToKitchen={onSendToKitchen}
-          tableSession={tableSession}
-          totalItems={totalItems}
-          totals={totals}
-        />
-      )}
-
-      {anim.exitSnapshot && (
-        <CartOverlay
-          animClass="animate-[cart-slide-out_300ms_ease-out_forwards]"
-          cart={anim.exitSnapshot.cart}
-          isQuickSaleMode={Boolean(isQuickSaleMode)}
-          onCheckout={onCheckout}
-          onClearCart={onClearCart}
-          onExitTable={onExitTable}
-          onSendToKitchen={onSendToKitchen}
-          tableSession={anim.exitSnapshot.tableSession}
-          totalItems={anim.exitSnapshot.totalItems}
-          totals={anim.exitSnapshot.totals}
-        />
-      )}
-
-      {anim.mesasSnapshot && anim.animClass === "mesas-slide-out" && (
-        <CartOverlay
-          animClass="animate-[cart-slide-out_350ms_ease-out_forwards]"
-          cart={anim.mesasSnapshot.cart}
-          isQuickSaleMode={Boolean(isQuickSaleMode)}
-          onCheckout={onCheckout}
-          onClearCart={onClearCart}
-          onExitTable={onExitTable}
-          onSendToKitchen={onSendToKitchen}
-          totalItems={anim.mesasSnapshot.totalItems}
-          totals={anim.mesasSnapshot.totals}
-        />
-      )}
-
-      {anim.mesasSnapshot && anim.animClass === "mesas-slide-in" && (
-        <CartOverlay
-          animClass="animate-[cart-slide-in_350ms_ease-out_both]"
-          cart={anim.mesasSnapshot.cart}
-          isQuickSaleMode={Boolean(isQuickSaleMode)}
-          onCheckout={onCheckout}
-          onClearCart={onClearCart}
-          onExitTable={onExitTable}
-          onSendToKitchen={onSendToKitchen}
-          totalItems={anim.mesasSnapshot.totalItems}
-          totals={anim.mesasSnapshot.totals}
-        />
-      )}
+      <CartPanelOverlays
+        anim={anim}
+        cart={cart}
+        isQuickSaleMode={Boolean(isQuickSaleMode)}
+        onCheckout={onCheckout}
+        onClearCart={onClearCart}
+        onExitTable={requestExit}
+        onSendToKitchen={onSendToKitchen}
+        tableSession={tableSession}
+        totalItems={totalItems}
+        totals={totals}
+      />
 
       <Modal
         centered
@@ -932,6 +1022,60 @@ export function CartPanel({
               type="button"
             >
               Cancelar orden
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+
+      <Modal
+        centered
+        onClose={closeDiscardConfirmModal}
+        opened={isDiscardConfirmOpen}
+        title="Descartar cambios sin enviar"
+      >
+        <Stack gap="md">
+          <Text c="dimmed" size="sm">
+            Hay cambios sin enviar. ¿Deseas descartarlos? La mesa conservará el
+            último estado enviado a cocina.
+          </Text>
+          <div className="rounded-md bg-gray-0 p-3 dark:bg-dark-6">
+            <Text fw={600} size="sm">
+              Cambios pendientes
+            </Text>
+            <Text c="dimmed" size="sm">
+              Altas en borrador:{" "}
+              {tableSession?.pendingKitchenPreparationCount ?? 0}
+            </Text>
+            <Text c="dimmed" size="sm">
+              Cambios de cantidad o nota:{" "}
+              {tableSession?.pendingKitchenModificationCount ?? 0}
+            </Text>
+            <Text c="dimmed" size="sm">
+              Cancelaciones:{" "}
+              {tableSession?.pendingKitchenCancellationCount ?? 0}
+            </Text>
+          </div>
+          {discardError ? (
+            <Text c="red" size="sm">
+              {discardError}
+            </Text>
+          ) : null}
+          <Group justify="flex-end">
+            <Button
+              disabled={tableSession?.isDiscardingChanges}
+              onClick={closeDiscardConfirmModal}
+              type="button"
+              variant="default"
+            >
+              Cancelar
+            </Button>
+            <Button
+              color="red"
+              loading={tableSession?.isDiscardingChanges}
+              onClick={confirmDiscard}
+              type="button"
+            >
+              Descartar
             </Button>
           </Group>
         </Stack>
