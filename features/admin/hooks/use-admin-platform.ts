@@ -1,17 +1,21 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { z } from "zod";
-import type {
-  AdminModuleStateSchema,
-  AdminOrganizationDetailSchema,
-  AdminOrganizationsResponseSchema,
-  AdminPlatformOverviewSchema,
-  AdminSetOrganizationModuleSchema,
+import {
+  type AdminModuleStateSchema,
+  type AdminOrganizationDetailSchema,
+  type AdminOrganizationsQuery,
+  AdminOrganizationsQuerySchema,
+  type AdminOrganizationsResponseV2Schema,
+  type AdminOverviewQuery,
+  AdminOverviewQuerySchema,
+  type AdminPlatformOverviewSchema,
+  type AdminSetOrganizationModuleSchema,
 } from "@/features/admin/admin.schema";
 import { ADMIN_QUERY_ROOT_KEY } from "./use-admin-users";
 
 export type AdminPlatformOverview = z.infer<typeof AdminPlatformOverviewSchema>;
 export type AdminOrganizationsResponse = z.infer<
-  typeof AdminOrganizationsResponseSchema
+  typeof AdminOrganizationsResponseV2Schema
 >;
 export type AdminOrganizationSummary =
   AdminOrganizationsResponse["organizations"][number];
@@ -23,10 +27,23 @@ export type AdminSetOrganizationModuleInput = z.infer<
   typeof AdminSetOrganizationModuleSchema
 > & { organizationId: string };
 
+export type AdminOverviewParams = Partial<AdminOverviewQuery>;
+export type AdminOrganizationsParams = Partial<AdminOrganizationsQuery>;
+
 const dateTimeFormat = new Intl.DateTimeFormat();
 
 function getBrowserTimeZone() {
   return dateTimeFormat.resolvedOptions().timeZone;
+}
+
+function buildParams(input: Record<string, unknown>, timeZone: string) {
+  const params = new URLSearchParams({ tz: timeZone });
+  for (const [key, value] of Object.entries(input)) {
+    if (value !== undefined && value !== null && value !== "") {
+      params.set(key, String(value));
+    }
+  }
+  return params;
 }
 
 async function fetchAdminJson<T>(
@@ -34,7 +51,10 @@ async function fetchAdminJson<T>(
   fallbackMessage: string,
   init?: RequestInit
 ): Promise<T> {
-  const response = await fetch(path, { credentials: "include", ...init });
+  const response = await fetch(path, {
+    credentials: "include",
+    ...init,
+  });
 
   if (!response.ok) {
     let message = fallbackMessage;
@@ -52,27 +72,36 @@ async function fetchAdminJson<T>(
   return response.json() as Promise<T>;
 }
 
-export function useAdminOverviewQuery() {
+export function useAdminOverviewQuery(input: AdminOverviewParams = {}) {
   const timeZone = getBrowserTimeZone();
-
+  const normalized = normalizeAdminOverviewQuery(input);
+  const params = buildParams(normalized, timeZone);
   return useQuery({
-    queryKey: [...ADMIN_QUERY_ROOT_KEY, "platform-overview", timeZone],
+    queryKey: [
+      ...ADMIN_QUERY_ROOT_KEY,
+      "platform-overview",
+      normalized,
+      timeZone,
+    ],
     queryFn: () =>
       fetchAdminJson<AdminPlatformOverview>(
-        `/api/admin/overview?tz=${encodeURIComponent(timeZone)}`,
+        `/api/admin/overview?${params.toString()}`,
         "No se pudo cargar el resumen de la plataforma."
       ),
   });
 }
 
-export function useAdminOrganizationsQuery() {
+export function useAdminOrganizationsQuery(
+  input: AdminOrganizationsParams = {}
+) {
   const timeZone = getBrowserTimeZone();
-
+  const normalized = normalizeAdminOrganizationsQuery(input);
+  const params = buildParams(normalized, timeZone);
   return useQuery({
-    queryKey: [...ADMIN_QUERY_ROOT_KEY, "organizations", timeZone],
+    queryKey: [...ADMIN_QUERY_ROOT_KEY, "organizations", normalized, timeZone],
     queryFn: () =>
       fetchAdminJson<AdminOrganizationsResponse>(
-        `/api/admin/organizations?tz=${encodeURIComponent(timeZone)}`,
+        `/api/admin/organizations?${params.toString()}`,
         "No se pudieron cargar las organizaciones."
       ),
   });
@@ -121,4 +150,49 @@ export function useSetOrganizationModuleMutation() {
       queryClient.invalidateQueries({ queryKey: ADMIN_QUERY_ROOT_KEY });
     },
   });
+}
+
+const ADMIN_DATE_KEY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+
+function normalizeIncompleteCustomPeriod<
+  T extends {
+    period?: "30d" | "custom" | "all";
+    startDate?: string | null;
+    endDate?: string | null;
+  },
+>(input: T) {
+  const startDate =
+    input.startDate && ADMIN_DATE_KEY_REGEX.test(input.startDate)
+      ? input.startDate
+      : undefined;
+  const endDate =
+    input.endDate && ADMIN_DATE_KEY_REGEX.test(input.endDate)
+      ? input.endDate
+      : undefined;
+  if (
+    input.period === "custom" &&
+    (!(startDate && endDate) || startDate > endDate)
+  ) {
+    return {
+      ...input,
+      period: "30d" as const,
+      startDate: undefined,
+      endDate: undefined,
+    };
+  }
+  return { ...input, startDate, endDate };
+}
+
+export function normalizeAdminOrganizationsQuery(
+  input: Partial<AdminOrganizationsQuery>
+) {
+  return AdminOrganizationsQuerySchema.parse(
+    normalizeIncompleteCustomPeriod(input)
+  );
+}
+
+export function normalizeAdminOverviewQuery(
+  input: Partial<AdminOverviewQuery>
+) {
+  return AdminOverviewQuerySchema.parse(normalizeIncompleteCustomPeriod(input));
 }

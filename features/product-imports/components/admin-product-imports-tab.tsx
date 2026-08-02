@@ -5,11 +5,13 @@ import {
   FileInput,
   Group,
   Loader,
+  NumberInput,
   Pagination,
   Select,
   SimpleGrid,
   Stepper,
   Table,
+  TextInput,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import {
@@ -22,12 +24,16 @@ import {
   RefreshCcw,
   Upload,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import {
+  getAdminUrlParams,
+  replaceAdminUrlParams,
+} from "@/features/admin/admin-url-state";
 import {
   AdminTabError,
   AdminTabLoading,
 } from "@/features/admin/components/admin-page-states";
-import { useAdminOrganizationsQuery } from "@/features/admin/hooks/use-admin-platform";
+import { useAdminOptionsQuery } from "@/features/admin/hooks/use-admin-options";
 import { DashboardPanelShell } from "@/features/dashboard/components/dashboard-ui-primitives";
 import {
   downloadProductImportTemplate,
@@ -48,6 +54,22 @@ const importDateFormatter = new Intl.DateTimeFormat("es-CO", {
   timeStyle: "short",
 });
 
+type ImportSortBy =
+  | "createdAt"
+  | "completedAt"
+  | "status"
+  | "totalRows"
+  | "invalidRows"
+  | "createdProducts";
+const IMPORT_SORT_OPTIONS: ImportSortBy[] = [
+  "createdAt",
+  "completedAt",
+  "status",
+  "totalRows",
+  "invalidRows",
+  "createdProducts",
+];
+
 function statusColor(status: ProductImportBatchSummary["status"]) {
   if (status === "completed") {
     return "green";
@@ -59,6 +81,15 @@ function statusColor(status: ProductImportBatchSummary["status"]) {
     return "yellow";
   }
   return "red";
+}
+
+function readImportNumber(params: URLSearchParams, key: string) {
+  const raw = params.get(`i_${key}`);
+  if (!raw) {
+    return;
+  }
+  const value = Number(raw);
+  return Number.isInteger(value) && value >= 0 ? value : undefined;
 }
 
 function statusLabel(status: ProductImportBatchSummary["status"]) {
@@ -76,6 +107,15 @@ function rowStatusLabel(status: "imported" | "invalid" | "valid") {
     return "Importada";
   }
   return status === "valid" ? "Válida" : "Error";
+}
+
+function parseImportStatus(value: string) {
+  return value === "ready" ||
+    value === "invalid" ||
+    value === "completed" ||
+    value === "failed"
+    ? value
+    : undefined;
 }
 
 function SummaryCard({ label, value }: { label: string; value: number }) {
@@ -321,22 +361,27 @@ function ImportWizard({
 }: {
   onPreview: (detail: ProductImportBatchDetail) => void;
 }) {
-  const organizationsQuery = useAdminOrganizationsQuery();
   const importersQuery = useProductImportersQuery();
   const preview = usePreviewProductImportMutation();
   const [organizationId, setOrganizationId] = useState<string | null>(null);
+  const [organizationSearch, setOrganizationSearch] = useState("");
   const [importerKey, setImporterKey] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
+  const organizationsQuery = useAdminOptionsQuery({
+    resource: "organizations",
+    search: organizationSearch,
+    selectedIds: organizationId ? [organizationId] : [],
+  });
 
   const importers = importersQuery.data?.importers ?? [];
   const selectedImporter = importers.find((item) => item.key === importerKey);
-  const organizationOptions = useMemo(
-    () =>
-      (organizationsQuery.data?.organizations ?? []).map((item) => ({
-        value: item.id,
-        label: `${item.name} (${item.slug})`,
-      })),
-    [organizationsQuery.data?.organizations]
+  const organizationOptions = (organizationsQuery.data?.items ?? []).map(
+    (item) => ({
+      value: item.id,
+      label: item.secondaryLabel
+        ? `${item.name} (${item.secondaryLabel})`
+        : item.name,
+    })
   );
 
   useEffect(() => {
@@ -397,9 +442,12 @@ function ImportWizard({
         <Select
           data={organizationOptions}
           label="Organización de destino"
+          nothingFoundMessage="No se encontraron organizaciones"
           onChange={setOrganizationId}
+          onSearchChange={setOrganizationSearch}
           placeholder="Busca una organización"
           searchable
+          searchValue={organizationSearch}
           value={organizationId}
         />
         <Select
@@ -460,10 +508,120 @@ function ImportWizard({
 }
 
 function ImportHistory({ onSelect }: { onSelect: (batchId: string) => void }) {
-  const [page, setPage] = useState(1);
-  const [organizationId, setOrganizationId] = useState<string | null>(null);
-  const organizations = useAdminOrganizationsQuery();
-  const history = useProductImportHistoryQuery(organizationId, page);
+  const initialParams = getAdminUrlParams();
+  const [page, setPage] = useState(() => {
+    const value = Number(initialParams.get("i_page"));
+    return Number.isSafeInteger(value) && value > 0 ? value : 1;
+  });
+  const [organizationId, setOrganizationId] = useState<string | null>(() =>
+    initialParams.get("i_organizationId")
+  );
+  const [search, setSearch] = useState(
+    () => initialParams.get("i_search") ?? ""
+  );
+  const [importerKey, setImporterKey] = useState(
+    () => initialParams.get("i_importerKey") ?? ""
+  );
+  const [status, setStatus] = useState(
+    () => initialParams.get("i_status") ?? ""
+  );
+  const [createdByUserId, setCreatedByUserId] = useState(
+    () => initialParams.get("i_createdByUserId") ?? ""
+  );
+  const [totalRowsMin, setTotalRowsMin] = useState<number | undefined>(() =>
+    readImportNumber(initialParams, "totalRowsMin")
+  );
+  const [totalRowsMax, setTotalRowsMax] = useState<number | undefined>(() =>
+    readImportNumber(initialParams, "totalRowsMax")
+  );
+  const [invalidRowsMin, setInvalidRowsMin] = useState<number | undefined>(() =>
+    readImportNumber(initialParams, "invalidRowsMin")
+  );
+  const [invalidRowsMax, setInvalidRowsMax] = useState<number | undefined>(() =>
+    readImportNumber(initialParams, "invalidRowsMax")
+  );
+  const [sortBy, setSortBy] = useState<ImportSortBy>(() => {
+    const value = initialParams.get("i_sortBy") as ImportSortBy;
+    return IMPORT_SORT_OPTIONS.includes(value) ? value : "createdAt";
+  });
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">(() =>
+    initialParams.get("i_sortDirection") === "asc" ? "asc" : "desc"
+  );
+  const [startDate, setStartDate] = useState(
+    () => initialParams.get("i_startDate") ?? ""
+  );
+  const [endDate, setEndDate] = useState(
+    () => initialParams.get("i_endDate") ?? ""
+  );
+  const [organizationSearch, setOrganizationSearch] = useState("");
+  const organizations = useAdminOptionsQuery({
+    resource: "organizations",
+    search: organizationSearch,
+    selectedIds: organizationId ? [organizationId] : [],
+  });
+  const importers = useProductImportersQuery();
+  const importStatus = parseImportStatus(status);
+  const history = useProductImportHistoryQuery({
+    organizationId: organizationId ?? undefined,
+    search,
+    importerKey: importerKey || undefined,
+    status: importStatus,
+    createdByUserId: createdByUserId || undefined,
+    startDate: startDate || undefined,
+    endDate: endDate || undefined,
+    totalRowsMin,
+    totalRowsMax,
+    invalidRowsMin,
+    invalidRowsMax,
+    sortBy,
+    sortDirection,
+    page,
+    pageSize: 20,
+  });
+  const update = (
+    key: string,
+    value: string | number | null | undefined,
+    reset = true
+  ) => {
+    const nextPage =
+      reset || key !== "page" || value === null ? 1 : Number(value) || 1;
+    if (reset) {
+      setPage(1);
+    }
+    replaceAdminUrlParams({ [`i_${key}`]: value, i_page: nextPage });
+  };
+  const clear = () => {
+    setPage(1);
+    setOrganizationId(null);
+    setSearch("");
+    setImporterKey("");
+    setStatus("");
+    setCreatedByUserId("");
+    setTotalRowsMin(undefined);
+    setTotalRowsMax(undefined);
+    setInvalidRowsMin(undefined);
+    setInvalidRowsMax(undefined);
+    setSortBy("createdAt");
+    setSortDirection("desc");
+    setStartDate("");
+    setEndDate("");
+    replaceAdminUrlParams({
+      i_page: null,
+      i_organizationId: null,
+      i_search: null,
+      i_importerKey: null,
+      i_status: null,
+      i_createdByUserId: null,
+      i_totalRowsMin: null,
+      i_totalRowsMax: null,
+      i_invalidRowsMin: null,
+      i_invalidRowsMax: null,
+      i_sortBy: null,
+      i_sortDirection: null,
+      i_startDate: null,
+      i_endDate: null,
+    });
+  };
 
   if (history.isPending) {
     return <AdminTabLoading />;
@@ -479,21 +637,177 @@ function ImportHistory({ onSelect }: { onSelect: (batchId: string) => void }) {
   }
   return (
     <div className="space-y-4">
-      <Select
-        clearable
-        data={(organizations.data?.organizations ?? []).map((item) => ({
-          value: item.id,
-          label: item.name,
-        }))}
-        label="Filtrar historial por organización"
-        onChange={(value) => {
-          setOrganizationId(value);
-          setPage(1);
-        }}
-        placeholder="Todas las organizaciones"
-        searchable
-        value={organizationId}
-      />
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <TextInput
+          label="Buscar"
+          onChange={(event) => {
+            const value = event.target.value;
+            setSearch(value);
+            update("search", value);
+          }}
+          placeholder="Archivo, actor o importador…"
+          value={search}
+        />
+        <Select
+          clearable
+          data={(organizations.data?.items ?? []).map((item) => ({
+            value: item.id,
+            label: item.name,
+          }))}
+          label="Organización"
+          nothingFoundMessage="No se encontraron organizaciones"
+          onChange={(value) => {
+            setOrganizationId(value);
+            update("organizationId", value);
+          }}
+          onSearchChange={setOrganizationSearch}
+          placeholder="Todas"
+          searchable
+          searchValue={organizationSearch}
+          value={organizationId}
+        />
+        <Select
+          clearable
+          data={(importers.data?.importers ?? []).map((item) => ({
+            value: item.key,
+            label: item.label,
+          }))}
+          label="Formato"
+          onChange={(value) => {
+            setImporterKey(value ?? "");
+            update("importerKey", value);
+          }}
+          placeholder="Todos"
+          value={importerKey || null}
+        />
+        <Select
+          clearable
+          data={[
+            { value: "ready", label: "Lista" },
+            { value: "invalid", label: "Con errores" },
+            { value: "completed", label: "Completada" },
+            { value: "failed", label: "Fallida" },
+          ]}
+          label="Estado"
+          onChange={(value) => {
+            setStatus(value ?? "");
+            update("status", value);
+          }}
+          placeholder="Todos"
+          value={status || null}
+        />
+        <TextInput
+          label="Actor (ID)"
+          onChange={(event) => {
+            const value = event.target.value;
+            setCreatedByUserId(value);
+            update("createdByUserId", value);
+          }}
+          placeholder="ID del usuario"
+          value={createdByUserId}
+        />
+        <NumberInput
+          hideControls
+          label="Filas mínimas"
+          min={0}
+          onChange={(value) => {
+            const next = typeof value === "number" ? value : undefined;
+            setTotalRowsMin(next);
+            update("totalRowsMin", next);
+          }}
+          value={totalRowsMin ?? ""}
+        />
+        <NumberInput
+          hideControls
+          label="Filas máximas"
+          min={0}
+          onChange={(value) => {
+            const next = typeof value === "number" ? value : undefined;
+            setTotalRowsMax(next);
+            update("totalRowsMax", next);
+          }}
+          value={totalRowsMax ?? ""}
+        />
+        <NumberInput
+          hideControls
+          label="Errores mínimos"
+          min={0}
+          onChange={(value) => {
+            const next = typeof value === "number" ? value : undefined;
+            setInvalidRowsMin(next);
+            update("invalidRowsMin", next);
+          }}
+          value={invalidRowsMin ?? ""}
+        />
+        <NumberInput
+          hideControls
+          label="Errores máximos"
+          min={0}
+          onChange={(value) => {
+            const next = typeof value === "number" ? value : undefined;
+            setInvalidRowsMax(next);
+            update("invalidRowsMax", next);
+          }}
+          value={invalidRowsMax ?? ""}
+        />
+        <Select
+          allowDeselect={false}
+          data={[
+            { value: "createdAt", label: "Ordenar por creación" },
+            { value: "completedAt", label: "Ordenar por finalización" },
+            { value: "status", label: "Ordenar por estado" },
+            { value: "totalRows", label: "Ordenar por filas" },
+            { value: "invalidRows", label: "Ordenar por errores" },
+            { value: "createdProducts", label: "Ordenar por productos" },
+          ]}
+          label="Orden"
+          onChange={(value) => {
+            const next = IMPORT_SORT_OPTIONS.includes(value as ImportSortBy)
+              ? (value as ImportSortBy)
+              : "createdAt";
+            setSortBy(next);
+            update("sortBy", next);
+          }}
+          value={sortBy}
+        />
+        <Select
+          allowDeselect={false}
+          data={[
+            { value: "desc", label: "Descendente" },
+            { value: "asc", label: "Ascendente" },
+          ]}
+          label="Dirección"
+          onChange={(value) => {
+            const next = (value as "asc" | "desc") ?? "desc";
+            setSortDirection(next);
+            update("sortDirection", next);
+          }}
+          value={sortDirection}
+        />
+        <TextInput
+          label="Desde"
+          onChange={(event) => {
+            const value = event.target.value;
+            setStartDate(value);
+            update("startDate", value);
+          }}
+          type="date"
+          value={startDate}
+        />
+        <TextInput
+          label="Hasta"
+          onChange={(event) => {
+            const value = event.target.value;
+            setEndDate(value);
+            update("endDate", value);
+          }}
+          type="date"
+          value={endDate}
+        />
+      </div>
+      <Button onClick={clear} variant="subtle">
+        Limpiar filtros
+      </Button>
       {history.data.batches.length === 0 ? (
         <p className="rounded-xl border border-zinc-800 p-6 text-center text-sm text-zinc-500">
           No hay importaciones para el filtro seleccionado.
@@ -555,7 +869,10 @@ function ImportHistory({ onSelect }: { onSelect: (batchId: string) => void }) {
           {history.data.total > history.data.pageSize ? (
             <Pagination
               aria-label="Páginas del historial de importaciones"
-              onChange={setPage}
+              onChange={(value) => {
+                setPage(value);
+                update("page", String(value), false);
+              }}
               total={Math.ceil(history.data.total / history.data.pageSize)}
               value={page}
             />

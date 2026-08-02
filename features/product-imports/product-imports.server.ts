@@ -1,4 +1,17 @@
-import { and, asc, count, desc, eq, isNull, ne, sql } from "drizzle-orm";
+import type { SQL } from "drizzle-orm";
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  gte,
+  ilike,
+  isNull,
+  lt,
+  ne,
+  sql,
+} from "drizzle-orm";
 import type { Database } from "@/database/drizzle/db";
 import { organization } from "@/database/drizzle/schema/auth.schema";
 import { category, product } from "@/database/drizzle/schema/inventory.schema";
@@ -6,6 +19,7 @@ import {
   productImportBatch,
   productImportRow,
 } from "@/database/drizzle/schema/product-import.schema";
+import { resolveAdminDateRange } from "@/features/admin/admin-filters.shared";
 import { recordInitialInventoryMovements } from "@/features/inventory/inventory-operations.server";
 import { normalizeCreateProductValues } from "@/features/products/product-create-values.shared";
 import { getEnabledPaymentMethodIds } from "@/features/settings/payment-methods.server";
@@ -21,6 +35,8 @@ import {
   type ProductImportBatchSummary,
   ProductImportDocumentV1Schema,
   type ProductImportHistory,
+  type ProductImportHistoryQuery,
+  ProductImportHistoryQuerySchema,
   type ProductImportIssue,
   type ProductImportProductV1,
   ProductImportProductV1Schema,
@@ -30,6 +46,14 @@ const DB_WRITE_CHUNK_SIZE = 250;
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
 const PATH_SEPARATOR_REGEX = /[\\/]/;
+const PRODUCT_IMPORT_HISTORY_SORT_COLUMNS = {
+  createdAt: productImportBatch.createdAt,
+  completedAt: productImportBatch.completedAt,
+  status: productImportBatch.status,
+  totalRows: productImportBatch.totalRows,
+  invalidRows: productImportBatch.invalidRows,
+  createdProducts: productImportBatch.createdProducts,
+} as const;
 
 type DbExecutor = Pick<Database, "select">;
 interface ImportRowForValidation {
@@ -604,19 +628,78 @@ export async function runPreviewProductImport(
   return loadProductImportDetail(db, batchId, { rowPage: 1 });
 }
 
+function buildProductImportHistoryFilter(
+  parsed: ProductImportHistoryQuery,
+  timeZone: string
+) {
+  const filters: SQL[] = [];
+  if (parsed.organizationId) {
+    filters.push(eq(productImportBatch.organizationId, parsed.organizationId));
+  }
+  if (parsed.importerKey) {
+    filters.push(eq(productImportBatch.importerKey, parsed.importerKey));
+  }
+  if (parsed.status) {
+    filters.push(eq(productImportBatch.status, parsed.status));
+  }
+  if (parsed.createdByUserId) {
+    filters.push(
+      eq(productImportBatch.createdByUserId, parsed.createdByUserId)
+    );
+  }
+  if (parsed.search) {
+    const pattern = `%${parsed.search}%`;
+    filters.push(
+      sql`(${ilike(productImportBatch.originalFilename, pattern)} or ${ilike(productImportBatch.createdByEmail, pattern)} or ${ilike(productImportBatch.importerKey, pattern)} or ${ilike(organization.name, pattern)})`
+    );
+  }
+  if (parsed.totalRowsMin !== undefined) {
+    filters.push(gte(productImportBatch.totalRows, parsed.totalRowsMin));
+  }
+  if (parsed.totalRowsMax !== undefined) {
+    filters.push(lt(productImportBatch.totalRows, parsed.totalRowsMax + 1));
+  }
+  if (parsed.invalidRowsMin !== undefined) {
+    filters.push(gte(productImportBatch.invalidRows, parsed.invalidRowsMin));
+  }
+  if (parsed.invalidRowsMax !== undefined) {
+    filters.push(lt(productImportBatch.invalidRows, parsed.invalidRowsMax + 1));
+  }
+  if (parsed.startDate || parsed.endDate) {
+    const range = resolveAdminDateRange(
+      "custom",
+      parsed.startDate,
+      parsed.endDate,
+      timeZone
+    );
+    if (range.start) {
+      filters.push(gte(productImportBatch.createdAt, range.start));
+    }
+    if (range.endExclusive) {
+      filters.push(lt(productImportBatch.createdAt, range.endExclusive));
+    }
+  }
+  return filters.length ? and(...filters) : undefined;
+}
+
 export async function loadProductImportHistory(
   db: Database,
-  input: {
-    organizationId?: string;
-    page?: number;
-    pageSize?: number;
+  input: Partial<ProductImportHistoryQuery> & {
+    timeZone?: string;
   }
 ): Promise<ProductImportHistory> {
-  const page = clampPage(input.page);
-  const pageSize = clampPageSize(input.pageSize);
-  const filter = input.organizationId
-    ? eq(productImportBatch.organizationId, input.organizationId)
-    : undefined;
+  const parsed = ProductImportHistoryQuerySchema.parse({
+    ...input,
+    page: input.page ?? 1,
+    pageSize: input.pageSize ?? DEFAULT_PAGE_SIZE,
+  });
+  const page = clampPage(parsed.page);
+  const pageSize = clampPageSize(parsed.pageSize);
+  const filter = buildProductImportHistoryFilter(
+    parsed,
+    input.timeZone ?? "America/Bogota"
+  );
+  const direction = parsed.sortDirection === "asc" ? asc : desc;
   const [rows, totalRows] = await Promise.all([
     db
       .select({
@@ -647,10 +730,20 @@ export async function loadProductImportHistory(
         eq(organization.id, productImportBatch.organizationId)
       )
       .where(filter)
-      .orderBy(desc(productImportBatch.createdAt))
+      .orderBy(
+        direction(PRODUCT_IMPORT_HISTORY_SORT_COLUMNS[parsed.sortBy]),
+        direction(productImportBatch.id)
+      )
       .limit(pageSize)
       .offset((page - 1) * pageSize),
-    db.select({ total: count() }).from(productImportBatch).where(filter),
+    db
+      .select({ total: count() })
+      .from(productImportBatch)
+      .innerJoin(
+        organization,
+        eq(organization.id, productImportBatch.organizationId)
+      )
+      .where(filter),
   ]);
   return {
     batches: rows.map(batchRowToSummary),

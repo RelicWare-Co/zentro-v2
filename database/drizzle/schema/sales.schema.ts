@@ -42,6 +42,7 @@ export const sale = pgTable(
       table.organizationId,
       table.createdAt
     ),
+    index("sale_createdAt_idx").on(table.createdAt),
   ]
 );
 

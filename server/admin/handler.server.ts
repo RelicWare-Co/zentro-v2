@@ -5,10 +5,23 @@ import { bodyLimit } from "hono/body-limit";
 import { dbSqlite } from "@/database/drizzle/db";
 import { AdminSetOrganizationModuleSchema } from "@/features/admin/admin.schema";
 import {
-  runBuildAdminOrganizationDetail,
-  runBuildAdminOrganizations,
-} from "@/features/admin/build-admin-organizations.server";
-import { runBuildAdminOverview } from "@/features/admin/build-admin-overview.server";
+  AdminQueryParseError,
+  parseAdminOptionsQuery,
+  parseAdminOrganizationsQuery,
+  parseAdminOverviewQuery,
+  parseAdminProductImportsQuery,
+  parseAdminSalesQuery,
+  parseAdminUsersQuery,
+} from "@/features/admin/admin-query-params.server";
+import { runBuildAdminOptions } from "@/features/admin/build-admin-options.server";
+import { runBuildAdminOrganizationDetail } from "@/features/admin/build-admin-organizations.server";
+import { runBuildAdminOrganizationsList } from "@/features/admin/build-admin-organizations-list.server";
+import { runBuildAdminOverviewFiltered } from "@/features/admin/build-admin-overview-filtered.server";
+import {
+  runBuildAdminSaleDetail,
+  runBuildAdminSales,
+} from "@/features/admin/build-admin-sales.server";
+import { runBuildAdminUsers } from "@/features/admin/build-admin-users.server";
 import { runAdminSetOrganizationModule } from "@/features/admin/set-organization-module.server";
 import { resolveDashboardTimeZone } from "@/features/dashboard/zoned-time.server";
 import { getProductImporter } from "@/features/product-imports/product-importer-registry.server";
@@ -53,38 +66,145 @@ function throwProductImportError(error: unknown): never {
   throw error;
 }
 
+function parseAdminRequest<T>(
+  request: Request,
+  parser: (params: URLSearchParams) => T
+) {
+  try {
+    return parser(new URL(request.url).searchParams);
+  } catch (error) {
+    if (error instanceof AdminQueryParseError || error instanceof Error) {
+      throw createError({ message: error.message, status: 400 });
+    }
+    throw error;
+  }
+}
+
+const PRIVATE_JSON_HEADERS = {
+  "Cache-Control": "private, no-store",
+  Vary: "Cookie",
+};
+
 export function createAdminApp() {
   const app = new Hono<EvlogVariables>();
+
+  app.use("*", async (c, next) => {
+    await next();
+    c.header("Cache-Control", "private, no-store");
+    c.header("Vary", "Cookie");
+  });
 
   app.get("/overview", async (c) => {
     const authBundle = await requirePlatformAdmin(c.req.raw.headers);
     const timeZone = resolveDashboardTimeZone(c.req.query("tz"));
+    const query = parseAdminRequest(c.req.raw, parseAdminOverviewQuery);
 
     c.get("log").set({
       admin: "overview",
       userId: authBundle.userID,
       timeZone,
+      period: query.period,
+      hasOrganizationFilter: Boolean(query.organizationId),
     });
 
-    const overview = await runBuildAdminOverview(dbSqlite(), timeZone);
-    return c.json(overview);
+    const overview = await runBuildAdminOverviewFiltered(
+      dbSqlite(),
+      query,
+      timeZone
+    );
+    return c.json(overview, 200, PRIVATE_JSON_HEADERS);
+  });
+
+  app.get("/options", async (c) => {
+    const authBundle = await requirePlatformAdmin(c.req.raw.headers);
+    const query = parseAdminRequest(c.req.raw, parseAdminOptionsQuery);
+
+    c.get("log").set({
+      admin: "options",
+      userId: authBundle.userID,
+      resource: query.resource,
+      page: query.page,
+      hasSearch: Boolean(query.search),
+      selectedCount: query.selectedIds.length,
+    });
+
+    const options = await runBuildAdminOptions(dbSqlite(), query);
+    return c.json(options, 200, PRIVATE_JSON_HEADERS);
   });
 
   app.get("/organizations", async (c) => {
     const authBundle = await requirePlatformAdmin(c.req.raw.headers);
     const timeZone = resolveDashboardTimeZone(c.req.query("tz"));
+    const query = parseAdminRequest(c.req.raw, parseAdminOrganizationsQuery);
 
     c.get("log").set({
       admin: "organizations",
       userId: authBundle.userID,
       timeZone,
+      period: query.period,
+      hasSearch: Boolean(query.search),
+      hasMetricFilter: query.paidMin !== null || query.paidMax !== null,
     });
 
-    const organizations = await runBuildAdminOrganizations(
+    const organizations = await runBuildAdminOrganizationsList(
       dbSqlite(),
+      query,
       timeZone
     );
-    return c.json(organizations);
+    return c.json(organizations, 200, PRIVATE_JSON_HEADERS);
+  });
+
+  app.get("/users", async (c) => {
+    const authBundle = await requirePlatformAdmin(c.req.raw.headers);
+    const timeZone = resolveDashboardTimeZone(c.req.query("tz"));
+    const query = parseAdminRequest(c.req.raw, parseAdminUsersQuery);
+
+    c.get("log").set({
+      admin: "users",
+      userId: authBundle.userID,
+      timeZone,
+      period: query.period,
+      page: query.page,
+      hasSearch: Boolean(query.search),
+      hasOrganizationFilter: Boolean(query.organizationId),
+    });
+
+    const users = await runBuildAdminUsers(dbSqlite(), query, timeZone);
+    return c.json(users, 200, PRIVATE_JSON_HEADERS);
+  });
+
+  app.get("/sales", async (c) => {
+    const authBundle = await requirePlatformAdmin(c.req.raw.headers);
+    const timeZone = resolveDashboardTimeZone(c.req.query("tz"));
+    const query = parseAdminRequest(c.req.raw, parseAdminSalesQuery);
+
+    c.get("log").set({
+      admin: "sales",
+      userId: authBundle.userID,
+      timeZone,
+      period: query.period,
+      page: query.page,
+      hasSearch: Boolean(query.search),
+      hasOrganizationFilter: Boolean(query.organizationId),
+    });
+
+    const sales = await runBuildAdminSales(dbSqlite(), query, timeZone);
+    return c.json(sales, 200, PRIVATE_JSON_HEADERS);
+  });
+
+  app.get("/sales/:id", async (c) => {
+    const authBundle = await requirePlatformAdmin(c.req.raw.headers);
+    const saleId = c.req.param("id");
+    c.get("log").set({
+      admin: "sale-detail",
+      userId: authBundle.userID,
+      hasSaleId: Boolean(saleId),
+    });
+    const detail = await runBuildAdminSaleDetail(dbSqlite(), saleId);
+    if (!detail) {
+      throw createError({ message: "No se encontró la venta.", status: 404 });
+    }
+    return c.json(detail, 200, PRIVATE_JSON_HEADERS);
   });
 
   app.get("/organizations/:id", async (c) => {
@@ -110,7 +230,7 @@ export function createAdminApp() {
         status: 404,
       });
     }
-    return c.json(detail);
+    return c.json(detail, 200, PRIVATE_JSON_HEADERS);
   });
 
   app.post("/organizations/:id/modules", async (c) => {
@@ -146,7 +266,7 @@ export function createAdminApp() {
         status: 404,
       });
     }
-    return c.json({ modules });
+    return c.json({ modules }, 200, PRIVATE_JSON_HEADERS);
   });
 
   app.get("/product-imports/importers", async (c) => {
@@ -155,7 +275,11 @@ export function createAdminApp() {
       admin: "product-importers",
       userId: authBundle.userID,
     });
-    return c.json({ importers: getProductImporterDescriptors() });
+    return c.json(
+      { importers: getProductImporterDescriptors() },
+      200,
+      PRIVATE_JSON_HEADERS
+    );
   });
 
   app.get("/product-imports/importers/:key/template", async (c) => {
@@ -207,8 +331,8 @@ export function createAdminApp() {
         userId: authBundle.userID,
         organizationId,
         importerKey,
-        fileName: file.name,
-        fileSize: file.size,
+        hasFile: true,
+        fileType: file.type,
       });
       try {
         const detail = await runPreviewProductImport(dbSqlite(), {
@@ -220,7 +344,7 @@ export function createAdminApp() {
           userId: authBundle.userID,
           userEmail: authBundle.ctx.email ?? "desconocido",
         });
-        return c.json(detail);
+        return c.json(detail, 200, PRIVATE_JSON_HEADERS);
       } catch (error) {
         throwProductImportError(error);
       }
@@ -229,18 +353,21 @@ export function createAdminApp() {
 
   app.get("/product-imports", async (c) => {
     const authBundle = await requirePlatformAdmin(c.req.raw.headers);
-    const organizationId = c.req.query("organizationId")?.trim() || undefined;
+    const query = parseAdminRequest(c.req.raw, parseAdminProductImportsQuery);
+    const timeZone = resolveDashboardTimeZone(c.req.query("tz"));
     c.get("log").set({
       admin: "product-import-history",
       userId: authBundle.userID,
-      organizationId,
+      timeZone,
+      page: query.page,
+      hasSearch: Boolean(query.search),
+      hasOrganizationFilter: Boolean(query.organizationId),
     });
     const history = await loadProductImportHistory(dbSqlite(), {
-      organizationId,
-      page: parsePositiveInteger(c.req.query("page")),
-      pageSize: parsePositiveInteger(c.req.query("pageSize")),
+      ...query,
+      timeZone,
     });
-    return c.json(history);
+    return c.json(history, 200, PRIVATE_JSON_HEADERS);
   });
 
   app.get("/product-imports/:id", async (c) => {
@@ -261,7 +388,7 @@ export function createAdminApp() {
         status: 404,
       });
     }
-    return c.json(detail);
+    return c.json(detail, 200, PRIVATE_JSON_HEADERS);
   });
 
   app.post("/product-imports/:id/commit", async (c) => {
@@ -277,7 +404,7 @@ export function createAdminApp() {
         batchId,
         userId: authBundle.userID,
       });
-      return c.json(detail);
+      return c.json(detail, 200, PRIVATE_JSON_HEADERS);
     } catch (error) {
       throwProductImportError(error);
     }

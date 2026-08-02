@@ -1,9 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ADMIN_QUERY_ROOT_KEY } from "@/features/admin/hooks/use-admin-users";
-import type {
-  ProductImportBatchDetail,
-  ProductImporterDescriptor,
-  ProductImportHistory,
+import {
+  type ProductImportBatchDetail,
+  type ProductImporterDescriptor,
+  type ProductImportHistory,
+  type ProductImportHistoryQuery,
+  ProductImportHistoryQuerySchema,
 } from "@/features/product-imports/product-imports.schema";
 
 export const PRODUCT_IMPORT_QUERY_KEY = [
@@ -11,6 +13,12 @@ export const PRODUCT_IMPORT_QUERY_KEY = [
   "product-imports",
 ] as const;
 const CONTENT_DISPOSITION_FILENAME_REGEX = /filename\*=UTF-8''([^;]+)/i;
+const IMPORT_DATE_KEY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+const dateTimeFormat = new Intl.DateTimeFormat();
+
+function getBrowserTimeZone() {
+  return dateTimeFormat.resolvedOptions().timeZone;
+}
 
 async function readError(response: Response, fallback: string) {
   try {
@@ -45,18 +53,34 @@ export function useProductImportersQuery() {
 }
 
 export function useProductImportHistoryQuery(
-  organizationId: string | null,
-  page: number
+  input: Partial<ProductImportHistoryQuery> = {}
 ) {
-  const params = new URLSearchParams({ page: String(page), pageSize: "20" });
-  if (organizationId) {
-    params.set("organizationId", organizationId);
+  const timeZone = getBrowserTimeZone();
+  const startDate =
+    input.startDate && IMPORT_DATE_KEY_REGEX.test(input.startDate)
+      ? input.startDate
+      : undefined;
+  const endDate =
+    input.endDate && IMPORT_DATE_KEY_REGEX.test(input.endDate)
+      ? input.endDate
+      : undefined;
+  const normalized = ProductImportHistoryQuerySchema.parse({
+    ...input,
+    startDate:
+      startDate && endDate && startDate > endDate ? undefined : startDate,
+    endDate: startDate && endDate && startDate > endDate ? undefined : endDate,
+  });
+  const params = new URLSearchParams({ tz: timeZone });
+  for (const [key, value] of Object.entries(normalized)) {
+    if (value !== undefined && value !== null && value !== "") {
+      params.set(key, String(value));
+    }
   }
   return useQuery({
-    queryKey: [...PRODUCT_IMPORT_QUERY_KEY, "history", organizationId, page],
+    queryKey: [...PRODUCT_IMPORT_QUERY_KEY, "history", normalized, timeZone],
     queryFn: () =>
       fetchJson<ProductImportHistory>(
-        `/api/admin/product-imports?${params}`,
+        `/api/admin/product-imports?${params.toString()}`,
         "No se pudo cargar el historial de importaciones."
       ),
   });

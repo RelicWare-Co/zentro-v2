@@ -8,6 +8,7 @@ import { CreateProductSchema } from "@/features/products/products.schema";
 export const PRODUCT_IMPORT_MAX_FILE_BYTES = 5 * 1024 * 1024;
 export const PRODUCT_IMPORT_MAX_ROWS = 5000;
 export const PRODUCT_IMPORT_FORMAT_VERSION = "1";
+const PRODUCT_IMPORT_DATE_PARTS_REGEX = /^(\d{4})-(\d{2})-(\d{2})$/;
 
 export const ProductImportStatusSchema = z.enum([
   "ready",
@@ -101,6 +102,106 @@ export const ProductImportHistorySchema = z.object({
   pageSize: z.number().int(),
   total: z.number().int(),
 });
+
+function isValidImportDate(value: string) {
+  const match = PRODUCT_IMPORT_DATE_PARTS_REGEX.exec(value);
+  if (!match) {
+    return false;
+  }
+  const date = new Date(
+    Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]))
+  );
+  return (
+    date.getUTCFullYear() === Number(match[1]) &&
+    date.getUTCMonth() === Number(match[2]) - 1 &&
+    date.getUTCDate() === Number(match[3])
+  );
+}
+
+function validateProductImportQuery(
+  value: {
+    startDate?: string;
+    endDate?: string;
+    totalRowsMin?: number;
+    totalRowsMax?: number;
+    invalidRowsMin?: number;
+    invalidRowsMax?: number;
+  },
+  context: z.RefinementCtx
+) {
+  for (const [field, date] of [
+    ["startDate", value.startDate],
+    ["endDate", value.endDate],
+  ] as const) {
+    if (date && !isValidImportDate(date)) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "La fecha no es válida.",
+        path: [field],
+      });
+    }
+  }
+  if (value.startDate && value.endDate && value.startDate > value.endDate) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "La fecha inicial no puede ser posterior a la final.",
+      path: ["startDate"],
+    });
+  }
+  for (const [minKey, maxKey] of [
+    ["totalRowsMin", "totalRowsMax"],
+    ["invalidRowsMin", "invalidRowsMax"],
+  ] as const) {
+    const min = value[minKey];
+    const max = value[maxKey];
+    if (min !== undefined && max !== undefined && min > max) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "El mínimo no puede ser mayor que el máximo.",
+        path: [minKey],
+      });
+    }
+  }
+}
+
+export const ProductImportHistoryQuerySchema = z
+  .object({
+    organizationId: z.string().trim().min(1).optional(),
+    importerKey: z.string().trim().min(1).optional(),
+    status: ProductImportStatusSchema.optional(),
+    createdByUserId: z.string().trim().min(1).optional(),
+    search: z.string().trim().max(255).default(""),
+    startDate: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .optional(),
+    endDate: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .optional(),
+    totalRowsMin: z.number().int().min(0).optional(),
+    totalRowsMax: z.number().int().min(0).optional(),
+    invalidRowsMin: z.number().int().min(0).optional(),
+    invalidRowsMax: z.number().int().min(0).optional(),
+    sortBy: z
+      .enum([
+        "createdAt",
+        "completedAt",
+        "status",
+        "totalRows",
+        "invalidRows",
+        "createdProducts",
+      ])
+      .default("createdAt"),
+    sortDirection: z.enum(["asc", "desc"]).default("desc"),
+    page: z.number().int().min(1).default(1),
+    pageSize: z.number().int().min(1).max(100).default(20),
+  })
+  .superRefine(validateProductImportQuery);
+
+export type ProductImportHistoryQuery = z.infer<
+  typeof ProductImportHistoryQuerySchema
+>;
 
 export const ProductImporterDescriptorSchema = z.object({
   key: z.string(),

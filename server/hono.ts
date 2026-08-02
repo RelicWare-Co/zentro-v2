@@ -24,6 +24,10 @@ function getApp() {
   // Global error handler — captures unexpected throws
   app.onError((error, c) => {
     c.get("log").error(error);
+    if (c.req.path.startsWith("/api/admin")) {
+      c.header("Cache-Control", "private, no-store");
+      c.header("Vary", "Cookie");
+    }
     const parsed = parseError(error);
     return c.json(
       {

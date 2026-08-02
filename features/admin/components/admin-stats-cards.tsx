@@ -1,6 +1,6 @@
 import { Skeleton } from "@mantine/core";
 import { ShieldCheck, Users, UserX } from "lucide-react";
-import { useAdminUserStatsQuery } from "@/features/admin/hooks/use-admin-users";
+import { useAdminPage } from "@/features/admin/admin-page-context";
 
 function StatCard({
   icon,
@@ -29,25 +29,25 @@ function StatCard({
 }
 
 export function AdminStatsCards() {
-  const statsQuery = useAdminUserStatsQuery();
-  const stats = statsQuery.data;
+  const { state } = useAdminPage();
+  const stats = state.summary;
 
   return (
     <section className="grid gap-4 sm:grid-cols-3">
       <StatCard
         icon={<Users className="size-5" />}
-        label="Usuarios totales"
-        value={stats?.total ?? null}
+        label="Usuarios en los resultados"
+        value={stats.total}
       />
       <StatCard
         icon={<ShieldCheck className="size-5" />}
-        label="Administradores"
-        value={stats?.admins ?? null}
+        label="Administradores en los resultados"
+        value={stats.admins}
       />
       <StatCard
         icon={<UserX className="size-5" />}
-        label="Usuarios suspendidos"
-        value={stats?.banned ?? null}
+        label="Suspendidos en los resultados"
+        value={stats.banned}
       />
     </section>
   );

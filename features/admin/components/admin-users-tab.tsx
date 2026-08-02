@@ -1,11 +1,29 @@
 import { Badge, Button } from "@mantine/core";
 import { UserPlus } from "lucide-react";
 import { useAdminPage } from "@/features/admin/admin-page-context";
+import {
+  AdminTabError,
+  AdminTabLoading,
+} from "@/features/admin/components/admin-page-states";
 import { AdminStatsCards } from "@/features/admin/components/admin-stats-cards";
 import { AdminUsersTable } from "@/features/admin/components/admin-users-table";
 
 export function AdminUsersTab() {
   const { state, actions } = useAdminPage();
+
+  if (state.isPending) {
+    return <AdminTabLoading />;
+  }
+  if (state.isError) {
+    return (
+      <AdminTabError
+        error={state.isError ? "No se pudo cargar la consulta." : null}
+        fallbackMessage="Ocurrió un error al cargar los usuarios. Intenta de nuevo."
+        onRetry={() => window.location.reload()}
+        title="No se pudieron cargar los usuarios"
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">

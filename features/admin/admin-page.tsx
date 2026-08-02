@@ -3,26 +3,26 @@ import {
   Building2,
   FileSpreadsheet,
   LayoutDashboard,
+  Receipt,
   Users,
 } from "lucide-react";
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { AdminPageProvider } from "@/features/admin/admin-page-context";
 import {
-  AdminPageProvider,
-  useAdminPage,
-} from "@/features/admin/admin-page-context";
+  type AdminTab,
+  getAdminUrlTab,
+  replaceAdminUrlParams,
+} from "@/features/admin/admin-url-state";
 import { AdminBanDialog } from "@/features/admin/components/admin-ban-dialog";
 import { AdminDeleteDialog } from "@/features/admin/components/admin-delete-dialog";
 import { AdminOrganizationSheet } from "@/features/admin/components/admin-organization-sheet";
 import { AdminOrganizationsTab } from "@/features/admin/components/admin-organizations-tab";
 import { AdminOverviewTab } from "@/features/admin/components/admin-overview-tab";
 import { AdminPageHeader } from "@/features/admin/components/admin-page-header";
-import {
-  AdminPageError,
-  AdminPageLoading,
-} from "@/features/admin/components/admin-page-states";
 import { AdminPasswordDialog } from "@/features/admin/components/admin-password-dialog";
 import { AdminRoleDialog } from "@/features/admin/components/admin-role-dialog";
+import { AdminSalesTab } from "@/features/admin/components/admin-sales-tab";
 import { AdminSessionsSheet } from "@/features/admin/components/admin-sessions-sheet";
 import { AdminUserFormSheet } from "@/features/admin/components/admin-user-form-sheet";
 import { AdminUsersTab } from "@/features/admin/components/admin-users-tab";
@@ -37,18 +37,17 @@ function AdminPageRoot({ children }: { children: ReactNode }) {
 }
 
 function AdminPageLayout() {
-  const { state, meta } = useAdminPage();
-  const [adminTab, setAdminTab] = useState<
-    "overview" | "organizations" | "users" | "imports"
-  >("overview");
-
-  if (state.isPending) {
-    return <AdminPageLoading />;
-  }
-
-  if (state.isError) {
-    return <AdminPageError error={meta.usersError} />;
-  }
+  const [adminTab, setAdminTab] = useState<AdminTab>(() => getAdminUrlTab());
+  useEffect(() => {
+    const handlePopState = () => setAdminTab(getAdminUrlTab());
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+  const changeTab = (value: string) => {
+    const next = value as AdminTab;
+    setAdminTab(next);
+    replaceAdminUrlParams({ adminTab: next });
+  };
 
   return (
     <>
@@ -56,9 +55,7 @@ function AdminPageLayout() {
         <AdminPageHeader />
         <div className="space-y-6">
           <div className="overflow-x-auto pb-1">
-            <SegmentedControl<
-              "overview" | "organizations" | "users" | "imports"
-            >
+            <SegmentedControl<AdminTab>
               className="min-w-max"
               data={[
                 {
@@ -88,28 +85,29 @@ function AdminPageLayout() {
                 {
                   label: (
                     <span className="inline-flex items-center gap-1.5">
+                      <Receipt className="size-4" /> Ventas
+                    </span>
+                  ),
+                  value: "sales",
+                },
+                {
+                  label: (
+                    <span className="inline-flex items-center gap-1.5">
                       <FileSpreadsheet className="size-4" /> Importaciones
                     </span>
                   ),
                   value: "imports",
                 },
               ]}
-              onChange={setAdminTab}
+              onChange={changeTab}
               value={adminTab}
             />
           </div>
-          <div hidden={adminTab !== "overview"}>
-            <AdminOverviewTab />
-          </div>
-          <div hidden={adminTab !== "organizations"}>
-            <AdminOrganizationsTab />
-          </div>
-          <div hidden={adminTab !== "users"}>
-            <AdminUsersTab />
-          </div>
-          <div hidden={adminTab !== "imports"}>
-            <AdminProductImportsTab />
-          </div>
+          {adminTab === "overview" ? <AdminOverviewTab /> : null}
+          {adminTab === "organizations" ? <AdminOrganizationsTab /> : null}
+          {adminTab === "users" ? <AdminUsersTab /> : null}
+          {adminTab === "sales" ? <AdminSalesTab /> : null}
+          {adminTab === "imports" ? <AdminProductImportsTab /> : null}
         </div>
       </AdminPageRoot>
       <AdminUserFormSheet />

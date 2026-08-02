@@ -57,19 +57,19 @@ function OrganizationMetrics({ detail }: { detail: AdminOrganizationDetail }) {
       <CompactStatCard
         description={`${formatCount(metrics.salesCountToday)} ventas hoy`}
         icon={Wallet}
-        title="Ingresos de hoy"
+        title="Cobrado hoy"
         value={formatCurrency(metrics.revenueToday)}
       />
       <CompactStatCard
         description={`${formatCount(metrics.salesCount30d)} ventas en 30 días`}
         icon={Receipt}
-        title="Ingresos (30 días)"
+        title="Cobrado (30 días)"
         value={formatCurrency(metrics.revenue30d)}
       />
       <CompactStatCard
         description={`${formatCount(metrics.customersCount)} clientes · ${formatCount(metrics.productsCount)} productos`}
         icon={Package}
-        title="Ingresos totales"
+        title="Cobrado histórico"
         value={formatCurrency(metrics.totalRevenue)}
       />
       <CompactStatCard

@@ -9,6 +9,10 @@ import { zentroStandardXlsxImporter } from "@/features/product-imports/zentro-st
 import { loginAndSelectBootstrapOrganization } from "../helpers/auth";
 import { createIsolatedE2EAccount } from "../helpers/bootstrap";
 
+const ADMIN_IMPORTS_URL_REGEX = /adminTab=imports/;
+const ADMIN_SALES_URL_REGEX = /adminTab=sales/;
+const ADMIN_IMPORT_ORGANIZATION_URL_REGEX = /i_organizationId=/;
+
 function asArrayBuffer(bytes: Uint8Array) {
   const copy = new Uint8Array(bytes.byteLength);
   copy.set(bytes);
@@ -71,10 +75,16 @@ test.describe("platform product imports", () => {
       slug: `sin-importaciones-${Date.now()}`,
       createdAt: new Date(),
     });
-    const forbiddenImporters = await page.request.get(
-      "/api/admin/product-imports/importers"
-    );
-    expect(forbiddenImporters.status()).toBe(403);
+    const forbiddenAdminRoutes = await Promise.all([
+      page.request.get("/api/admin/product-imports/importers"),
+      page.request.get("/api/admin/users"),
+      page.request.get("/api/admin/sales"),
+      page.request.get("/api/admin/options?resource=organizations"),
+      page.request.get("/api/admin/sales/nonexistent"),
+    ]);
+    expect(forbiddenAdminRoutes.map((response) => response.status())).toEqual([
+      403, 403, 403, 403, 403,
+    ]);
     await db
       .update(user)
       .set({ role: "admin" })
@@ -88,6 +98,28 @@ test.describe("platform product imports", () => {
     await expect(
       page.getByRole("heading", { name: "Administración" })
     ).toBeVisible();
+    const [usersResponse, salesResponse, optionsResponse, invalidResponse] =
+      await Promise.all([
+        page.request.get("/api/admin/users"),
+        page.request.get("/api/admin/sales"),
+        page.request.get("/api/admin/options?resource=organizations"),
+        page.request.get("/api/admin/options?pageSize=500"),
+      ]);
+    expect(usersResponse.status()).toBe(200);
+    expect(salesResponse.status()).toBe(200);
+    expect(optionsResponse.status()).toBe(200);
+    expect(invalidResponse.status()).toBe(400);
+    for (const response of [usersResponse, salesResponse, optionsResponse]) {
+      expect(response.headers()["cache-control"]).toContain(
+        "private, no-store"
+      );
+    }
+    const missingSale = await page.request.get("/api/admin/sales/nonexistent");
+    expect(missingSale.status()).toBe(404);
+    expect(missingSale.headers()["cache-control"]).toContain(
+      "private, no-store"
+    );
+
     const templateResponse = await page.request.get(
       "/api/admin/product-imports/importers/zentro-standard-xlsx/template"
     );
@@ -98,7 +130,13 @@ test.describe("platform product imports", () => {
     expect(templateResponse.headers()["content-disposition"]).toContain(
       "plantilla-importacion-productos-zentro-v1.xlsx"
     );
+    await page.getByText("Ventas", { exact: true }).click();
+    await expect(page).toHaveURL(ADMIN_SALES_URL_REGEX);
+    await expect(
+      page.getByRole("heading", { name: "Ventas", exact: true })
+    ).toBeVisible();
     await page.getByText("Importaciones", { exact: true }).click();
+    await expect(page).toHaveURL(ADMIN_IMPORTS_URL_REGEX);
 
     const productName = `Producto importado E2E ${Date.now()}`;
     const file = await buildProductFile(productName);
@@ -146,6 +184,7 @@ test.describe("platform product imports", () => {
     });
     await historyFilter.click();
     await page.getByRole("option", { name: emptyOrganizationName }).click();
+    await expect(page).toHaveURL(ADMIN_IMPORT_ORGANIZATION_URL_REGEX);
     await expect(
       page.getByText("No hay importaciones para el filtro seleccionado.")
     ).toBeVisible();

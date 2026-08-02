@@ -59,6 +59,11 @@ export const productImportBatch = pgTable(
       table.organizationId,
       table.createdAt
     ),
+    index("product_import_batch_created_idx").on(table.createdAt),
+    index("product_import_batch_actor_created_idx").on(
+      table.createdByUserId,
+      table.createdAt
+    ),
     index("product_import_batch_hash_idx").on(
       table.organizationId,
       table.fileHash

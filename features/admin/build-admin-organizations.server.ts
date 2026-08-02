@@ -9,7 +9,7 @@ import {
 import { customer } from "@/database/drizzle/schema/customer.schema";
 import { organizationModuleEntitlement } from "@/database/drizzle/schema/feature.schema";
 import { product } from "@/database/drizzle/schema/inventory.schema";
-import { sale } from "@/database/drizzle/schema/sales.schema";
+import { payment, sale } from "@/database/drizzle/schema/sales.schema";
 import type {
   AdminOrganizationDetailSchema,
   AdminOrganizationsResponseSchema,
@@ -35,6 +35,10 @@ type AdminOrganizationDetail = z.infer<typeof AdminOrganizationDetailSchema>;
 const LAST_30_DAYS = 30;
 const DETAIL_TREND_DAYS = 7;
 const RECENT_SALES_LIMIT = 8;
+
+function paymentAppliedForSale() {
+  return sql<number>`coalesce((select sum(${payment.appliedAmount}) from ${payment} where ${payment.saleId} = ${sale.id}), 0)`;
+}
 
 function normalizeNumber(value: number | string | null | undefined) {
   if (typeof value === "number") {
@@ -133,7 +137,7 @@ export async function runBuildAdminOrganizations(
     db
       .select({
         organizationId: sale.organizationId,
-        revenue: sql<number>`coalesce(sum(${sale.totalAmount} - ${sale.passThroughTotalAmount}), 0)`,
+        revenue: sql<number>`coalesce(sum(${paymentAppliedForSale()}), 0)`,
         salesCount: sql<number>`count(*)`,
       })
       .from(sale)
@@ -148,7 +152,7 @@ export async function runBuildAdminOrganizations(
     db
       .select({
         organizationId: sale.organizationId,
-        revenue: sql<number>`coalesce(sum(${sale.totalAmount} - ${sale.passThroughTotalAmount}), 0)`,
+        revenue: sql<number>`coalesce(sum(${paymentAppliedForSale()}), 0)`,
         salesCount: sql<number>`count(*)`,
       })
       .from(sale)
@@ -272,8 +276,7 @@ export async function runBuildAdminOrganizationDetail(
   const salesTrendDays = db
     .select({
       dateKey: saleDateKey.as("date_key"),
-      totalAmount: sale.totalAmount,
-      passThroughTotalAmount: sale.passThroughTotalAmount,
+      paidAmount: paymentAppliedForSale().as("paid_amount"),
     })
     .from(sale)
     .where(
@@ -312,7 +315,7 @@ export async function runBuildAdminOrganizationDetail(
       .orderBy(asc(member.createdAt)),
     db
       .select({
-        revenue: sql<number>`coalesce(sum(${sale.totalAmount} - ${sale.passThroughTotalAmount}), 0)`,
+        revenue: sql<number>`coalesce(sum(${paymentAppliedForSale()}), 0)`,
         salesCount: sql<number>`count(*)`,
       })
       .from(sale)
@@ -325,7 +328,7 @@ export async function runBuildAdminOrganizationDetail(
       ),
     db
       .select({
-        revenue: sql<number>`coalesce(sum(${sale.totalAmount} - ${sale.passThroughTotalAmount}), 0)`,
+        revenue: sql<number>`coalesce(sum(${paymentAppliedForSale()}), 0)`,
         salesCount: sql<number>`count(*)`,
       })
       .from(sale)
@@ -338,7 +341,7 @@ export async function runBuildAdminOrganizationDetail(
       ),
     db
       .select({
-        revenue: sql<number>`coalesce(sum(${sale.totalAmount} - ${sale.passThroughTotalAmount}), 0)`,
+        revenue: sql<number>`coalesce(sum(${paymentAppliedForSale()}), 0)`,
         salesCount: sql<number>`count(*)`,
         lastSaleAt: sql<Date | null>`max(${sale.createdAt})`,
       })
@@ -366,7 +369,7 @@ export async function runBuildAdminOrganizationDetail(
     db
       .select({
         dateKey: salesTrendDays.dateKey,
-        revenue: sql<number>`coalesce(sum(${salesTrendDays.totalAmount} - ${salesTrendDays.passThroughTotalAmount}), 0)`,
+        revenue: sql<number>`coalesce(sum(${salesTrendDays.paidAmount}), 0)`,
         salesCount: sql<number>`count(*)`,
       })
       .from(salesTrendDays)

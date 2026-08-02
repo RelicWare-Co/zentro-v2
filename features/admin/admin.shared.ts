@@ -3,7 +3,18 @@ import type {
   UserWithRole,
 } from "better-auth/plugins/admin";
 
-export type AdminPanelUser = UserWithRole;
+export interface AdminPanelUserMetrics {
+  historicalPaidAmount: number;
+  lastSaleAt: number | null;
+  paidAmount: number;
+  paidAmount30d: number;
+  salesCount: number;
+}
+
+export type AdminPanelUser = UserWithRole & {
+  metrics?: AdminPanelUserMetrics;
+  organizations?: Array<{ id: string; name: string; role: string }>;
+};
 export type AdminPanelSession = SessionWithImpersonatedBy;
 
 export function parseUserRoles(role: string | null | undefined): string[] {

@@ -1,4 +1,4 @@
-import { ActionIcon, Badge } from "@mantine/core";
+import { ActionIcon, Badge, Button, Select, TextInput } from "@mantine/core";
 import {
   Building2,
   ChartColumn,
@@ -7,7 +7,9 @@ import {
   Store,
   Users,
   Wallet,
+  X,
 } from "lucide-react";
+import { useState } from "react";
 import {
   Table,
   TableBody,
@@ -19,9 +21,14 @@ import {
 import { formatAdminDateTime } from "@/features/admin/admin.shared";
 import { useAdminPage } from "@/features/admin/admin-page-context";
 import {
+  getAdminUrlParams,
+  replaceAdminUrlParams,
+} from "@/features/admin/admin-url-state";
+import {
   AdminTabError,
   AdminTabLoading,
 } from "@/features/admin/components/admin-page-states";
+import { useAdminOptionsQuery } from "@/features/admin/hooks/use-admin-options";
 import {
   type AdminPlatformOverview,
   useAdminOverviewQuery,
@@ -34,8 +41,6 @@ import {
 import {
   formatCompactCurrency,
   formatCount,
-  formatDelta,
-  getPercentChange,
 } from "@/features/dashboard/dashboard-formatters.shared";
 import { formatCurrency } from "@/lib/format-currency.shared";
 
@@ -43,9 +48,28 @@ const trendDayFormatter = new Intl.DateTimeFormat("es-CO", {
   day: "numeric",
   month: "short",
 });
+const trendMonthFormatter = new Intl.DateTimeFormat("es-CO", {
+  month: "short",
+  year: "2-digit",
+});
 
-function formatTrendDay(dateKey: string) {
-  return trendDayFormatter.format(new Date(`${dateKey}T12:00:00`));
+function formatTrendBucket(
+  dateKey: string,
+  granularity: "day" | "week" | "month"
+) {
+  const date = new Date(
+    granularity === "month" ? `${dateKey}-01T12:00:00` : `${dateKey}T12:00:00`
+  );
+  return granularity === "month"
+    ? trendMonthFormatter.format(date)
+    : trendDayFormatter.format(date);
+}
+
+function granularityLabel(granularity: "day" | "week" | "month") {
+  if (granularity === "week") {
+    return "Semanal";
+  }
+  return granularity === "month" ? "Mensual" : "Diaria";
 }
 
 function AdminPlatformStatCards({
@@ -53,39 +77,42 @@ function AdminPlatformStatCards({
 }: {
   overview: AdminPlatformOverview;
 }) {
-  const { month, today, totals } = overview;
+  const { today, totals } = overview;
+  const period = overview.periodSummary ?? {
+    activeOrganizations: today.activeOrganizations,
+    paidAmount: today.revenue,
+    pendingAmount: 0,
+    saleAmount: today.revenue,
+    salesCount: today.salesCount,
+  };
+  const averagePaid =
+    period.salesCount > 0 ? period.paidAmount / period.salesCount : 0;
 
   return (
     <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
       <CompactStatCard
-        description={`${formatCount(today.salesCount)} ventas · ticket prom. ${formatCurrency(today.avgTicket)}`}
+        description={`${formatCount(period.salesCount)} ventas · ticket prom. ${formatCurrency(averagePaid)}`}
         icon={Wallet}
-        title="Ingresos de hoy"
-        value={formatCurrency(today.revenue)}
+        title="Cobrado del periodo"
+        value={formatCurrency(period.paidAmount)}
       />
       <CompactStatCard
-        description="Organizaciones con ventas hoy"
+        description="Organizaciones con ventas en el periodo"
         icon={Store}
-        title="Clientes activos hoy"
-        value={`${formatCount(today.activeOrganizations)} de ${formatCount(totals.organizations)}`}
+        title="Clientes activos"
+        value={`${formatCount(period.activeOrganizations)} de ${formatCount(totals.organizations)}`}
       />
       <CompactStatCard
-        description={formatDelta(
-          getPercentChange(month.revenue, month.previousRevenue),
-          "vs mes anterior"
-        )}
+        description="Importe de ventas no canceladas"
         icon={ChartColumn}
-        title="Ingresos del mes"
-        value={formatCurrency(month.revenue)}
+        title="Ventas del periodo"
+        value={formatCurrency(period.saleAmount)}
       />
       <CompactStatCard
-        description={formatDelta(
-          getPercentChange(month.salesCount, month.previousSalesCount),
-          "vs mes anterior"
-        )}
+        description="Pendiente de cobro en ventas no canceladas"
         icon={Receipt}
-        title="Ventas del mes"
-        value={formatCount(month.salesCount)}
+        title="Pendiente"
+        value={formatCurrency(period.pendingAmount)}
       />
       <CompactStatCard
         description={`+${formatCount(totals.newOrganizationsThisMonth)} este mes`}
@@ -109,65 +136,86 @@ function AdminPlatformTrendPanel({
   overview: AdminPlatformOverview;
 }) {
   const trend = overview.salesTrend;
+  const trendMeta = overview.trendMeta ?? {
+    granularity: "day" as const,
+    maxPoints: 45,
+    truncated: false,
+    startDateKey: trend[0]?.dateKey ?? null,
+    endDateKey: trend.at(-1)?.dateKey ?? null,
+  };
   const maxRevenue = Math.max(1, ...trend.map((point) => point.revenue));
-  const totalRevenue = trend.reduce((total, point) => total + point.revenue, 0);
-  const totalSales = trend.reduce(
-    (total, point) => total + point.salesCount,
-    0
-  );
+  const totalRevenue =
+    overview.periodSummary?.paidAmount ??
+    trend.reduce((total, point) => total + point.revenue, 0);
+  const totalSales =
+    overview.periodSummary?.salesCount ??
+    trend.reduce((total, point) => total + point.salesCount, 0);
   const hasTrendData = totalRevenue > 0 || totalSales > 0;
+  const trendRange =
+    trendMeta.startDateKey && trendMeta.endDateKey
+      ? `${formatTrendBucket(trendMeta.startDateKey, trendMeta.granularity)} – ${formatTrendBucket(trendMeta.endDateKey, trendMeta.granularity)}`
+      : "Sin rango disponible";
 
   return (
     <DashboardPanelShell
-      description="Ingresos diarios sumando todas las organizaciones."
+      description={`Cobros aplicados con granularidad ${granularityLabel(trendMeta.granularity).toLowerCase()} · ${trendRange}${trendMeta.truncated ? ` · últimos ${trendMeta.maxPoints} periodos con actividad` : ""}.`}
       headerAside={
         <Badge
           className="self-start border-zinc-700 bg-black/20 text-zinc-300 sm:self-auto"
           tt="none"
           variant="outline"
         >
+          {granularityLabel(trendMeta.granularity)} ·{" "}
           {formatCurrency(totalRevenue)} · {formatCount(totalSales)} ventas
         </Badge>
       }
-      title="Ventas de los últimos 14 días"
+      title="Ventas del periodo seleccionado"
     >
       {hasTrendData ? (
-        <div className="grid h-44 grid-cols-[repeat(14,minmax(0,1fr))] gap-1 sm:gap-2">
-          {trend.map((point) => {
-            const barHeight = Math.max(
-              point.revenue > 0 ? 10 : 4,
-              (point.revenue / maxRevenue) * 100
-            );
+        <div className="overflow-x-auto pb-2">
+          <div
+            className="grid h-44 gap-1 sm:gap-2"
+            style={{
+              gridTemplateColumns: `repeat(${trend.length}, minmax(32px, 1fr))`,
+              minWidth: `${Math.max(560, trend.length * 36)}px`,
+            }}
+          >
+            {trend.map((point) => {
+              const barHeight = Math.max(
+                point.revenue > 0 ? 10 : 4,
+                (point.revenue / maxRevenue) * 100
+              );
 
-            return (
-              <div
-                className="flex h-full min-w-0 flex-col justify-end"
-                key={point.dateKey}
-                title={`${formatTrendDay(point.dateKey)}: ${formatCurrency(point.revenue)} · ${formatCount(point.salesCount)} ventas · ${formatCount(point.activeOrganizations)} clientes activos`}
-              >
-                <div className="mb-1 hidden text-center text-[10px] text-zinc-500 lg:block">
-                  {formatCompactCurrency(point.revenue)}
+              return (
+                <div
+                  className="flex h-full min-w-0 flex-col justify-end"
+                  key={point.dateKey}
+                  title={`${formatTrendBucket(point.dateKey, trendMeta.granularity)}: ${formatCurrency(point.revenue)} · ${formatCount(point.salesCount)} ventas · ${formatCount(point.activeOrganizations)} clientes activos`}
+                >
+                  <div className="mb-1 hidden text-center text-[10px] text-zinc-500 lg:block">
+                    {formatCompactCurrency(point.revenue)}
+                  </div>
+                  <div className="flex h-24 items-end border-zinc-800/80 border-b px-0.5">
+                    <div
+                      className={
+                        point.revenue > 0
+                          ? "w-full rounded-t-md bg-gradient-to-t from-[var(--color-voltage)] to-[#f1ff87] shadow-[0_0_20px_rgba(201,230,5,0.12)] transition-all"
+                          : "w-full rounded-full bg-zinc-800 transition-all"
+                      }
+                      style={{ height: `${barHeight}%` }}
+                    />
+                  </div>
+                  <div className="mt-2 truncate text-center text-[10px] text-zinc-400">
+                    {formatTrendBucket(point.dateKey, trendMeta.granularity)}
+                  </div>
                 </div>
-                <div className="flex h-24 items-end border-zinc-800/80 border-b px-0.5">
-                  <div
-                    className={
-                      point.revenue > 0
-                        ? "w-full rounded-t-md bg-gradient-to-t from-[var(--color-voltage)] to-[#f1ff87] shadow-[0_0_20px_rgba(201,230,5,0.12)] transition-all"
-                        : "w-full rounded-full bg-zinc-800 transition-all"
-                    }
-                    style={{ height: `${barHeight}%` }}
-                  />
-                </div>
-                <div className="mt-2 truncate text-center text-[10px] text-zinc-400">
-                  {formatTrendDay(point.dateKey)}
-                </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       ) : (
         <EmptyState>
-          No hay ventas en los últimos 14 días para mostrar el gráfico.
+          No hay ventas para mostrar en el periodo seleccionado.
         </EmptyState>
       )}
     </DashboardPanelShell>
@@ -181,20 +229,40 @@ function AdminDailySalesByClientPanel({
 }) {
   const { actions } = useAdminPage();
   const rows = overview.organizationsDaily;
+  const rankingMeta = overview.rankingMeta ?? {
+    limit: rows.length,
+    total: rows.length,
+    truncated: false,
+  };
+  const openOrganizations = () => {
+    replaceAdminUrlParams({ adminTab: "organizations" });
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  };
 
   return (
     <DashboardPanelShell
-      description="Cómo va el día de cada organización, incluyendo las que no han vendido."
+      description={`Ranking por cobrado del periodo${rankingMeta.truncated ? ` · top ${rankingMeta.limit} de ${rankingMeta.total}` : ""}.`}
       headerAside={
-        <Badge
-          className="self-start border-zinc-700 bg-black/20 text-zinc-300 sm:self-auto"
-          tt="none"
-          variant="outline"
-        >
-          {formatCount(overview.today.activeOrganizations)} con ventas hoy
-        </Badge>
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge
+            className="self-start border-zinc-700 bg-black/20 text-zinc-300 sm:self-auto"
+            tt="none"
+            variant="outline"
+          >
+            {formatCount(overview.today.activeOrganizations)} con ventas
+          </Badge>
+          {rankingMeta.truncated ? (
+            <Button
+              onClick={openOrganizations}
+              size="compact-xs"
+              variant="subtle"
+            >
+              Ver listado completo
+            </Button>
+          ) : null}
+        </div>
       }
-      title="Ventas de hoy por cliente"
+      title="Ventas por organización"
     >
       {rows.length === 0 ? (
         <EmptyState>Aún no hay organizaciones registradas.</EmptyState>
@@ -205,10 +273,10 @@ function AdminDailySalesByClientPanel({
               <TableRow className="border-zinc-800 hover:bg-transparent">
                 <TableHead className="px-4 text-zinc-400">Cliente</TableHead>
                 <TableHead className="text-right text-zinc-400">
-                  Ventas hoy
+                  Ventas del periodo
                 </TableHead>
                 <TableHead className="text-right text-zinc-400">
-                  Ingresos hoy
+                  Cobrado del periodo
                 </TableHead>
                 <TableHead className="hidden text-zinc-400 md:table-cell">
                   Última venta
@@ -274,7 +342,61 @@ function AdminDailySalesByClientPanel({
 }
 
 export function AdminOverviewTab() {
-  const overviewQuery = useAdminOverviewQuery();
+  const initialParams = getAdminUrlParams();
+  const [period, setPeriod] = useState<"30d" | "custom" | "all">(() => {
+    const value = initialParams.get("v_period");
+    return value === "custom" || value === "all" ? value : "30d";
+  });
+  const [organizationId, setOrganizationId] = useState(
+    () => initialParams.get("v_organizationId") ?? ""
+  );
+  const [startDate, setStartDate] = useState(
+    () => initialParams.get("v_startDate") ?? ""
+  );
+  const [endDate, setEndDate] = useState(
+    () => initialParams.get("v_endDate") ?? ""
+  );
+  const [organizationSearch, setOrganizationSearch] = useState("");
+  const organizationOptions = useAdminOptionsQuery({
+    resource: "organizations",
+    search: organizationSearch,
+    selectedIds: organizationId ? [organizationId] : [],
+  });
+  const updatePeriod = (value: string) => {
+    const next = value === "custom" || value === "all" ? value : "30d";
+    setPeriod(next);
+    replaceAdminUrlParams({ v_period: next, v_page: null });
+  };
+  const updateOrganization = (value: string | null) => {
+    setOrganizationId(value ?? "");
+    replaceAdminUrlParams({ v_organizationId: value, v_page: null });
+  };
+  const updateDate = (key: "startDate" | "endDate", value: string) => {
+    if (key === "startDate") {
+      setStartDate(value);
+    } else {
+      setEndDate(value);
+    }
+    replaceAdminUrlParams({ [`v_${key}`]: value, v_page: null });
+  };
+  const clear = () => {
+    setPeriod("30d");
+    setOrganizationId("");
+    setStartDate("");
+    setEndDate("");
+    replaceAdminUrlParams({
+      v_period: null,
+      v_organizationId: null,
+      v_startDate: null,
+      v_endDate: null,
+    });
+  };
+  const overviewQuery = useAdminOverviewQuery({
+    period,
+    organizationId: organizationId || undefined,
+    startDate: startDate || undefined,
+    endDate: endDate || undefined,
+  });
 
   if (overviewQuery.isPending) {
     return <AdminTabLoading />;
@@ -285,6 +407,7 @@ export function AdminOverviewTab() {
       <AdminTabError
         error={overviewQuery.error}
         fallbackMessage="Ocurrió un error al cargar las analíticas. Intenta de nuevo."
+        onRetry={() => overviewQuery.refetch()}
         title="No se pudo cargar el resumen de la plataforma"
       />
     );
@@ -294,6 +417,57 @@ export function AdminOverviewTab() {
 
   return (
     <div className="space-y-6">
+      <div className="flex flex-wrap items-end gap-3 rounded-xl border border-zinc-800 bg-[var(--color-carbon)] p-4">
+        <Select
+          allowDeselect={false}
+          data={[
+            { value: "30d", label: "Últimos 30 días" },
+            { value: "custom", label: "Periodo personalizado" },
+            { value: "all", label: "Histórico" },
+          ]}
+          onChange={(value) => updatePeriod(value ?? "30d")}
+          value={period}
+          w={190}
+        />
+        <Select
+          clearable
+          data={(organizationOptions.data?.items ?? []).map((organization) => ({
+            value: organization.id,
+            label: organization.name,
+          }))}
+          nothingFoundMessage="No se encontraron organizaciones"
+          onChange={updateOrganization}
+          onSearchChange={setOrganizationSearch}
+          placeholder="Todas las organizaciones"
+          searchable
+          searchValue={organizationSearch}
+          value={organizationId || null}
+          w={240}
+        />
+        {period === "custom" ? (
+          <>
+            <TextInput
+              label="Desde"
+              onChange={(event) => updateDate("startDate", event.target.value)}
+              type="date"
+              value={startDate}
+            />
+            <TextInput
+              label="Hasta"
+              onChange={(event) => updateDate("endDate", event.target.value)}
+              type="date"
+              value={endDate}
+            />
+          </>
+        ) : null}
+        <Button
+          leftSection={<X className="size-4" />}
+          onClick={clear}
+          variant="subtle"
+        >
+          Limpiar filtros
+        </Button>
+      </div>
       <AdminPlatformStatCards overview={overview} />
       <AdminPlatformTrendPanel overview={overview} />
       <AdminDailySalesByClientPanel overview={overview} />

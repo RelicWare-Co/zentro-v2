@@ -4,11 +4,15 @@ import {
   Button,
   Loader,
   Menu,
+  NumberInput,
   Select,
   TextInput,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
   ChevronLeft,
   ChevronRight,
   KeyRound,
@@ -23,7 +27,9 @@ import {
   Users,
   UserX,
   VenetianMask,
+  X,
 } from "lucide-react";
+import { useState } from "react";
 import {
   Table,
   TableBody,
@@ -40,8 +46,10 @@ import {
   isUserCurrentlyBanned,
 } from "@/features/admin/admin.shared";
 import { useAdminPage } from "@/features/admin/admin-page-context";
+import { useAdminOptionsQuery } from "@/features/admin/hooks/use-admin-options";
 import { useAdminUserActions } from "@/features/admin/hooks/use-admin-user-actions";
 import type { AdminUsersSearchField } from "@/features/admin/hooks/use-admin-users";
+import { formatCurrency } from "@/lib/format-currency.shared";
 import { getErrorMessage } from "@/lib/utils";
 
 const darkMenuStyles = {
@@ -206,53 +214,261 @@ const SEARCH_FIELD_OPTIONS: { label: string; value: AdminUsersSearchField }[] =
     { value: "name", label: "Nombre" },
   ];
 
+function UserSortHeader({
+  active,
+  direction,
+  label,
+  onClick,
+}: {
+  active: boolean;
+  direction: "asc" | "desc";
+  label: string;
+  onClick: () => void;
+}) {
+  let Icon = ArrowUpDown;
+  if (active) {
+    Icon = direction === "asc" ? ArrowUp : ArrowDown;
+  }
+  return (
+    <button
+      className="inline-flex items-center gap-1 hover:text-white"
+      onClick={onClick}
+      type="button"
+    >
+      {label}
+      <Icon aria-hidden="true" className="size-3.5" />
+    </button>
+  );
+}
+
 export function AdminUsersTable() {
   const { state, actions } = useAdminPage();
+  const [organizationSearch, setOrganizationSearch] = useState("");
+  const organizationOptionsQuery = useAdminOptionsQuery({
+    resource: "organizations",
+    search: organizationSearch,
+    selectedIds: state.organizationId ? [state.organizationId] : [],
+  });
+  const organizationOptions =
+    organizationOptionsQuery.data?.items.map((organization) => ({
+      value: organization.id,
+      label: organization.name,
+    })) ?? [];
+  const hasFilters = Boolean(
+    state.searchQuery.trim() ||
+      state.organizationId ||
+      state.role ||
+      state.banned !== null ||
+      state.emailVerified !== null ||
+      state.hasSales !== null ||
+      state.paidMin !== null ||
+      state.paidMax !== null ||
+      state.period !== "30d"
+  );
+  const toggleSort = (sortBy: typeof state.sortBy) => {
+    actions.setSort(sortBy);
+    if (state.sortBy === sortBy && state.sortDirection === "desc") {
+      actions.setSortDirection("asc");
+    } else {
+      actions.setSortDirection("desc");
+    }
+  };
 
   return (
     <section className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="w-full sm:max-w-sm">
-          <TextInput
-            aria-label="Buscar usuarios"
-            leftSection={<Search aria-hidden="true" className="size-4" />}
-            onChange={(event) => actions.setSearchQuery(event.target.value)}
-            placeholder={
-              state.searchField === "email"
-                ? "Buscar por email…"
-                : "Buscar por nombre…"
-            }
-            rightSection={
-              state.isFetching && !state.isPending ? (
-                <Loader color="gray" size="xs" />
-              ) : null
-            }
-            value={state.searchQuery}
-          />
-        </div>
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <TextInput
+          aria-label="Buscar usuarios"
+          leftSection={<Search aria-hidden="true" className="size-4" />}
+          onChange={(event) => actions.setSearchQuery(event.target.value)}
+          placeholder={
+            state.searchField === "email"
+              ? "Buscar por email…"
+              : "Buscar por nombre…"
+          }
+          rightSection={
+            state.isFetching && !state.isPending ? (
+              <Loader color="gray" size="xs" />
+            ) : null
+          }
+          value={state.searchQuery}
+        />
         <Select
           allowDeselect={false}
           aria-label="Campo de búsqueda"
-          className="w-full sm:w-40"
           data={SEARCH_FIELD_OPTIONS}
           onChange={(value) =>
             actions.setSearchField((value ?? "email") as AdminUsersSearchField)
           }
           value={state.searchField}
         />
+        <Select
+          clearable
+          data={organizationOptions}
+          nothingFoundMessage="No se encontraron organizaciones"
+          onChange={(value) => actions.setOrganizationId(value ?? "")}
+          onSearchChange={setOrganizationSearch}
+          placeholder="Organización"
+          searchable
+          searchValue={organizationSearch}
+          value={state.organizationId || null}
+        />
+        <Select
+          clearable
+          data={[
+            { value: "admin", label: "Administradores" },
+            { value: "user", label: "Usuarios" },
+          ]}
+          onChange={(value) =>
+            actions.setRole((value ?? "") as typeof state.role)
+          }
+          placeholder="Rol"
+          value={state.role || null}
+        />
+        <Select
+          clearable
+          data={[
+            { value: "true", label: "Suspendidos" },
+            { value: "false", label: "Activos" },
+          ]}
+          onChange={(value) =>
+            actions.setBanned(value === null ? null : value === "true")
+          }
+          placeholder="Estado"
+          value={state.banned === null ? null : String(state.banned)}
+        />
+        <Select
+          clearable
+          data={[
+            { value: "true", label: "Email verificado" },
+            { value: "false", label: "Email no verificado" },
+          ]}
+          onChange={(value) =>
+            actions.setEmailVerified(value === null ? null : value === "true")
+          }
+          placeholder="Verificación de email"
+          value={
+            state.emailVerified === null ? null : String(state.emailVerified)
+          }
+        />
+        <Select
+          clearable
+          data={[
+            { value: "true", label: "Con ventas" },
+            { value: "false", label: "Sin ventas" },
+          ]}
+          onChange={(value) =>
+            actions.setHasSales(value === null ? null : value === "true")
+          }
+          placeholder="Actividad"
+          value={state.hasSales === null ? null : String(state.hasSales)}
+        />
+        <NumberInput
+          hideControls
+          label="Cobrado mínimo"
+          min={0}
+          onChange={(value) =>
+            actions.setPaidMin(typeof value === "number" ? value : null)
+          }
+          value={state.paidMin ?? ""}
+        />
+        <NumberInput
+          hideControls
+          label="Cobrado máximo"
+          min={0}
+          onChange={(value) =>
+            actions.setPaidMax(typeof value === "number" ? value : null)
+          }
+          value={state.paidMax ?? ""}
+        />
       </div>
-
+      <div className="flex flex-wrap items-center gap-2">
+        <Select
+          allowDeselect={false}
+          data={[
+            { value: "30d", label: "Últimos 30 días" },
+            { value: "custom", label: "Periodo personalizado" },
+            { value: "all", label: "Histórico" },
+          ]}
+          onChange={(value) =>
+            actions.setPeriod((value ?? "30d") as typeof state.period)
+          }
+          value={state.period}
+          w={190}
+        />
+        {state.period === "custom" ? (
+          <>
+            <TextInput
+              aria-label="Desde"
+              onChange={(event) => actions.setStartDate(event.target.value)}
+              type="date"
+              value={state.startDate}
+            />
+            <TextInput
+              aria-label="Hasta"
+              onChange={(event) => actions.setEndDate(event.target.value)}
+              type="date"
+              value={state.endDate}
+            />
+          </>
+        ) : null}
+        {hasFilters ? (
+          <Button
+            leftSection={<X className="size-4" />}
+            onClick={actions.clearUserFilters}
+            variant="subtle"
+          >
+            Limpiar filtros
+          </Button>
+        ) : null}
+      </div>
       <div className="overflow-hidden rounded-xl border border-zinc-800 bg-[var(--color-carbon)]">
         <Table>
           <TableHeader>
             <TableRow className="border-zinc-800 hover:bg-transparent">
-              <TableHead className="px-4 text-zinc-400">Usuario</TableHead>
+              <TableHead className="px-4 text-zinc-400">
+                <UserSortHeader
+                  active={state.sortBy === "name"}
+                  direction={state.sortDirection}
+                  label="Usuario"
+                  onClick={() => toggleSort("name")}
+                />
+              </TableHead>
               <TableHead className="text-zinc-400">Estado</TableHead>
               <TableHead className="hidden text-zinc-400 md:table-cell">
                 Verificado
               </TableHead>
               <TableHead className="hidden text-zinc-400 lg:table-cell">
-                Creado
+                <UserSortHeader
+                  active={state.sortBy === "createdAt"}
+                  direction={state.sortDirection}
+                  label="Creado"
+                  onClick={() => toggleSort("createdAt")}
+                />
+              </TableHead>
+              <TableHead className="hidden text-right text-zinc-400 lg:table-cell">
+                <UserSortHeader
+                  active={state.sortBy === "lastSaleAt"}
+                  direction={state.sortDirection}
+                  label="Última venta"
+                  onClick={() => toggleSort("lastSaleAt")}
+                />
+              </TableHead>
+              <TableHead className="hidden text-right text-zinc-400 xl:table-cell">
+                <UserSortHeader
+                  active={state.sortBy === "paidAmount"}
+                  direction={state.sortDirection}
+                  label="Cobrado"
+                  onClick={() => toggleSort("paidAmount")}
+                />
+              </TableHead>
+              <TableHead className="hidden text-right text-zinc-400 2xl:table-cell">
+                <UserSortHeader
+                  active={state.sortBy === "historicalPaidAmount"}
+                  direction={state.sortDirection}
+                  label="Histórico"
+                  onClick={() => toggleSort("historicalPaidAmount")}
+                />
               </TableHead>
               <TableHead className="text-right text-zinc-400">
                 Acciones
@@ -262,12 +478,12 @@ export function AdminUsersTable() {
           <TableBody>
             {state.users.length === 0 ? (
               <TableRow className="border-zinc-800 hover:bg-transparent">
-                <TableCell colSpan={5}>
+                <TableCell colSpan={8}>
                   <div className="flex flex-col items-center gap-3 p-10 text-center">
                     <Users className="size-8 text-zinc-600" />
                     <p className="text-sm text-zinc-500">
-                      {state.searchQuery.trim()
-                        ? "No hay usuarios que coincidan con la búsqueda."
+                      {hasFilters
+                        ? "No hay usuarios que coincidan con los filtros."
                         : "Aún no hay usuarios registrados."}
                     </p>
                   </div>
@@ -303,6 +519,17 @@ export function AdminUsersTable() {
                   <TableCell className="hidden text-sm text-zinc-300 lg:table-cell">
                     {formatAdminDateTime(user.createdAt)}
                   </TableCell>
+                  <TableCell className="hidden text-right text-sm text-zinc-400 lg:table-cell">
+                    {user.metrics?.lastSaleAt
+                      ? formatAdminDateTime(user.metrics.lastSaleAt)
+                      : "Sin ventas"}
+                  </TableCell>
+                  <TableCell className="hidden text-right text-sm text-zinc-300 tabular-nums xl:table-cell">
+                    {formatCurrency(user.metrics?.paidAmount ?? 0)}
+                  </TableCell>
+                  <TableCell className="hidden text-right text-sm text-zinc-300 tabular-nums 2xl:table-cell">
+                    {formatCurrency(user.metrics?.historicalPaidAmount ?? 0)}
+                  </TableCell>
                   <TableCell className="text-right">
                     <UserRowActions user={user} />
                   </TableCell>
@@ -312,10 +539,9 @@ export function AdminUsersTable() {
           </TableBody>
         </Table>
       </div>
-
       <div className="flex items-center justify-between">
         <p className="text-sm text-zinc-500">
-          Página {state.page} de {state.totalPages}
+          Página {state.page} de {state.totalPages} · {state.total} usuarios
         </p>
         <div className="flex gap-2">
           <Button
