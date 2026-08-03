@@ -100,6 +100,10 @@ export interface SaleModeCheckoutState {
   ) => void;
 }
 
+export interface SaleModeExitOptions {
+  discardPendingKitchenChanges?: boolean;
+}
+
 export interface SaleModeAdapter {
   addToCart(product: Product, modifiers: CartItemModifier[]): void;
   readonly allowCreditSales: boolean;
@@ -110,7 +114,7 @@ export interface SaleModeAdapter {
   readonly discountInput: string;
   enter(payload?: unknown): void;
   readonly error: Error | null;
-  exit(): Promise<boolean>;
+  exit(options?: SaleModeExitOptions): Promise<boolean>;
   finalizeSale(
     payments: SalePayment[],
     options: SaleFinalizeOptions

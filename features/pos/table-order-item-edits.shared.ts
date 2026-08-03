@@ -2,6 +2,13 @@ export type ItemQuantityOverrides = Record<string, number>;
 
 export function createItemMutationQueue() {
   const tails = new Map<string, Promise<void>>();
+  const pendingMutations = new Set<Promise<void>>();
+
+  const waitForPendingMutations = async () => {
+    while (pendingMutations.size > 0) {
+      await Promise.all(pendingMutations);
+    }
+  };
 
   return {
     clear() {
@@ -10,17 +17,20 @@ export function createItemMutationQueue() {
     enqueue(itemId: string, mutation: () => Promise<void>) {
       const previous = tails.get(itemId) ?? Promise.resolve();
       const next = previous.then(mutation, mutation);
-      tails.set(
-        itemId,
-        next.catch(() => undefined)
-      );
+      const settled = next.catch(() => undefined);
+      tails.set(itemId, settled);
+      pendingMutations.add(settled);
+      settled.finally(() => pendingMutations.delete(settled));
       return next;
     },
+    hasPending() {
+      return pendingMutations.size > 0;
+    },
     async waitForAll() {
-      await Promise.all(tails.values());
+      await waitForPendingMutations();
     },
     async drain() {
-      await Promise.all(tails.values());
+      await waitForPendingMutations();
       tails.clear();
     },
   };

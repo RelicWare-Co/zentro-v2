@@ -11,6 +11,7 @@ import type {
   PosTableSessionState,
   SaleFinalizeOptions,
   SaleModeAdapter,
+  SaleModeExitOptions,
   SaleModeFactoryParams,
   SalePayment,
 } from "@/features/pos/sale-modes/types";
@@ -184,15 +185,18 @@ export function useTableSaleAdapter(
     ]
   );
 
-  const exit = useCallback(async () => {
-    const didExit = await tableOrder.exitTable();
-    if (!didExit) {
-      return false;
-    }
-    checkout.resetPayments();
-    resetDiscount();
-    return true;
-  }, [checkout.resetPayments, resetDiscount, tableOrder.exitTable]);
+  const exit = useCallback(
+    async (options?: SaleModeExitOptions) => {
+      const didExit = await tableOrder.exitTable(options);
+      if (!didExit) {
+        return false;
+      }
+      checkout.resetPayments();
+      resetDiscount();
+      return true;
+    },
+    [checkout.resetPayments, resetDiscount, tableOrder.exitTable]
+  );
 
   const totalItems = useMemo(
     () => tableOrder.cart.reduce((sum, item) => sum + item.quantity, 0),

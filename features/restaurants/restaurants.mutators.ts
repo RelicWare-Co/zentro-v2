@@ -31,7 +31,8 @@ export const deleteRestaurantOrderItemArgsSchema = zod.object({
   orderItemId: zod.string().trim().min(1),
 });
 export const discardPendingKitchenChangesArgsSchema = zod.object({
-  orderId: zod.string().trim().min(1),
+  orderId: zod.string().trim().min(1).nullable().optional(),
+  tableId: zod.string().trim().min(1),
 });
 export const sendRestaurantOrderToKitchenArgsSchema = zod.object({
   orderId: zod.string().trim().min(1),

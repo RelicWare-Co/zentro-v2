@@ -338,7 +338,8 @@ export function useAddRestaurantOrderItemMutation() {
     async (input: z.infer<typeof AddRestaurantOrderItemInputSchema>, zero) => {
       const itemId = crypto.randomUUID();
       await waitForZeroMutation(
-        zero.mutate(mutators.restaurants.addOrderItem({ ...input, itemId }))
+        zero.mutate(mutators.restaurants.addOrderItem({ ...input, itemId })),
+        { awaitServer: true }
       );
       return { ...input, itemId };
     }
@@ -382,7 +383,8 @@ export function useDeleteRestaurantOrderItemMutation() {
       zero
     ) => {
       await waitForZeroMutation(
-        zero.mutate(mutators.restaurants.deleteOrderItem(input))
+        zero.mutate(mutators.restaurants.deleteOrderItem(input)),
+        { awaitServer: true }
       );
       return { success: true as const };
     }

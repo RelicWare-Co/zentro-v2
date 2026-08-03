@@ -1,8 +1,21 @@
-import { ActionIcon, Alert, Badge, Button } from "@mantine/core";
+import {
+  ActionIcon,
+  Alert,
+  Badge,
+  Button,
+  Group,
+  Modal,
+  Stack,
+  Text,
+} from "@mantine/core";
 import { UtensilsCrossed, X } from "lucide-react";
-import { type ReactNode, useEffect, useRef } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { usePageContext } from "vike-react/usePageContext";
 import { isOrganizationManagerRole } from "@/features/organization/access-control.shared";
+import type {
+  PosTableSessionState,
+  SaleModeExitOptions,
+} from "@/features/pos/sale-modes/types";
 import { RestaurantFloorView } from "@/features/restaurants/components/restaurant-floor-view";
 import { useRestaurantBootstrap } from "@/features/restaurants/hooks/use-restaurants";
 import { cn } from "@/lib/utils";
@@ -18,10 +31,15 @@ function RestaurantPosTablesPanel({
   activeTableId,
   onClose,
   onSelectTable,
+  tableSession,
 }: {
   activeTableId: string | null;
   onClose: () => void;
-  onSelectTable: (tableId: string) => void;
+  onSelectTable: (
+    tableId: string,
+    options?: SaleModeExitOptions
+  ) => Promise<boolean>;
+  tableSession: PosTableSessionState | null;
 }) {
   const pageContext = usePageContext();
   const canManageLayout = isOrganizationManagerRole(
@@ -30,6 +48,10 @@ function RestaurantPosTablesPanel({
   const bootstrapQuery = useRestaurantBootstrap();
   const bootstrap = bootstrapQuery.data;
   const panelRef = useRef<HTMLDivElement>(null);
+  const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false);
+  const [isSwitchingTable, setIsSwitchingTable] = useState(false);
+  const [pendingTableId, setPendingTableId] = useState<string | null>(null);
+  const [selectionError, setSelectionError] = useState<string | null>(null);
 
   useEffect(() => {
     // Steal focus from the (now covered) catalog search input so barcode and
@@ -55,9 +77,74 @@ function RestaurantPosTablesPanel({
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
 
-  const handleSelectTable = (tableId: string) => {
-    onSelectTable(tableId);
-    onClose();
+  const closeDiscardConfirmModal = () => {
+    if (isSwitchingTable) {
+      return;
+    }
+    setPendingTableId(null);
+    setSelectionError(null);
+    setIsDiscardConfirmOpen(false);
+  };
+
+  const selectTable = async (
+    tableId: string,
+    options?: SaleModeExitOptions
+  ) => {
+    setSelectionError(null);
+    setIsSwitchingTable(true);
+    try {
+      const didSelect = await onSelectTable(tableId, options);
+      if (!didSelect && options?.discardPendingKitchenChanges) {
+        setSelectionError(
+          "No se pudieron descartar los cambios. Inténtalo de nuevo."
+        );
+      }
+      return didSelect;
+    } catch (error) {
+      setSelectionError(
+        error instanceof Error
+          ? error.message
+          : "No se pudo cambiar de mesa. Inténtalo de nuevo."
+      );
+      return false;
+    } finally {
+      setIsSwitchingTable(false);
+    }
+  };
+
+  const handleSelectTable = async (tableId: string) => {
+    if (isSwitchingTable || tableSession?.isDiscardingChanges) {
+      return;
+    }
+    if (tableId === activeTableId) {
+      onClose();
+      return;
+    }
+    if (tableSession?.hasPendingKitchenChanges) {
+      setPendingTableId(tableId);
+      setSelectionError(null);
+      setIsDiscardConfirmOpen(true);
+      return;
+    }
+
+    if (await selectTable(tableId)) {
+      onClose();
+    }
+  };
+
+  const confirmDiscardAndSelectTable = async () => {
+    if (!pendingTableId || isSwitchingTable) {
+      return;
+    }
+
+    if (
+      await selectTable(pendingTableId, {
+        discardPendingKitchenChanges: true,
+      })
+    ) {
+      closeDiscardConfirmModal();
+      onClose();
+    }
   };
 
   let content: ReactNode = null;
@@ -151,6 +238,60 @@ function RestaurantPosTablesPanel({
 
         <div className="flex min-h-0 flex-1 flex-col">{content}</div>
       </div>
+
+      <Modal
+        centered
+        onClose={closeDiscardConfirmModal}
+        opened={isDiscardConfirmOpen}
+        title="Descartar cambios sin enviar"
+      >
+        <Stack gap="md">
+          <Text c="dimmed" size="sm">
+            Hay cambios sin enviar en {tableSession?.tableName ?? "la mesa"}.
+            ¿Deseas descartarlos antes de cambiar de mesa?
+          </Text>
+          <div className="rounded-md bg-gray-0 p-3 dark:bg-dark-6">
+            <Text fw={600} size="sm">
+              Cambios pendientes
+            </Text>
+            <Text c="dimmed" size="sm">
+              Altas en borrador:{" "}
+              {tableSession?.pendingKitchenPreparationCount ?? 0}
+            </Text>
+            <Text c="dimmed" size="sm">
+              Cambios de cantidad o nota:{" "}
+              {tableSession?.pendingKitchenModificationCount ?? 0}
+            </Text>
+            <Text c="dimmed" size="sm">
+              Cancelaciones:{" "}
+              {tableSession?.pendingKitchenCancellationCount ?? 0}
+            </Text>
+          </div>
+          {selectionError ? (
+            <Text c="red" size="sm">
+              {selectionError}
+            </Text>
+          ) : null}
+          <Group justify="flex-end">
+            <Button
+              disabled={isSwitchingTable}
+              onClick={closeDiscardConfirmModal}
+              type="button"
+              variant="default"
+            >
+              Cancelar
+            </Button>
+            <Button
+              color="red"
+              loading={isSwitchingTable}
+              onClick={confirmDiscardAndSelectTable}
+              type="button"
+            >
+              Descartar y cambiar
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
     </div>
   );
 }
@@ -169,11 +310,16 @@ export function RestaurantPosTables({
   isOpen,
   onOpenChange,
   onSelectTable,
+  tableSession,
 }: {
   activeTableId: string | null;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onSelectTable: (tableId: string) => void;
+  onSelectTable: (
+    tableId: string,
+    options?: SaleModeExitOptions
+  ) => Promise<boolean>;
+  tableSession: PosTableSessionState | null;
 }) {
   return (
     <>
@@ -192,6 +338,7 @@ export function RestaurantPosTables({
           activeTableId={activeTableId}
           onClose={() => onOpenChange(false)}
           onSelectTable={onSelectTable}
+          tableSession={tableSession}
         />
       </div>
 

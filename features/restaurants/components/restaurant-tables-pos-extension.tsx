@@ -21,7 +21,10 @@ export function RestaurantTablesPosExtension({
         }
         onCloseModal();
       }}
-      onSelectTable={(tableId) => saleMode?.enterMode?.(tableId)}
+      onSelectTable={(tableId, options) =>
+        saleMode?.enterMode?.(tableId, options) ?? Promise.resolve(false)
+      }
+      tableSession={saleMode?.sessionState ?? null}
     />
   );
 }

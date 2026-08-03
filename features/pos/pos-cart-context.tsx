@@ -11,7 +11,10 @@ import { usePosModal } from "@/features/pos/pos-modal-context";
 import { POS_MODAL_IDS } from "@/features/pos/pos-page-modals.shared";
 import { usePosSaleMode } from "@/features/pos/pos-sale-mode-context";
 import { usePosShiftContext } from "@/features/pos/pos-shift-context";
-import type { PosTableSessionState } from "@/features/pos/sale-modes/types";
+import type {
+  PosTableSessionState,
+  SaleModeExitOptions,
+} from "@/features/pos/sale-modes/types";
 import type {
   CartItem,
   CartItemModifier,
@@ -25,8 +28,11 @@ export interface PosCartContextValue {
   clearCart: () => void;
   confirmModifiers: () => void;
   discountInput: string;
-  enterTableMode: (tableId: string) => Promise<boolean>;
-  exitTableMode: () => Promise<boolean>;
+  enterTableMode: (
+    tableId: string,
+    options?: SaleModeExitOptions
+  ) => Promise<boolean>;
+  exitTableMode: (options?: SaleModeExitOptions) => Promise<boolean>;
   getProductQuantity: (productId: string) => number;
   handleBarcodeScan: (value: string) => boolean;
   handleProductSelect: (product: Product) => void;
@@ -193,11 +199,17 @@ export function PosCartProvider({ children }: { children: ReactNode }) {
   );
 
   const enterTableMode = useCallback(
-    async (tableId: string) => {
+    async (tableId: string, options?: SaleModeExitOptions) => {
       if (!tableMode) {
         return false;
       }
-      const didExit = await activeMode.exit();
+      if (
+        activeMode.modeId === "table" &&
+        activeMode.sessionState?.tableId === tableId
+      ) {
+        return true;
+      }
+      const didExit = await activeMode.exit(options);
       if (!didExit) {
         return false;
       }
@@ -207,12 +219,15 @@ export function PosCartProvider({ children }: { children: ReactNode }) {
     [activeMode, tableMode]
   );
 
-  const exitTableMode = useCallback(() => {
-    if (activeMode.modeId === "table") {
-      return activeMode.exit();
-    }
-    return Promise.resolve(true);
-  }, [activeMode]);
+  const exitTableMode = useCallback(
+    (options?: SaleModeExitOptions) => {
+      if (activeMode.modeId === "table") {
+        return activeMode.exit(options);
+      }
+      return Promise.resolve(true);
+    },
+    [activeMode]
+  );
 
   const tableSession = activeMode.sessionState;
 

@@ -1,7 +1,10 @@
 import { notifications } from "@mantine/notifications";
 import { useQuery as useZeroQuery } from "@rocicorp/zero/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { PosTableOrderItemStatus } from "@/features/pos/sale-modes/types";
+import type {
+  PosTableOrderItemStatus,
+  SaleModeExitOptions,
+} from "@/features/pos/sale-modes/types";
 import {
   buildOrderItemUpdateInput,
   createItemMutationQueue,
@@ -38,6 +41,8 @@ interface PendingKitchenAutoPrint {
   tableName: string;
   ticketId: string;
 }
+
+const TABLE_ORDER_MUTATION_QUEUE_KEY = "table-order";
 
 function getErrorDescription(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
@@ -250,9 +255,14 @@ export function usePosTableOrder(
   const [pendingKitchenAutoPrint, setPendingKitchenAutoPrint] =
     useState<PendingKitchenAutoPrint | null>(null);
   const [isDiscardingChanges, setIsDiscardingChanges] = useState(false);
+  const [
+    hasPotentialPendingKitchenChanges,
+    setHasPotentialPendingKitchenChanges,
+  ] = useState(false);
   const itemNotesOverridesRef = useRef<ItemNotesOverrides>({});
   const itemQuantityOverridesRef = useRef<ItemQuantityOverrides>({});
   const itemMutationQueueRef = useRef(createItemMutationQueue());
+  const hasPotentialPendingKitchenChangesRef = useRef(false);
   const isDiscardingChangesRef = useRef(false);
   const tableDetailQuery = useRestaurantTableDetail(
     enabled ? activeTableId : null
@@ -442,15 +452,27 @@ export function usePosTableOrder(
     return statuses;
   }, [activeItems]);
 
+  const setPotentialPendingKitchenChanges = useCallback((value: boolean) => {
+    hasPotentialPendingKitchenChangesRef.current = value;
+    setHasPotentialPendingKitchenChanges(value);
+  }, []);
+
+  const enqueueItemMutation = useCallback(
+    (itemId: string, mutation: () => Promise<void>) =>
+      itemMutationQueueRef.current.enqueue(itemId, mutation),
+    []
+  );
+
   const clearTableSession = useCallback(() => {
     itemNotesOverridesRef.current = {};
     itemQuantityOverridesRef.current = {};
     itemMutationQueueRef.current.clear();
     setItemNotesOverrides({});
     setItemQuantityOverrides({});
+    setPotentialPendingKitchenChanges(false);
     setPendingKitchenAutoPrint(null);
     setActiveTableId(null);
-  }, []);
+  }, [setPotentialPendingKitchenChanges]);
 
   const enterTable = useCallback(
     (tableId: string) => {
@@ -462,47 +484,60 @@ export function usePosTableOrder(
       itemMutationQueueRef.current.clear();
       setItemNotesOverrides({});
       setItemQuantityOverrides({});
+      setPotentialPendingKitchenChanges(false);
       setPendingKitchenAutoPrint(null);
       setActiveTableId(tableId);
     },
-    [enabled]
+    [enabled, setPotentialPendingKitchenChanges]
   );
 
-  const exitTable = useCallback(async (): Promise<boolean> => {
-    if (isDiscardingChangesRef.current) {
-      return false;
-    }
+  const exitTable = useCallback(
+    async (options?: SaleModeExitOptions): Promise<boolean> => {
+      if (isDiscardingChangesRef.current) {
+        return false;
+      }
 
-    const orderId = openOrder?.id ?? null;
-    if (!(orderId && pendingKitchenItems.length > 0)) {
-      clearTableSession();
-      return true;
-    }
+      const shouldDiscard =
+        pendingKitchenItems.length > 0 ||
+        hasPotentialPendingKitchenChangesRef.current;
+      if (!shouldDiscard) {
+        clearTableSession();
+        return true;
+      }
+      if (!(options?.discardPendingKitchenChanges && activeTableId)) {
+        return false;
+      }
 
-    isDiscardingChangesRef.current = true;
-    setIsDiscardingChanges(true);
-    try {
-      await itemMutationQueueRef.current.drain();
-      await discardPendingKitchenChangesMutation.mutateAsync({ orderId });
-      clearTableSession();
-      return true;
-    } catch (error) {
-      notifications.show({
-        title: "No se pudieron descartar los cambios",
-        message: getErrorDescription(error, "Inténtalo de nuevo."),
-        color: "red",
-      });
-      return false;
-    } finally {
-      isDiscardingChangesRef.current = false;
-      setIsDiscardingChanges(false);
-    }
-  }, [
-    clearTableSession,
-    discardPendingKitchenChangesMutation,
-    openOrder?.id,
-    pendingKitchenItems.length,
-  ]);
+      isDiscardingChangesRef.current = true;
+      setIsDiscardingChanges(true);
+      try {
+        await itemMutationQueueRef.current.drain();
+        await discardPendingKitchenChangesMutation.mutateAsync({
+          orderId: openOrder?.id ?? null,
+          tableId: activeTableId,
+        });
+        clearTableSession();
+        return true;
+      } catch (error) {
+        notifications.show({
+          title: "No se pudieron descartar los cambios",
+          message: getErrorDescription(error, "Inténtalo de nuevo."),
+          color: "red",
+        });
+        return false;
+      } finally {
+        isDiscardingChangesRef.current = false;
+        setIsDiscardingChanges(false);
+      }
+    },
+    [
+      activeTableId,
+      clearTableSession,
+      discardPendingKitchenChangesMutation,
+      openOrder?.id,
+      pendingKitchenItems.length,
+    ]
+  );
 
   const addProduct = useCallback(
     async (product: Product, modifiers: CartItemModifier[]) => {
@@ -510,15 +545,18 @@ export function usePosTableOrder(
         return;
       }
       try {
-        await addItemMutation.mutateAsync({
-          tableId: activeTableId,
-          productId: product.id,
-          quantity: 1,
-          notes: null,
-          modifiers: modifiers.map((modifier) => ({
-            modifierProductId: modifier.id,
-            quantity: modifier.quantity,
-          })),
+        setPotentialPendingKitchenChanges(true);
+        await enqueueItemMutation(TABLE_ORDER_MUTATION_QUEUE_KEY, async () => {
+          await addItemMutation.mutateAsync({
+            tableId: activeTableId,
+            productId: product.id,
+            quantity: 1,
+            notes: null,
+            modifiers: modifiers.map((modifier) => ({
+              modifierProductId: modifier.id,
+              quantity: modifier.quantity,
+            })),
+          });
         });
       } catch (error) {
         notifications.show({
@@ -528,13 +566,13 @@ export function usePosTableOrder(
         });
       }
     },
-    [enabled, activeTableId, addItemMutation]
-  );
-
-  const enqueueItemMutation = useCallback(
-    (itemId: string, mutation: () => Promise<void>) =>
-      itemMutationQueueRef.current.enqueue(itemId, mutation),
-    []
+    [
+      enabled,
+      activeTableId,
+      addItemMutation,
+      enqueueItemMutation,
+      setPotentialPendingKitchenChanges,
+    ]
   );
 
   const updateItemQuantity = useCallback(
@@ -562,6 +600,7 @@ export function usePosTableOrder(
           item.quantity,
           itemQuantityOverridesRef.current
         ) + delta;
+      setPotentialPendingKitchenChanges(true);
       try {
         if (nextQuantity <= 0) {
           await enqueueItemMutation(orderItemId, async () => {
@@ -606,6 +645,7 @@ export function usePosTableOrder(
       deleteOrderItemMutation,
       enqueueItemMutation,
       updateOrderItemMutation,
+      setPotentialPendingKitchenChanges,
     ]
   );
 
@@ -629,6 +669,7 @@ export function usePosTableOrder(
         return;
       }
       try {
+        setPotentialPendingKitchenChanges(true);
         await enqueueItemMutation(orderItemId, async () => {
           await deleteOrderItemMutation.mutateAsync({ orderItemId });
         });
@@ -640,7 +681,12 @@ export function usePosTableOrder(
         });
       }
     },
-    [activeItems, deleteOrderItemMutation, enqueueItemMutation]
+    [
+      activeItems,
+      deleteOrderItemMutation,
+      enqueueItemMutation,
+      setPotentialPendingKitchenChanges,
+    ]
   );
 
   const updateItemNotes = useCallback(
@@ -659,6 +705,7 @@ export function usePosTableOrder(
       }
 
       const normalizedNotes = notes?.trim() || null;
+      setPotentialPendingKitchenChanges(true);
       await enqueueItemMutation(orderItemId, async () => {
         await updateOrderItemMutation.mutateAsync(
           buildOrderItemUpdateInput({
@@ -676,7 +723,12 @@ export function usePosTableOrder(
       itemNotesOverridesRef.current = nextOverrides;
       setItemNotesOverrides(nextOverrides);
     },
-    [activeItems, enqueueItemMutation, updateOrderItemMutation]
+    [
+      activeItems,
+      enqueueItemMutation,
+      updateOrderItemMutation,
+      setPotentialPendingKitchenChanges,
+    ]
   );
 
   const sendToKitchen = useCallback(async () => {
@@ -713,6 +765,7 @@ export function usePosTableOrder(
       return;
     }
 
+    setPotentialPendingKitchenChanges(false);
     notifications.show({
       message: `${table.name} enviada a cocina`,
       color: "green",
@@ -731,7 +784,13 @@ export function usePosTableOrder(
         areaName: table.areaName,
       });
     }
-  }, [openOrder, table, sendToKitchenMutation, organizationMetadata]);
+  }, [
+    openOrder,
+    table,
+    sendToKitchenMutation,
+    organizationMetadata,
+    setPotentialPendingKitchenChanges,
+  ]);
 
   const closeTableOrder = useCallback(
     async (params: {
@@ -804,7 +863,8 @@ export function usePosTableOrder(
     itemStatusById,
     draftItemsCount: openOrder?.totals.draftItemsCount ?? 0,
     hasSentKitchenTicket: (openOrder?.tickets.length ?? 0) > 0,
-    hasPendingKitchenChanges: pendingKitchenItems.length > 0,
+    hasPendingKitchenChanges:
+      pendingKitchenItems.length > 0 || hasPotentialPendingKitchenChanges,
     pendingKitchenCancellationCount: pendingKitchenSummary.cancellations,
     pendingKitchenModificationCount: pendingKitchenSummary.modifications,
     pendingKitchenPreparationCount: pendingKitchenSummary.preparations,

@@ -11,6 +11,7 @@ import { usePosShiftContext } from "@/features/pos/pos-shift-context";
 import type {
   PosPaymentMethodOption,
   PosTableSessionState,
+  SaleModeExitOptions,
 } from "@/features/pos/sale-modes/types";
 import type {
   ActiveShift,
@@ -82,8 +83,11 @@ export interface PosPageActions {
   confirmCreateCustomer: () => void;
   confirmModifiers: () => void;
   confirmOpenShift: () => void;
-  enterTableMode: (tableId: string) => Promise<boolean>;
-  exitTableMode: () => Promise<boolean>;
+  enterTableMode: (
+    tableId: string,
+    options?: SaleModeExitOptions
+  ) => Promise<boolean>;
+  exitTableMode: (options?: SaleModeExitOptions) => Promise<boolean>;
   fetchNextProductsPage: () => void;
   finalizeSale: () => void;
   getProductQuantity: (productId: string) => number;

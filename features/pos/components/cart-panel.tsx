@@ -23,7 +23,10 @@ import { useEffect, useRef, useState } from "react";
 import { formatCurrency } from "@/lib/format-currency.shared";
 import { cn } from "@/lib/utils";
 import type { PosTableSessionState } from "../pos-page-context";
-import type { PosTableOrderItemStatus } from "../sale-modes/types";
+import type {
+  PosTableOrderItemStatus,
+  SaleModeExitOptions,
+} from "../sale-modes/types";
 import type { CartItem, CartTotals } from "../types";
 import { CartItemCard } from "./cart-item-card";
 import { CartItemCommentDialog } from "./cart-item-comment-dialog";
@@ -275,7 +278,7 @@ function CartOverlay({
   isQuickSaleMode: boolean;
   onCheckout: () => void;
   onClearCart: () => void;
-  onExitTable?: () => Promise<boolean>;
+  onExitTable?: (options?: SaleModeExitOptions) => Promise<boolean>;
   onSendToKitchen?: () => void;
   totals: CartTotals;
   totalItems: number;
@@ -355,7 +358,7 @@ function CartPanelOverlays({
   isQuickSaleMode: boolean;
   onCheckout: () => void;
   onClearCart: () => void;
-  onExitTable?: () => Promise<boolean>;
+  onExitTable?: (options?: SaleModeExitOptions) => Promise<boolean>;
   onSendToKitchen?: () => void;
   tableSession?: PosTableSessionState | null;
   totalItems: number;
@@ -432,7 +435,7 @@ interface CartPanelProps {
   onCancelTableOrder?: (reason: string) => Promise<void>;
   onCheckout: () => void;
   onClearCart: () => void;
-  onExitTable?: () => Promise<boolean>;
+  onExitTable?: (options?: SaleModeExitOptions) => Promise<boolean>;
   onRemoveItem: (cartItemId: string) => void;
   onSendToKitchen?: () => void;
   onUpdateItemDiscount: (cartItemId: string, value: string) => void;
@@ -459,7 +462,7 @@ function CartPanelHeader({
   hasItems: boolean;
   onClearCart: () => void;
   onEditOrderNotes?: () => void;
-  onExitTable?: () => Promise<boolean>;
+  onExitTable?: (options?: SaleModeExitOptions) => Promise<boolean>;
   tableSession?: PosTableSessionState | null;
   totalItems: number;
 }) {
@@ -525,7 +528,9 @@ function CartPanelHeader({
             className="shrink-0 text-zinc-400! hover:bg-white/5 hover:text-white!"
             disabled={tableSession.isDiscardingChanges}
             leftSection={<LogOut className="size-4" />}
-            onClick={onExitTable}
+            onClick={() => {
+              onExitTable?.().catch(() => undefined);
+            }}
             size="compact-sm"
             variant="subtle"
           >
@@ -863,7 +868,9 @@ export function CartPanel({
     }
     setDiscardError(null);
     try {
-      const didExit = await onExitTable();
+      const didExit = await onExitTable({
+        discardPendingKitchenChanges: true,
+      });
       if (didExit) {
         setIsDiscardConfirmOpen(false);
       } else {

@@ -38,10 +38,12 @@ describe("table order item edits", () => {
     const drain = queue.drain();
 
     await Promise.resolve();
+    expect(queue.hasPending()).toBe(true);
     expect(started).toEqual(["first"]);
 
     releaseFirst?.();
     await drain;
+    expect(queue.hasPending()).toBe(false);
     expect(started).toEqual(["first", "second"]);
 
     await Promise.all([first, second]);

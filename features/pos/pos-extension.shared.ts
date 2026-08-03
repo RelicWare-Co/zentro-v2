@@ -1,10 +1,15 @@
 import type { ComponentType } from "react";
-import type { PosTableSessionState } from "@/features/pos/sale-modes/types";
+import type {
+  PosTableSessionState,
+  SaleModeExitOptions,
+} from "@/features/pos/sale-modes/types";
 
 export type PosExtensionSlot = "catalog-overlay" | "header-action" | "modal";
 
 export interface PosExtensionSaleModeInfo {
-  enterMode: ((payload: unknown) => void) | null;
+  enterMode:
+    | ((payload: unknown, options?: SaleModeExitOptions) => Promise<boolean>)
+    | null;
   modeId: string;
   sessionState: PosTableSessionState | null;
   tableId: string | null;

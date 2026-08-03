@@ -1,5 +1,5 @@
-import { and, eq } from "drizzle-orm";
-import type { z } from "zod";
+import { and, eq, inArray } from "drizzle-orm";
+import { z } from "zod";
 import {
   restaurantOrder,
   restaurantOrderItem,
@@ -8,6 +8,7 @@ import {
 import {
   assertTableFromOrganization,
   getOpenOrderById,
+  getOpenOrderForTable,
   getOrCreateOpenOrderForTable,
   getProductSnapshot,
   lockOpenRestaurantOrder,
@@ -339,17 +340,82 @@ export async function runDeleteRestaurantOrderItem(
   return { success: true, orderId: itemRow.orderId };
 }
 
+const SentModifierSnapshotSchema = z.array(
+  z.object({
+    id: z.string().trim().min(1),
+    name: z.string(),
+    quantity: z.number().int().positive(),
+    unitPrice: z.number().int().nonnegative(),
+  })
+);
+
+interface CurrentOrderItemModifier {
+  modifierProductId: string;
+  quantity: number;
+  unitPrice: number;
+}
+
+interface RestaurantOrderReference {
+  id: string;
+  status: string;
+  tableId: string;
+}
+
+type SentModifierSnapshot = z.infer<typeof SentModifierSnapshotSchema>;
+
+function parseSentModifierSnapshot(value: string): SentModifierSnapshot {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(value);
+  } catch {
+    throw new Error("No se pudo restaurar el snapshot de modificadores.");
+  }
+
+  const result = SentModifierSnapshotSchema.safeParse(parsed);
+  if (!result.success) {
+    throw new Error("No se pudo restaurar el snapshot de modificadores.");
+  }
+  return result.data;
+}
+
+function serializeCurrentModifiers(modifiers: CurrentOrderItemModifier[]) {
+  return JSON.stringify(
+    modifiers
+      .map((modifier) => ({
+        id: modifier.modifierProductId,
+        quantity: modifier.quantity,
+        unitPrice: modifier.unitPrice,
+      }))
+      .toSorted((left, right) => left.id.localeCompare(right.id))
+  );
+}
+
+function serializeSentModifiers(modifiers: SentModifierSnapshot) {
+  return JSON.stringify(
+    modifiers
+      .map((modifier) => ({
+        id: modifier.id,
+        quantity: modifier.quantity,
+        unitPrice: modifier.unitPrice,
+      }))
+      .toSorted((left, right) => left.id.localeCompare(right.id))
+  );
+}
+
 async function restoreSentOrderItem(
   db: RestaurantDbExecutor,
   item: {
     id: string;
-    status: string;
-    quantity: number;
+    modifiers: CurrentOrderItemModifier[];
     notes: string | null;
     pendingCancellation: boolean;
-    sentQuantity: number;
+    quantity: number;
+    sentModifiersSnapshot: string;
     sentNotes: string | null;
+    sentQuantity: number;
+    status: string;
   },
+  organizationId: string,
   now: Date
 ) {
   if (item.status !== "sent") {
@@ -359,13 +425,46 @@ async function restoreSentOrderItem(
   const sentQuantity =
     item.sentQuantity > 0 ? item.sentQuantity : item.quantity;
   const sentNotes = item.sentQuantity > 0 ? item.sentNotes : item.notes;
+  const sentModifiers =
+    item.sentQuantity > 0
+      ? parseSentModifierSnapshot(item.sentModifiersSnapshot)
+      : item.modifiers.map((modifier) => ({
+          id: modifier.modifierProductId,
+          name: "",
+          quantity: modifier.quantity,
+          unitPrice: modifier.unitPrice,
+        }));
+  const shouldRestoreModifiers =
+    serializeCurrentModifiers(item.modifiers) !==
+    serializeSentModifiers(sentModifiers);
   const needsRestore =
     item.pendingCancellation ||
     item.quantity !== sentQuantity ||
-    item.notes !== sentNotes;
+    item.notes !== sentNotes ||
+    shouldRestoreModifiers;
 
   if (!needsRestore) {
     return false;
+  }
+
+  if (shouldRestoreModifiers) {
+    await db
+      .delete(restaurantOrderItemModifier)
+      .where(eq(restaurantOrderItemModifier.orderItemId, item.id));
+
+    if (sentModifiers.length > 0) {
+      await db.insert(restaurantOrderItemModifier).values(
+        sentModifiers.map((modifier) => ({
+          id: crypto.randomUUID(),
+          organizationId,
+          orderItemId: item.id,
+          modifierProductId: modifier.id,
+          quantity: modifier.quantity,
+          unitPrice: modifier.unitPrice,
+          createdAt: now,
+        }))
+      );
+    }
   }
 
   await db
@@ -380,6 +479,117 @@ async function restoreSentOrderItem(
   return true;
 }
 
+async function resolveOpenOrderForDiscard(
+  db: RestaurantDbExecutor,
+  organizationId: string,
+  tableId: string,
+  requestedOrderId: string | null
+) {
+  let orderReference: RestaurantOrderReference | null = null;
+
+  if (requestedOrderId) {
+    const [orderById] = await db
+      .select({
+        id: restaurantOrder.id,
+        status: restaurantOrder.status,
+        tableId: restaurantOrder.tableId,
+      })
+      .from(restaurantOrder)
+      .where(
+        and(
+          eq(restaurantOrder.organizationId, organizationId),
+          eq(restaurantOrder.id, requestedOrderId)
+        )
+      )
+      .limit(1);
+    orderReference = orderById ?? null;
+  }
+  if (!orderReference) {
+    orderReference = await getOpenOrderForTable(db, organizationId, tableId);
+  }
+
+  if (!orderReference) {
+    return null;
+  }
+  if (orderReference.tableId !== tableId) {
+    throw new Error("La cuenta no pertenece a la mesa activa.");
+  }
+  if (orderReference.status !== "open") {
+    throw new Error("La cuenta no existe o ya no está abierta.");
+  }
+
+  return lockOpenRestaurantOrder(db, organizationId, orderReference.id);
+}
+
+async function getModifiersByOrderItemId(
+  db: RestaurantDbExecutor,
+  organizationId: string,
+  itemIds: string[]
+) {
+  if (itemIds.length === 0) {
+    return new Map<string, CurrentOrderItemModifier[]>();
+  }
+
+  const modifierRows = await db
+    .select({
+      orderItemId: restaurantOrderItemModifier.orderItemId,
+      modifierProductId: restaurantOrderItemModifier.modifierProductId,
+      quantity: restaurantOrderItemModifier.quantity,
+      unitPrice: restaurantOrderItemModifier.unitPrice,
+    })
+    .from(restaurantOrderItemModifier)
+    .where(
+      and(
+        eq(restaurantOrderItemModifier.organizationId, organizationId),
+        inArray(restaurantOrderItemModifier.orderItemId, itemIds)
+      )
+    );
+  const modifiersByItemId = new Map<string, CurrentOrderItemModifier[]>();
+
+  for (const modifier of modifierRows) {
+    const modifiers = modifiersByItemId.get(modifier.orderItemId) ?? [];
+    modifiers.push({
+      modifierProductId: modifier.modifierProductId,
+      quantity: modifier.quantity,
+      unitPrice: modifier.unitPrice,
+    });
+    modifiersByItemId.set(modifier.orderItemId, modifiers);
+  }
+
+  return modifiersByItemId;
+}
+
+async function deleteOrderIfEmpty(db: RestaurantDbExecutor, orderId: string) {
+  const [remainingItem] = await db
+    .select({ id: restaurantOrderItem.id })
+    .from(restaurantOrderItem)
+    .where(eq(restaurantOrderItem.orderId, orderId))
+    .limit(1);
+
+  if (!remainingItem) {
+    await db.delete(restaurantOrder).where(eq(restaurantOrder.id, orderId));
+  }
+}
+
+async function updateOrderTimestampIfPresent(
+  db: RestaurantDbExecutor,
+  orderId: string,
+  now: Date
+) {
+  const [remainingOrder] = await db
+    .select({ id: restaurantOrder.id })
+    .from(restaurantOrder)
+    .where(eq(restaurantOrder.id, orderId))
+    .limit(1);
+
+  if (remainingOrder) {
+    await db
+      .update(restaurantOrder)
+      .set({ updatedAt: now })
+      .where(eq(restaurantOrder.id, orderId));
+  }
+}
+
 export async function runDiscardPendingKitchenChanges(
   db: RestaurantDbExecutor,
   args: z.infer<typeof DiscardPendingKitchenChangesInputSchema>,
@@ -390,32 +600,22 @@ export async function runDiscardPendingKitchenChanges(
     organizationId: auth.organizationId,
   });
   const organizationId = auth.organizationId;
-  const [orderReference] = await db
-    .select({
-      id: restaurantOrder.id,
-      status: restaurantOrder.status,
-    })
-    .from(restaurantOrder)
-    .where(
-      and(
-        eq(restaurantOrder.organizationId, organizationId),
-        eq(restaurantOrder.id, args.orderId)
-      )
-    )
-    .limit(1);
+  const tableId = normalizeRequiredString(args.tableId, "tableId");
+  const requestedOrderId = normalizeOptionalString(args.orderId);
+  const order = await resolveOpenOrderForDiscard(
+    db,
+    organizationId,
+    tableId,
+    requestedOrderId
+  );
 
-  if (!orderReference) {
+  if (!order) {
     return {
       deletedDraftItems: 0,
-      orderId: args.orderId,
+      orderId: requestedOrderId,
       restoredItems: 0,
     };
   }
-  if (orderReference.status !== "open") {
-    throw new Error("La cuenta no existe o ya no está abierta.");
-  }
-
-  const order = await lockOpenRestaurantOrder(db, organizationId, args.orderId);
   const items = await db
     .select({
       id: restaurantOrderItem.id,
@@ -423,6 +623,7 @@ export async function runDiscardPendingKitchenChanges(
       quantity: restaurantOrderItem.quantity,
       notes: restaurantOrderItem.notes,
       pendingCancellation: restaurantOrderItem.pendingCancellation,
+      sentModifiersSnapshot: restaurantOrderItem.sentModifiersSnapshot,
       sentQuantity: restaurantOrderItem.sentQuantity,
       sentNotes: restaurantOrderItem.sentNotes,
     })
@@ -433,6 +634,11 @@ export async function runDiscardPendingKitchenChanges(
         eq(restaurantOrderItem.orderId, order.id)
       )
     );
+  const modifiersByItemId = await getModifiersByOrderItemId(
+    db,
+    organizationId,
+    items.map((item) => item.id)
+  );
 
   const now = new Date();
   let deletedDraftItems = 0;
@@ -447,37 +653,28 @@ export async function runDiscardPendingKitchenChanges(
       continue;
     }
 
-    if (await restoreSentOrderItem(db, item, now)) {
+    if (
+      await restoreSentOrderItem(
+        db,
+        {
+          ...item,
+          modifiers: modifiersByItemId.get(item.id) ?? [],
+        },
+        organizationId,
+        now
+      )
+    ) {
       restoredItems += 1;
     }
   }
 
   const changed = deletedDraftItems > 0 || restoredItems > 0;
   if (deletedDraftItems > 0) {
-    const [remainingItem] = await db
-      .select({ id: restaurantOrderItem.id })
-      .from(restaurantOrderItem)
-      .where(eq(restaurantOrderItem.orderId, order.id))
-      .limit(1);
-
-    if (!remainingItem) {
-      await db.delete(restaurantOrder).where(eq(restaurantOrder.id, order.id));
-    }
+    await deleteOrderIfEmpty(db, order.id);
   }
 
   if (changed) {
-    const [remainingOrder] = await db
-      .select({ id: restaurantOrder.id })
-      .from(restaurantOrder)
-      .where(eq(restaurantOrder.id, order.id))
-      .limit(1);
-
-    if (remainingOrder) {
-      await db
-        .update(restaurantOrder)
-        .set({ updatedAt: now })
-        .where(eq(restaurantOrder.id, order.id));
-    }
+    await updateOrderTimestampIfPresent(db, order.id, now);
   }
 
   return {

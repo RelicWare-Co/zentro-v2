@@ -8,6 +8,7 @@ import {
   restaurantKitchenTicketLine,
   restaurantOrder,
   restaurantOrderItem,
+  restaurantOrderItemModifier,
   restaurantTable,
 } from "@/database/drizzle/schema/restaurant.schema";
 import { sale } from "@/database/drizzle/schema/sales.schema";
@@ -618,12 +619,12 @@ describe("restaurant module", () => {
       await discardPendingKitchenChangesViaZero({
         zeroDb,
         ctx,
-        input: { orderId: burger.orderId },
+        input: { orderId: null, tableId },
       });
       await discardPendingKitchenChangesViaZero({
         zeroDb,
         ctx,
-        input: { orderId: burger.orderId },
+        input: { orderId: burger.orderId, tableId },
       });
 
       const [detail, itemRows, ticketLines] = await Promise.all([
@@ -704,6 +705,176 @@ describe("restaurant module", () => {
       });
       expect(closeResult.status).toBe("completed");
       expect(closeResult.totalAmount).toBe(42_000);
+
+      await cleanup();
+    });
+
+    test("restores the sent modifier snapshot", async () => {
+      const { db, cleanup } = await createTestDb();
+      const { organizationId, userId } = await seedOrganizationWithMember(db, {
+        memberRole: "owner",
+      });
+      await setRestaurantModuleEnabled(db, organizationId, true);
+
+      const areaId = await seedRestaurantArea(db, {
+        organizationId,
+        name: "Barra",
+      });
+      const [tableId, productId, modifierProductId] = await Promise.all([
+        seedRestaurantTable(db, {
+          organizationId,
+          areaId,
+          name: "B1",
+        }),
+        seedProduct(db, {
+          organizationId,
+          name: "Hamburguesa",
+          price: 15_000,
+          stock: 10,
+          trackInventory: false,
+        }),
+        seedProduct(db, {
+          organizationId,
+          name: "Extra queso",
+          price: 2000,
+          isModifier: true,
+          stock: 10,
+          trackInventory: false,
+        }),
+      ]);
+      const zeroDb = createZeroTestDb(db);
+      const ctx = createZeroContext(userId, organizationId);
+      const added = await addRestaurantOrderItemViaZero({
+        db,
+        zeroDb,
+        ctx,
+        input: {
+          tableId,
+          productId,
+          quantity: 1,
+          modifiers: [{ modifierProductId, quantity: 1 }],
+        },
+      });
+      const initialSend = await sendRestaurantOrderToKitchenViaZero({
+        db,
+        zeroDb,
+        ctx,
+        input: { orderId: added.orderId },
+      });
+
+      await db
+        .update(restaurantOrderItemModifier)
+        .set({ quantity: 2 })
+        .where(eq(restaurantOrderItemModifier.orderItemId, added.itemId));
+
+      const pendingDetail = await getRestaurantTableDetailViaZero({
+        zeroDb,
+        ctx,
+        tableId,
+      });
+      expect(pendingDetail.openOrder?.hasPendingKitchenChanges).toBe(true);
+
+      await discardPendingKitchenChangesViaZero({
+        zeroDb,
+        ctx,
+        input: { orderId: added.orderId, tableId },
+      });
+
+      const detail = await getRestaurantTableDetailViaZero({
+        zeroDb,
+        ctx,
+        tableId,
+      });
+      const restoredItem = detail.openOrder?.items.find(
+        (item) => item.id === added.itemId
+      );
+      const initialTicket = detail.openOrder?.tickets.find(
+        (ticket) => ticket.id === initialSend.ticket.id
+      );
+      expect(detail.openOrder?.hasPendingKitchenChanges).toBe(false);
+      expect(restoredItem?.modifiers).toEqual([
+        expect.objectContaining({
+          modifierProductId,
+          quantity: 1,
+          unitPrice: 2000,
+        }),
+      ]);
+      expect(initialTicket?.lines[0]?.modifiers).toEqual([
+        expect.objectContaining({
+          modifierProductId,
+          quantity: 1,
+          unitPrice: 2000,
+        }),
+      ]);
+
+      await cleanup();
+    });
+
+    test("resolves a replacement order through the active table", async () => {
+      const { db, cleanup } = await createTestDb();
+      const { organizationId, userId } = await seedOrganizationWithMember(db, {
+        memberRole: "owner",
+      });
+      await setRestaurantModuleEnabled(db, organizationId, true);
+
+      const areaId = await seedRestaurantArea(db, {
+        organizationId,
+        name: "Patio",
+      });
+      const [tableId, firstProductId, replacementProductId] = await Promise.all(
+        [
+          seedRestaurantTable(db, {
+            organizationId,
+            areaId,
+            name: "P1",
+          }),
+          seedProduct(db, {
+            organizationId,
+            name: "Entrada",
+            stock: 10,
+            trackInventory: false,
+          }),
+          seedProduct(db, {
+            organizationId,
+            name: "Plato fuerte",
+            stock: 10,
+            trackInventory: false,
+          }),
+        ]
+      );
+      const zeroDb = createZeroTestDb(db);
+      const ctx = createZeroContext(userId, organizationId);
+      const first = await addRestaurantOrderItemViaZero({
+        db,
+        zeroDb,
+        ctx,
+        input: { tableId, productId: firstProductId, quantity: 1 },
+      });
+      await deleteRestaurantOrderItemViaZero({
+        zeroDb,
+        ctx,
+        input: { orderItemId: first.itemId },
+      });
+      const replacement = await addRestaurantOrderItemViaZero({
+        db,
+        zeroDb,
+        ctx,
+        input: { tableId, productId: replacementProductId, quantity: 1 },
+      });
+      expect(replacement.orderId).not.toBe(first.orderId);
+
+      await discardPendingKitchenChangesViaZero({
+        zeroDb,
+        ctx,
+        input: { orderId: first.orderId, tableId },
+      });
+
+      const detail = await getRestaurantTableDetailViaZero({
+        zeroDb,
+        ctx,
+        tableId,
+      });
+      expect(detail.openOrder).toBeNull();
 
       await cleanup();
     });

@@ -21,8 +21,8 @@ export function PosModals() {
     onCloseModal: actions.closeActiveModal,
     onOpenModal: actions.openActiveModal,
     saleMode: {
-      enterMode: (payload: unknown) =>
-        actions.enterTableMode(payload as string),
+      enterMode: (payload: unknown, options) =>
+        actions.enterTableMode(payload as string, options),
       modeId: state.tableSession ? "table" : "counter",
       sessionState: state.tableSession,
       tableId: state.tableSession?.tableId ?? null,
