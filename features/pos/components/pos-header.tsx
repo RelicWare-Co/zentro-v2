@@ -37,9 +37,9 @@ export function PosHeader({
   onToggleQuickSaleMode,
 }: PosHeaderProps) {
   return (
-    <header className="z-10 shrink-0 border-zinc-800 border-b bg-[var(--color-carbon)] px-3 py-3 md:px-4 md:py-2">
-      <div className="flex min-h-10 flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex min-w-0 flex-1 flex-col gap-3 md:flex-row md:items-center">
+    <header className="z-10 flex min-h-16 shrink-0 items-center border-zinc-800 border-b bg-[var(--color-carbon)] px-3 py-2 md:px-4 lg:h-16 lg:py-0">
+      <div className="flex w-full flex-col gap-2 lg:flex-row lg:items-center lg:justify-between lg:gap-3">
+        <div className="flex min-w-0 flex-1 items-center gap-2 lg:gap-3">
           <div className="flex shrink-0 items-center gap-2 whitespace-nowrap text-sm">
             <span
               className={`size-2.5 rounded-full ${
@@ -57,14 +57,14 @@ export function PosHeader({
           </div>
 
           <Divider
-            className="hidden h-5 md:block"
+            className="hidden h-5 shrink-0 lg:block"
             color="dark.4"
             orientation="vertical"
           />
 
-          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2 transition-colors focus-within:border-[var(--color-voltage)] focus-within:ring-1 focus-within:ring-[var(--color-voltage)]/20">
+          <div className="flex min-w-0 max-w-[360px] flex-1 items-center gap-1 rounded-full border border-zinc-800 bg-zinc-900/50 py-1 pr-1 pl-3 transition-colors focus-within:border-[var(--color-voltage)] focus-within:ring-1 focus-within:ring-[var(--color-voltage)]/20">
             <CustomerPicker
-              buttonClassName="h-auto min-h-7 flex-1 border-0 bg-transparent px-0 py-0 hover:bg-transparent"
+              buttonClassName="h-7 min-h-0 flex-1 border-0 bg-transparent px-0 py-0 text-sm hover:bg-transparent"
               contentClassName="w-[min(320px,calc(100vw-2rem))]"
               customers={customers}
               onCustomerChange={onCustomerChange}
@@ -83,7 +83,7 @@ export function PosHeader({
           </div>
         </div>
 
-        <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-end lg:w-auto">
+        <div className="flex w-full flex-wrap items-center gap-2 sm:justify-end lg:w-auto lg:shrink-0 lg:flex-nowrap">
           <Button
             className={cn(
               "h-9 w-9 shrink-0 p-0",

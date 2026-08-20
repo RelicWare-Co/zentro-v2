@@ -28,15 +28,6 @@ export function CustomerPicker({
   const selectedCustomer =
     customers.find((customer) => customer.id === selectedCustomerId) ?? null;
   const selectedCustomerLabel = selectedCustomer?.name ?? "Cliente Mostrador";
-  const selectedCustomerMeta = selectedCustomer
-    ? [
-        selectedCustomer.documentNumber,
-        selectedCustomer.phone,
-        selectedCustomer.email,
-      ]
-        .filter(Boolean)
-        .join(" · ")
-    : "Venta rápida sin cliente asociado";
 
   const normalizedSearch = search.trim().toLowerCase();
   const filteredCustomers = customers.filter((customer) =>
@@ -64,18 +55,13 @@ export function CustomerPicker({
         <button
           aria-expanded={combobox.dropdownOpened}
           className={cn(
-            "flex h-11 min-w-0 items-center justify-between rounded-lg border border-zinc-800 bg-[#101010] px-3 py-2 text-left text-sm text-white hover:bg-[#151515]",
+            "flex h-9 min-w-0 items-center justify-between rounded-lg border border-zinc-800 bg-[#101010] px-3 text-left text-sm text-white hover:bg-[#151515]",
             buttonClassName
           )}
           onClick={() => combobox.toggleDropdown()}
           type="button"
         >
-          <span className="min-w-0">
-            <span className="block truncate">{selectedCustomerLabel}</span>
-            <span className="block truncate text-xs text-zinc-500">
-              {selectedCustomerMeta}
-            </span>
-          </span>
+          <span className="min-w-0 truncate">{selectedCustomerLabel}</span>
           <ChevronsUpDown
             aria-hidden="true"
             className="ml-2 size-4 shrink-0 text-zinc-500"
