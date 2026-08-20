@@ -1,5 +1,5 @@
 import { Button, Divider } from "@mantine/core";
-import { ArrowLeftRight, Lock, Plus, Printer, Unlock, Zap } from "lucide-react";
+import { ArrowLeftRight, Lock, Printer, Unlock, Zap } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import type { ActiveShift, PosCustomer } from "../types";
@@ -62,24 +62,15 @@ export function PosHeader({
             orientation="vertical"
           />
 
-          <div className="flex min-w-0 max-w-[360px] flex-1 items-center gap-1 rounded-full border border-zinc-800 bg-zinc-900/50 py-1 pr-1 pl-3 transition-colors focus-within:border-[var(--color-voltage)] focus-within:ring-1 focus-within:ring-[var(--color-voltage)]/20">
+          <div className="flex min-w-0 flex-1 items-center">
             <CustomerPicker
-              buttonClassName="h-7 min-h-0 flex-1 border-0 bg-transparent px-0 py-0 text-sm hover:bg-transparent"
-              contentClassName="w-[min(320px,calc(100vw-2rem))]"
+              buttonClassName="min-w-0 max-w-[360px] flex-1"
+              contentClassName="w-[min(380px,calc(100vw-2rem))]"
               customers={customers}
+              onCreateCustomer={onCreateCustomer}
               onCustomerChange={onCustomerChange}
               selectedCustomerId={selectedCustomerId}
             />
-            <Button
-              className="shrink-0 text-[var(--color-voltage)]! hover:bg-[var(--color-voltage)]/10 hover:text-[var(--color-voltage)]!"
-              leftSection={<Plus className="size-3.5" />}
-              onClick={onCreateCustomer}
-              size="compact-sm"
-              type="button"
-              variant="subtle"
-            >
-              Cliente
-            </Button>
           </div>
         </div>
 

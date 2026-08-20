@@ -41,6 +41,7 @@ export function CheckoutCustomerSection({
         customers={state.customers}
         onCustomerChange={actions.setSelectedCustomerId}
         selectedCustomerId={state.selectedCustomerId}
+        showIcon={false}
       />
     </div>
   );
