@@ -37,9 +37,7 @@ export interface PosCatalogContextValue {
   searchQuery: string;
   setActiveCategoryId: (id: string) => void;
   setSearchQuery: (query: string) => void;
-  setViewMode: (mode: "grid" | "list") => void;
   toggleProductFavorite: (productId: string) => void;
-  viewMode: "grid" | "list";
 }
 
 const PosCatalogContext = createContext<PosCatalogContextValue | null>(null);
@@ -55,7 +53,6 @@ export function usePosCatalog() {
 export function PosCatalogProvider({ children }: { children: ReactNode }) {
   const [activeCategoryId, setActiveCategoryId] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   const { data: activeOrganization } = useActiveOrganization();
   const activeOrganizationId = activeOrganization?.id ?? null;
@@ -121,9 +118,7 @@ export function PosCatalogProvider({ children }: { children: ReactNode }) {
     searchQuery,
     setActiveCategoryId,
     setSearchQuery,
-    setViewMode,
     toggleProductFavorite,
-    viewMode,
   };
 
   return <PosCatalogContext value={value}>{children}</PosCatalogContext>;

@@ -69,7 +69,6 @@ export interface PosPageState {
   totalItems: number;
   totalPaid: number;
   totals: CartTotals;
-  viewMode: "grid" | "list";
 }
 
 export interface PosPageActions {
@@ -111,7 +110,6 @@ export interface PosPageActions {
   setIsMobileCartOpen: (open: boolean) => void;
   setSearchQuery: (query: string) => void;
   setSelectedCustomerId: (id: string) => void;
-  setViewMode: (mode: "grid" | "list") => void;
   toggleProductFavorite: (productId: string) => void;
   toggleQuickSaleMode: () => void;
   updateItemDiscount: (cartItemId: string, value: string) => void;
@@ -185,9 +183,7 @@ export function PosPageCompatProvider({ children }: { children: ReactNode }) {
     searchQuery,
     setActiveCategoryId,
     setSearchQuery,
-    setViewMode,
     toggleProductFavorite,
-    viewMode,
   } = usePosCatalog();
 
   const { activeShift, isActiveShift, isActiveShiftLoading, shift } =
@@ -297,7 +293,6 @@ export function PosPageCompatProvider({ children }: { children: ReactNode }) {
         totalItems,
         totalPaid,
         totals,
-        viewMode,
       },
       actions: {
         addToCart: activeMode.addToCart,
@@ -335,7 +330,6 @@ export function PosPageCompatProvider({ children }: { children: ReactNode }) {
         setIsMobileCartOpen,
         setSearchQuery,
         setSelectedCustomerId,
-        setViewMode,
         toggleProductFavorite,
         toggleQuickSaleMode,
         updateItemDiscount,
@@ -390,7 +384,6 @@ export function PosPageCompatProvider({ children }: { children: ReactNode }) {
       tableSession,
       totalItems,
       totals,
-      viewMode,
       cart,
       clearCart,
       closeActiveModal,
@@ -430,7 +423,6 @@ export function PosPageCompatProvider({ children }: { children: ReactNode }) {
       setIsMobileCartOpen,
       setSearchQuery,
       setSelectedCustomerId,
-      setViewMode,
       toggleProductFavorite,
       hasPaymentDifference,
       isCreditSale,
