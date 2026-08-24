@@ -20,6 +20,10 @@ function createAuth() {
   return betterAuth({
     advanced: {
       useSecureCookies: process.env.NODE_ENV === "production",
+      // better-auth >= 1.7: joins moved out of `experimental`.
+      database: {
+        joins: true,
+      },
       ...(cookieDomain
         ? {
             crossSubDomainCookies: {
@@ -39,7 +43,6 @@ function createAuth() {
     database: drizzleAdapter(dbSqlite(), {
       provider: "pg",
     }),
-    experimental: { joins: true },
     emailAndPassword: {
       enabled: true,
     },

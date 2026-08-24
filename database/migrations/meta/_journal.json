@@ -162,6 +162,13 @@
       "when": 1785665239061,
       "tag": "0022_black_kat_farrell",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1787323672814,
+      "tag": "0023_brief_luminals",
+      "breakpoints": true
     }
   ]
 }
