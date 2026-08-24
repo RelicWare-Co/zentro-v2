@@ -4,6 +4,7 @@ import {
   ChefHat,
   ChevronLeft,
   ChevronRight,
+  ChevronsUpDown,
   Clock3,
   LayoutDashboard,
   Loader2,
@@ -282,15 +283,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </button>
         </div>
 
-        <div
-          className={cn(
-            "shrink-0 border-zinc-800 border-b p-4",
-            isCollapsed && "lg:px-2"
-          )}
-        >
+        <div className="shrink-0 border-zinc-800 border-b">
           <button
             className={cn(
-              "group flex w-full items-center overflow-hidden rounded-xl border border-zinc-700 bg-zinc-900/50 px-3 py-2.5 text-left transition-all hover:border-zinc-600 hover:bg-zinc-800/50",
+              "group flex w-full items-center px-5 py-2.5 text-left text-zinc-400 transition-colors hover:bg-white/5 hover:text-white",
               isCollapsed && "lg:justify-center lg:px-0"
             )}
             onClick={async () => {
@@ -317,10 +313,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             title={isCollapsed ? "Cambiar organización" : undefined}
             type="button"
           >
-            <div className="flex size-6 shrink-0 items-center justify-center rounded bg-[var(--color-voltage)]/10 text-[var(--color-voltage)] transition-colors group-hover:bg-[var(--color-voltage)]/20">
-              <Building2 className="size-3.5" />
-            </div>
-            <div
+            <Building2 className="size-5 shrink-0" />
+            <span
               className={cn(
                 "overflow-hidden transition-all duration-300",
                 isCollapsed
@@ -328,11 +322,16 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                   : "ml-3 w-auto flex-1 opacity-100"
               )}
             >
-              <p className="truncate font-medium text-sm text-white">
+              <span className="block truncate font-medium">
                 {getActiveOrganizationName(activeOrganization)}
-              </p>
-              <p className="truncate text-xs text-zinc-500">Cambiar</p>
-            </div>
+              </span>
+            </span>
+            <ChevronsUpDown
+              className={cn(
+                "ml-auto size-4 shrink-0 text-zinc-500 transition-colors group-hover:text-zinc-300",
+                isCollapsed && "lg:hidden"
+              )}
+            />
           </button>
         </div>
 
