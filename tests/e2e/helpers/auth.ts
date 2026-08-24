@@ -33,9 +33,19 @@ async function submitLoginForm(
     await loginTab.click();
   }
 
-  await page.locator('input[name="email"]').fill(email);
-  await page.locator('input[name="password"]').fill(password);
-  await page.getByRole("button", { name: "Ingresar" }).click();
+  try {
+    await page.locator('input[name="email"]').fill(email, { timeout: 5000 });
+    await page
+      .locator('input[name="password"]')
+      .fill(password, { timeout: 5000 });
+    await page
+      .getByRole("button", { name: "Ingresar" })
+      .click({ timeout: 5000 });
+  } catch {
+    // `page.request` shares cookies with the browser context, so an existing
+    // session can redirect /login away while we are still filling the form.
+    // Callers verify the post-login state afterwards.
+  }
 }
 
 async function waitForPostLogin(page: Page): Promise<void> {

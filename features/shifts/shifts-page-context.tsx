@@ -57,7 +57,6 @@ export interface ShiftsPageState {
   filters: ShiftsPageFilters;
   hasMoreResults: boolean;
   isDetailOpen: boolean;
-  isMobileFilterOpen: boolean;
   nextCursor: ShiftListCursor | null;
   pageIndex: number;
   pageSize: number;
@@ -69,8 +68,6 @@ export interface ShiftsPageState {
 }
 
 export interface ShiftsPageActions {
-  applyDesktopFilters: () => void;
-  applyMobileFilters: () => void;
   clearFilters: () => void;
   goToNextPage: () => void;
   goToPreviousPage: () => void;
@@ -80,7 +77,6 @@ export interface ShiftsPageActions {
   setDifferenceStatus: (value: string) => void;
   setEndDate: (value: string) => void;
   setHasMovements: (value: string) => void;
-  setMobileFilterOpen: (open: boolean) => void;
   setPageSize: (value: number) => void;
   setPaymentMethod: (value: string) => void;
   setSearchQuery: (value: string) => void;
@@ -144,7 +140,6 @@ export function ShiftsPageProvider({ children }: { children: ReactNode }) {
   const [endDate, setEndDate] = useState("");
   const [pageSize, setPageSizeState] = useState(DEFAULT_LIST_LIMIT);
   const deferredSearchQuery = useDeferredValue(searchQuery);
-  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [shiftDetailState, dispatchShiftDetail] = useShiftDetailState();
 
   const shiftsFilterKey = useMemo(
@@ -274,6 +269,7 @@ export function ShiftsPageProvider({ children }: { children: ReactNode }) {
   ].filter(Boolean).length;
 
   const activeAdvancedFilterCount = [
+    status,
     cashierId,
     terminalName,
     paymentMethod,
@@ -292,7 +288,6 @@ export function ShiftsPageProvider({ children }: { children: ReactNode }) {
   });
 
   const clearFilters = useCallback(() => {
-    setIsMobileFilterOpen(false);
     setSearchQuery("");
     setStatus("");
     setCashierId("");
@@ -312,15 +307,6 @@ export function ShiftsPageProvider({ children }: { children: ReactNode }) {
     },
     [resetPagination]
   );
-
-  const applyMobileFilters = useCallback(() => {
-    setIsMobileFilterOpen(false);
-    resetPagination();
-  }, [resetPagination]);
-
-  const applyDesktopFilters = useCallback(() => {
-    resetPagination();
-  }, [resetPagination]);
 
   const goToNextPage = useCallback(() => {
     if (nextCursor !== null) {
@@ -369,7 +355,6 @@ export function ShiftsPageProvider({ children }: { children: ReactNode }) {
         rangeLabel,
         activeFilterCount,
         activeAdvancedFilterCount,
-        isMobileFilterOpen,
         isDetailOpen,
         selectedShiftId,
       },
@@ -384,10 +369,7 @@ export function ShiftsPageProvider({ children }: { children: ReactNode }) {
         setStartDate,
         setEndDate,
         setPageSize,
-        setMobileFilterOpen: setIsMobileFilterOpen,
         clearFilters,
-        applyMobileFilters,
-        applyDesktopFilters,
         goToPreviousPage,
         goToNextPage,
         openShiftDetail,
@@ -431,13 +413,10 @@ export function ShiftsPageProvider({ children }: { children: ReactNode }) {
       rangeLabel,
       activeFilterCount,
       activeAdvancedFilterCount,
-      isMobileFilterOpen,
       isDetailOpen,
       selectedShiftId,
       setPageSize,
       clearFilters,
-      applyMobileFilters,
-      applyDesktopFilters,
       goToPreviousPage,
       goToNextPage,
       paymentMethodLabels,

@@ -90,7 +90,6 @@ export interface SalesPageState {
   isCancelDialogOpen: boolean;
   isCancelling: boolean;
   isDetailOpen: boolean;
-  isMobileFilterOpen: boolean;
   isRefreshing: boolean;
   nextCursor: import("@/features/sales/sales.shared").SaleListCursor | null;
   pageIndex: number;
@@ -121,7 +120,6 @@ export interface SalesPageActions {
   setCashierId: (value: string) => void;
   setDetailOpen: (open: boolean) => void;
   setEndDate: (value: string) => void;
-  setMobileFilterOpen: (open: boolean) => void;
   setPageSize: (value: number) => void;
   setPaymentMethod: (value: string) => void;
   setSearchQuery: (value: string) => void;
@@ -261,7 +259,6 @@ export function SalesPageProvider({ children }: { children: ReactNode }) {
   const [isViewPending, startViewTransition] = useTransition();
   const [saleDetailState, dispatchSaleDetail] = useSaleDetailState();
   const { isOpen: isDetailOpen, selectedSaleId } = saleDetailState;
-  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
 
   const salesQuery = useSalesList(listParams);
@@ -319,6 +316,7 @@ export function SalesPageProvider({ children }: { children: ReactNode }) {
   ].filter(Boolean).length;
 
   const activeAdvancedFilterCount = [
+    status,
     paymentMethod,
     cashierId,
     terminalName,
@@ -348,7 +346,6 @@ export function SalesPageProvider({ children }: { children: ReactNode }) {
   );
 
   const clearFilters = useCallback(() => {
-    setIsMobileFilterOpen(false);
     setSearchQuery("");
     setStatus("");
     setPaymentMethod("");
@@ -450,7 +447,6 @@ export function SalesPageProvider({ children }: { children: ReactNode }) {
         isDetailOpen,
         selectedSaleId,
         selectedSaleSummary,
-        isMobileFilterOpen,
         isCancelDialogOpen,
         isCancelling: cancelSaleMutation.isPending,
         isRefreshing,
@@ -469,7 +465,6 @@ export function SalesPageProvider({ children }: { children: ReactNode }) {
         setStartDate,
         setEndDate,
         setPageSize,
-        setMobileFilterOpen: setIsMobileFilterOpen,
         setCancelDialogOpen: setIsCancelDialogOpen,
         clearFilters,
         openSaleDetail,
@@ -528,7 +523,6 @@ export function SalesPageProvider({ children }: { children: ReactNode }) {
       isDetailOpen,
       selectedSaleId,
       selectedSaleSummary,
-      isMobileFilterOpen,
       isCancelDialogOpen,
       cancelSaleMutation.isPending,
       isRefreshing,

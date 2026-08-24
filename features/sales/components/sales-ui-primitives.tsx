@@ -1,27 +1,4 @@
 import type { LucideIcon } from "lucide-react";
-import type { ReactNode } from "react";
-
-export function SalesFilterField({
-  label,
-  htmlFor,
-  children,
-}: {
-  label: string;
-  htmlFor: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className="space-y-2">
-      <label
-        className="font-medium text-xs text-zinc-500 uppercase tracking-[0.16em]"
-        htmlFor={htmlFor}
-      >
-        {label}
-      </label>
-      {children}
-    </div>
-  );
-}
 
 export function SalesCompactMetricCard({
   title,

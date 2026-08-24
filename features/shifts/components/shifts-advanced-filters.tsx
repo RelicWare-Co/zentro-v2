@@ -1,9 +1,20 @@
-import { Select, TextInput } from "@mantine/core";
-import { ALL_FILTER_VALUE } from "@/features/listing/listing.constants.shared";
-import { ShiftsFilterField } from "@/features/shifts/components/shifts-ui-primitives";
+import { FilterDateField } from "@/features/listing/filters/filter-date-field";
+import { FilterSection } from "@/features/listing/filters/filter-section";
+import {
+  FilterSelect,
+  type FilterSelectOption,
+} from "@/features/listing/filters/filter-select";
+import {
+  SHIFT_DIFFERENCE_STATUS_LABELS,
+  SHIFT_DIFFERENCE_STATUS_VALUES,
+  SHIFT_HAS_MOVEMENTS_LABELS,
+  SHIFT_HAS_MOVEMENTS_VALUES,
+  SHIFT_STATUS_LABELS,
+  SHIFT_STATUS_VALUES,
+} from "@/features/shifts/shifts-page.constants.shared";
 import { useShiftsPage } from "@/features/shifts/shifts-page-context";
 
-function ShiftsAdvancedFiltersFields({
+export function ShiftsAdvancedFiltersFields({
   layout,
 }: {
   layout: "mobile" | "desktop";
@@ -13,165 +24,114 @@ function ShiftsAdvancedFiltersFields({
   const isMobile = layout === "mobile";
   const idPrefix = isMobile ? "mobile-" : "";
   const size = isMobile ? "md" : "sm";
-  const comboboxProps = isMobile ? undefined : { withinPortal: false };
+
+  const cashierOptions: FilterSelectOption[] = state.filterOptions.cashiers.map(
+    (cashier) => ({ value: cashier.id, label: cashier.name })
+  );
+  const paymentMethodOptions: FilterSelectOption[] =
+    state.filterOptions.paymentMethods.map((paymentMethod) => ({
+      value: paymentMethod.id,
+      label: paymentMethod.label,
+    }));
+  const terminalOptions: FilterSelectOption[] =
+    state.filterOptions.terminals.map((terminal) => ({
+      value: terminal,
+      label: terminal,
+    }));
 
   return (
-    <div className={isMobile ? "space-y-4" : "grid gap-4 md:grid-cols-2"}>
-      <ShiftsFilterField
-        htmlFor={`${idPrefix}${meta.fieldIds.cashier}`}
-        label="Cajero"
-      >
-        <Select
-          comboboxProps={comboboxProps}
-          data={[
-            { value: ALL_FILTER_VALUE, label: "Todos" },
-            ...state.filterOptions.cashiers.map((cashier) => ({
-              value: cashier.id,
-              label: cashier.name,
-            })),
-          ]}
-          id={`${idPrefix}${meta.fieldIds.cashier}`}
-          onChange={(value) =>
-            actions.setCashierId(
-              !value || value === ALL_FILTER_VALUE ? "" : value
-            )
-          }
-          placeholder="Todos"
+    <div
+      className={
+        isMobile
+          ? "space-y-6"
+          : "grid items-start gap-x-6 gap-y-6 sm:grid-cols-2 lg:grid-cols-3"
+      }
+    >
+      <FilterSection title="Estado">
+        <FilterSelect
+          allLabel="Todos"
+          id={`${idPrefix}${meta.fieldIds.status}`}
+          label="Estado"
+          onChange={actions.setStatus}
+          options={SHIFT_STATUS_VALUES.map((value) => ({
+            value,
+            label: SHIFT_STATUS_LABELS[value],
+          }))}
           size={size}
-          value={filters.cashierId || ALL_FILTER_VALUE}
+          value={filters.status}
         />
-      </ShiftsFilterField>
-
-      <ShiftsFilterField
-        htmlFor={`${idPrefix}${meta.fieldIds.terminal}`}
-        label="Terminal"
-      >
-        <Select
-          comboboxProps={comboboxProps}
-          data={[
-            { value: ALL_FILTER_VALUE, label: "Todas" },
-            ...state.filterOptions.terminals.map((terminal) => ({
-              value: terminal,
-              label: terminal,
-            })),
-          ]}
-          id={`${idPrefix}${meta.fieldIds.terminal}`}
-          onChange={(value) =>
-            actions.setTerminalName(
-              !value || value === ALL_FILTER_VALUE ? "" : value
-            )
-          }
-          placeholder="Todas"
-          size={size}
-          value={filters.terminalName || ALL_FILTER_VALUE}
-        />
-      </ShiftsFilterField>
-
-      <ShiftsFilterField
-        htmlFor={`${idPrefix}${meta.fieldIds.paymentMethod}`}
-        label="Metodo"
-      >
-        <Select
-          comboboxProps={comboboxProps}
-          data={[
-            { value: ALL_FILTER_VALUE, label: "Todos" },
-            ...state.filterOptions.paymentMethods.map((paymentMethod) => ({
-              value: paymentMethod.id,
-              label: paymentMethod.label,
-            })),
-          ]}
-          id={`${idPrefix}${meta.fieldIds.paymentMethod}`}
-          onChange={(value) =>
-            actions.setPaymentMethod(
-              !value || value === ALL_FILTER_VALUE ? "" : value
-            )
-          }
-          placeholder="Todos"
-          size={size}
-          value={filters.paymentMethod || ALL_FILTER_VALUE}
-        />
-      </ShiftsFilterField>
-
-      <ShiftsFilterField
-        htmlFor={`${idPrefix}${meta.fieldIds.differenceStatus}`}
-        label="Diferencia"
-      >
-        <Select
-          comboboxProps={comboboxProps}
-          data={[
-            { value: ALL_FILTER_VALUE, label: "Todas" },
-            { value: "short", label: "Faltante" },
-            { value: "over", label: "Sobrante" },
-            { value: "balanced", label: "Cuadrada" },
-          ]}
+        <FilterSelect
+          allLabel="Todas"
           id={`${idPrefix}${meta.fieldIds.differenceStatus}`}
-          onChange={(value) =>
-            actions.setDifferenceStatus(
-              !value || value === ALL_FILTER_VALUE ? "" : value
-            )
-          }
-          placeholder="Todas"
+          label="Diferencia"
+          onChange={actions.setDifferenceStatus}
+          options={SHIFT_DIFFERENCE_STATUS_VALUES.map((value) => ({
+            value,
+            label: SHIFT_DIFFERENCE_STATUS_LABELS[value],
+          }))}
           size={size}
-          value={filters.differenceStatus || ALL_FILTER_VALUE}
+          value={filters.differenceStatus}
         />
-      </ShiftsFilterField>
-
-      <ShiftsFilterField
-        htmlFor={`${idPrefix}${meta.fieldIds.hasMovements}`}
-        label="Movimientos"
-      >
-        <Select
-          comboboxProps={comboboxProps}
-          data={[
-            { value: ALL_FILTER_VALUE, label: "Todos" },
-            { value: "yes", label: "Con movimientos" },
-            { value: "no", label: "Sin movimientos" },
-          ]}
+        <FilterSelect
+          allLabel="Todos"
           id={`${idPrefix}${meta.fieldIds.hasMovements}`}
-          onChange={(value) =>
-            actions.setHasMovements(
-              !value || value === ALL_FILTER_VALUE ? "" : value
-            )
-          }
-          placeholder="Todos"
+          label="Movimientos"
+          onChange={actions.setHasMovements}
+          options={SHIFT_HAS_MOVEMENTS_VALUES.map((value) => ({
+            value,
+            label: SHIFT_HAS_MOVEMENTS_LABELS[value],
+          }))}
           size={size}
-          value={filters.hasMovements || ALL_FILTER_VALUE}
+          value={filters.hasMovements}
         />
-      </ShiftsFilterField>
+      </FilterSection>
 
-      <ShiftsFilterField
-        htmlFor={`${idPrefix}${meta.fieldIds.startDate}`}
-        label="Desde"
-      >
-        <TextInput
-          id={`${idPrefix}${meta.fieldIds.startDate}`}
-          onChange={(event) => actions.setStartDate(event.target.value)}
+      <FilterSection title="Personas y lugar">
+        <FilterSelect
+          allLabel="Todos"
+          id={`${idPrefix}${meta.fieldIds.cashier}`}
+          label="Cajero"
+          onChange={actions.setCashierId}
+          options={cashierOptions}
           size={size}
-          type="date"
+          value={filters.cashierId}
+        />
+        <FilterSelect
+          allLabel="Todos"
+          id={`${idPrefix}${meta.fieldIds.paymentMethod}`}
+          label="Medio de pago"
+          onChange={actions.setPaymentMethod}
+          options={paymentMethodOptions}
+          size={size}
+          value={filters.paymentMethod}
+        />
+        <FilterSelect
+          allLabel="Todas"
+          id={`${idPrefix}${meta.fieldIds.terminal}`}
+          label="Terminal"
+          onChange={actions.setTerminalName}
+          options={terminalOptions}
+          size={size}
+          value={filters.terminalName}
+        />
+      </FilterSection>
+
+      <FilterSection title="Período">
+        <FilterDateField
+          id={`${idPrefix}${meta.fieldIds.startDate}`}
+          label="Desde"
+          onChange={actions.setStartDate}
+          size={size}
           value={filters.startDate}
         />
-      </ShiftsFilterField>
-
-      <ShiftsFilterField
-        htmlFor={`${idPrefix}${meta.fieldIds.endDate}`}
-        label="Hasta"
-      >
-        <TextInput
+        <FilterDateField
           id={`${idPrefix}${meta.fieldIds.endDate}`}
-          onChange={(event) => actions.setEndDate(event.target.value)}
+          label="Hasta"
+          onChange={actions.setEndDate}
           size={size}
-          type="date"
           value={filters.endDate}
         />
-      </ShiftsFilterField>
+      </FilterSection>
     </div>
   );
-}
-
-export function ShiftsAdvancedFiltersMobile() {
-  return <ShiftsAdvancedFiltersFields layout="mobile" />;
-}
-
-export function ShiftsAdvancedFiltersDesktop() {
-  return <ShiftsAdvancedFiltersFields layout="desktop" />;
 }

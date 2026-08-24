@@ -1,24 +1,4 @@
 import type { LucideIcon } from "lucide-react";
-import type { ReactNode } from "react";
-
-export function ShiftsFilterField({
-  label,
-  htmlFor,
-  children,
-}: {
-  label: string;
-  htmlFor: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className="space-y-2">
-      <label className="text-sm text-zinc-400" htmlFor={htmlFor}>
-        {label}
-      </label>
-      {children}
-    </div>
-  );
-}
 
 export function ShiftsCompactMetricCard({
   title,

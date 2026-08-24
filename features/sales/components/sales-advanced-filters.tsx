@@ -1,10 +1,19 @@
-import { Select, TextInput } from "@mantine/core";
-import { ALL_FILTER_VALUE } from "@/features/listing/listing.constants.shared";
-import { SalesFilterField } from "@/features/sales/components/sales-ui-primitives";
+import { FilterDateField } from "@/features/listing/filters/filter-date-field";
+import { FilterMoneyField } from "@/features/listing/filters/filter-money-field";
+import { FilterSection } from "@/features/listing/filters/filter-section";
+import {
+  FilterSelect,
+  type FilterSelectOption,
+} from "@/features/listing/filters/filter-select";
+import {
+  SALE_BALANCE_STATUS_LABELS,
+  SALE_BALANCE_STATUS_VALUES,
+  SALE_STATUS_LABELS,
+  SALE_STATUS_VALUES,
+} from "@/features/sales/sales-page.constants.shared";
 import { useSalesPage } from "@/features/sales/sales-page-context";
-import { formatMoneyInput, sanitizeMoneyInput } from "@/lib/utils";
 
-function SalesAdvancedFiltersFields({
+export function SalesAdvancedFiltersFields({
   layout,
 }: {
   layout: "mobile" | "desktop";
@@ -14,197 +23,134 @@ function SalesAdvancedFiltersFields({
   const isMobile = layout === "mobile";
   const idPrefix = isMobile ? "mobile-" : "";
   const size = isMobile ? "md" : "sm";
-  const comboboxProps = isMobile ? undefined : { withinPortal: false };
+
+  const cashierOptions: FilterSelectOption[] = state.filterOptions.cashiers.map(
+    (cashier) => ({ value: cashier.id, label: cashier.name ?? "Cajero" })
+  );
+  const paymentMethodOptions: FilterSelectOption[] =
+    state.filterOptions.paymentMethods.map((paymentMethod) => ({
+      value: paymentMethod.id,
+      label: paymentMethod.label,
+    }));
+  const terminalOptions: FilterSelectOption[] =
+    state.filterOptions.terminals.map((terminal) => ({
+      value: terminal,
+      label: terminal,
+    }));
 
   return (
-    <div className={isMobile ? "space-y-4" : "grid gap-4 md:grid-cols-2"}>
-      <SalesFilterField
-        htmlFor={`${idPrefix}${meta.fieldIds.paymentMethod}`}
-        label="Medio de pago"
-      >
-        <Select
-          comboboxProps={comboboxProps}
-          data={[
-            { value: ALL_FILTER_VALUE, label: "Todos" },
-            ...state.filterOptions.paymentMethods.map((paymentMethod) => ({
-              value: paymentMethod.id,
-              label: paymentMethod.label,
-            })),
-          ]}
-          id={`${idPrefix}${meta.fieldIds.paymentMethod}`}
-          onChange={(value) =>
-            actions.setPaymentMethod(
-              !value || value === ALL_FILTER_VALUE ? "" : value
-            )
-          }
-          placeholder="Todos"
+    <div
+      className={
+        isMobile
+          ? "space-y-6"
+          : "grid items-start gap-x-6 gap-y-6 sm:grid-cols-2 lg:grid-cols-4"
+      }
+    >
+      <FilterSection title="Estado">
+        <FilterSelect
+          allLabel="Todos"
+          id={`${idPrefix}${meta.fieldIds.status}`}
+          label="Estado"
+          onChange={actions.setStatus}
+          options={SALE_STATUS_VALUES.map((value) => ({
+            value,
+            label: SALE_STATUS_LABELS[value],
+          }))}
           size={size}
-          value={filters.paymentMethod || ALL_FILTER_VALUE}
+          value={filters.status}
         />
-      </SalesFilterField>
-
-      <SalesFilterField
-        htmlFor={`${idPrefix}${meta.fieldIds.cashier}`}
-        label="Cajero"
-      >
-        <Select
-          comboboxProps={comboboxProps}
-          data={[
-            { value: ALL_FILTER_VALUE, label: "Todos" },
-            ...state.filterOptions.cashiers.map((cashier) => ({
-              value: cashier.id,
-              label: cashier.name ?? "Cajero",
-            })),
-          ]}
-          id={`${idPrefix}${meta.fieldIds.cashier}`}
-          onChange={(value) =>
-            actions.setCashierId(
-              !value || value === ALL_FILTER_VALUE ? "" : value
-            )
-          }
-          placeholder="Todos"
-          size={size}
-          value={filters.cashierId || ALL_FILTER_VALUE}
-        />
-      </SalesFilterField>
-
-      <SalesFilterField
-        htmlFor={`${idPrefix}${meta.fieldIds.terminal}`}
-        label="Terminal"
-      >
-        <Select
-          comboboxProps={comboboxProps}
-          data={[
-            { value: ALL_FILTER_VALUE, label: "Todas" },
-            ...state.filterOptions.terminals.map((terminal) => ({
-              value: terminal,
-              label: terminal,
-            })),
-          ]}
-          id={`${idPrefix}${meta.fieldIds.terminal}`}
-          onChange={(value) =>
-            actions.setTerminalName(
-              !value || value === ALL_FILTER_VALUE ? "" : value
-            )
-          }
-          placeholder="Todas"
-          size={size}
-          value={filters.terminalName || ALL_FILTER_VALUE}
-        />
-      </SalesFilterField>
-
-      <SalesFilterField
-        htmlFor={`${idPrefix}${meta.fieldIds.balanceStatus}`}
-        label="Estado de saldo"
-      >
-        <Select
-          comboboxProps={comboboxProps}
-          data={[
-            { value: ALL_FILTER_VALUE, label: "Todos" },
-            { value: "with_balance", label: "Con saldo pendiente" },
-            { value: "settled", label: "Sin saldo" },
-          ]}
+        <FilterSelect
+          allLabel="Todos"
           id={`${idPrefix}${meta.fieldIds.balanceStatus}`}
-          onChange={(value) =>
-            actions.setBalanceStatus(
-              !value || value === ALL_FILTER_VALUE ? "" : value
-            )
-          }
-          placeholder="Todos"
+          label="Saldo pendiente"
+          onChange={actions.setBalanceStatus}
+          options={SALE_BALANCE_STATUS_VALUES.map((value) => ({
+            value,
+            label: SALE_BALANCE_STATUS_LABELS[value],
+          }))}
           size={size}
-          value={filters.balanceStatus || ALL_FILTER_VALUE}
+          value={filters.balanceStatus}
         />
-      </SalesFilterField>
+      </FilterSection>
 
-      <SalesFilterField
-        htmlFor={`${idPrefix}${meta.fieldIds.amountMin}`}
-        label="Monto mínimo"
-      >
-        <TextInput
-          autoComplete="off"
+      <FilterSection title="Personas y lugar">
+        <FilterSelect
+          allLabel="Todos"
+          id={`${idPrefix}${meta.fieldIds.cashier}`}
+          label="Cajero"
+          onChange={actions.setCashierId}
+          options={cashierOptions}
+          size={size}
+          value={filters.cashierId}
+        />
+        <FilterSelect
+          allLabel="Todos"
+          id={`${idPrefix}${meta.fieldIds.paymentMethod}`}
+          label="Medio de pago"
+          onChange={actions.setPaymentMethod}
+          options={paymentMethodOptions}
+          size={size}
+          value={filters.paymentMethod}
+        />
+        <FilterSelect
+          allLabel="Todas"
+          id={`${idPrefix}${meta.fieldIds.terminal}`}
+          label="Terminal"
+          onChange={actions.setTerminalName}
+          options={terminalOptions}
+          size={size}
+          value={filters.terminalName}
+        />
+      </FilterSection>
+
+      <FilterSection title="Montos">
+        <FilterMoneyField
           id={`${idPrefix}${meta.fieldIds.amountMin}`}
-          inputMode="numeric"
-          onChange={(event) =>
-            actions.setAmountMin(sanitizeMoneyInput(event.target.value))
-          }
+          label="Monto mínimo"
+          onChange={actions.setAmountMin}
           placeholder="Ej. 5.000…"
           size={size}
-          type="text"
-          value={formatMoneyInput(filters.amountMin)}
+          value={filters.amountMin}
         />
-      </SalesFilterField>
-
-      <SalesFilterField
-        htmlFor={`${idPrefix}${meta.fieldIds.amountMax}`}
-        label="Monto máximo"
-      >
-        <TextInput
-          autoComplete="off"
+        <FilterMoneyField
           id={`${idPrefix}${meta.fieldIds.amountMax}`}
-          inputMode="numeric"
-          onChange={(event) =>
-            actions.setAmountMax(sanitizeMoneyInput(event.target.value))
-          }
+          label="Monto máximo"
+          onChange={actions.setAmountMax}
           placeholder="Ej. 25.000…"
           size={size}
-          type="text"
-          value={formatMoneyInput(filters.amountMax)}
+          value={filters.amountMax}
         />
-      </SalesFilterField>
+      </FilterSection>
 
-      {meta.isTodayView ? (
-        <div
-          className={
-            isMobile
-              ? "rounded-2xl border border-[var(--color-voltage)]/20 border-dashed bg-[var(--color-voltage)]/5 px-4 py-3 text-sm text-zinc-300"
-              : "rounded-2xl border border-[var(--color-voltage)]/20 border-dashed bg-[var(--color-voltage)]/5 px-4 py-3 text-sm text-zinc-300 md:col-span-2"
-          }
-        >
-          <p className="font-medium text-white">
-            Ventana: {meta.salesWindowLabel}
-          </p>
-          <p className="mt-0.5 text-xs text-zinc-400">
-            Mostrando solo las ventas asociadas a este turno.
-          </p>
-        </div>
-      ) : (
-        <>
-          <SalesFilterField
-            htmlFor={`${idPrefix}${meta.fieldIds.startDate}`}
-            label="Desde"
-          >
-            <TextInput
-              autoComplete="off"
+      <FilterSection title="Período">
+        {meta.isTodayView ? (
+          <div className="rounded-2xl border border-[var(--color-voltage)]/20 border-dashed bg-[var(--color-voltage)]/5 px-4 py-3 text-sm text-zinc-300">
+            <p className="font-medium text-white">
+              Ventana: {meta.salesWindowLabel}
+            </p>
+            <p className="mt-0.5 text-xs text-zinc-400">
+              Mostrando solo las ventas asociadas a este turno.
+            </p>
+          </div>
+        ) : (
+          <>
+            <FilterDateField
               id={`${idPrefix}${meta.fieldIds.startDate}`}
-              onChange={(event) => actions.setStartDate(event.target.value)}
+              label="Desde"
+              onChange={actions.setStartDate}
               size={size}
-              type="date"
               value={filters.startDate}
             />
-          </SalesFilterField>
-          <SalesFilterField
-            htmlFor={`${idPrefix}${meta.fieldIds.endDate}`}
-            label="Hasta"
-          >
-            <TextInput
-              autoComplete="off"
+            <FilterDateField
               id={`${idPrefix}${meta.fieldIds.endDate}`}
-              onChange={(event) => actions.setEndDate(event.target.value)}
+              label="Hasta"
+              onChange={actions.setEndDate}
               size={size}
-              type="date"
               value={filters.endDate}
             />
-          </SalesFilterField>
-        </>
-      )}
+          </>
+        )}
+      </FilterSection>
     </div>
   );
-}
-
-export function SalesAdvancedFiltersMobile() {
-  return <SalesAdvancedFiltersFields layout="mobile" />;
-}
-
-export function SalesAdvancedFiltersDesktop() {
-  return <SalesAdvancedFiltersFields layout="desktop" />;
 }
