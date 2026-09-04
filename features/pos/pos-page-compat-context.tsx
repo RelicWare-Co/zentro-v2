@@ -38,7 +38,6 @@ export interface PosPageState {
   cashChangeDue: number;
   categories: Category[];
   checkoutError: Error | null;
-  customers: PosCustomer[];
   discountInput: string;
   hasDiscountError: boolean;
   hasNextPage: boolean;
@@ -61,6 +60,7 @@ export interface PosPageState {
   remainingCreditAmount: number;
   saleSuccessToken: number | null;
   searchQuery: string;
+  selectedCustomer: PosCustomer | null;
   selectedCustomerCreditAccount: { balance: number } | null;
   selectedCustomerId: string;
   selectedProductForModifiers: Product | null;
@@ -192,7 +192,7 @@ export function PosPageCompatProvider({ children }: { children: ReactNode }) {
   const {
     confirmCreateCustomer,
     createCustomerModal,
-    customers,
+    selectedCustomer,
     selectedCustomerCreditAccount,
     selectedCustomerId,
     setSelectedCustomerId,
@@ -262,7 +262,6 @@ export function PosPageCompatProvider({ children }: { children: ReactNode }) {
         cashChangeDue,
         categories,
         checkoutError,
-        customers,
         discountInput: activeMode.discountInput,
         hasNextPage: !!hasNextPage,
         hasDiscountError,
@@ -285,6 +284,7 @@ export function PosPageCompatProvider({ children }: { children: ReactNode }) {
         remainingCreditAmount,
         saleSuccessToken,
         searchQuery,
+        selectedCustomer,
         selectedCustomerCreditAccount,
         selectedCustomerId,
         selectedProductForModifiers,
@@ -361,7 +361,6 @@ export function PosPageCompatProvider({ children }: { children: ReactNode }) {
       cashChangeDue,
       checkoutError,
       categories,
-      customers,
       hasNextPage,
       hasDiscountError,
       isActiveShift,
@@ -378,6 +377,7 @@ export function PosPageCompatProvider({ children }: { children: ReactNode }) {
       projectedCreditBalance,
       saleSuccessToken,
       searchQuery,
+      selectedCustomer,
       selectedCustomerCreditAccount,
       selectedCustomerId,
       selectedProductForModifiers,

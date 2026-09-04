@@ -47,18 +47,17 @@ export function PosSaleModeProvider({ children }: { children: ReactNode }) {
   } = usePosCatalog();
   const { activeShift } = usePosShiftContext();
   const { closeActiveModal } = usePosModal();
-  const { customers, selectedCustomerId, setSelectedCustomerId } =
+  const { selectedCustomer, selectedCustomerId, setSelectedCustomerId } =
     usePosCustomer();
 
   const [saleSuccessToken, setSaleSuccessToken] = useState<number | null>(null);
 
   const printReceiptForSale = useCallback(
     async (payload: SaleReceiptPayload) => {
-      const customer = customers.find((c) => c.id === selectedCustomerId);
       await printSaleReceipt({
         activeOrganizationId,
         activeOrganizationName,
-        customer,
+        customer: selectedCustomer ?? undefined,
         defaultTerminalName,
         paymentMethods: paymentMethodsForReceipt,
         result: payload.result,
@@ -66,8 +65,7 @@ export function PosSaleModeProvider({ children }: { children: ReactNode }) {
       });
     },
     [
-      customers,
-      selectedCustomerId,
+      selectedCustomer,
       activeOrganizationId,
       activeOrganizationName,
       defaultTerminalName,

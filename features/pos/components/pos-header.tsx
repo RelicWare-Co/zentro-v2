@@ -2,32 +2,26 @@ import { Button, Divider } from "@mantine/core";
 import { ArrowLeftRight, Lock, Printer, Unlock, Zap } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
-import type { ActiveShift, PosCustomer } from "../types";
-import { CustomerPicker } from "./customer-picker";
+import type { ActiveShift } from "../types";
+import { PosCustomerPicker } from "./pos-customer-picker";
 
 interface PosHeaderProps {
   activeShift: ActiveShift | null;
-  customers: PosCustomer[];
   defaultTerminalName: string;
   headerActions?: ReactNode;
   isQuickSaleMode?: boolean;
   onCashMovement: () => void;
   onCloseShift: () => void;
   onCreateCustomer: () => void;
-  onCustomerChange: (customerId: string) => void;
   onOpenDrawer: () => void;
   onOpenShift: () => void;
   onToggleQuickSaleMode?: () => void;
-  selectedCustomerId: string;
 }
 
 export function PosHeader({
   activeShift,
   defaultTerminalName,
-  customers,
   headerActions,
-  selectedCustomerId,
-  onCustomerChange,
   onOpenShift,
   onCashMovement,
   onOpenDrawer,
@@ -63,13 +57,10 @@ export function PosHeader({
           />
 
           <div className="flex min-w-0 flex-1 items-center">
-            <CustomerPicker
+            <PosCustomerPicker
               buttonClassName="min-w-0 max-w-[360px] flex-1"
               contentClassName="w-[min(380px,calc(100vw-2rem))]"
-              customers={customers}
               onCreateCustomer={onCreateCustomer}
-              onCustomerChange={onCustomerChange}
-              selectedCustomerId={selectedCustomerId}
             />
           </div>
         </div>

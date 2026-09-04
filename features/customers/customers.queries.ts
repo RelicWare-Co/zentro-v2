@@ -7,6 +7,10 @@ const customersSearchArgsSchema = z.object({
   searchQuery: z.string().trim().optional().nullable(),
 });
 
+const customerByIdArgsSchema = z.object({
+  customerId: z.string().trim().optional().nullable(),
+});
+
 function normalizeLimit(limit?: number) {
   return Math.min(Math.max(limit ?? 50, 1), 100);
 }
@@ -39,6 +43,18 @@ export const customersQueries = {
         .orderBy("name", "asc")
         .orderBy("id", "asc")
         .limit(normalizeLimit(args.limit));
+    }),
+    byId: defineZentroQuery(customerByIdArgsSchema, ({ args, ctx }) => {
+      const normalizedCustomerId = args.customerId?.trim() ?? "";
+      if (!(hasOrgContext(ctx) && normalizedCustomerId)) {
+        return denyQuery(zql.customer);
+      }
+
+      return zql.customer
+        .where("organizationId", ctx.orgID)
+        .where("deletedAt", "IS", null)
+        .where("id", normalizedCustomerId)
+        .limit(1);
     }),
   },
 };

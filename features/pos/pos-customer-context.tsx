@@ -1,14 +1,14 @@
 import { createContext, type ReactNode, use, useMemo, useState } from "react";
 import { useCreditAccountsSearch } from "@/features/credit/hooks/use-credit";
+import { useCustomerById } from "@/features/customers/hooks/use-customers";
 import { useCreateCustomerModal } from "@/features/pos/hooks/use-create-customer-modal";
-import { usePosCustomers } from "@/features/pos/hooks/use-pos-queries";
 import { usePosModal } from "@/features/pos/pos-modal-context";
 import type { PosCustomer } from "@/features/pos/types";
 
 export interface PosCustomerContextValue {
   confirmCreateCustomer: () => void;
   createCustomerModal: ReturnType<typeof useCreateCustomerModal>;
-  customers: PosCustomer[];
+  selectedCustomer: PosCustomer | null;
   selectedCustomerCreditAccount: { balance: number } | null;
   selectedCustomerId: string;
   setSelectedCustomerId: (id: string) => void;
@@ -29,15 +29,23 @@ export function PosCustomerProvider({ children }: { children: ReactNode }) {
 
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
 
-  const { data: customersData } = usePosCustomers();
+  const { data: selectedCustomerById } = useCustomerById(
+    selectedCustomerId || null
+  );
   const { data: creditAccountsData } = useCreditAccountsSearch("");
 
-  const customers = customersData?.data ?? [];
   const creditAccounts = creditAccountsData?.data ?? [];
 
   const createCustomerModal = useCreateCustomerModal((customerId) => {
     setSelectedCustomerId(customerId);
   }, closeActiveModal);
+
+  const selectedCustomer = useMemo<PosCustomer | null>(() => {
+    if (!selectedCustomerId) {
+      return null;
+    }
+    return selectedCustomerById ?? null;
+  }, [selectedCustomerById, selectedCustomerId]);
 
   const selectedCustomerCreditAccount = useMemo(() => {
     if (!selectedCustomerId) {
@@ -53,7 +61,7 @@ export function PosCustomerProvider({ children }: { children: ReactNode }) {
   const value: PosCustomerContextValue = {
     confirmCreateCustomer: createCustomerModal.handleCreateCustomer,
     createCustomerModal,
-    customers,
+    selectedCustomer,
     selectedCustomerCreditAccount,
     selectedCustomerId,
     setSelectedCustomerId,

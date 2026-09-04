@@ -75,6 +75,26 @@ export function useCustomersSearch(searchQuery: string, limit = 50) {
   };
 }
 
+export function useCustomerById(customerId: string | null) {
+  const [customerRows, status] = useZeroQuery(
+    queries.customers.byId({ customerId })
+  );
+  const error = getZeroQueryError(status);
+  const customer = customerRows[0] ? normalizeCustomer(customerRows[0]) : null;
+
+  return {
+    data: customer,
+    error,
+    isError: Boolean(error),
+    refetch: () => {
+      if (status.type === "error") {
+        status.retry();
+      }
+      return Promise.resolve();
+    },
+  };
+}
+
 export function useCreateCustomerMutation() {
   return useZeroMutation(async (input: CreateCustomerInput, zero) => {
     const id = crypto.randomUUID();

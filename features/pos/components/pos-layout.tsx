@@ -60,7 +60,6 @@ export function PosLayout() {
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-[var(--color-page-bg)] text-[var(--color-photon)]">
       <PosHeader
         activeShift={state.activeShift}
-        customers={state.customers}
         defaultTerminalName={meta.defaultTerminalName}
         headerActions={headerActionExtensions.map(({ Component, id }) => (
           <Component key={id} {...extensionRenderProps} />
@@ -69,11 +68,9 @@ export function PosLayout() {
         onCashMovement={actions.openCashMovementModal}
         onCloseShift={actions.openCloseShiftModal}
         onCreateCustomer={actions.openCreateCustomerModal}
-        onCustomerChange={actions.setSelectedCustomerId}
         onOpenDrawer={handleOpenDrawer}
         onOpenShift={actions.openShiftModal}
         onToggleQuickSaleMode={actions.toggleQuickSaleMode}
-        selectedCustomerId={state.selectedCustomerId}
       />
 
       <div className="flex min-h-0 flex-1 overflow-hidden">

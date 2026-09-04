@@ -1,5 +1,5 @@
 import { User, Zap } from "lucide-react";
-import { CustomerPicker } from "@/features/pos/components/customer-picker";
+import { PosCustomerPicker } from "@/features/pos/components/pos-customer-picker";
 import { usePosPage } from "@/features/pos/pos-page-context";
 import { cn } from "@/lib/utils";
 
@@ -10,12 +10,9 @@ interface CheckoutCustomerSectionProps {
 export function CheckoutCustomerSection({
   className,
 }: CheckoutCustomerSectionProps) {
-  const { state, actions } = usePosPage();
+  const { state } = usePosPage();
 
-  const selectedCustomer =
-    state.customers.find(
-      (customer) => customer.id === state.selectedCustomerId
-    ) ?? null;
+  const selectedCustomer = state.selectedCustomer;
 
   const isQuickSale = !selectedCustomer;
   return (
@@ -35,12 +32,9 @@ export function CheckoutCustomerSection({
       >
         {isQuickSale ? <Zap className="size-4" /> : <User className="size-4" />}
       </div>
-      <CustomerPicker
+      <PosCustomerPicker
         buttonClassName="h-auto flex-1 border-0 bg-transparent p-0 hover:bg-transparent hover:text-white"
         contentClassName="w-[min(420px,calc(100vw-2rem))]"
-        customers={state.customers}
-        onCustomerChange={actions.setSelectedCustomerId}
-        selectedCustomerId={state.selectedCustomerId}
         showIcon={false}
       />
     </div>

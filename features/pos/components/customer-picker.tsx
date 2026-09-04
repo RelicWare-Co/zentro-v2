@@ -1,6 +1,5 @@
 import { Combobox, useCombobox } from "@mantine/core";
 import { Check, ChevronsUpDown, Plus, Search, Store, User } from "lucide-react";
-import { useState } from "react";
 import { cn } from "@/lib/utils";
 import type { PosCustomer } from "../types";
 
@@ -10,35 +9,33 @@ interface CustomerPickerProps {
   customers: PosCustomer[];
   onCreateCustomer?: () => void;
   onCustomerChange: (customerId: string) => void;
+  /** Server-side search: typing and dropdown close are forwarded to the owner. */
+  onSearchChange: (value: string) => void;
   searchPlaceholder?: string;
+  searchValue: string;
+  /** Resolved selected customer (may be absent from the current results page). */
+  selectedCustomer: PosCustomer | null;
   selectedCustomerId: string;
   showIcon?: boolean;
 }
 
 export function CustomerPicker({
   customers,
+  selectedCustomer,
   selectedCustomerId,
   onCreateCustomer,
   onCustomerChange,
+  onSearchChange,
+  searchValue,
   buttonClassName,
   contentClassName,
   searchPlaceholder = "Buscar por nombre, documento o teléfono...",
   showIcon = true,
 }: CustomerPickerProps) {
   const combobox = useCombobox({
-    onDropdownClose: () => setSearch(""),
+    onDropdownClose: () => onSearchChange(""),
   });
-  const [search, setSearch] = useState("");
-  const selectedCustomer =
-    customers.find((customer) => customer.id === selectedCustomerId) ?? null;
   const selectedCustomerLabel = selectedCustomer?.name ?? "Cliente Mostrador";
-
-  const normalizedSearch = search.trim().toLowerCase();
-  const filteredCustomers = customers.filter((customer) =>
-    `${customer.name} ${customer.documentNumber ?? ""} ${customer.phone ?? ""} ${customer.email ?? ""}`
-      .toLowerCase()
-      .includes(normalizedSearch)
-  );
 
   const isOpen = combobox.dropdownOpened;
 
@@ -110,9 +107,9 @@ export function CustomerPicker({
                 "h-9 rounded-xl border-zinc-700 bg-zinc-800 text-sm text-white placeholder:text-zinc-500 focus:border-[var(--color-voltage)] focus:ring-1 focus:ring-[var(--color-voltage)]/20",
             }}
             leftSection={<Search className="size-4 text-zinc-500" />}
-            onChange={(event) => setSearch(event.currentTarget.value)}
+            onChange={(event) => onSearchChange(event.currentTarget.value)}
             placeholder={searchPlaceholder}
-            value={search}
+            value={searchValue}
           />
         </div>
         <Combobox.Options className="max-h-[320px] overflow-y-auto p-1.5">
@@ -140,7 +137,7 @@ export function CustomerPicker({
               />
             </div>
           </Combobox.Option>
-          {filteredCustomers.map((customer) => (
+          {customers.map((customer) => (
             <Combobox.Option
               className="rounded-xl px-2 py-2.5 text-white transition-colors hover:bg-zinc-800 data-[combobox-active]:bg-zinc-800"
               key={customer.id}
@@ -171,7 +168,7 @@ export function CustomerPicker({
               </div>
             </Combobox.Option>
           ))}
-          {filteredCustomers.length === 0 ? (
+          {customers.length === 0 ? (
             <Combobox.Empty className="py-6 text-center text-sm text-zinc-500">
               No se encontraron clientes.
             </Combobox.Empty>
