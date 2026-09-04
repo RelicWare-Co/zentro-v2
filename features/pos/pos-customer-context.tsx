@@ -1,9 +1,10 @@
+import { useQuery as useZeroQuery } from "@rocicorp/zero/react";
 import { createContext, type ReactNode, use, useMemo, useState } from "react";
-import { useCreditAccountsSearch } from "@/features/credit/hooks/use-credit";
 import { useCustomerById } from "@/features/customers/hooks/use-customers";
 import { useCreateCustomerModal } from "@/features/pos/hooks/use-create-customer-modal";
 import { usePosModal } from "@/features/pos/pos-modal-context";
 import type { PosCustomer } from "@/features/pos/types";
+import { queries } from "@/zero/queries";
 
 export interface PosCustomerContextValue {
   confirmCreateCustomer: () => void;
@@ -32,9 +33,9 @@ export function PosCustomerProvider({ children }: { children: ReactNode }) {
   const { data: selectedCustomerById } = useCustomerById(
     selectedCustomerId || null
   );
-  const { data: creditAccountsData } = useCreditAccountsSearch("");
-
-  const creditAccounts = creditAccountsData?.data ?? [];
+  // Full credit-account set: this Zero query has no limit, so the selected
+  // customer's balance is never missed by a client-side page cap.
+  const [creditAccountRows] = useZeroQuery(queries.credit.accounts());
 
   const createCustomerModal = useCreateCustomerModal((customerId) => {
     setSelectedCustomerId(customerId);
@@ -51,12 +52,11 @@ export function PosCustomerProvider({ children }: { children: ReactNode }) {
     if (!selectedCustomerId) {
       return null;
     }
-    return (
-      creditAccounts.find(
-        (account) => account.customerId === selectedCustomerId
-      ) ?? null
+    const account = creditAccountRows.find(
+      (row) => row.customerId === selectedCustomerId
     );
-  }, [creditAccounts, selectedCustomerId]);
+    return account ? { balance: account.balance ?? 0 } : null;
+  }, [creditAccountRows, selectedCustomerId]);
 
   const value: PosCustomerContextValue = {
     confirmCreateCustomer: createCustomerModal.handleCreateCustomer,
