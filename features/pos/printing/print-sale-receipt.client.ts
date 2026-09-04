@@ -1,3 +1,4 @@
+import { resolveReceiptChangeDue } from "@/features/pos/pos.shared";
 import { buildSaleReceiptDocument } from "@/features/pos/printing/receipt-documents";
 import type { SaleReceiptPayload } from "@/features/pos/sale-modes/types";
 import type { PosCustomer } from "@/features/pos/types";
@@ -58,6 +59,7 @@ export async function printSaleReceipt({
     totalAmount: result.totalAmount,
     paidAmount: result.paidAmount,
     balanceDue: result.balanceDue,
+    changeDue: resolveReceiptChangeDue(result.totalAmount, snapshot.payments),
     paymentMethodLabels: createPaymentMethodLabelMap(paymentMethods),
   });
 

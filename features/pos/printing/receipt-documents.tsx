@@ -44,6 +44,8 @@ export function buildSaleReceiptDocument(input: {
   totalAmount: number;
   paidAmount: number;
   balanceDue: number;
+  /** Cash returned to the customer when tendered payments exceed the total. */
+  changeDue?: number;
   paymentMethodLabels?: Record<string, string>;
 }): ThermalReceiptDocument {
   const items: ThermalReceiptItem[] = input.items.map((item) => {
@@ -128,6 +130,14 @@ export function buildSaleReceiptDocument(input: {
         label: "Pagado",
         value: formatCurrency(input.paidAmount),
       },
+      ...(input.changeDue && input.changeDue > 0
+        ? [
+            {
+              label: "Cambio",
+              value: formatCurrency(input.changeDue),
+            },
+          ]
+        : []),
       {
         label: "Saldo pendiente",
         value: formatCurrency(input.balanceDue),

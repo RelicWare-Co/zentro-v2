@@ -49,6 +49,21 @@ export function resolveAppliedSalePaidAmount(
   return Math.min(totalAmount, tenderedAmount);
 }
 
+/**
+ * Cash returned to the customer when tendered payments exceed the total.
+ * Mirrors the server's `applySalePayments` change math (cash-only surplus).
+ */
+export function resolveReceiptChangeDue(
+  totalAmount: number,
+  payments: Array<{ amount: number }>
+) {
+  const tenderedAmount = payments.reduce(
+    (sum, payment) => sum + payment.amount,
+    0
+  );
+  return Math.max(tenderedAmount - totalAmount, 0);
+}
+
 function normalizePosSearchQuery(searchQuery?: string | null) {
   return searchQuery?.trim().toLowerCase() ?? "";
 }
