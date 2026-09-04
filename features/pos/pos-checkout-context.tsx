@@ -74,8 +74,11 @@ export function PosCheckoutProvider({ children }: { children: ReactNode }) {
     if (!requireActiveShift()) {
       return;
     }
+    // Start every checkout from a clean slate: amounts typed for a previous
+    // cart (or a cancelled checkout) must not leak into the next sale.
+    checkout.resetPayments();
     openActiveModal(POS_MODAL_IDS.CHECKOUT);
-  }, [requireActiveShift, openActiveModal]);
+  }, [requireActiveShift, checkout, openActiveModal]);
 
   const finalizeSale = useCallback(() => {
     if (!requireActiveShift()) {
