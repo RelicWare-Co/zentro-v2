@@ -132,6 +132,7 @@ export function usePosCheckout(
   ]);
   const [isCreditSale, setIsCreditSale] = useState(false);
   const isQuickSaleSubmittingRef = useRef(false);
+  const isFinalizeSubmittingRef = useRef(false);
 
   const createSaleMutation = useCreateSaleMutation();
   const cartSignature = useMemo(() => buildCartSignature(cart), [cart]);
@@ -344,10 +345,17 @@ export function usePosCheckout(
   ]);
 
   const handleFinalizeSale = useCallback(() => {
-    if (!activeShiftId || cart.length === 0) {
+    if (
+      !activeShiftId ||
+      cart.length === 0 ||
+      hasDiscountError ||
+      createSaleMutation.isPending ||
+      isFinalizeSubmittingRef.current
+    ) {
       return;
     }
     const shiftId = activeShiftId;
+    isFinalizeSubmittingRef.current = true;
 
     const salePayments = buildSalePaymentsFromInputs(payments);
 
@@ -381,12 +389,16 @@ export function usePosCheckout(
         resetDiscount();
         resetPayments();
       },
+      onSettled: () => {
+        isFinalizeSubmittingRef.current = false;
+      },
     });
   }, [
     activeShiftId,
     cart,
     createSaleMutation,
     effectiveIsCreditSale,
+    hasDiscountError,
     payments,
     cartTotals,
     clearCart,
