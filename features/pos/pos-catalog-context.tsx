@@ -7,6 +7,7 @@ import {
   useState,
 } from "react";
 import {
+  usePosBarcodeCatalog,
   usePosCategories,
   usePosModifierProducts,
   usePosProducts,
@@ -22,6 +23,9 @@ export interface PosCatalogContextValue {
   activeOrganizationId: string | null;
   activeOrganizationName: string | null;
   allowCreditSales: boolean;
+  /** Unfiltered catalog used for barcode/sku scan lookups. */
+  barcodeScanProducts: Product[];
+  /** Catalog filtered by the current category/search UI filters. */
   categories: Category[];
   defaultTerminalName: string;
   fetchNextProductsPage: () => void;
@@ -73,6 +77,7 @@ export function PosCatalogProvider({ children }: { children: ReactNode }) {
     isFetchingNextPage,
     isLoading: isProductsLoading,
   } = usePosProducts(activeCategoryId, searchQuery);
+  const barcodeScanProducts = usePosBarcodeCatalog();
 
   const toggleFavoriteMutation = useToggleProductFavoriteMutation();
 
@@ -103,6 +108,7 @@ export function PosCatalogProvider({ children }: { children: ReactNode }) {
     activeOrganizationId,
     activeOrganizationName,
     allowCreditSales,
+    barcodeScanProducts,
     categories: categories ?? [],
     defaultTerminalName,
     fetchNextProductsPage: fetchNextPage,

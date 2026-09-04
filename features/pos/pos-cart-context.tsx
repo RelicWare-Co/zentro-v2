@@ -21,6 +21,10 @@ import type {
   CartTotals,
   Product,
 } from "@/features/pos/types";
+import {
+  buildBarcodeLookupValues,
+  findCatalogProductByBarcodeScan,
+} from "@/features/products/barcode.shared";
 
 export interface PosCartContextValue {
   cancelTableOrder: (reason: string) => Promise<void>;
@@ -65,7 +69,7 @@ export function usePosCartContext() {
 export function PosCartProvider({ children }: { children: ReactNode }) {
   const { activeMode, saleModeAdapters } = usePosSaleMode();
   const { requireActiveShift } = usePosShiftContext();
-  const { modifierProducts, products } = usePosCatalog();
+  const { barcodeScanProducts, modifierProducts } = usePosCatalog();
   const { closeActiveModal, openActiveModal } = usePosModal();
 
   const addItemToOrder = useCallback(
@@ -111,10 +115,12 @@ export function PosCartProvider({ children }: { children: ReactNode }) {
       if (!requireActiveShift()) {
         return false;
       }
-      const matchedProduct = products.find(
-        (p) =>
-          p.barcode?.trim() === value ||
-          p.sku?.trim().toLowerCase() === value.toLowerCase()
+      // Scan against the unfiltered catalog so an active category tab or
+      // search text cannot silently swallow the scan. The shared helper also
+      // matches GTIN padding variants and SKUs.
+      const matchedProduct = findCatalogProductByBarcodeScan(
+        barcodeScanProducts,
+        buildBarcodeLookupValues(value)
       );
       if (matchedProduct) {
         handleProductSelection(matchedProduct);
@@ -122,7 +128,7 @@ export function PosCartProvider({ children }: { children: ReactNode }) {
       }
       return false;
     },
-    [requireActiveShift, products, handleProductSelection]
+    [requireActiveShift, barcodeScanProducts, handleProductSelection]
   );
 
   const updateQuantityAction = useCallback(

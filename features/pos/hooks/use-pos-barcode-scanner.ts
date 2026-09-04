@@ -146,9 +146,14 @@ export function usePosBarcodeScanner({
       }
 
       resetScannerMetrics();
-      await onBarcodeScan(value);
+      const matched = await onBarcodeScan(value);
+      if (matched) {
+        // Clear so the next scan starts from an empty field instead of
+        // concatenating onto the previous barcode.
+        onClearSearch();
+      }
     },
-    [onBarcodeScan, resetScannerMetrics]
+    [onBarcodeScan, onClearSearch, resetScannerMetrics]
   );
 
   const submitSingleVisibleProduct = useCallback(

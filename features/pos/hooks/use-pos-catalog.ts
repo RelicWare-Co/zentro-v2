@@ -118,6 +118,21 @@ export function usePosModifierProducts() {
   };
 }
 
+export function usePosBarcodeCatalog() {
+  const [barcodeRows] = useZeroQuery(
+    queries.products.posCatalog({
+      categoryId: null,
+      searchQuery: null,
+      limit: 1000,
+    })
+  );
+  return useMemo(
+    () =>
+      barcodeRows.map((row) => buildPosProduct(row as PosProductWithCategory)),
+    [barcodeRows]
+  );
+}
+
 export function usePosProducts(activeCategoryId: string, searchQuery: string) {
   const categoryId = activeCategoryId === "all" ? null : activeCategoryId;
   const deferredSearchQuery = useDeferredValue(searchQuery);
@@ -129,7 +144,6 @@ export function usePosProducts(activeCategoryId: string, searchQuery: string) {
   });
   const loadedPageCount =
     pageState.filterKey === filterKey ? pageState.loadedPageCount : 1;
-  const [isFetchingNextPage, setIsFetchingNextPage] = useState(false);
 
   const [productRows, status] = useZeroQuery(
     queries.products.posCatalog({
@@ -179,19 +193,17 @@ export function usePosProducts(activeCategoryId: string, searchQuery: string) {
     error,
     isError: Boolean(error),
     isLoading: isQueryLoading && !hasLoadedRef.current,
-    isFetchingNextPage,
+    isFetchingNextPage: false,
     hasNextPage,
     fetchNextPage: () => {
-      if (!hasNextPage || isFetchingNextPage) {
+      if (!hasNextPage) {
         return Promise.resolve();
       }
 
-      setIsFetchingNextPage(true);
       setPageState({
         filterKey,
         loadedPageCount: loadedPageCount + 1,
       });
-      setIsFetchingNextPage(false);
       return Promise.resolve();
     },
     refetch: () => {
