@@ -141,6 +141,14 @@ export const restaurantKitchenTicket = pgTable(
       .$onUpdate(() => new Date())
       .notNull(),
     printedAt: timestamp("printed_at", { withTimezone: true, mode: "date" }),
+    printTarget: text("print_target").default("sender").notNull(),
+    printStatus: text("print_status"),
+    printClaimedBy: text("print_claimed_by"),
+    printClaimedAt: timestamp("print_claimed_at", {
+      withTimezone: true,
+      mode: "date",
+    }),
+    printedByTerminal: text("printed_by_terminal"),
   },
   (table) => [
     index("restaurantKitchenTicket_organizationId_idx").on(

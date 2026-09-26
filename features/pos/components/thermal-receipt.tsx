@@ -253,6 +253,9 @@ const styles = {
     width: "72mm",
     margin: "0 auto",
     padding: "4mm 0",
+    // Las comandas y facturas siempre se leen como papel: fondo blanco y
+    // letra negra, incluso dentro de la UI oscura.
+    backgroundColor: "#fff",
     color: "#000",
     fontFamily:
       '"SFMono-Regular", ui-monospace, Menlo, Monaco, Consolas, "Liberation Mono", monospace',

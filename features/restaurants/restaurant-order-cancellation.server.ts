@@ -1,4 +1,4 @@
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, or } from "drizzle-orm";
 import type { z } from "zod";
 import {
   restaurantKitchenTicket,
@@ -68,6 +68,25 @@ export async function runCancelRestaurantOrder(
         and(
           eq(restaurantKitchenTicket.organizationId, organizationId),
           eq(restaurantKitchenTicket.orderId, order.id)
+        )
+      ),
+    db
+      .update(restaurantKitchenTicket)
+      .set({
+        printStatus: "skipped",
+        printClaimedBy: null,
+        printClaimedAt: null,
+        updatedAt: now,
+      })
+      .where(
+        and(
+          eq(restaurantKitchenTicket.organizationId, organizationId),
+          eq(restaurantKitchenTicket.orderId, order.id),
+          eq(restaurantKitchenTicket.printTarget, "caja"),
+          or(
+            eq(restaurantKitchenTicket.printStatus, "pending"),
+            eq(restaurantKitchenTicket.printStatus, "printing")
+          )
         )
       ),
   ]);

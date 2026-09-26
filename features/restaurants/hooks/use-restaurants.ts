@@ -3,8 +3,10 @@ import { useMemo, useRef } from "react";
 import { usePageContext } from "vike-react/usePageContext";
 import type { z } from "zod";
 import type {
+  AcknowledgeKitchenTicketPrintInputSchema,
   AddRestaurantOrderItemInputSchema,
   CancelRestaurantOrderInputSchema,
+  ClaimKitchenTicketPrintInputSchema,
   CloseRestaurantOrderInputSchema,
   CreateRestaurantAreaInputSchema,
   CreateRestaurantTableInputSchema,
@@ -12,6 +14,9 @@ import type {
   DeleteRestaurantOrderItemInputSchema,
   DeleteRestaurantTableInputSchema,
   DiscardPendingKitchenChangesInputSchema,
+  FailKitchenTicketPrintInputSchema,
+  MarkKitchenTicketPrintedInputSchema,
+  RequeueKitchenTicketPrintInputSchema,
   SendRestaurantOrderToKitchenInputSchema,
   UpdateRestaurantOrderItemInputSchema,
   UpdateRestaurantOrderItemStatusInputSchema,
@@ -420,11 +425,101 @@ export function useSendRestaurantOrderToKitchenMutation() {
           mutators.restaurants.sendToKitchen({
             orderId: input.orderId,
             ticketId,
+            printTarget: input.printTarget,
           })
         ),
         { awaitServer: true }
       );
       return { ticketId };
+    }
+  );
+}
+
+/**
+ * `serverAccepted` **no** significa "gané el claim": el runner del servidor no
+ * lanza por contención (otra caja ganó, la orden ya no está abierta, el TTL lo
+ * recuperó), así que `true` solo indica que el servidor no rechazó el
+ * mutador. La prueba real de propiedad es la fila replicada con nuestro token
+ * (`waitForClaimConfirmation`).
+ */
+export function useClaimKitchenTicketPrintMutation() {
+  return useZeroMutation(
+    async (input: z.infer<typeof ClaimKitchenTicketPrintInputSchema>, zero) => {
+      const result = await zero.mutate(
+        mutators.restaurants.claimKitchenTicketPrint(input)
+      );
+      const clientResult = await result.client;
+      if (clientResult.type === "error") {
+        throw new Error(clientResult.error.message);
+      }
+
+      const serverResult = await result.server;
+      if (serverResult.type === "error") {
+        // Expected contention/no-op paths (another caja won, printing disabled,
+        // no open shift) must not surface a rejection toast.
+        return {
+          serverAccepted: false as const,
+          message: serverResult.error.message,
+        };
+      }
+      return { serverAccepted: true as const };
+    }
+  );
+}
+
+export function useMarkKitchenTicketPrintedMutation() {
+  return useZeroMutation(
+    async (
+      input: z.infer<typeof MarkKitchenTicketPrintedInputSchema>,
+      zero
+    ) => {
+      await waitForZeroMutation(
+        zero.mutate(mutators.restaurants.markKitchenTicketPrinted(input)),
+        { awaitServer: true }
+      );
+      return { success: true as const };
+    }
+  );
+}
+
+export function useFailKitchenTicketPrintMutation() {
+  return useZeroMutation(
+    async (input: z.infer<typeof FailKitchenTicketPrintInputSchema>, zero) => {
+      await waitForZeroMutation(
+        zero.mutate(mutators.restaurants.failKitchenTicketPrint(input)),
+        { awaitServer: true }
+      );
+      return { success: true as const };
+    }
+  );
+}
+
+export function useRequeueKitchenTicketPrintMutation() {
+  return useZeroMutation(
+    async (
+      input: z.infer<typeof RequeueKitchenTicketPrintInputSchema>,
+      zero
+    ) => {
+      await waitForZeroMutation(
+        zero.mutate(mutators.restaurants.requeueKitchenTicketPrint(input)),
+        { awaitServer: true }
+      );
+      return { success: true as const };
+    }
+  );
+}
+
+export function useAcknowledgeKitchenTicketPrintMutation() {
+  return useZeroMutation(
+    async (
+      input: z.infer<typeof AcknowledgeKitchenTicketPrintInputSchema>,
+      zero
+    ) => {
+      await waitForZeroMutation(
+        zero.mutate(mutators.restaurants.acknowledgeKitchenTicketPrint(input)),
+        { awaitServer: true }
+      );
+      return { success: true as const };
     }
   );
 }
@@ -523,4 +618,54 @@ export function useDeleteRestaurantTableMutation() {
       );
     }
   );
+}
+
+export function usePendingKitchenPrints() {
+  const pageContext = usePageContext();
+  const zeroContext = pageContext.zeroContext;
+  const [ticketRows, ticketStatus] = useZeroQuery(
+    queries.restaurants.pendingPrints()
+  );
+  const error = getZeroQueryError(ticketStatus);
+
+  return {
+    data: ticketRows as RestaurantKitchenTicketRow[],
+    error,
+    isError: Boolean(error),
+    isLoading:
+      Boolean(zeroContext) &&
+      ticketStatus.type === "unknown" &&
+      ticketRows.length === 0,
+    refetch: () => {
+      if (ticketStatus.type === "error") {
+        ticketStatus.retry?.();
+      }
+      return Promise.resolve();
+    },
+  };
+}
+
+export function useSalonKitchenTickets(from: number) {
+  const pageContext = usePageContext();
+  const zeroContext = pageContext.zeroContext;
+  const [ticketRows, ticketStatus] = useZeroQuery(
+    queries.restaurants.salonTickets({ from })
+  );
+  const error = getZeroQueryError(ticketStatus);
+
+  return {
+    data: ticketRows as RestaurantKitchenTicketRow[],
+    error,
+    isError: Boolean(error),
+    isLoading:
+      Boolean(zeroContext) &&
+      ticketStatus.type === "unknown" &&
+      ticketRows.length === 0,
+    refetch: () => {
+      if (ticketStatus.type === "error") {
+        ticketStatus.retry?.();
+      }
+      return Promise.resolve();
+    },
+  };
 }

@@ -274,6 +274,7 @@ export async function runSendRestaurantOrderToKitchen(
   const ticketId = args.ticketId;
   const sequenceNumber = (lastTicket?.sequenceNumber ?? 0) + 1;
   const kind = lastTicket ? "correction" : "initial";
+  const printTarget = args.printTarget === "caja" ? "caja" : "sender";
 
   await database.insert(restaurantKitchenTicket).values({
     id: ticketId,
@@ -286,6 +287,11 @@ export async function runSendRestaurantOrderToKitchen(
     createdAt: now,
     updatedAt: now,
     printedAt: null,
+    printTarget,
+    printStatus: printTarget === "caja" ? "pending" : null,
+    printClaimedBy: null,
+    printClaimedAt: null,
+    printedByTerminal: null,
   });
 
   await database.insert(restaurantKitchenTicketLine).values(

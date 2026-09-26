@@ -439,6 +439,11 @@ export default drizzleZeroConfig(drizzleSchema, {
       createdAt: true,
       updatedAt: true,
       printedAt: true,
+      printTarget: true,
+      printStatus: true,
+      printClaimedBy: true,
+      printClaimedAt: true,
+      printedByTerminal: true,
     },
     restaurantKitchenTicketLine: {
       id: true,

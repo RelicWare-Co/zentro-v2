@@ -14,6 +14,22 @@ export const DEFAULT_POS_RECEIPT_LAYOUT_SETTINGS: PosReceiptLayoutSettings = {
   receiptFontScale: "normal",
 };
 
+/**
+ * Decide si una impresión debe abrir el cajón de dinero.
+ *
+ * El ajuste `openDrawerAfterPrint` de la máquina aplica a los recibos de venta
+ * (cerrar una caja abre el cajón), pero una comanda de cocina no es un cobro:
+ * el watcher de la caja imprime de forma desatendida, así que abrir el cajón
+ * en cada pedido sería un defecto. Quien imprime algo que no es un cobro lo
+ * desactiva explícitamente con `openCashDrawer: false`.
+ */
+export function shouldOpenCashDrawer(
+  settings: { openDrawerAfterPrint: boolean },
+  options?: { openCashDrawer?: boolean }
+) {
+  return options?.openCashDrawer ?? settings.openDrawerAfterPrint;
+}
+
 const RECEIPT_CSS_LAYOUTS: Record<
   PosReceiptPaperWidth,
   {

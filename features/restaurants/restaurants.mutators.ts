@@ -37,6 +37,25 @@ export const discardPendingKitchenChangesArgsSchema = zod.object({
 export const sendRestaurantOrderToKitchenArgsSchema = zod.object({
   orderId: zod.string().trim().min(1),
   ticketId: zod.string().trim().min(1),
+  printTarget: zod.enum(["sender", "caja"]).optional(),
+});
+export const claimKitchenTicketPrintArgsSchema = zod.object({
+  ticketId: zod.string().trim().min(1),
+  claimToken: zod.string().trim().min(1),
+});
+export const markKitchenTicketPrintedArgsSchema = zod.object({
+  ticketId: zod.string().trim().min(1),
+  claimToken: zod.string().trim().min(1),
+});
+export const failKitchenTicketPrintArgsSchema = zod.object({
+  ticketId: zod.string().trim().min(1),
+  claimToken: zod.string().trim().min(1),
+});
+export const requeueKitchenTicketPrintArgsSchema = zod.object({
+  ticketId: zod.string().trim().min(1),
+});
+export const acknowledgeKitchenTicketPrintArgsSchema = zod.object({
+  ticketId: zod.string().trim().min(1),
 });
 export const cancelRestaurantOrderArgsSchema = zod.object({
   orderId: zod.string().trim().min(1),
@@ -123,6 +142,36 @@ export const restaurantsMutators = {
     ),
     sendToKitchen: defineZentroMutator(
       sendRestaurantOrderToKitchenArgsSchema,
+      async () => {
+        // Server-only restaurant writes; client completes without optimistic writes.
+      }
+    ),
+    claimKitchenTicketPrint: defineZentroMutator(
+      claimKitchenTicketPrintArgsSchema,
+      async () => {
+        // Server-only restaurant writes; client completes without optimistic writes.
+      }
+    ),
+    markKitchenTicketPrinted: defineZentroMutator(
+      markKitchenTicketPrintedArgsSchema,
+      async () => {
+        // Server-only restaurant writes; client completes without optimistic writes.
+      }
+    ),
+    failKitchenTicketPrint: defineZentroMutator(
+      failKitchenTicketPrintArgsSchema,
+      async () => {
+        // Server-only restaurant writes; client completes without optimistic writes.
+      }
+    ),
+    requeueKitchenTicketPrint: defineZentroMutator(
+      requeueKitchenTicketPrintArgsSchema,
+      async () => {
+        // Server-only restaurant writes; client completes without optimistic writes.
+      }
+    ),
+    acknowledgeKitchenTicketPrint: defineZentroMutator(
+      acknowledgeKitchenTicketPrintArgsSchema,
       async () => {
         // Server-only restaurant writes; client completes without optimistic writes.
       }

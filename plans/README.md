@@ -32,6 +32,7 @@ fork — was intentionally excluded as a deliberate fork).
 | 015 | Remove `as any` type escapes in production code and tests | P3 | S | 008 | DONE |
 | 016 | Replace `Number(...) \|\| 0` with normalized helpers in product form | P2 | S | 008 | DONE |
 | 017 | Add Playwright E2E for shift lifecycle and credit POS | P3 | M | — | DONE |
+| 018 | Waiter mobile orders printed at the active caja | P2 | L | — | DONE (mobile `/restaurante`, Zero print queue with claim tokens, Salón inbox + sound; 14 integration tests) |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale)
 

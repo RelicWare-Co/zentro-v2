@@ -9,8 +9,10 @@ import {
 } from "@/database/drizzle/schema/restaurant.schema";
 import { sale } from "@/database/drizzle/schema/sales.schema";
 import type {
+  AcknowledgeKitchenTicketPrintInputSchema,
   AddRestaurantOrderItemInputSchema,
   CancelRestaurantOrderInputSchema,
+  ClaimKitchenTicketPrintInputSchema,
   CloseRestaurantOrderInputSchema,
   CreateRestaurantAreaInputSchema,
   CreateRestaurantTableInputSchema,
@@ -18,6 +20,9 @@ import type {
   DeleteRestaurantOrderItemInputSchema,
   DeleteRestaurantTableInputSchema,
   DiscardPendingKitchenChangesInputSchema,
+  FailKitchenTicketPrintInputSchema,
+  MarkKitchenTicketPrintedInputSchema,
+  RequeueKitchenTicketPrintInputSchema,
   SendRestaurantOrderToKitchenInputSchema,
   UpdateRestaurantAreaInputSchema,
   UpdateRestaurantOrderItemInputSchema,
@@ -169,6 +174,17 @@ type UpdateOrderItemStatusInput = z.infer<
 type CancelOrderInput = z.infer<typeof CancelRestaurantOrderInputSchema>;
 type SendToKitchenInput = z.infer<
   typeof SendRestaurantOrderToKitchenInputSchema
+>;
+type ClaimTicketPrintInput = z.infer<typeof ClaimKitchenTicketPrintInputSchema>;
+type MarkTicketPrintedInput = z.infer<
+  typeof MarkKitchenTicketPrintedInputSchema
+>;
+type FailTicketPrintInput = z.infer<typeof FailKitchenTicketPrintInputSchema>;
+type RequeueTicketPrintInput = z.infer<
+  typeof RequeueKitchenTicketPrintInputSchema
+>;
+type AcknowledgeTicketPrintInput = z.infer<
+  typeof AcknowledgeKitchenTicketPrintInputSchema
 >;
 type CloseOrderInput = z.infer<typeof CloseRestaurantOrderInputSchema>;
 type CreateAreaInput = z.infer<typeof CreateRestaurantAreaInputSchema>;
@@ -521,4 +537,120 @@ export async function deleteRestaurantTableViaZero({
     serverMutators.restaurants.deleteTable.fn({ args: input, ctx, tx })
   );
   return getRestaurantConfigurationViaZero({ zeroDb, ctx });
+}
+
+export async function claimKitchenTicketPrintViaZero({
+  zeroDb,
+  ctx,
+  input,
+}: {
+  zeroDb: ZeroTestDb;
+  ctx: ZeroContext;
+  input: ClaimTicketPrintInput;
+}) {
+  await zeroDb.transaction((tx) =>
+    serverMutators.restaurants.claimKitchenTicketPrint.fn({
+      args: input,
+      ctx,
+      tx,
+    })
+  );
+}
+
+export async function markKitchenTicketPrintedViaZero({
+  zeroDb,
+  ctx,
+  input,
+}: {
+  zeroDb: ZeroTestDb;
+  ctx: ZeroContext;
+  input: MarkTicketPrintedInput;
+}) {
+  await zeroDb.transaction((tx) =>
+    serverMutators.restaurants.markKitchenTicketPrinted.fn({
+      args: input,
+      ctx,
+      tx,
+    })
+  );
+}
+
+export async function failKitchenTicketPrintViaZero({
+  zeroDb,
+  ctx,
+  input,
+}: {
+  zeroDb: ZeroTestDb;
+  ctx: ZeroContext;
+  input: FailTicketPrintInput;
+}) {
+  await zeroDb.transaction((tx) =>
+    serverMutators.restaurants.failKitchenTicketPrint.fn({
+      args: input,
+      ctx,
+      tx,
+    })
+  );
+}
+
+export async function requeueKitchenTicketPrintViaZero({
+  zeroDb,
+  ctx,
+  input,
+}: {
+  zeroDb: ZeroTestDb;
+  ctx: ZeroContext;
+  input: RequeueTicketPrintInput;
+}) {
+  await zeroDb.transaction((tx) =>
+    serverMutators.restaurants.requeueKitchenTicketPrint.fn({
+      args: input,
+      ctx,
+      tx,
+    })
+  );
+}
+
+export async function acknowledgeKitchenTicketPrintViaZero({
+  zeroDb,
+  ctx,
+  input,
+}: {
+  zeroDb: ZeroTestDb;
+  ctx: ZeroContext;
+  input: AcknowledgeTicketPrintInput;
+}) {
+  await zeroDb.transaction((tx) =>
+    serverMutators.restaurants.acknowledgeKitchenTicketPrint.fn({
+      args: input,
+      ctx,
+      tx,
+    })
+  );
+}
+
+export function getPendingKitchenPrintsViaZero({
+  zeroDb,
+  ctx,
+}: {
+  zeroDb: ZeroTestDb;
+  ctx: ZeroContext;
+}) {
+  return zeroDb.run(
+    queries.restaurants.pendingPrints.fn({ args: undefined, ctx })
+  );
+}
+
+export function getSalonKitchenTicketsViaZero({
+  zeroDb,
+  ctx,
+  from,
+}: {
+  zeroDb: ZeroTestDb;
+  ctx: ZeroContext;
+  from?: number | null;
+}) {
+  return zeroDb.run(
+    queries.restaurants.salonTickets.fn({ args: { from }, ctx })
+  );
 }

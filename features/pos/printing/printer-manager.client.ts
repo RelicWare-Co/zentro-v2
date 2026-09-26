@@ -18,6 +18,7 @@ import {
   patchPosLocalPrinterSettings,
   readPosLocalPrinterSettings,
 } from "@/features/pos/printing/printer-settings.local.client";
+import { shouldOpenCashDrawer } from "@/features/pos/printing/receipt-layout.shared";
 import type { ThermalReceiptDocument } from "@/features/pos/printing/thermal-receipt-document";
 
 type EncodablePrinterLanguage = Exclude<PosPrinterLanguage, "auto">;
@@ -887,7 +888,8 @@ class PosPrinterManager {
 
   async printReceipt(
     document: ThermalReceiptDocument,
-    organizationId?: string | null
+    organizationId?: string | null,
+    options?: { openCashDrawer?: boolean }
   ) {
     const settings = readPosLocalPrinterSettings(organizationId);
     await this.ensureConnected(settings, organizationId);
@@ -907,7 +909,9 @@ class PosPrinterManager {
 
     await Promise.resolve(this.printer.print(payload));
 
-    if (settings.openDrawerAfterPrint) {
+    // Las comandas de cocina no son un cobro: abren el cajón solo si quien
+    // llama lo pide explícitamente, no por el ajuste global de la máquina.
+    if (shouldOpenCashDrawer(settings, options)) {
       await this.openCashDrawer(organizationId);
     }
   }

@@ -18,8 +18,17 @@ import {
   runUpdateRestaurantTable,
 } from "@/features/restaurants/restaurant-mutations.server";
 import {
+  runAcknowledgeKitchenTicketPrint,
+  runClaimKitchenTicketPrint,
+  runFailKitchenTicketPrint,
+  runMarkKitchenTicketPrinted,
+  runRequeueKitchenTicketPrint,
+} from "@/features/restaurants/restaurant-print-operations.server";
+import {
+  acknowledgeKitchenTicketPrintArgsSchema,
   addRestaurantOrderItemArgsSchema,
   cancelRestaurantOrderArgsSchema,
+  claimKitchenTicketPrintArgsSchema,
   closeRestaurantOrderArgsSchema,
   createRestaurantAreaArgsSchema,
   createRestaurantTableArgsSchema,
@@ -28,6 +37,9 @@ import {
   deleteRestaurantTableArgsSchema,
   discardPendingKitchenChangesArgsSchema,
   ensureDefaultRestaurantAreasArgsSchema,
+  failKitchenTicketPrintArgsSchema,
+  markKitchenTicketPrintedArgsSchema,
+  requeueKitchenTicketPrintArgsSchema,
   sendRestaurantOrderToKitchenArgsSchema,
   updateRestaurantAreaArgsSchema,
   updateRestaurantOrderItemArgsSchema,
@@ -95,6 +107,31 @@ export const restaurantsServerMutators = {
   sendToKitchen: defineZentroServerMutator(
     sendRestaurantOrderToKitchenArgsSchema,
     restaurantRunner(runSendRestaurantOrderToKitchen),
+    { operationName: RESTAURANT_OP_NAME }
+  ),
+  claimKitchenTicketPrint: defineZentroServerMutator(
+    claimKitchenTicketPrintArgsSchema,
+    restaurantRunner(runClaimKitchenTicketPrint),
+    { operationName: RESTAURANT_OP_NAME }
+  ),
+  markKitchenTicketPrinted: defineZentroServerMutator(
+    markKitchenTicketPrintedArgsSchema,
+    restaurantRunner(runMarkKitchenTicketPrinted),
+    { operationName: RESTAURANT_OP_NAME }
+  ),
+  failKitchenTicketPrint: defineZentroServerMutator(
+    failKitchenTicketPrintArgsSchema,
+    restaurantRunner(runFailKitchenTicketPrint),
+    { operationName: RESTAURANT_OP_NAME }
+  ),
+  requeueKitchenTicketPrint: defineZentroServerMutator(
+    requeueKitchenTicketPrintArgsSchema,
+    restaurantRunner(runRequeueKitchenTicketPrint),
+    { operationName: RESTAURANT_OP_NAME }
+  ),
+  acknowledgeKitchenTicketPrint: defineZentroServerMutator(
+    acknowledgeKitchenTicketPrintArgsSchema,
+    restaurantRunner(runAcknowledgeKitchenTicketPrint),
     { operationName: RESTAURANT_OP_NAME }
   ),
   cancelOrder: defineZentroServerMutator(

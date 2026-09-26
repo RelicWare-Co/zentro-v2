@@ -52,6 +52,30 @@ export const DiscardPendingKitchenChangesInputSchema = z.object({
 
 export const SendRestaurantOrderToKitchenInputSchema = z.object({
   orderId: z.string().trim().min(1),
+  printTarget: z.enum(["sender", "caja"]).optional(),
+});
+
+export const ClaimKitchenTicketPrintInputSchema = z.object({
+  ticketId: z.string().trim().min(1),
+  claimToken: z.string().trim().min(1),
+});
+
+export const MarkKitchenTicketPrintedInputSchema = z.object({
+  ticketId: z.string().trim().min(1),
+  claimToken: z.string().trim().min(1),
+});
+
+export const FailKitchenTicketPrintInputSchema = z.object({
+  ticketId: z.string().trim().min(1),
+  claimToken: z.string().trim().min(1),
+});
+
+export const RequeueKitchenTicketPrintInputSchema = z.object({
+  ticketId: z.string().trim().min(1),
+});
+
+export const AcknowledgeKitchenTicketPrintInputSchema = z.object({
+  ticketId: z.string().trim().min(1),
 });
 
 export const CancelRestaurantOrderInputSchema = z.object({
@@ -257,6 +281,12 @@ const RestaurantKitchenTicketSchema = z.object({
   status: z.string(),
   createdAt: z.number(),
   printedAt: z.number().nullable().optional(),
+  printTarget: z.enum(["sender", "caja"]),
+  printStatus: z
+    .enum(["pending", "printing", "printed", "failed", "skipped"])
+    .nullable(),
+  printClaimedBy: z.string().nullable().optional(),
+  printedByTerminal: z.string().nullable().optional(),
   lines: KitchenTicketLineSchema.array(),
 });
 

@@ -560,6 +560,31 @@ export function getSavedDeviceForConnection(
   return settings.savedDevices[connectionType];
 }
 
+/**
+ * Una máquina puede imprimir en dispositivo cuando el modo de salida es
+ * `device` y hay una impresora guardada para el tipo de conexión activo (QZ
+ * exige además un `printerName`).
+ */
+export function isPosLocalPrinterConfigured(settings: PosLocalPrinterSettings) {
+  if (settings.outputMode !== "device") {
+    return false;
+  }
+
+  const savedDevice = getSavedDeviceForConnection(
+    settings,
+    settings.connectionType
+  );
+  if (!savedDevice) {
+    return false;
+  }
+
+  if (settings.connectionType === "qz") {
+    return savedDevice.type === "qz" && savedDevice.printerName.length > 0;
+  }
+
+  return true;
+}
+
 export function isPosPrinterConnectionTypeSupported(
   connectionType: PosPrinterConnectionType
 ) {

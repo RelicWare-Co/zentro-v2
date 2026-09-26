@@ -6,6 +6,10 @@ const restaurantTableIdArgsSchema = z.object({
   tableId: z.string().trim().optional().nullable(),
 });
 
+const salonTicketsArgsSchema = z.object({
+  from: z.number().optional().nullable(),
+});
+
 export const restaurantsQueries = {
   restaurants: {
     layout: defineZentroQuery(({ ctx }) => {
@@ -91,6 +95,62 @@ export const restaurantsQueries = {
           query.orderBy("createdAt", "desc").orderBy("id", "desc")
         )
         .orderBy("createdAt", "desc");
+    }),
+    pendingPrints: defineZentroQuery(({ ctx }) => {
+      if (!hasOrgContext(ctx)) {
+        return denyQuery(zql.restaurantKitchenTicket);
+      }
+
+      return zql.restaurantKitchenTicket
+        .where("organizationId", ctx.orgID)
+        .where("printTarget", "=", "caja")
+        .where(({ cmp, or }) =>
+          or(
+            cmp("printStatus", "=", "pending"),
+            cmp("printStatus", "=", "printing")
+          )
+        )
+        .where(({ cmp, or }) =>
+          or(cmp("status", "=", "sent"), cmp("status", "=", "ready"))
+        )
+        .whereExists("order", (query) => query.where("status", "open"))
+        .related("lines", (query) =>
+          query.orderBy("createdAt", "asc").orderBy("id", "asc")
+        )
+        .related("order", (query) =>
+          query
+            .where("status", "open")
+            .related("table", (tableQuery) => tableQuery.related("area"))
+        )
+        .orderBy("createdAt", "asc")
+        .orderBy("id", "asc")
+        .limit(50);
+    }),
+    salonTickets: defineZentroQuery(salonTicketsArgsSchema, ({ args, ctx }) => {
+      if (!hasOrgContext(ctx)) {
+        return denyQuery(zql.restaurantKitchenTicket);
+      }
+
+      let query = zql.restaurantKitchenTicket
+        .where("organizationId", ctx.orgID)
+        .where("printTarget", "=", "caja");
+      const from = args.from;
+      if (typeof from === "number" && Number.isFinite(from)) {
+        query = query.where("createdAt", ">=", from);
+      }
+
+      return query
+        .related("lines", (lineQuery) =>
+          lineQuery.orderBy("createdAt", "asc").orderBy("id", "asc")
+        )
+        .related("order", (orderQuery) =>
+          orderQuery.related("table", (tableQuery) =>
+            tableQuery.related("area")
+          )
+        )
+        .orderBy("createdAt", "desc")
+        .orderBy("id", "desc")
+        .limit(100);
     }),
   },
 };

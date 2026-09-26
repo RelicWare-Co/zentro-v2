@@ -76,9 +76,37 @@ export interface RestaurantKitchenTicketRow {
   lines?: RestaurantKitchenTicketLineRow[] | null;
   order?: RestaurantOpenOrderRow | null;
   orderId: string;
+  printClaimedAt?: number | null;
+  printClaimedBy?: string | null;
   printedAt?: number | null;
+  printedByTerminal?: string | null;
+  printStatus?: string | null;
+  printTarget?: string | null;
   sequenceNumber: number;
   status?: string | null;
+}
+
+export type RestaurantTicketPrintStatus =
+  | "failed"
+  | "pending"
+  | "printed"
+  | "printing"
+  | "skipped";
+
+export function mapRestaurantTicketPrintStatus(
+  value: string | null | undefined
+): RestaurantTicketPrintStatus | null {
+  if (
+    value === "pending" ||
+    value === "printing" ||
+    value === "printed" ||
+    value === "failed" ||
+    value === "skipped"
+  ) {
+    return value;
+  }
+
+  return null;
 }
 
 export interface RestaurantOpenOrderRow {
@@ -333,6 +361,13 @@ export function mapRestaurantKitchenTicket(
     status: ticketRow.status ?? "sent",
     createdAt: toTimestamp(ticketRow.createdAt) ?? Date.now(),
     printedAt: toTimestamp(ticketRow.printedAt),
+    printTarget:
+      ticketRow.printTarget === "caja"
+        ? ("caja" as const)
+        : ("sender" as const),
+    printStatus: mapRestaurantTicketPrintStatus(ticketRow.printStatus),
+    printClaimedBy: ticketRow.printClaimedBy ?? null,
+    printedByTerminal: ticketRow.printedByTerminal ?? null,
     lines: (ticketRow.lines ?? [])
       .slice()
       .sort(

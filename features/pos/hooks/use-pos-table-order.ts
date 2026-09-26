@@ -24,11 +24,12 @@ import {
   useUpdateRestaurantOrderItemMutation,
   useUpdateRestaurantOrderMetaMutation,
 } from "@/features/restaurants/hooks/use-restaurants";
-import {
-  type KitchenTicketPrintItem,
-  printKitchenTicket,
-} from "@/features/restaurants/printing/print-kitchen-ticket";
+import { printKitchenTicket } from "@/features/restaurants/printing/print-kitchen-ticket";
 import type { RestaurantTableDetail } from "@/features/restaurants/restaurants.shared";
+import {
+  buildKitchenTicketPrintPayload,
+  buildPendingKitchenPrintItems,
+} from "@/features/restaurants/waiter-order.shared";
 import { parseOrganizationSettingsMetadata } from "@/features/settings/settings.shared";
 import { queries } from "@/zero/queries";
 
@@ -57,7 +58,6 @@ function getEffectiveItemNotes(
   }
   return item.notes ?? null;
 }
-
 function buildTableCartItem(
   item: TableOrderItem,
   quantity: number,
@@ -92,149 +92,6 @@ function buildTableCartItem(
     discountAmount: item.discountAmount,
     notes,
   };
-}
-
-function parseSentModifiers(value: string) {
-  try {
-    const parsed: unknown = JSON.parse(value);
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-
-    return parsed.flatMap((modifier) => {
-      if (
-        !modifier ||
-        typeof modifier !== "object" ||
-        !("name" in modifier) ||
-        !("quantity" in modifier) ||
-        !("unitPrice" in modifier) ||
-        typeof modifier.name !== "string" ||
-        typeof modifier.quantity !== "number" ||
-        typeof modifier.unitPrice !== "number"
-      ) {
-        return [];
-      }
-
-      return [
-        {
-          name: modifier.name,
-          quantity: modifier.quantity,
-          unitPrice: modifier.unitPrice,
-        },
-      ];
-    });
-  } catch {
-    return [];
-  }
-}
-
-function serializeModifiers(item: TableOrderItem) {
-  return JSON.stringify(
-    item.modifiers
-      .map((modifier) => ({
-        id: modifier.modifierProductId,
-        name: modifier.name,
-        quantity: modifier.quantity,
-        unitPrice: modifier.unitPrice,
-      }))
-      .toSorted((left, right) => left.id.localeCompare(right.id))
-  );
-}
-
-function scaleItemTotal(item: TableOrderItem, quantity: number) {
-  return item.quantity > 0
-    ? Math.round((item.totalAmount / item.quantity) * quantity)
-    : item.totalAmount;
-}
-
-function buildCurrentKitchenPrintItem(
-  item: TableOrderItem,
-  quantity: number,
-  notes: string | null
-): KitchenTicketPrintItem {
-  return {
-    productName: item.productName,
-    quantity,
-    notes,
-    modifiers: item.modifiers.map((modifier) => ({
-      name: modifier.name,
-      quantity: modifier.quantity,
-      unitPrice: modifier.unitPrice,
-    })),
-    totalAmount: scaleItemTotal(item, quantity),
-  };
-}
-
-function buildSentKitchenPrintItem(
-  item: TableOrderItem,
-  current: KitchenTicketPrintItem
-): KitchenTicketPrintItem {
-  const savedSentQuantity = item.sentQuantity ?? 0;
-  const quantity = savedSentQuantity > 0 ? savedSentQuantity : item.quantity;
-  const notes =
-    savedSentQuantity > 0 ? (item.sentNotes ?? null) : (item.notes ?? null);
-  const modifiers =
-    savedSentQuantity > 0
-      ? parseSentModifiers(item.sentModifiersSnapshot ?? "[]")
-      : current.modifiers;
-
-  return {
-    productName: item.sentProductName ?? item.productName,
-    quantity,
-    notes,
-    modifiers,
-    totalAmount: scaleItemTotal(item, quantity),
-    operation: "cancel",
-  };
-}
-
-function buildModifiedKitchenPrintItem(
-  current: KitchenTicketPrintItem,
-  sent: KitchenTicketPrintItem
-): KitchenTicketPrintItem {
-  return {
-    ...current,
-    productName: sent.productName,
-    operation: "modify",
-    previousModifiers: sent.modifiers,
-    previousNotes: sent.notes,
-    previousQuantity: sent.quantity,
-  };
-}
-
-function getPendingKitchenLines(
-  item: TableOrderItem,
-  quantity: number,
-  notes: string | null
-): KitchenTicketPrintItem[] {
-  const current = buildCurrentKitchenPrintItem(item, quantity, notes);
-  if (item.status === "draft") {
-    return [current];
-  }
-
-  const sent = buildSentKitchenPrintItem(item, current);
-  if (item.pendingCancellation) {
-    return [sent];
-  }
-
-  const modifiersChanged =
-    serializeModifiers(item) !== (item.sentModifiersSnapshot ?? "[]");
-  const quantityDifference = quantity - sent.quantity;
-  if (notes === sent.notes && !modifiersChanged && quantityDifference === 0) {
-    return [];
-  }
-
-  return [buildModifiedKitchenPrintItem(current, sent)];
-}
-
-function buildPendingKitchenPrintItems(
-  items: TableOrderItem[],
-  getQuantity: (item: TableOrderItem) => number,
-  getNotes: (item: TableOrderItem) => string | null
-): KitchenTicketPrintItem[] {
-  return items.flatMap((item) =>
-    getPendingKitchenLines(item, getQuantity(item), getNotes(item))
-  );
 }
 
 /**
@@ -400,35 +257,14 @@ export function usePosTableOrder(
 
     setPendingKitchenAutoPrint(null);
     printKitchenTicket(
-      {
-        id: ticket.id,
+      buildKitchenTicketPrintPayload({
         orderNumber: openOrder.orderNumber,
-        kind: ticket.kind,
-        sequenceNumber: ticket.sequenceNumber,
-        createdAt: ticket.createdAt,
         table: {
           name: pendingKitchenAutoPrint.tableName,
           areaName: pendingKitchenAutoPrint.areaName,
         },
-        items: ticket.lines.map((line) => ({
-          productName: line.productName,
-          quantity: line.quantity,
-          operation: line.operation,
-          notes: line.notes ?? null,
-          previousNotes: line.previousNotes ?? null,
-          previousQuantity: line.previousQuantity ?? null,
-          modifiers: line.modifiers.map((modifier) => ({
-            name: modifier.name,
-            quantity: modifier.quantity,
-            unitPrice: modifier.unitPrice,
-          })),
-          previousModifiers: line.previousModifiers.map((modifier) => ({
-            name: modifier.name,
-            quantity: modifier.quantity,
-            unitPrice: modifier.unitPrice,
-          })),
-        })),
-      },
+        ticket,
+      }),
       activeOrganizationId
     ).catch((error) => {
       notifications.show({

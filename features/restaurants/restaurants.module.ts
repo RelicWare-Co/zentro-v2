@@ -31,17 +31,27 @@ export const restaurantModuleDefinition = defineModule({
       return [];
     }
 
-    return flags.kitchenDisplayEnabled
-      ? [
-          {
-            id: "restaurants-kitchen",
-            label: "Cocina",
-            path: "/kitchen",
-            order: 36,
-            icon: "chef-hat",
-          },
-        ]
-      : [];
+    const navigation = [
+      {
+        id: "restaurants-salon",
+        label: "Salón",
+        path: "/restaurante",
+        order: 35,
+        icon: "utensils-crossed",
+      },
+    ];
+
+    if (flags.kitchenDisplayEnabled) {
+      navigation.push({
+        id: "restaurants-kitchen",
+        label: "Cocina",
+        path: "/kitchen",
+        order: 36,
+        icon: "chef-hat",
+      });
+    }
+
+    return navigation;
   },
   getPosSaleModes: () => [tableSaleModeFactory],
   getPosExtensions: ({ accessible }) =>
