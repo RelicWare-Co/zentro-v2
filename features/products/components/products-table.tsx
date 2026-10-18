@@ -3,12 +3,13 @@
 import { ActionIcon, Badge, Button } from "@mantine/core";
 import {
   createColumnHelper,
+  createPaginatedRowModel,
   flexRender,
-  getCoreRowModel,
-  getPaginationRowModel,
   type PaginationState,
+  rowPaginationFeature,
+  tableFeatures,
   type Updater,
-  useReactTable,
+  useTable,
 } from "@tanstack/react-table";
 import { Edit3, Trash2 } from "lucide-react";
 import { useCallback, useMemo } from "react";
@@ -26,7 +27,12 @@ import type { Product } from "@/features/products/hooks/use-products";
 import { useProductsPage } from "@/features/products/products-page-context";
 import { formatCurrency } from "@/lib/format-currency.shared";
 
-const columnHelper = createColumnHelper<Product>();
+const features = tableFeatures({
+  rowPaginationFeature,
+  paginatedRowModel: createPaginatedRowModel(),
+});
+
+const columnHelper = createColumnHelper<typeof features, Product>();
 
 export function ProductsTable() {
   "use no memo";
@@ -34,107 +40,105 @@ export function ProductsTable() {
   const { state, actions } = useProductsPage();
 
   const columns = useMemo(
-    () => [
-      columnHelper.accessor("name", {
-        header: "Producto",
-        cell: ({ row }) => (
-          <div className="min-w-0">
-            <p className="truncate font-medium text-white">
-              {row.original.name}
-            </p>
-            {row.original.isModifier ? (
-              <Badge color="voltage" mt={4} tt="none" variant="light">
-                Modificador
-              </Badge>
-            ) : null}
-            {row.original.isIngredient ? (
-              <Badge color="grape" mt={4} tt="none" variant="light">
-                Insumo
-              </Badge>
-            ) : null}
-          </div>
-        ),
-      }),
-      columnHelper.accessor("categoryName", {
-        header: "Categoría",
-        cell: ({ getValue }) => getValue() ?? "Sin categoría",
-      }),
-      columnHelper.display({
-        id: "sku",
-        header: "SKU / Código",
-        cell: ({ row }) => (
-          <div className="text-sm text-zinc-300">
-            <p>{row.original.sku || "-"}</p>
-            {row.original.barcode ? (
-              <p className="text-xs text-zinc-500">
-                BC: {row.original.barcode}
+    () =>
+      columnHelper.columns([
+        columnHelper.accessor("name", {
+          header: "Producto",
+          cell: ({ row }) => (
+            <div className="min-w-0">
+              <p className="truncate font-medium text-white">
+                {row.original.name}
               </p>
-            ) : null}
-          </div>
-        ),
-      }),
-      columnHelper.display({
-        id: "stock",
-        header: "Stock",
-        cell: ({ row }) => (
-          <ProductStockBadge
-            lowStockThreshold={state.lowStockThreshold}
-            product={row.original}
-          />
-        ),
-      }),
-      columnHelper.accessor("price", {
-        header: "Precio",
-        cell: ({ row }) =>
-          row.original.isIngredient ? (
-            <span className="text-zinc-500">—</span>
-          ) : (
-            <span className="font-medium text-zinc-200">
-              {formatCurrency(row.original.price)}
-            </span>
+              {row.original.isModifier ? (
+                <Badge color="voltage" mt={4} tt="none" variant="light">
+                  Modificador
+                </Badge>
+              ) : null}
+              {row.original.isIngredient ? (
+                <Badge color="grape" mt={4} tt="none" variant="light">
+                  Insumo
+                </Badge>
+              ) : null}
+            </div>
           ),
-      }),
-      columnHelper.display({
-        id: "actions",
-        header: () => <span className="sr-only">Acciones</span>,
-        cell: ({ row }) => (
-          <div className="flex justify-end gap-2">
-            {row.original.trackInventory ? (
-              <Button
-                onClick={() => actions.openInventoryForProduct(row.original)}
-                size="xs"
+        }),
+        columnHelper.accessor("categoryName", {
+          header: "Categoría",
+          cell: ({ getValue }) => getValue() ?? "Sin categoría",
+        }),
+        columnHelper.display({
+          id: "sku",
+          header: "SKU / Código",
+          cell: ({ row }) => (
+            <div className="text-sm text-zinc-300">
+              <p>{row.original.sku || "-"}</p>
+              {row.original.barcode ? (
+                <p className="text-xs text-zinc-500">
+                  BC: {row.original.barcode}
+                </p>
+              ) : null}
+            </div>
+          ),
+        }),
+        columnHelper.display({
+          id: "stock",
+          header: "Stock",
+          cell: ({ row }) => (
+            <ProductStockBadge
+              lowStockThreshold={state.lowStockThreshold}
+              product={row.original}
+            />
+          ),
+        }),
+        columnHelper.accessor("price", {
+          header: "Precio",
+          cell: ({ row }) =>
+            row.original.isIngredient ? (
+              <span className="text-zinc-500">—</span>
+            ) : (
+              <span className="font-medium text-zinc-200">
+                {formatCurrency(row.original.price)}
+              </span>
+            ),
+        }),
+        columnHelper.display({
+          id: "actions",
+          header: () => <span className="sr-only">Acciones</span>,
+          cell: ({ row }) => (
+            <div className="flex justify-end gap-2">
+              {row.original.trackInventory ? (
+                <Button
+                  onClick={() => actions.openInventoryForProduct(row.original)}
+                  size="xs"
+                  type="button"
+                  variant="outline"
+                >
+                  Stock
+                </Button>
+              ) : null}
+              <ActionIcon
+                aria-label="Editar producto"
+                onClick={() => actions.openEditProduct(row.original)}
                 type="button"
                 variant="outline"
               >
-                Stock
-              </Button>
-            ) : null}
-            <ActionIcon
-              aria-label="Editar producto"
-              onClick={() => actions.openEditProduct(row.original)}
-              type="button"
-              variant="outline"
-            >
-              <Edit3 className="size-3.5" />
-            </ActionIcon>
-            <ActionIcon
-              aria-label="Eliminar producto"
-              color="red"
-              onClick={() => actions.requestDeleteProduct(row.original)}
-              type="button"
-              variant="outline"
-            >
-              <Trash2 className="size-3.5" />
-            </ActionIcon>
-          </div>
-        ),
-      }),
-    ],
+                <Edit3 className="size-3.5" />
+              </ActionIcon>
+              <ActionIcon
+                aria-label="Eliminar producto"
+                color="red"
+                onClick={() => actions.requestDeleteProduct(row.original)}
+                type="button"
+                variant="outline"
+              >
+                <Trash2 className="size-3.5" />
+              </ActionIcon>
+            </div>
+          ),
+        }),
+      ]),
     [actions, state.lowStockThreshold]
   );
-
-  const coreRowModel = useMemo(() => getCoreRowModel(), []);
-  const paginationRowModel = useMemo(() => getPaginationRowModel(), []);
 
   const tableState = useMemo(
     () => ({ pagination: state.pagination }),
@@ -145,11 +149,10 @@ export function ProductsTable() {
     [actions]
   );
 
-  const table = useReactTable({
+  const table = useTable({
     data: state.products,
     columns,
-    getCoreRowModel: coreRowModel,
-    getPaginationRowModel: paginationRowModel,
+    features,
     onPaginationChange: handlePaginationChange,
     state: tableState,
   });
@@ -185,7 +188,7 @@ export function ProductsTable() {
                     className="border-zinc-800 hover:bg-white/5"
                     key={row.id}
                   >
-                    {row.getVisibleCells().map((cell) => (
+                    {row.getAllCells().map((cell) => (
                       <TableCell className="px-4" key={cell.id}>
                         {flexRender(
                           cell.column.columnDef.cell,

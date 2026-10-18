@@ -176,6 +176,13 @@
       "when": 1790310943276,
       "tag": "0024_far_sheva_callister",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1792301939107,
+      "tag": "0025_rich_red_wolf",
+      "breakpoints": true
     }
   ]
 }

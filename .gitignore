@@ -175,3 +175,4 @@ test-results/
 playwright-report/
 playwright/.auth/
 playwright/.auth/e2e-bootstrap.json
+.workbuddy-ai

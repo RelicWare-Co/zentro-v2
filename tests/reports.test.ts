@@ -268,14 +268,9 @@ describe("report workbook", () => {
     expect(workbook.getWorksheet("Ventas")?.getCell("A4").value).toBe("Fecha");
     expect(workbook.getWorksheet("Ventas")?.getCell("B5").value).toBe("Pagada");
     expect(workbook.getWorksheet("Ventas")?.getCell("F5").value).toBe(10_000);
-    expect(workbook.getWorksheet("Ventas")?.getCell("A5").value).toBeInstanceOf(
-      Date
-    );
-    expect(
-      (
-        workbook.getWorksheet("Ventas")?.getCell("A5").value as Date
-      ).toISOString()
-    ).toBe("2026-07-17T10:00:00.000Z");
+    const saleDate = workbook.getWorksheet("Ventas")?.getCell("A5").value;
+    expect(saleDate).toBeInstanceOf(Date);
+    expect((saleDate as Date).toISOString()).toBe("2026-07-17T10:00:00.000Z");
     expect(workbook.getWorksheet("Productos")?.getCell("A4").value).toBe(
       "Producto"
     );

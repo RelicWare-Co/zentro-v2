@@ -103,17 +103,16 @@ describe("waitForClaimConfirmation", () => {
     expect(await runConfirmation(() => rows)).toBe(false);
   });
 
-  test.each([
-    "printed",
-    "skipped",
-    "failed",
-  ] as const)("gives up when the ticket is already %s", async (printStatus) => {
-    const rows: KitchenPrintRow[] = [
-      { id: TICKET_ID, printClaimedBy: null, printStatus },
-    ];
+  test.each(["printed", "skipped", "failed"] as const)(
+    "gives up when the ticket is already %s",
+    async (printStatus) => {
+      const rows: KitchenPrintRow[] = [
+        { id: TICKET_ID, printClaimedBy: null, printStatus },
+      ];
 
-    expect(await runConfirmation(() => rows)).toBe(false);
-  });
+      expect(await runConfirmation(() => rows)).toBe(false);
+    }
+  );
 
   test("gives up when the ticket leaves the result set", async () => {
     expect(await runConfirmation(() => [])).toBe(false);
@@ -210,15 +209,16 @@ describe("isKitchenPrintAttemptable", () => {
     }
   });
 
-  test.each([
-    "printed",
-    "skipped",
-    "failed",
-    null,
-    undefined,
-  ] as const)("never attempts tickets in state %s", (printStatus) => {
-    expect(
-      isKitchenPrintAttemptable({ id: TICKET_ID, printStatus }, undefined, now)
-    ).toBe(false);
-  });
+  test.each(["printed", "skipped", "failed", null, undefined] as const)(
+    "never attempts tickets in state %s",
+    (printStatus) => {
+      expect(
+        isKitchenPrintAttemptable(
+          { id: TICKET_ID, printStatus },
+          undefined,
+          now
+        )
+      ).toBe(false);
+    }
+  );
 });

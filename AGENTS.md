@@ -30,7 +30,8 @@ Read the section for the task at hand before editing. `AGENTS.md` defines reposi
 - Run the dev server with `bun run dev`.
 - Build with `bun run build`.
 - Run a built production server with `bun run start`; production startup must use Bun, not Node.
-- Type-check with `bunx tsc --noEmit`.
+- Type-check with `bunx tsc --noEmit`. TypeScript 7 is the native compiler and ships **no programmatic API**; tools that `require("typescript")` need the `@typescript/typescript6` alias instead of a downgrade.
+- Dependency upgrade runbook and pending work: `docs/dependency-upgrade-2026-10.md`.
 - Run integration tests with `bun test`. The script is intentionally scoped to `tests/*.test.ts`, requires Postgres (`docker compose up -d postgres`), and excludes Playwright specs under `tests/e2e/`.
 - CI (`.github/workflows/ci.yml`) runs typecheck, Ultracite, and the integration-test gate on pushes to `main`/`prod` and pull requests.
 
@@ -131,6 +132,8 @@ What stays in `server/`:
 
 ### Vike
 
+- `server/hono.ts` must call `vike(app, [...])` **before** registering any concrete route (including `/api/auth/*`). Since `@vikejs/hono` 0.4 the adapter mounts Vike's handlers through `app.notFound()` and throws at boot if a route exists first. `app.use(...)` middleware may be registered before it.
+- `@vikejs/hono` tracks `vike` and `hono` peer versions: bump the three together (`vike` is pinned exactly).
 - Pages live under `pages/**`; route guards use Vike guard files such as `+guard.ts`.
 - Keep server-only behavior behind the Hono/Vike server boundary. Components and browser code must not import database tables, auth server modules, or server-only procedure implementations.
 - Use Vike environment suffixes to enforce runtime boundaries:
@@ -227,6 +230,7 @@ Zero is the primary API for app data. Migration history lives in `MIGRATION_PLAN
 ### Desktop (Electron)
 
 - Keep Electron code inside `desktop/`; the web app is the source of truth for product behavior.
+- Electron Forge 8 is ESM-only and emits `main`/`preload` as CommonJS: `desktop/package.json` points `main` at `.vite/build/main.cjs` and `desktop/src/main.ts` loads `preload.cjs`. Renaming one without the other breaks packaged builds only, not `desktop:check`.
 - `desktop/src/main.ts` loads `ZENTRO_DESKTOP_WEB_URL` when set and falls back to `http://localhost:3000` in development. Packaged builds must bake a real web URL through `desktop/.env` or the shell.
 - Keep `nodeIntegration: false`, `contextIsolation: true`, `sandbox: true`, and same-origin navigation guards unless there is a reviewed reason to change them.
 - Use `desktop/src/preload.ts` only for minimal desktop affordances, mirroring browser-visible shape in `types/zentro-desktop.d.ts`. Do not expose broad Node/Electron APIs to the remote web surface.

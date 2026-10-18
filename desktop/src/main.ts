@@ -436,7 +436,7 @@ const createWindow = async () => {
       // rewrites `import.meta.dirname` to an undefined placeholder there, so
       // the Electron main process must use the CommonJS dirname for preload.
       // biome-ignore lint/correctness/noGlobalDirnameFilename: Electron Forge main output is CommonJS.
-      preload: path.join(__dirname, "preload.js"),
+      preload: path.join(__dirname, "preload.cjs"),
       sandbox: true,
       webSecurity: true,
     },

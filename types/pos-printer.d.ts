@@ -1,30 +1,3 @@
-declare module "@point-of-sale/receipt-printer-encoder" {
-  export default class ReceiptPrinterEncoder {
-    constructor(options?: {
-      language?: string;
-      codepageMapping?: string;
-      columns?: number;
-      errors?: string;
-    });
-    get columns(): number;
-    initialize(): this;
-    codepage(value: string): this;
-    align(value: string): this;
-    bold(value: boolean): this;
-    size(width?: number | string, height?: number): this;
-    line(value: string): this;
-    newline(count?: number): this;
-    cut(value?: string): this;
-    rule(options?: { style?: string }): this;
-    pulse(pin?: number, on?: number, off?: number): this;
-    table(
-      columns: Array<{ width: number; align: string }>,
-      rows: string[][]
-    ): this;
-    encode(): Uint8Array;
-  }
-}
-
 declare module "@point-of-sale/receipt-printer-status" {
   interface ReceiptPrinterStatusDriver {
     addEventListener(

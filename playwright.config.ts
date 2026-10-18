@@ -1,8 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
 import dotenv from "dotenv";
 
-dotenv.config();
-dotenv.config({ path: ".env.playwright.local", override: true });
+dotenv.config({ quiet: true });
+dotenv.config({ path: ".env.playwright.local", override: true, quiet: true });
 
 const baseURL =
   process.env.PLAYWRIGHT_BASE_URL ??

@@ -41,6 +41,14 @@ function getApp() {
   });
 
   // Better Auth handler
+  // vike(app) must be installed before any concrete route: since @vikejs/hono
+  // 0.4 it mounts Vike's server handlers through app.notFound() and guards the
+  // middleware chain, so registering routes first throws at boot.
+  vike(app, [
+    // Make database available in Context as `context.db`
+    dbMiddleware,
+  ]);
+
   app.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));
 
   app.route("/api/zero", createZeroApp());
@@ -52,11 +60,6 @@ function getApp() {
   app.route("/api/qz", createQzApp());
   app.route("/api/reports", createReportsApp());
   app.route("/api/sales", createSalesApp());
-
-  vike(app, [
-    // Make database available in Context as `context.db`
-    dbMiddleware,
-  ]);
 
   return app;
 }

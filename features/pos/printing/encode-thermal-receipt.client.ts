@@ -13,6 +13,53 @@ import {
 
 type EncodablePrinterLanguage = Exclude<PosPrinterLanguage, "auto">;
 
+// receipt-printer-encoder v4 throws when the mapping name is not registered for
+// the selected language. Only ESC/POS exposes a mapping table per vendor, Star
+// PRNT only accepts "star", and Star Line ignores mappings entirely.
+const ESC_POS_CODEPAGE_MAPPINGS = [
+  "bixolon",
+  "bixolon/legacy",
+  "citizen",
+  "epson",
+  "epson/legacy",
+  "fujitsu",
+  "hp",
+  "metapace",
+  "mpt",
+  "pos-5890",
+  "pos-8360",
+  "star",
+  "sunmi",
+  "xprinter",
+  "youku",
+] as const;
+
+type EscPosCodepageMapping = (typeof ESC_POS_CODEPAGE_MAPPINGS)[number];
+
+/**
+ * The settings field is free text, so an unknown or vendor-mismatched value must
+ * degrade to the language default instead of throwing at print time.
+ */
+function resolveCodepageMapping(
+  language: EncodablePrinterLanguage,
+  value: string | null | undefined
+): EscPosCodepageMapping | undefined {
+  if (language === "star-line") {
+    return;
+  }
+
+  if (language === "star-prnt") {
+    return "star";
+  }
+
+  const candidate = value?.trim().toLowerCase();
+
+  return (
+    ESC_POS_CODEPAGE_MAPPINGS.find((mapping) => mapping === candidate) ??
+    "epson"
+  );
+}
+
 function toSingleLine(value: string) {
   return value.replace(/\s+/g, " ").trim();
 }
@@ -147,9 +194,15 @@ export function encodeThermalReceipt(options: {
   codepageMapping?: string | null;
   layout?: Partial<PosReceiptLayoutSettings> | null;
 }) {
+  const codepageMapping = resolveCodepageMapping(
+    options.language,
+    options.codepageMapping
+  );
   const encoder = new ReceiptPrinterEncoder({
     language: options.language,
-    codepageMapping: options.codepageMapping ?? "epson",
+    // Star Line has no mapping table, so the option must be omitted rather than
+    // set to undefined: v4 reads Object.keys() on it when no candidates are set.
+    ...(codepageMapping ? { codepageMapping } : {}),
     columns: getThermalReceiptEncoderColumns(options.layout),
     errors: "relaxed",
   });
@@ -214,7 +267,10 @@ export function encodeDrawerPulse(options: {
 }) {
   const encoder = new ReceiptPrinterEncoder({
     language: options.language,
-    codepageMapping: options.codepageMapping ?? "epson",
+    codepageMapping: resolveCodepageMapping(
+      options.language,
+      options.codepageMapping
+    ),
     errors: "relaxed",
   });
 
