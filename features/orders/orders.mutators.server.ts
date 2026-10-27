@@ -1,8 +1,9 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import type { Database } from "@/database/drizzle/db";
 import { pedido, pedidoItem } from "@/database/drizzle/schema/orders.schema";
 import { shift } from "@/database/drizzle/schema/pos.schema";
+import { getPedidoChargeBlocker } from "@/features/orders/orders.shared";
 import type { CreateSaleDbExecutor } from "@/features/sales/create-sale.server";
 import { runCreateSale } from "@/features/sales/create-sale.server";
 import { defineZentroServerMutator } from "@/zero/sdk.server";
@@ -74,6 +75,38 @@ export const ordersServerMutators = {
         .select()
         .from(pedidoItem)
         .where(eq(pedidoItem.orderId, args.pedidoId));
+
+      // `delivery_fee` and `pedido_item.modifiers` are shared columns owned by
+      // the new app. They are not in v2's Drizzle schema, so read them with a
+      // raw projection instead of widening this schema/Zero contract.
+      const [chargeMeta] = await tx
+        .select({
+          deliveryFee: sql<number>`"pedido"."delivery_fee"`,
+          modifiersCount: sql<number>`(
+            select count(*)::int
+            from "pedido_item"
+            where "pedido_item"."order_id" = "pedido"."id"
+              and jsonb_array_length("pedido_item"."modifiers") > 0
+          )`,
+        })
+        .from(pedido)
+        .where(eq(pedido.id, args.pedidoId))
+        .limit(1);
+
+      const chargeBlocker = getPedidoChargeBlocker({
+        deliveryFee: Number(chargeMeta?.deliveryFee ?? 0),
+        modifiersCount: Number(chargeMeta?.modifiersCount ?? 0),
+      });
+      if (chargeBlocker === "delivery") {
+        throw new Error(
+          "Este pedido tiene un costo de domicilio. Cóbralo desde la app nueva o ajusta la venta manualmente."
+        );
+      }
+      if (chargeBlocker === "modifiers") {
+        throw new Error(
+          "Este pedido tiene adiciones. Cóbralo desde la app nueva o ajusta la venta manualmente."
+        );
+      }
 
       const saleItems = items.map((item) => ({
         productId: item.productId,
